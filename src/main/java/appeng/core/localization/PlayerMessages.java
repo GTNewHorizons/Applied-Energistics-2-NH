@@ -62,6 +62,10 @@ public enum PlayerMessages implements Localization {
     PatternRepeaterAccessor,
     PatternRepeaterRouteOutputTrue,
     PatternRepeaterRouteOutputFalse,
+    ChannelDevice,
+    ChannelLost,
+    ChannelLostPart,
+    ChannelLostMore,
 
     WirelessHighlighted,
     WirelessInOtherDim,
