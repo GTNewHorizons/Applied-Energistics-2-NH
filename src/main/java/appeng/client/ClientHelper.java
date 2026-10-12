@@ -61,6 +61,7 @@ import appeng.client.render.effects.EnergyFx;
 import appeng.client.render.effects.LightningArcFX;
 import appeng.client.render.effects.LightningFX;
 import appeng.client.render.effects.VibrantFX;
+import appeng.client.render.highlighter.ChannelAlertHighlighter;
 import appeng.client.render.highlighter.HighlighterManager;
 import appeng.client.render.notification.NotificationManager;
 import appeng.client.render.previewBlocks.BlockRendererPreviewEvent;
@@ -121,6 +122,7 @@ public class ClientHelper extends ServerHelper {
         MinecraftForge.EVENT_BUS.register(new BlockPosHighlighter());
         MinecraftForge.EVENT_BUS.register(new NetworkVisualiserRender());
         MinecraftForge.EVENT_BUS.register(new HighlighterManager());
+        MinecraftForge.EVENT_BUS.register(ChannelAlertHighlighter.INSTANCE);
         MinecraftForge.EVENT_BUS.register(BlockRendererPreviewEvent.getInstance());
         FMLCommonHandler.instance().bus().register(BlockRendererPreviewEvent.getInstance());
         FMLCommonHandler.instance().bus().register(new KeyBindHandler());

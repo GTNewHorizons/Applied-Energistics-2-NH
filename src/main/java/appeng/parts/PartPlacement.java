@@ -55,6 +55,8 @@ import appeng.integration.IntegrationType;
 import appeng.integration.abstraction.IBuildCraftTransport;
 import appeng.integration.abstraction.IFMP;
 import appeng.integration.abstraction.IImmibisMicroblocks;
+import appeng.me.ChannelAlertTracker;
+import appeng.me.helpers.IGridProxyable;
 import appeng.parts.networking.PartCable;
 import appeng.util.LookDirection;
 import appeng.util.Platform;
@@ -278,6 +280,9 @@ public class PartPlacement {
         if (world.isRemote && host instanceof FMPPlacementHelper) return true;
         final ForgeDirection mySide = host.addPart(held, side, player);
         if (mySide != null) {
+            if (host.getPart(mySide) instanceof IGridProxyable machine) {
+                ChannelAlertTracker.recordPlacement(player, world, machine);
+            }
             if (world.isRemote && host.getPart(mySide) instanceof PartCable cable) {
                 for (ForgeDirection s : ForgeDirection.VALID_DIRECTIONS) {
                     int nx = x + s.offsetX;
