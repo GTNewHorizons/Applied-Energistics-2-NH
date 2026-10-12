@@ -8,24 +8,31 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
+import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
+import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.world.WorldEvent;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 
+import appeng.api.util.DimensionalCoord;
+import appeng.container.AEBaseContainer;
 import appeng.core.sync.packets.PacketChannelAlert;
 import appeng.core.sync.packets.PacketChannelAlert.Target;
+import appeng.parts.AEBasePart;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 /** Independent of the search highlighters: blinking outlines, but continuously visible navigation lines. */
 public final class ChannelAlertHighlighter extends BlockPosHighlighter {
 
     public static final ChannelAlertHighlighter INSTANCE = new ChannelAlertHighlighter();
-    private static final long DURATION = TimeUnit.SECONDS.toNanos(10);
+    private static final long DURATION = TimeUnit.SECONDS.toNanos(15);
     private static final long BLINK_INTERVAL = TimeUnit.MILLISECONDS.toNanos(500);
     private final Map<Target, Long> targets = new LinkedHashMap<>();
     private final FloatBuffer modelView = BufferUtils.createFloatBuffer(16);
@@ -61,6 +68,25 @@ public final class ChannelAlertHighlighter extends BlockPosHighlighter {
     @SubscribeEvent
     public void onWorldUnload(WorldEvent.Unload event) {
         if (event.world == renderWorld) clear();
+    }
+
+    @SubscribeEvent
+    public void onGuiOpened(GuiScreenEvent.InitGuiEvent.Post event) {
+        if (targets.isEmpty()) return;
+        final Minecraft mc = Minecraft.getMinecraft();
+        // Only acknowledge a successfully displayed GUI, not a click or a canceled open request.
+        if (event.gui != mc.currentScreen || renderWorld != mc.theWorld) return;
+        if (event.gui instanceof GuiContainer gui && gui.inventorySlots instanceof AEBaseContainer container) {
+            final Object target = container.getTarget();
+            if (target instanceof AEBasePart part) {
+                final TileEntity tile = part.getTile();
+                if (tile != null && tile.getWorldObj() != null) {
+                    targets.remove(new Target(part.getLocation(), part.getSide(), null));
+                }
+            } else if (target instanceof TileEntity tile && tile.getWorldObj() != null) {
+                targets.remove(new Target(new DimensionalCoord(tile), ForgeDirection.UNKNOWN, null));
+            }
+        }
     }
 
     @Override
