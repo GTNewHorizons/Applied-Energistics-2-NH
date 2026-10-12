@@ -50,6 +50,7 @@ import appeng.core.sync.packets.PacketNEIRecipe;
 import appeng.core.sync.packets.PacketNetworkStatusSelected;
 import appeng.core.sync.packets.PacketNetworkVisualiserData;
 import appeng.core.sync.packets.PacketNewStorageDimension;
+import appeng.core.sync.packets.PacketOpenInterface;
 import appeng.core.sync.packets.PacketOptimizePatterns;
 import appeng.core.sync.packets.PacketPaintedEntity;
 import appeng.core.sync.packets.PacketPartInteraction;
@@ -164,7 +165,8 @@ public class AppEngPacketHandlerBase {
         PACKET_SUPER_WIRELESS_TOOL_COMMAND(PacketWirelessToolCommand.class),
         PACKET_CRAFTING_DIAGNOSTIC_RESET(PacketCraftingDiagnosticReset.class),
         PACKET_HIGHLIGHT_ITEM_FLOW(PacketHighlightItemFlow.class),
-        PACKET_FLOW_RATES(PacketFlowRates.class);
+        PACKET_FLOW_RATES(PacketFlowRates.class),
+        PACKET_OPEN_INTERFACE(PacketOpenInterface.class);
 
         private final Class<? extends AppEngPacket> packetClass;
         private final Constructor<? extends AppEngPacket> packetConstructor;

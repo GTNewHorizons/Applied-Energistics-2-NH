@@ -96,6 +96,7 @@ import appeng.container.implementations.ContainerPriority;
 import appeng.container.implementations.ContainerPriorityCard;
 import appeng.container.implementations.ContainerQNB;
 import appeng.container.implementations.ContainerQuartzKnife;
+import appeng.container.implementations.ContainerRemoteInterface;
 import appeng.container.implementations.ContainerRenamer;
 import appeng.container.implementations.ContainerSecurity;
 import appeng.container.implementations.ContainerSkyChest;
@@ -269,6 +270,9 @@ public enum GuiBridge implements IGuiHandler {
     GUI_WIRELESS_NETWORK_MANAGER(ContainerWirelessNetworkManager.class, IGuiItemObject.class, GuiHostType.ITEM, null),
 
     GUI_SUPER_ME_REPLENISHER(ContainerSuperMEReplenisher.class, TileSuperMEReplenisher.class, GuiHostType.WORLD,
+            SecurityPermissions.BUILD),
+
+    GUI_REMOTE_INTERFACE(ContainerRemoteInterface.class, IInterfaceHost.class, GuiHostType.WORLD,
             SecurityPermissions.BUILD);
 
     private final Class tileClass;
