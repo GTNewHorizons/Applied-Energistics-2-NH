@@ -21,12 +21,14 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.IChatComponent;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -34,6 +36,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 import com.google.common.primitives.Ints;
 
 import appeng.api.AEApi;
+import appeng.api.config.SecurityPermissions;
 import appeng.api.config.Settings;
 import appeng.api.config.YesNo;
 import appeng.api.implementations.ICraftingPatternItem;
@@ -46,10 +49,13 @@ import appeng.api.util.DimensionalCoord;
 import appeng.api.util.IInterfaceViewable;
 import appeng.client.gui.IGuiSub;
 import appeng.container.AEBaseContainer;
+import appeng.container.RemoteInterfaceGui;
 import appeng.container.interfaces.IContainerSubGui;
+import appeng.core.sync.GuiBridge;
 import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketInterfaceTerminalUpdate;
 import appeng.helpers.IInterfaceHost;
+import appeng.helpers.IPrimaryGuiIconProvider;
 import appeng.helpers.InventoryAction;
 import appeng.items.misc.ItemEncodedPattern;
 import appeng.parts.AEBasePart;
@@ -144,6 +150,64 @@ public final class ContainerInterfaceTerminal extends AEBaseContainer implements
 
     public void scheduleUpdate() {
         this.forceNextUpdate = true;
+    }
+
+    public void openInterface(final EntityPlayer player, final long id) {
+        if (player.openContainer != this) return;
+        final InvTracker tracker = this.trackedById.get(id);
+        if (tracker != null && tracker.machine instanceof IInterfaceHost host) {
+            this.openInterface(player, host);
+        }
+    }
+
+    public void openInterface(final EntityPlayer player, final IInterfaceHost host) {
+        if (!this.canAccessInterface(player, host)) return;
+        final ForgeDirection side = host instanceof AEBasePart part ? part.getSide() : ForgeDirection.UNKNOWN;
+        final TileEntity tile = host.getTileEntity();
+        Platform.openGUI(player, tile, side, GuiBridge.GUI_REMOTE_INTERFACE);
+        if (player.openContainer instanceof ContainerRemoteInterface remote && remote.getTarget() == host) {
+            final ItemStack icon = host instanceof IPrimaryGuiIconProvider provider ? provider.getPrimaryGuiIcon()
+                    : host.getSelfRep();
+            remote.setRemoteGui(new RemoteInterfaceGui(this, host, icon, side), this.createPrimaryGui());
+        }
+    }
+
+    public boolean canAccessInterface(final EntityPlayer player, final IInterfaceHost host) {
+        // Wireless addon terminals do not expose a range/energy lifetime contract here.
+        if (!(this.getTarget() instanceof TileEntity) && !(this.getTarget() instanceof AEBasePart)) return false;
+        if (player != this.getInventoryPlayer().player || !this.isValidContainer()
+                || !this.canInteractWith(player)
+                || !this.tracked.containsKey(host))
+            return false;
+        final Object source = this.getTarget();
+        final TileEntity sourceTile = source instanceof TileEntity tile ? tile : ((AEBasePart) source).getTile();
+        if (sourceTile == null || sourceTile.getWorldObj() != player.worldObj
+                || !player.worldObj.blockExists(sourceTile.xCoord, sourceTile.yCoord, sourceTile.zCoord)
+                || player.worldObj.getTileEntity(sourceTile.xCoord, sourceTile.yCoord, sourceTile.zCoord) != sourceTile)
+            return false;
+        if (source instanceof AEBasePart part && Platform.getPartFromTE(sourceTile, part.getSide()) != part)
+            return false;
+        if (!this.hasAccess(SecurityPermissions.BUILD, true)) return false;
+
+        final IGridNode anchorNode = this.anchor.getActionableNode();
+        final IGridNode node = host.getActionableNode();
+        if (anchorNode == null || !anchorNode.isActive()
+                || anchorNode.getGrid() != this.grid
+                || node == null
+                || !node.isActive()
+                || !this.collectReachableGrids().contains(node.getGrid()))
+            return false;
+
+        final TileEntity tile = host.getTileEntity();
+        if (tile == null || tile.getWorldObj() != player.worldObj
+                || !player.worldObj.blockExists(tile.xCoord, tile.yCoord, tile.zCoord)
+                || player.worldObj.getTileEntity(tile.xCoord, tile.yCoord, tile.zCoord) != tile)
+            return false;
+        final ForgeDirection side = host instanceof AEBasePart part ? part.getSide() : ForgeDirection.UNKNOWN;
+        final Object target = side == ForgeDirection.UNKNOWN ? tile : Platform.getPartFromTE(tile, side);
+        if (target != host) return false;
+
+        return GuiBridge.GUI_REMOTE_INTERFACE.hasPermissions(tile, tile.xCoord, tile.yCoord, tile.zCoord, side, player);
     }
 
     @Override
@@ -481,6 +545,7 @@ public final class ContainerInterfaceTerminal extends AEBaseContainer implements
     private static class InvTracker {
 
         private final long id;
+        private final IInterfaceViewable machine;
         private boolean shouldDisplay;
         private String name;
         private String suffix;
@@ -504,6 +569,7 @@ public final class ContainerInterfaceTerminal extends AEBaseContainer implements
             DimensionalCoord location = machine.getLocation();
 
             this.id = id;
+            this.machine = machine;
             this.shouldDisplay = getTerminalVisibility(machine);
             this.name = machine.getRawName();
             this.suffix = serializeSuffix(machine.getNameSuffix());

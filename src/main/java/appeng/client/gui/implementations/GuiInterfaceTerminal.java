@@ -39,12 +39,14 @@ import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IChatComponent;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants.NBT;
+import net.minecraftforge.common.util.ForgeDirection;
 
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -86,14 +88,17 @@ import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketInterfaceTerminalUpdate;
 import appeng.core.sync.packets.PacketInterfaceTerminalUpdate.PacketEntry;
 import appeng.core.sync.packets.PacketInventoryAction;
+import appeng.core.sync.packets.PacketOpenInterface;
 import appeng.core.sync.packets.PacketRemoteRename;
 import appeng.core.sync.packets.PacketSwitchGuis;
 import appeng.core.sync.packets.PacketToggleInterfaceVisibility;
+import appeng.helpers.IInterfaceHost;
 import appeng.helpers.InventoryAction;
 import appeng.integration.IntegrationRegistry;
 import appeng.integration.IntegrationType;
 import appeng.integration.modules.NEI;
 import appeng.items.misc.ItemEncodedPattern;
+import appeng.parts.AEBasePart;
 import appeng.tile.inventory.AppEngInternalInventory;
 import appeng.util.Platform;
 import appeng.util.item.AEItemStack;
@@ -226,6 +231,7 @@ public class GuiInterfaceTerminal extends AEBaseGui
         extraOptionsText.add(ButtonToolTips.HighlightInterface.getLocal());
         extraOptionsText.add(ButtonToolTips.HighlightInterfaceDesc.getLocal());
         extraOptionsText.add(ButtonToolTips.RenameInterface.getLocal());
+        extraOptionsText.add(ButtonToolTips.OpenInterface.getLocal());
 
         NEI.searchField.putFormatter(this.searchFieldInputs);
         NEI.searchField.putFormatter(this.searchFieldOutputs);
@@ -882,6 +888,10 @@ public class GuiInterfaceTerminal extends AEBaseGui
                     pendingEntryButtonTooltip = buildInterfaceTerminalVisibilityTooltip(entry.hideButton);
                 } else if (shiftHeld) {
                     pendingEntryButtonTooltip = Collections.singletonList(ButtonToolTips.RenameInterface.getLocal());
+                } else if (GuiScreen.isCtrlKeyDown()) {
+                    pendingEntryButtonTooltip = Collections.singletonList(
+                            (entry.canOpenRemotely() ? ButtonToolTips.OpenInterface
+                                    : ButtonToolTips.OpenInterfaceUnavailable).getLocal());
                 } else {
                     pendingEntryButtonTooltip = extraOptionsText;
                 }
@@ -1799,6 +1809,19 @@ public class GuiInterfaceTerminal extends AEBaseGui
             return mc != null && mc.thePlayer != null && mc.thePlayer.dimension == this.dim;
         }
 
+        boolean canOpenRemotely() {
+            if (!(inventorySlots instanceof ContainerInterfaceTerminal terminal)
+                    || (!(terminal.getTarget() instanceof TileEntity) && !(terminal.getTarget() instanceof AEBasePart)))
+                return false;
+            if (!isInPlayerDimension() || mc.theWorld == null || !mc.theWorld.blockExists(x, y, z)) {
+                return false;
+            }
+
+            final TileEntity te = mc.theWorld.getTileEntity(x, y, z);
+            return Platform.getPartFromTE(te, ForgeDirection.getOrientation(side)) instanceof IInterfaceHost
+                    || te instanceof IInterfaceHost;
+        }
+
         InterfaceTerminalEntry setIcons(ItemStack selfRep, ItemStack dispRep) {
             // Kotlin would make this pretty easy :(
             this.selfRep = selfRep;
@@ -1917,7 +1940,7 @@ public class GuiInterfaceTerminal extends AEBaseGui
                 return false;
             }
 
-            // Validate options/hide button click (Alt switches to hide mode)
+            // Alt hide and Shift rename take precedence over Ctrl remote access.
             final boolean altHeld = Keyboard.isKeyDown(Keyboard.KEY_LMENU) || Keyboard.isKeyDown(Keyboard.KEY_RMENU);
             if (mouseX >= optionsButton.xPosition && mouseX < optionsButton.xPosition + optionsButton.width
                     && mouseY > optionsButton.yPosition
@@ -1931,6 +1954,15 @@ public class GuiInterfaceTerminal extends AEBaseGui
                 if (isShiftKeyDown() && isInPlayerDimension()) {
                     renameButton.func_146113_a(mc.getSoundHandler());
                     NetworkHandler.instance.sendToServer(new PacketRemoteRename(x, y, z, dim, side));
+                    return true;
+                }
+
+                if (GuiScreen.isCtrlKeyDown()) {
+                    if (canOpenRemotely()) {
+                        optionsButton.func_146113_a(mc.getSoundHandler());
+                        AEBaseGui.setSwitchingGuis(true);
+                        NetworkHandler.instance.sendToServer(new PacketOpenInterface(id));
+                    }
                     return true;
                 }
 

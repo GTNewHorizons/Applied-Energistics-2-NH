@@ -426,6 +426,12 @@ public abstract class AEBaseContainer extends Container {
 
     @Override
     public void detectAndSendChanges() {
+        if (Platform.isServer() && this.primaryGui instanceof RemoteInterfaceGui remoteGui) {
+            if (!remoteGui.canInteractWith(this.invPlayer.player)) {
+                this.setValidContainer(false);
+                return;
+            }
+        }
         this.sendCustomName();
 
         if (Platform.isServer()) {
@@ -685,8 +691,15 @@ public abstract class AEBaseContainer extends Container {
         return transferred ? result : null;
     }
 
+    public boolean hasRemoteInterfaceOrigin() {
+        return this.primaryGui instanceof RemoteInterfaceGui;
+    }
+
     @Override
     public boolean canInteractWith(final EntityPlayer entityplayer) {
+        if (this.primaryGui instanceof RemoteInterfaceGui remoteGui && !remoteGui.canInteractWith(entityplayer)) {
+            return false;
+        }
         if (this.isValidContainer()) {
             if (this.tileEntity instanceof IInventory) {
                 return ((IInventory) this.tileEntity).isUseableByPlayer(entityplayer);
@@ -1156,6 +1169,7 @@ public abstract class AEBaseContainer extends Container {
     }
 
     public PrimaryGui createPrimaryGui() {
+        if (this.primaryGui instanceof RemoteInterfaceGui) return this.primaryGui;
         ContainerOpenContext context = getOpenContext();
 
         final PrimaryGui pGui = new PrimaryGui(
