@@ -11,7 +11,7 @@ import net.minecraft.client.resources.I18n
 import net.minecraft.util.IIcon
 
 @SideOnly(Side.CLIENT)
-class InfoWrapper(info: P2PInfo) {
+class InfoWrapper(private val info: P2PInfo) {
     var frequency: Long = info.frequency
         set(value) {
             if (error || value == 0L) {
@@ -76,8 +76,8 @@ class InfoWrapper(info: P2PInfo) {
         val p2pType: ClientTunnelInfo = BetterP2P.proxy.getP2PFromIndex(info.type) as ClientTunnelInfo
         icon = p2pType.icon()
         overlay = p2pType.stack.iconIndex
-        description = I18n.format("gui.advanced_memory_card.p2p_status.type", p2pType.dispName, 
-                if (output) I18n.format("gui.advanced_memory_card.p2p_status.output") 
+        description = I18n.format("gui.advanced_memory_card.p2p_status.type", p2pType.dispName,
+                if (output) I18n.format("gui.advanced_memory_card.p2p_status.output")
                 else I18n.format("gui.advanced_memory_card.p2p_status.input"))
         val online = info.hasChannel
         hoverInfo = mutableListOf(
@@ -93,6 +93,8 @@ class InfoWrapper(info: P2PInfo) {
         }
         if (!online) hoverInfo.add("§c" + I18n.format("gui.advanced_memory_card.p2p_status.offline"))
     }
+
+    fun toInfo(): P2PInfo = info.copy(frequency = frequency, name = name)
 
     override fun hashCode(): Int {
         return loc.hashCode()

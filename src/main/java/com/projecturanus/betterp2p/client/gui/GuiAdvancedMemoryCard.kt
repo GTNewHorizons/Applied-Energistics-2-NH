@@ -7,9 +7,11 @@ import com.projecturanus.betterp2p.MODID
 import com.projecturanus.betterp2p.client.ClientCache
 import com.projecturanus.betterp2p.client.TextureBound
 import com.projecturanus.betterp2p.client.gui.widget.*
+import com.projecturanus.betterp2p.client.render.ConnectionHighlighter
 import com.projecturanus.betterp2p.item.BetterMemoryCardModes
 import com.projecturanus.betterp2p.item.MAX_TOOLTIP_LENGTH
 import com.projecturanus.betterp2p.network.ModNetwork
+import com.projecturanus.betterp2p.network.data.ConnectionGroup
 import com.projecturanus.betterp2p.network.data.MemoryInfo
 import com.projecturanus.betterp2p.network.data.P2PInfo
 import com.projecturanus.betterp2p.network.data.P2PLocation
@@ -21,9 +23,11 @@ import com.projecturanus.betterp2p.network.packet.S2COpenGui
 import com.projecturanus.betterp2p.util.p2p.ClientTunnelInfo
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.FontRenderer
+import net.minecraft.client.gui.Gui
 import net.minecraft.client.gui.GuiScreen
 import net.minecraft.client.renderer.Tessellator
 import net.minecraft.client.resources.I18n
+import net.minecraft.util.ChatComponentTranslation
 import net.minecraft.util.ResourceLocation
 import org.lwjgl.input.Keyboard
 import org.lwjgl.input.Mouse
@@ -62,6 +66,7 @@ class GuiAdvancedMemoryCard(msg: S2COpenGui) : GuiScreen(), TextureBound {
     private val typeButton: WidgetButton
 
     private val refreshButton: WidgetButton
+    private val connectionsButton: WidgetButton
 
     private val scrollBar: WidgetScrollBar
     private val searchBar: MEGuiTextField
@@ -283,6 +288,58 @@ class GuiAdvancedMemoryCard(msg: S2COpenGui) : GuiScreen(), TextureBound {
             }
         }
 
+        connectionsButton = object: WidgetButton(this, 0, 0, 32, 32) {
+            override fun mousePressed(mouseX: Int, mouseY: Int, button: Int): Boolean {
+                updateState()
+                if (button != 0 || !super.mousePressed(mc, mouseX, mouseY)) return false
+                val targets = ConnectionGroup.select(infos.sorted.map { it.toInfo() }, selectedInfo?.toInfo())
+                if (targets.isEmpty()) return false
+                ConnectionHighlighter.show(targets)
+                val visible = targets.count { it.dim == mc.thePlayer.dimension }
+                mc.thePlayer.addChatMessage(ChatComponentTranslation(
+                    "gui.advanced_memory_card.connections.shown", visible))
+                val otherDimensions = targets.size - visible
+                if (otherDimensions > 0) {
+                    mc.thePlayer.addChatMessage(ChatComponentTranslation(
+                        "gui.advanced_memory_card.connections.other_dimensions", otherDimensions))
+                }
+                super.func_146113_a(mc.soundHandler)
+                mc.displayGuiScreen(null)
+                mc.setIngameFocus()
+                return true
+            }
+
+            private fun updateState() {
+                enabled = selectedInfo?.frequency?.let { it != 0L } ?: false
+                hoverText = if (enabled) listOf(
+                    I18n.format("gui.advanced_memory_card.connections.show"),
+                    I18n.format("gui.advanced_memory_card.connections.desc"),
+                    I18n.format("gui.advanced_memory_card.connections.colors")
+                ) else listOf(
+                    I18n.format("gui.advanced_memory_card.connections.show"),
+                    I18n.format("gui.advanced_memory_card.connections.select")
+                )
+            }
+
+            override fun draw(mc: Minecraft, mouseX: Int, mouseY: Int, partialTicks: Float) {
+                updateState()
+                drawBG(Tessellator.instance, mouseX, mouseY, partialTicks)
+                val x = xPosition + 16
+                val y = yPosition + 16
+                val color = if (enabled) 0xFF66CCFF.toInt() else 0xFF777777.toInt()
+                Gui.drawRect(x - 8, y - 8, x - 3, y - 6, color)
+                Gui.drawRect(x - 8, y - 8, x - 6, y - 3, color)
+                Gui.drawRect(x + 3, y - 8, x + 8, y - 6, color)
+                Gui.drawRect(x + 6, y - 8, x + 8, y - 3, color)
+                Gui.drawRect(x - 8, y + 6, x - 3, y + 8, color)
+                Gui.drawRect(x - 8, y + 3, x - 6, y + 8, color)
+                Gui.drawRect(x + 3, y + 6, x + 8, y + 8, color)
+                Gui.drawRect(x + 6, y + 3, x + 8, y + 8, color)
+                Gui.drawRect(x - 4, y - 1, x + 4, y + 1, color)
+                Gui.drawRect(x - 1, y - 4, x + 1, y + 4, color)
+            }
+        }
+
         val typeSelectorList = mutableListOf<ClientTunnelInfo>()
         var toAdd = BetterP2P.proxy.getP2PFromClass(PartP2PTunnelME::class.java) as? ClientTunnelInfo
         if (toAdd != null) {
@@ -352,6 +409,9 @@ class GuiAdvancedMemoryCard(msg: S2COpenGui) : GuiScreen(), TextureBound {
         refreshButton.setPosition(guiLeft - 32, guiTop + 98)
         refreshButton.setTexCoords(32 * 5.0, 200.0)
         buttonList.add(refreshButton)
+
+        connectionsButton.setPosition(guiLeft - 32, guiTop + 130)
+        buttonList.add(connectionsButton)
 
         if (typeSelector.parent != typeButton) {
             closeTypeSelector(type)
