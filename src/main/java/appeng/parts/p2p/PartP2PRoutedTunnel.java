@@ -64,6 +64,15 @@ public abstract class PartP2PRoutedTunnel<T extends PartP2PRoutedTunnel<T>> exte
         }
     }
 
+    @Override
+    public void setFrequency(final long freq) {
+        final List<T> oldDependents = this.getDependentTunnels();
+        super.setFrequency(freq);
+        for (final T tunnel : oldDependents) {
+            tunnel.onRouteTargetsChanged();
+        }
+    }
+
     private List<T> resolveRoute(final P2PTransportPolicy.Route route) {
         return switch (route) {
             case OUTPUTS -> this.addOtherOutputs(new ArrayList<>());
