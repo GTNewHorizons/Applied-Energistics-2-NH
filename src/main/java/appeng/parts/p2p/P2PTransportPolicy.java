@@ -19,6 +19,14 @@ public class P2PTransportPolicy {
             this.extract = extract;
         }
 
+        public Route insert() {
+            return insert;
+        }
+
+        public Route extract() {
+            return extract;
+        }
+
         public static final SideAccess CLOSED = new SideAccess(Route.NONE, Route.NONE);
 
         public boolean uses(Route route) {
