@@ -43,7 +43,7 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower>
      */
     private static final IEnergyHandler NULL_HANDLER = new NullRFHandler();
 
-    private static final P2PTransportPolicy POLICY = P2PTransportPolicy.ONE_WAY_PUSH_PULL;
+    private static final P2PTransportPolicy POLICY = P2PTransportPolicy.ONE_WAY_PUSH;
 
     private boolean cachedReceiver = false;
     private IEnergyReceiver receiverTarget;
