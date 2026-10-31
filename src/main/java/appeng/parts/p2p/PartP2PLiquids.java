@@ -67,15 +67,9 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
 
     @Override
     public int fill(final ForgeDirection from, final FluidStack resource, final boolean doFill) {
-        if (resource == null || resource.getFluid() == null) return 0;
+        if (resource == null || resource.getFluid() == null || isBusy()) return 0;
 
         final Stack<PartP2PLiquids> stack = this.getDepth();
-
-        for (final PartP2PLiquids t : stack) {
-            if (t == this) {
-                return 0;
-            }
-        }
 
         stack.push(this);
 
@@ -164,15 +158,24 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
         final List<PartP2PLiquids> tunnels = new LinkedList<>();
         if (input == null) return tunnels;
         for (final PartP2PLiquids l : this.getInsertTargets()) {
-            if (l == this) continue;
             final IFluidHandler handler = l.getTarget();
-            if (handler != null) {
-                if (handler.canFill(l.getSide().getOpposite(), input)) {
-                    tunnels.add(l);
-                }
+            if (handler != null && handler.canFill(l.getSide().getOpposite(), input)) {
+                tunnels.add(l);
             }
         }
 
+        return tunnels;
+    }
+
+    private List<PartP2PLiquids> getExtractTargets(final Fluid fluid) {
+        final List<PartP2PLiquids> tunnels = new LinkedList<>();
+        if (fluid == null) return tunnels;
+        for (final PartP2PLiquids l : this.getExtractTargets()) {
+            final IFluidHandler handler = l.getTarget();
+            if (handler != null && handler.canDrain(l.getSide().getOpposite(), fluid)) {
+                tunnels.add(l);
+            }
+        }
         return tunnels;
     }
 
@@ -198,33 +201,53 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
 
     @Override
     public FluidStack drain(final ForgeDirection from, final FluidStack resource, final boolean doDrain) {
-        return null;
+        if (resource == null || resource.getFluid() == null || resource.amount <= 0) {
+            return null;
+        }
+        return this.drainTargets(resource, resource.amount, doDrain);
     }
 
     @Override
     public FluidStack drain(final ForgeDirection from, final int maxDrain, final boolean doDrain) {
-        return null;
+        if (maxDrain <= 0) {
+            return null;
+        }
+        return this.drainTargets(null, maxDrain, doDrain);
     }
 
-    private boolean inputAcceptsFluid(Fluid input) {
-        PartP2PLiquids l = getInput();
-        if (l == null || l == this || input == null) return false;
-        final IFluidHandler handler = l.getTarget();
-        return handler != null && handler.canFill(l.getSide().getOpposite(), input);
+    private FluidStack drainTargets(final FluidStack filter, final int maxDrain, final boolean doDrain) {
+        if (isBusy()) {
+            return null;
+        }
+
+        final Stack<PartP2PLiquids> stack = this.getDepth();
+        stack.push(this);
+        try {
+            final List<PartP2PLiquids> extractTargets = filter == null ? this.getExtractTargets() : this.getExtractTargets(filter.getFluid());
+            for (final PartP2PLiquids t : extractTargets) {
+                final IFluidHandler tank = t.getTarget();
+                if (tank == null) {
+                    continue;
+                }
+                final ForgeDirection side = t.getSide().getOpposite();
+                final FluidStack drained = filter == null ? tank.drain(side, maxDrain, doDrain) : tank.drain(side, new FluidStack(filter, maxDrain), doDrain);
+                if (drained != null && drained.amount > 0) {
+                    return drained;
+                }
+            }
+            return null;
+        } finally {
+            stack.pop();
+        }
     }
 
     @Override
     public boolean canFill(final ForgeDirection from, final Fluid fluid) {
-        if (from != this.getSide()) {
+        if (from != this.getSide() || isBusy()) {
             return false;
         }
 
         final Stack<PartP2PLiquids> stack = this.getDepth();
-        for (final PartP2PLiquids t : stack) {
-            if (t == this) {
-                return false;
-            }
-        }
         stack.push(this);
         try {
             return !this.getInsertTargets(fluid).isEmpty();
@@ -235,7 +258,16 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
 
     @Override
     public boolean canDrain(final ForgeDirection from, final Fluid fluid) {
-        return false;
+        if (from != this.getSide() || isBusy()) {
+            return false;
+        }
+        final Stack<PartP2PLiquids> stack = this.getDepth();
+        stack.push(this);
+        try {
+            return !this.getExtractTargets(fluid).isEmpty();
+        } finally {
+            stack.pop();
+        }
     }
 
     @Override
@@ -262,5 +294,14 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
             }
         }
         return INACTIVE_TANK;
+    }
+
+    private boolean isBusy() {
+        for (final PartP2PLiquids t : this.getDepth()) {
+            if (t == this) {
+                return true;
+            }
+        }
+        return false;
     }
 }
