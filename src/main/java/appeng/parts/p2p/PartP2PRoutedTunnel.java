@@ -1,11 +1,12 @@
 package appeng.parts.p2p;
 
-import appeng.me.GridAccessException;
-import net.minecraft.item.ItemStack;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import net.minecraft.item.ItemStack;
+
+import appeng.me.GridAccessException;
 
 public abstract class PartP2PRoutedTunnel<T extends PartP2PRoutedTunnel<T>> extends PartP2PTunnelNormal<T> {
 

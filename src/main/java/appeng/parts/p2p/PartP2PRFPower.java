@@ -13,8 +13,6 @@ package appeng.parts.p2p;
 import java.util.List;
 import java.util.Stack;
 
-import cofh.api.energy.IEnergyHandler;
-import cofh.api.energy.IEnergyProvider;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
@@ -27,12 +25,17 @@ import appeng.integration.modules.helpers.NullRFHandler;
 import appeng.transformer.annotations.Integration.Interface;
 import appeng.transformer.annotations.Integration.InterfaceList;
 import appeng.util.Platform;
+import cofh.api.energy.IEnergyHandler;
+import cofh.api.energy.IEnergyProvider;
 import cofh.api.energy.IEnergyReceiver;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-@InterfaceList(value = { @Interface(iface = "cofh.api.energy.IEnergyReceiver", iname = IntegrationType.RF), @Interface(iface = "cofh.api.energy.IEnergyProvider", iname = IntegrationType.RF) })
-public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower> implements IEnergyReceiver, IEnergyProvider {
+@InterfaceList(
+        value = { @Interface(iface = "cofh.api.energy.IEnergyReceiver", iname = IntegrationType.RF),
+                @Interface(iface = "cofh.api.energy.IEnergyProvider", iname = IntegrationType.RF) })
+public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower>
+        implements IEnergyReceiver, IEnergyProvider {
 
     private static final ThreadLocal<Stack<PartP2PRFPower>> THREAD_STACK = new ThreadLocal<>();
     /**
@@ -71,10 +74,9 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower> im
 
     @Override
     public void onNeighborChanged() {
-        super.onNeighborChanged();
-
         this.cachedReceiver = false;
         this.cachedProvider = false;
+        super.onNeighborChanged();
     }
 
     @Override
@@ -94,8 +96,7 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower> im
 
             for (final PartP2PRFPower t : targets) {
                 if (Platform.getRandomInt() % 2 > 0) {
-                    final int receiver = t.getReceiver()
-                            .receiveEnergy(t.getSide().getOpposite(), maxReceive, simulate);
+                    final int receiver = t.getReceiver().receiveEnergy(t.getSide().getOpposite(), maxReceive, simulate);
                     maxReceive -= receiver;
                     total += receiver;
 
@@ -107,8 +108,7 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower> im
 
             if (maxReceive > 0) {
                 for (final PartP2PRFPower t : targets) {
-                    final int receiver = t.getReceiver()
-                            .receiveEnergy(t.getSide().getOpposite(), maxReceive, simulate);
+                    final int receiver = t.getReceiver().receiveEnergy(t.getSide().getOpposite(), maxReceive, simulate);
                     maxReceive -= receiver;
                     total += receiver;
 

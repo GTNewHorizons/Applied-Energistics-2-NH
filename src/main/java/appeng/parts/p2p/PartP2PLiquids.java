@@ -217,14 +217,16 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
         final Stack<PartP2PLiquids> stack = this.getDepth();
         stack.push(this);
         try {
-            final List<PartP2PLiquids> extractTargets = filter == null ? this.getExtractTargets() : this.getExtractTargets(filter.getFluid());
+            final List<PartP2PLiquids> extractTargets = filter == null ? this.getExtractTargets()
+                    : this.getExtractTargets(filter.getFluid());
             for (final PartP2PLiquids t : extractTargets) {
                 final IFluidHandler tank = t.getTarget();
                 if (tank == null) {
                     continue;
                 }
                 final ForgeDirection side = t.getSide().getOpposite();
-                final FluidStack drained = filter == null ? tank.drain(side, maxDrain, doDrain) : tank.drain(side, new FluidStack(filter, maxDrain), doDrain);
+                final FluidStack drained = filter == null ? tank.drain(side, maxDrain, doDrain)
+                        : tank.drain(side, new FluidStack(filter, maxDrain), doDrain);
                 if (drained != null && drained.amount > 0) {
                     return drained;
                 }
@@ -277,7 +279,8 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
                 final List<FluidTankInfo> infos = new LinkedList<>();
                 for (final PartP2PLiquids t : this.getExtractTargets()) {
                     final IFluidHandler tank = t.getTarget();
-                    final FluidTankInfo[] targetInfos = tank != null ? tank.getTankInfo(t.getSide().getOpposite()) : null;
+                    final FluidTankInfo[] targetInfos = tank != null ? tank.getTankInfo(t.getSide().getOpposite())
+                            : null;
                     if (targetInfos != null) {
                         Collections.addAll(infos, targetInfos);
                     }

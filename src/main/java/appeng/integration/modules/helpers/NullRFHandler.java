@@ -10,9 +10,9 @@
 
 package appeng.integration.modules.helpers;
 
-import cofh.api.energy.IEnergyHandler;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import cofh.api.energy.IEnergyHandler;
 
 public class NullRFHandler implements IEnergyHandler {
 

@@ -34,10 +34,18 @@ public class P2PTransportPolicy {
         }
     }
 
-    public static final P2PTransportPolicy ONE_WAY_PUSH = new P2PTransportPolicy(new SideAccess(Route.OUTPUTS, Route.NONE), SideAccess.CLOSED);
-    public static final P2PTransportPolicy ONE_WAY_PUSH_PULL = new P2PTransportPolicy(new SideAccess(Route.OUTPUTS, Route.NONE), new SideAccess(Route.NONE, Route.INPUT));
-    public static final P2PTransportPolicy TWO_WAY_PUSH = new P2PTransportPolicy(new SideAccess(Route.OUTPUTS, Route.NONE), new SideAccess(Route.PEERS, Route.NONE));
-    public static final P2PTransportPolicy TWO_WAY_PUSH_PULL = new P2PTransportPolicy(new SideAccess(Route.OUTPUTS, Route.OUTPUTS), new SideAccess(Route.PEERS, Route.PEERS));
+    public static final P2PTransportPolicy ONE_WAY_PUSH = new P2PTransportPolicy(
+            new SideAccess(Route.OUTPUTS, Route.NONE),
+            SideAccess.CLOSED);
+    public static final P2PTransportPolicy ONE_WAY_PUSH_PULL = new P2PTransportPolicy(
+            new SideAccess(Route.OUTPUTS, Route.NONE),
+            new SideAccess(Route.NONE, Route.INPUT));
+    public static final P2PTransportPolicy TWO_WAY_PUSH = new P2PTransportPolicy(
+            new SideAccess(Route.OUTPUTS, Route.NONE),
+            new SideAccess(Route.PEERS, Route.NONE));
+    public static final P2PTransportPolicy TWO_WAY_PUSH_PULL = new P2PTransportPolicy(
+            new SideAccess(Route.OUTPUTS, Route.OUTPUTS),
+            new SideAccess(Route.PEERS, Route.PEERS));
 
     private final SideAccess inputSide;
     private final SideAccess outputSide;
