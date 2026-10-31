@@ -98,18 +98,10 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
             }
 
             if (requestTotal <= 0) {
-                if (stack.pop() != this) {
-                    throw new IllegalStateException("Invalid Recursion detected.");
-                }
-
                 return 0;
             }
 
             if (!doFill) {
-                if (stack.pop() != this) {
-                    throw new IllegalStateException("Invalid Recursion detected.");
-                }
-
                 return (int) Math.min(resource.amount, requestTotal);
             }
 
