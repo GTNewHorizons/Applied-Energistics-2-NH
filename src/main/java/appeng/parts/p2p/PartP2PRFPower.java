@@ -129,7 +129,7 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower> im
 
     @Override
     public int extractEnergy(final ForgeDirection from, final int maxExtract, final boolean simulate) {
-        if (!this.isActive() || !this.isBusy()) {
+        if (!this.isActive() || this.isBusy()) {
             return 0;
         }
 
@@ -141,7 +141,7 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower> im
             for (PartP2PRFPower t : this.getExtractTargets()) {
                 final IEnergyProvider provider = t.getProvider();
                 if (provider != null) {
-                    total += provider.extractEnergy(from, maxExtract, simulate);
+                    total += provider.extractEnergy(t.getSide().getOpposite(), maxExtract - total, simulate);
                     if (total >= maxExtract) {
                         break;
                     }
@@ -185,7 +185,7 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower> im
     }
 
     private IEnergyProvider getProvider() {
-        if (!this.cachedReceiver) {
+        if (!this.cachedProvider) {
             final TileEntity self = this.getTile();
             final TileEntity te = self.getWorldObj().getTileEntity(
                     self.xCoord + this.getSide().offsetX,
@@ -214,8 +214,8 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower> im
 
         try {
             int total = 0;
-            for (final PartP2PRFPower t : this.getInsertTargets()) {
-                total += t.getReceiver().getEnergyStored(t.getSide().getOpposite());
+            for (final PartP2PRFPower t : this.getExtractTargets()) {
+                total += t.getProvider().getEnergyStored(t.getSide().getOpposite());
             }
 
             return total;
@@ -226,7 +226,7 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower> im
 
     @Override
     public int getMaxEnergyStored(final ForgeDirection from) {
-        if (this.isOutput() || !this.isActive() || this.isBusy()) {
+        if (!this.isActive() || this.isBusy()) {
             return 0;
         }
 
@@ -236,8 +236,8 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower> im
 
         try {
             int total = 0;
-            for (final PartP2PRFPower t : this.getInsertTargets()) {
-                total += t.getReceiver().getMaxEnergyStored(t.getSide().getOpposite());
+            for (final PartP2PRFPower t : this.getExtractTargets()) {
+                total += t.getProvider().getMaxEnergyStored(t.getSide().getOpposite());
             }
             return total;
         } finally {
