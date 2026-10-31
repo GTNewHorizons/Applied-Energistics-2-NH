@@ -48,6 +48,14 @@ public abstract class PartP2PRoutedTunnel<T extends PartP2PRoutedTunnel<T>> exte
     protected void onRouteTargetsChanged() {}
 
     @Override
+    public void onTunnelNetworkChange() {
+        super.onTunnelNetworkChange();
+        for (final T tunnel : getDependentTunnels()) {
+            tunnel.onRouteTargetsChanged();
+        }
+    }
+
+    @Override
     public void onNeighborChanged() {
         super.onNeighborChanged();
         for (final T tunnel : getDependentTunnels()) {

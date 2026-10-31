@@ -185,40 +185,28 @@ public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
         return wasReq ? TickRateModulation.FASTER : TickRateModulation.SLOWER;
     }
 
+    private void refreshView() {
+        this.cachedInv = null;
+        final int olderSize = this.oldSize;
+        this.oldSize = this.getDestination().getSizeInventory();
+        if (olderSize != this.oldSize) {
+            this.getHost().notifyNeighbors();
+        }
+    }
+
     @MENetworkEventSubscribe
     public void changeStateA(final MENetworkBootingStatusChange bs) {
-        if (!this.isOutput()) {
-            this.cachedInv = null;
-            final int olderSize = this.oldSize;
-            this.oldSize = this.getDestination().getSizeInventory();
-            if (olderSize != this.oldSize) {
-                this.getHost().notifyNeighbors();
-            }
-        }
+        refreshView();
     }
 
     @MENetworkEventSubscribe
     public void changeStateB(final MENetworkChannelsChanged bs) {
-        if (!this.isOutput()) {
-            this.cachedInv = null;
-            final int olderSize = this.oldSize;
-            this.oldSize = this.getDestination().getSizeInventory();
-            if (olderSize != this.oldSize) {
-                this.getHost().notifyNeighbors();
-            }
-        }
+        refreshView();
     }
 
     @MENetworkEventSubscribe
     public void changeStateC(final MENetworkPowerStatusChange bs) {
-        if (!this.isOutput()) {
-            this.cachedInv = null;
-            final int olderSize = this.oldSize;
-            this.oldSize = this.getDestination().getSizeInventory();
-            if (olderSize != this.oldSize) {
-                this.getHost().notifyNeighbors();
-            }
-        }
+        refreshView();
     }
 
     @Override
@@ -229,24 +217,13 @@ public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
 
     @Override
     public void onTunnelNetworkChange() {
-        if (!this.isOutput()) {
-            this.cachedInv = null;
-            final int olderSize = this.oldSize;
-            this.oldSize = this.getDestination().getSizeInventory();
-            if (olderSize != this.oldSize) {
-                this.getHost().notifyNeighbors();
-            }
-        } else {
-            final PartP2PItems input = this.getInput();
-            if (input != null) {
-                input.getHost().notifyNeighbors();
-            }
-        }
+        super.onTunnelNetworkChange();
+        refreshView();
     }
 
     @Override
     protected void onRouteTargetsChanged() {
-        this.onTunnelNetworkChange();
+        refreshView();
     }
 
     @Override
