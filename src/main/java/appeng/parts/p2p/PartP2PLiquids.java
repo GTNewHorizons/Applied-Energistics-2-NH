@@ -227,7 +227,7 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
         }
         stack.push(this);
         try {
-            return !this.getInsertTargets(fluid).isEmpty() || inputAcceptsFluid(fluid);
+            return !this.getInsertTargets(fluid).isEmpty();
         } finally {
             stack.pop();
         }

@@ -87,7 +87,6 @@ public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
         }
 
         final List<IInventory> outs = new LinkedList<>();
-        final TunnelCollection<PartP2PItems> itemTunnels;
 
         final Set<PartP2PItems> insertTargets = new HashSet<>(getInsertTargets());
         final Set<PartP2PItems> extractTargets = new HashSet<>(getExtractTargets());
