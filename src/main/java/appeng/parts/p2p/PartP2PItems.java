@@ -245,6 +245,11 @@ public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
     }
 
     @Override
+    protected void onRouteTargetsChanged() {
+        this.onTunnelNetworkChange();
+    }
+
+    @Override
     public int[] getAccessibleSlotsFromSide(final int var1) {
         final int[] slots = new int[this.getSizeInventory()];
         for (int x = 0; x < this.getSizeInventory(); x++) {
