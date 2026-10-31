@@ -10,6 +10,7 @@
 
 package appeng.parts.p2p;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -73,75 +74,75 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
 
         stack.push(this);
 
-        final List<PartP2PLiquids> list = this.getInsertTargets(resource.getFluid());
+        try {
+            final List<PartP2PLiquids> list = this.getInsertTargets(resource.getFluid());
 
-        long requestTotal = 0;
+            long requestTotal = 0;
 
-        Iterator<PartP2PLiquids> i = list.iterator();
-        while (i.hasNext()) {
-            final PartP2PLiquids l = i.next();
-            if (l == this) continue;
-            final IFluidHandler tank = l.getTarget();
-            if (tank != null) {
-                l.tmpUsed = tank.fill(l.getSide().getOpposite(), resource.copy(), false);
-            } else {
-                l.tmpUsed = 0;
+            Iterator<PartP2PLiquids> i = list.iterator();
+            while (i.hasNext()) {
+                final PartP2PLiquids l = i.next();
+                if (l == this) continue;
+                final IFluidHandler tank = l.getTarget();
+                if (tank != null) {
+                    l.tmpUsed = tank.fill(l.getSide().getOpposite(), resource.copy(), false);
+                } else {
+                    l.tmpUsed = 0;
+                }
+
+                if (l.tmpUsed <= 0) {
+                    i.remove();
+                } else {
+                    requestTotal += l.tmpUsed;
+                }
             }
 
-            if (l.tmpUsed <= 0) {
-                i.remove();
-            } else {
-                requestTotal += l.tmpUsed;
+            if (requestTotal <= 0) {
+                if (stack.pop() != this) {
+                    throw new IllegalStateException("Invalid Recursion detected.");
+                }
+
+                return 0;
             }
+
+            if (!doFill) {
+                if (stack.pop() != this) {
+                    throw new IllegalStateException("Invalid Recursion detected.");
+                }
+
+                return (int) Math.min(resource.amount, requestTotal);
+            }
+
+            int available = resource.amount;
+
+            i = list.iterator();
+            int used = 0;
+            while (i.hasNext()) {
+                final PartP2PLiquids l = i.next();
+                if (l == this) continue;
+
+                final FluidStack insert = resource.copy();
+                insert.amount = (int) Math.ceil(insert.amount * ((double) l.tmpUsed / (double) requestTotal));
+                if (insert.amount > available) {
+                    insert.amount = available;
+                }
+
+                final IFluidHandler tank = l.getTarget();
+                if (tank != null) {
+                    l.tmpUsed = tank.fill(l.getSide().getOpposite(), insert, true);
+                } else {
+                    l.tmpUsed = 0;
+                }
+
+                available -= l.tmpUsed;
+                used += l.tmpUsed;
+                if (available == 0) break;
+            }
+
+            return used;
+        } finally {
+            stack.pop();
         }
-
-        if (requestTotal <= 0) {
-            if (stack.pop() != this) {
-                throw new IllegalStateException("Invalid Recursion detected.");
-            }
-
-            return 0;
-        }
-
-        if (!doFill) {
-            if (stack.pop() != this) {
-                throw new IllegalStateException("Invalid Recursion detected.");
-            }
-
-            return (int) Math.min(resource.amount, requestTotal);
-        }
-
-        int available = resource.amount;
-
-        i = list.iterator();
-        int used = 0;
-        while (i.hasNext()) {
-            final PartP2PLiquids l = i.next();
-            if (l == this) continue;
-
-            final FluidStack insert = resource.copy();
-            insert.amount = (int) Math.ceil(insert.amount * ((double) l.tmpUsed / (double) requestTotal));
-            if (insert.amount > available) {
-                insert.amount = available;
-            }
-
-            final IFluidHandler tank = l.getTarget();
-            if (tank != null) {
-                l.tmpUsed = tank.fill(l.getSide().getOpposite(), insert, true);
-            } else {
-                l.tmpUsed = 0;
-            }
-
-            available -= l.tmpUsed;
-            used += l.tmpUsed;
-            if (available == 0) break;
-        }
-
-        if (stack.pop() != this) {
-            throw new IllegalStateException("Invalid Recursion detected.");
-        }
-
-        return used;
     }
 
     private Stack<PartP2PLiquids> getDepth() {
@@ -272,10 +273,30 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
 
     @Override
     public FluidTankInfo[] getTankInfo(final ForgeDirection from) {
-        if (from == this.getSide()) {
-            return this.getTank();
+        if (from != this.getSide()) {
+            return new FluidTankInfo[0];
         }
-        return new FluidTankInfo[0];
+
+        if (this.getSideAccess().extract() != P2PTransportPolicy.Route.NONE && !this.isBusy()) {
+            final Stack<PartP2PLiquids> stack = this.getDepth();
+            stack.push(this);
+            try {
+                final List<FluidTankInfo> infos = new LinkedList<>();
+                for (final PartP2PLiquids t : this.getExtractTargets()) {
+                    final IFluidHandler tank = t.getTarget();
+                    final FluidTankInfo[] targetInfos = tank != null ? tank.getTankInfo(t.getSide().getOpposite()) : null;
+                    if (targetInfos != null) {
+                        Collections.addAll(infos, targetInfos);
+                    }
+                }
+                if (!infos.isEmpty()) {
+                    return infos.toArray(new FluidTankInfo[0]);
+                }
+            } finally {
+                stack.pop();
+            }
+        }
+        return this.getTank();
     }
 
     private FluidTankInfo[] getTank() {
