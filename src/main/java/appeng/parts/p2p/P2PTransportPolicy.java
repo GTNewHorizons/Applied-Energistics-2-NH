@@ -9,7 +9,15 @@ public class P2PTransportPolicy {
         PEERS
     }
 
-    public static record SideAccess(Route insert, Route extract) {
+    public static class SideAccess {
+
+        private final Route insert;
+        private final Route extract;
+
+        public SideAccess(Route insert, Route extract) {
+            this.insert = insert;
+            this.extract = extract;
+        }
 
         public static final SideAccess CLOSED = new SideAccess(Route.NONE, Route.NONE);
 

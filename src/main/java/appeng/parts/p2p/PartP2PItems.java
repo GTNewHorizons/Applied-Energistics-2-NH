@@ -89,22 +89,16 @@ public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
         final List<IInventory> outs = new LinkedList<>();
         final TunnelCollection<PartP2PItems> itemTunnels;
 
-        try {
-            itemTunnels = this.getOutputs();
-        } catch (final GridAccessException e) {
-            return new AppEngNullInventory();
-        }
-
         final Set<PartP2PItems> insertTargets = new HashSet<>(getInsertTargets());
         final Set<PartP2PItems> extractTargets = new HashSet<>(getExtractTargets());
 
-        for (final PartP2PItems t : itemTunnels) {
-            if (t.loopsBackTo(this, new HashSet<>())) {
-                continue;
-            }
+        for (final PartP2PItems t : this.getPeerTunnels()) {
             final boolean canInsert = insertTargets.contains(t);
             final boolean canExtract = extractTargets.contains(t);
             if (!canInsert && !canExtract) {
+                continue;
+            }
+            if (t.loopsBackTo(this, new HashSet<>())) {
                 continue;
             }
             final IInventory outputInv = t.getOutputInv();

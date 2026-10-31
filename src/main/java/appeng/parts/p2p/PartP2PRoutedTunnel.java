@@ -72,6 +72,10 @@ public abstract class PartP2PRoutedTunnel<T extends PartP2PRoutedTunnel<T>> exte
         };
     }
 
+    protected final List<T> getPeerTunnels() {
+        return this.resolveRoute(P2PTransportPolicy.Route.PEERS);
+    }
+
     private List<T> addOtherOutputs(final List<T> into) {
         try {
             for (final T output : this.getOutputs()) {
