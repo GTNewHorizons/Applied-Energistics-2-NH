@@ -79,7 +79,7 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
 
         stack.push(this);
 
-        final List<PartP2PLiquids> list = this.getInsertTargets();
+        final List<PartP2PLiquids> list = this.getInsertTargets(resource.getFluid());
 
         long requestTotal = 0;
 
@@ -160,24 +160,20 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
         return s;
     }
 
-    private List<PartP2PLiquids> getOutputs(final Fluid input) {
-        final List<PartP2PLiquids> outs = new LinkedList<>();
-        if (input == null) return outs;
-        try {
-            for (final PartP2PLiquids l : this.getOutputs()) {
-                if (l == this) continue;
-                final IFluidHandler handler = l.getTarget();
-                if (handler != null) {
-                    if (handler.canFill(l.getSide().getOpposite(), input)) {
-                        outs.add(l);
-                    }
+    private List<PartP2PLiquids> getInsertTargets(final Fluid input) {
+        final List<PartP2PLiquids> tunnels = new LinkedList<>();
+        if (input == null) return tunnels;
+        for (final PartP2PLiquids l : this.getInsertTargets()) {
+            if (l == this) continue;
+            final IFluidHandler handler = l.getTarget();
+            if (handler != null) {
+                if (handler.canFill(l.getSide().getOpposite(), input)) {
+                    tunnels.add(l);
                 }
             }
-        } catch (final GridAccessException e) {
-            // :P
         }
 
-        return outs;
+        return tunnels;
     }
 
     public IFluidHandler getTarget() {
@@ -231,7 +227,7 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
         }
         stack.push(this);
         try {
-            return !this.getOutputs(fluid).isEmpty() || inputAcceptsFluid(fluid);
+            return !this.getInsertTargets(fluid).isEmpty() || inputAcceptsFluid(fluid);
         } finally {
             stack.pop();
         }
