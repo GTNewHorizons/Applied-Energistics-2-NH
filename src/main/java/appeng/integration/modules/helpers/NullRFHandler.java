@@ -10,14 +10,19 @@
 
 package appeng.integration.modules.helpers;
 
+import cofh.api.energy.IEnergyHandler;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import cofh.api.energy.IEnergyReceiver;
 
-public class NullRFHandler implements IEnergyReceiver {
+public class NullRFHandler implements IEnergyHandler {
 
     @Override
     public int receiveEnergy(final ForgeDirection from, final int maxReceive, final boolean simulate) {
+        return 0;
+    }
+
+    @Override
+    public int extractEnergy(ForgeDirection forgeDirection, int i, boolean b) {
         return 0;
     }
 
