@@ -29,7 +29,7 @@ import appeng.me.GridAccessException;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-public class PartP2PLiquids extends PartP2PTunnelNormal<PartP2PLiquids> implements IFluidHandler {
+public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implements IFluidHandler {
 
     private static final ThreadLocal<Stack<PartP2PLiquids>> DEPTH = new ThreadLocal<>();
     private static final FluidTankInfo[] ACTIVE_TANK = { new FluidTankInfo(null, 10000) };
@@ -37,8 +37,15 @@ public class PartP2PLiquids extends PartP2PTunnelNormal<PartP2PLiquids> implemen
     private IFluidHandler cachedTank;
     private int tmpUsed;
 
+    private static final P2PTransportPolicy POLICY = P2PTransportPolicy.TWO_WAY_PUSH;
+
     public PartP2PLiquids(final ItemStack is) {
         super(is);
+    }
+
+    @Override
+    protected P2PTransportPolicy getTransportPolicy() {
+        return POLICY;
     }
 
     @Override
@@ -55,12 +62,7 @@ public class PartP2PLiquids extends PartP2PTunnelNormal<PartP2PLiquids> implemen
     @Override
     public void onNeighborChanged() {
         this.cachedTank = null;
-        if (this.isOutput()) {
-            final PartP2PLiquids in = this.getInput();
-            if (in != null) {
-                in.onTunnelNetworkChange();
-            }
-        }
+        super.onNeighborChanged();
     }
 
     @Override
@@ -77,11 +79,7 @@ public class PartP2PLiquids extends PartP2PTunnelNormal<PartP2PLiquids> implemen
 
         stack.push(this);
 
-        final List<PartP2PLiquids> list = this.getOutputs(resource.getFluid());
-        PartP2PLiquids input = getInput();
-        if (input != null) {
-            list.add(input);
-        }
+        final List<PartP2PLiquids> list = this.getInsertTargets();
 
         long requestTotal = 0;
 

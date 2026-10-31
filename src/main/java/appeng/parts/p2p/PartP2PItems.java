@@ -10,9 +10,13 @@
 
 package appeng.parts.p2p;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
+import appeng.util.inv.IInventoryWrapper;
+import appeng.util.inv.WrapperP2PInventory;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.inventory.IInventory;
@@ -50,7 +54,7 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 @Interface(iface = "buildcraft.api.transport.IPipeConnection", iname = IntegrationType.BuildCraftTransport)
-public class PartP2PItems extends PartP2PTunnelNormal<PartP2PItems>
+public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
         implements IPipeConnection, ISidedInventory, IGridTickable {
 
     private final LinkedList<IInventory> which = new LinkedList<>();
@@ -58,17 +62,21 @@ public class PartP2PItems extends PartP2PTunnelNormal<PartP2PItems>
     private boolean requested;
     private IInventory cachedInv;
 
+    private static final P2PTransportPolicy POLICY = P2PTransportPolicy.ONE_WAY_PUSH;
+
     public PartP2PItems(final ItemStack is) {
         super(is);
     }
 
     @Override
+    public P2PTransportPolicy getTransportPolicy() {
+        return POLICY;
+    }
+
+    @Override
     public void onNeighborChanged() {
         this.cachedInv = null;
-        final PartP2PItems input = this.getInput();
-        if (input != null && this.isOutput()) {
-            input.onTunnelNetworkChange();
-        }
+        super.onNeighborChanged();
     }
 
     private IInventory getDestination() {
@@ -87,9 +95,18 @@ public class PartP2PItems extends PartP2PTunnelNormal<PartP2PItems>
             return new AppEngNullInventory();
         }
 
+        final Set<PartP2PItems> insertTargets = new HashSet<>(getInsertTargets());
+        final Set<PartP2PItems> extractTargets = new HashSet<>(getExtractTargets());
+
         for (final PartP2PItems t : itemTunnels) {
-            final IInventory inv = t.getOutputInv();
-            if (inv != null) {
+            final boolean canInsert = insertTargets.contains(t);
+            final boolean canExtract = extractTargets.contains(t);
+            if (!canInsert && !canExtract) {
+                continue;
+            }
+            final IInventory outputInv = t.getOutputInv();
+            if (outputInv != null) {
+                final IInventory inv = new WrapperP2PInventory(outputInv, canInsert, canExtract);
                 if (Platform.getRandomInt() % 2 == 0) {
                     outs.add(inv);
                 } else {
@@ -301,7 +318,8 @@ public class PartP2PItems extends PartP2PTunnelNormal<PartP2PItems>
 
     @Override
     public boolean canExtractItem(final int i, final ItemStack itemstack, final int j) {
-        return false;
+        IInventory inv = this.getDestination();
+        return !(inv instanceof IInventoryWrapper wrapper) || wrapper.canRemoveItemFromSlot(i, itemstack);
     }
 
     public float getPowerDrainPerTick() {
