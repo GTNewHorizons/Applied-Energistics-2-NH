@@ -346,14 +346,15 @@ public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
             }
             if (!visited.contains(next)) {
                 visited.add(next);
-                try {
-                    for (final PartP2PItems t : next.getOutputs()) {
-                        if (t.loopsBackTo(tunnel, visited)) {
-                            return true;
-                        }
+                for (final PartP2PItems t : next.getInsertTargets()) {
+                    if (t.loopsBackTo(tunnel, visited)) {
+                        return true;
                     }
-                } catch (final GridAccessException ignored) {
-                    // :P
+                }
+                for (final PartP2PItems t : next.getExtractTargets()) {
+                    if (t.loopsBackTo(tunnel, visited)) {
+                        return true;
+                    }
                 }
             }
         }
