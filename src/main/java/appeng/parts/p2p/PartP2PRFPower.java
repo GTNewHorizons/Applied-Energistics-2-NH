@@ -65,6 +65,7 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower> im
 
     @Override
     public void onTunnelNetworkChange() {
+        super.onTunnelNetworkChange();
         this.getHost().notifyNeighbors();
     }
 
@@ -140,11 +141,9 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower> im
             int total = 0;
             for (PartP2PRFPower t : this.getExtractTargets()) {
                 final IEnergyProvider provider = t.getProvider();
-                if (provider != null) {
-                    total += provider.extractEnergy(t.getSide().getOpposite(), maxExtract - total, simulate);
-                    if (total >= maxExtract) {
-                        break;
-                    }
+                total += provider.extractEnergy(t.getSide().getOpposite(), maxExtract - total, simulate);
+                if (total >= maxExtract) {
+                    break;
                 }
             }
             if (!simulate && total > 0) {

@@ -58,6 +58,7 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
     @Override
     public void onTunnelNetworkChange() {
         this.cachedTank = null;
+        super.onTunnelNetworkChange();
     }
 
     @Override
