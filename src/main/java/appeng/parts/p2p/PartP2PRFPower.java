@@ -210,12 +210,7 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower>
         stack.push(this);
 
         try {
-            int total = 0;
-            for (final PartP2PRFPower t : this.getExtractTargets()) {
-                total += t.getProvider().getEnergyStored(t.getSide().getOpposite());
-            }
-
-            return total;
+            return (int) Math.min(Integer.MAX_VALUE, extractableEnergy());
         } finally {
             stack.pop();
         }
@@ -232,14 +227,24 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower>
         stack.push(this);
 
         try {
-            int total = 0;
-            for (final PartP2PRFPower t : this.getExtractTargets()) {
-                total += t.getProvider().getMaxEnergyStored(t.getSide().getOpposite());
+            int insertableEnergy = 0;
+            for (final PartP2PRFPower t : this.getInsertTargets()) {
+                IEnergyReceiver receiver = t.getReceiver();
+                ForgeDirection side = t.getSide().getOpposite();
+                insertableEnergy += Math.max(0, receiver.getMaxEnergyStored(side) - receiver.getEnergyStored(side));
             }
-            return total;
+            return (int) Math.min(Integer.MAX_VALUE, extractableEnergy() + insertableEnergy);
         } finally {
             stack.pop();
         }
+    }
+
+    private long extractableEnergy() {
+        long total = 0;
+        for (final PartP2PRFPower t : this.getExtractTargets()) {
+            total += t.getProvider().getEnergyStored(t.getSide().getOpposite());
+        }
+        return total;
     }
 
     @Override
