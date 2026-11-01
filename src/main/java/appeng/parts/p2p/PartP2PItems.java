@@ -59,15 +59,13 @@ public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
     private boolean requested;
     private IInventory cachedInv;
 
-    private static final P2PTransportPolicy POLICY = P2PTransportPolicy.ONE_WAY_PUSH;
-
     public PartP2PItems(final ItemStack is) {
         super(is);
     }
 
     @Override
-    public P2PTransportPolicy getTransportPolicy() {
-        return POLICY;
+    protected P2PTransportPolicy getTransportPolicy() {
+        return P2PTransportPolicy.ONE_WAY_PUSH;
     }
 
     @Override

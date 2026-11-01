@@ -38,15 +38,13 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
     private IFluidHandler cachedTank;
     private int tmpUsed;
 
-    private static final P2PTransportPolicy POLICY = P2PTransportPolicy.TWO_WAY_PUSH;
-
     public PartP2PLiquids(final ItemStack is) {
         super(is);
     }
 
     @Override
     protected P2PTransportPolicy getTransportPolicy() {
-        return POLICY;
+        return P2PTransportPolicy.TWO_WAY_PUSH;
     }
 
     @Override
@@ -83,7 +81,6 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
             Iterator<PartP2PLiquids> i = list.iterator();
             while (i.hasNext()) {
                 final PartP2PLiquids l = i.next();
-                if (l == this) continue;
                 final IFluidHandler tank = l.getTarget();
                 if (tank != null) {
                     l.tmpUsed = tank.fill(l.getSide().getOpposite(), resource.copy(), false);
@@ -112,7 +109,6 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
             int used = 0;
             while (i.hasNext()) {
                 final PartP2PLiquids l = i.next();
-                if (l == this) continue;
 
                 final FluidStack insert = resource.copy();
                 insert.amount = (int) Math.ceil(insert.amount * ((double) l.tmpUsed / (double) requestTotal));
