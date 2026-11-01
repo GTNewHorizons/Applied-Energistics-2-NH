@@ -34,6 +34,7 @@ import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.networking.ticking.TickRateModulation;
 import appeng.api.networking.ticking.TickingRequest;
 import appeng.core.settings.TickRates;
+import appeng.hooks.TickHandler;
 import appeng.integration.IntegrationRegistry;
 import appeng.integration.IntegrationType;
 import appeng.integration.abstraction.IBuildCraftTransport;
@@ -58,6 +59,7 @@ public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
     private int oldSize = 0;
     private boolean requested;
     private IInventory cachedInv;
+    private boolean sizeCheckQueued;
 
     public PartP2PItems(final ItemStack is) {
         super(is);
@@ -175,6 +177,20 @@ public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
 
     private void refreshView() {
         this.cachedInv = null;
+        if (!this.sizeCheckQueued) {
+            this.sizeCheckQueued = true;
+            TickHandler.INSTANCE.addCallable(null, world -> {
+                this.sizeCheckQueued = false;
+                if (!this.getTile().isInvalid() && this.getHost() != null
+                        && this.getHost().getPart(this.getSide()) == this) {
+                    this.checkSize();
+                }
+                return null;
+            });
+        }
+    }
+
+    private void checkSize() {
         final int olderSize = this.oldSize;
         this.oldSize = this.getDestination().getSizeInventory();
         if (olderSize != this.oldSize) {
