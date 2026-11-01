@@ -227,7 +227,7 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower>
         stack.push(this);
 
         try {
-            int insertableEnergy = 0;
+            long insertableEnergy = 0;
             for (final PartP2PRFPower t : this.getInsertTargets()) {
                 IEnergyReceiver receiver = t.getReceiver();
                 ForgeDirection side = t.getSide().getOpposite();

@@ -181,7 +181,7 @@ public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
             this.sizeCheckQueued = true;
             TickHandler.INSTANCE.addCallable(null, world -> {
                 this.sizeCheckQueued = false;
-                if (!this.getTile().isInvalid() && this.getHost() != null
+                if (this.getHost() != null && !this.getTile().isInvalid()
                         && this.getHost().getPart(this.getSide()) == this) {
                     this.checkSize();
                 }
