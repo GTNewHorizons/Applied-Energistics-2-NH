@@ -12,6 +12,7 @@ import com.github.vfyjxf.nee.network.NEEGuiHandler;
 import com.github.vfyjxf.nee.network.NEENetworkHandler;
 import com.github.vfyjxf.nee.proxy.CommonProxy;
 
+import appeng.core.BuildTags;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
@@ -32,11 +33,11 @@ public class NotEnoughEnergistics {
 
     public static final String MODID = "neenergistics";
     public static final String NAME = "NotEnoughEnergistics";
-    public static final String VERSION = Tags.VERSION;
+    public static final String VERSION = BuildTags.VERSION;
     public static final String DEPENDENCIES = "required-after:" + "NotEnoughItems;required-after:"
-            + "appliedenergistics2@[rv3-beta-754-GTNH,);after:"
+            + "appliedenergistics2;after:"
             + "ae2wct@[1.12.10,);after:"
-            + "ae2fc@[1.5.30-gtnh,);";
+            + "ae2fc;";
     public static final String GUI_FACTORY = "com.github.vfyjxf.nee.config.NEEConfigGuiFactory";
     public static final Logger logger = LogManager.getLogger("NotEnoughEnergistics");
 
