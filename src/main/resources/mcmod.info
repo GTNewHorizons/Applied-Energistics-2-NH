@@ -28,5 +28,20 @@
         "credits":"phantamanta44",
         "logoFile":"assets/ae2fc/logo.png",
         "screenshots":[]
+    },
+    {
+        "modid":"neenergistics",
+        "name":"NotEnoughEnergistics",
+        "description":"This mod replaces AE2's default NEI integration for the Pattern Terminal.",
+        "version":"${modVersion}",
+        "mcversion":"${minecraftVersion}",
+        "url":"https://github.com/GTNewHorizons/Applied-Energistics-2-NH",
+        "updateUrl":"",
+        "authorList":[
+         "vfyjxf"
+        ],
+        "credits":"Thanks TheRealp455w0rd",
+        "logoFile":"assets/neenergistics/meta/logo.png",
+        "screenshots":[]
     }
 ]
