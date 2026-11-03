@@ -1,0 +1,318 @@
+package thaumicenergistics.common.integration;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.inventory.GuiContainer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompressedStreamTools;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+
+import com.gtnewhorizons.aspectrecipeindex.nei.arcaneworkbench.ArcaneSlotPositioner;
+import com.gtnewhorizons.aspectrecipeindex.nei.arcaneworkbench.ShapedArcaneRecipeHandler;
+import com.gtnewhorizons.aspectrecipeindex.nei.arcaneworkbench.ShapelessArcaneRecipeHandler;
+import com.gtnewhorizons.aspectrecipeindex.nei.arcaneworkbench.WandRecipeHandler;
+
+import appeng.util.Platform;
+import codechicken.nei.PositionedStack;
+import codechicken.nei.api.API;
+import codechicken.nei.api.INEIGuiAdapter;
+import codechicken.nei.api.IOverlayHandler;
+import codechicken.nei.api.IStackPositioner;
+import codechicken.nei.recipe.IRecipeHandler;
+import cpw.mods.fml.common.Optional;
+import cpw.mods.fml.common.event.FMLInterModComms;
+import thaumicenergistics.client.gui.GuiArcaneCraftingTerminal;
+import thaumicenergistics.client.gui.abstraction.ThEBaseGui;
+import thaumicenergistics.common.container.ContainerPartArcaneCraftingTerminal;
+import thaumicenergistics.common.items.ItemEnum;
+import thaumicenergistics.common.network.NetworkHandler;
+import thaumicenergistics.common.network.packet.server.Packet_S_NEIRecipe;
+
+/**
+ * Contains all code required to integrate with Not Enough Items.
+ *
+ * @author Nividica
+ *
+ */
+public class ModuleNEI {
+
+    /**
+     * Base class for handling item overlays.
+     *
+     * @author Nividica
+     *
+     */
+    static abstract class ACTOverlayHandler implements IOverlayHandler {
+
+        protected static final int REGULAR_SLOT_INDEX_DIVISOR = 18;
+
+        /**
+         * Called when the user has shift-clicked the [?] button in NEI
+         */
+        @Override
+        public final void overlayRecipe(final GuiContainer gui, final IRecipeHandler recipeHandler,
+                final int recipeIndex, final boolean shift) {
+            try {
+                // Ensure the gui is correct
+                if (gui instanceof GuiArcaneCraftingTerminal) {
+                    List<PositionedStack> ingredients = recipeHandler.getIngredientStacks(recipeIndex);
+
+                    NBTTagCompound recipe = new NBTTagCompound();
+                    for (PositionedStack ingredient : ingredients) {
+                        if ((ingredient == null) || (ingredient.item == null) || (ingredient.item.getItem() == null))
+                            continue;
+                        addIngredientToItems(ingredient, recipe, false);
+                    }
+                    if (testSize(recipe, 32 * 1024)) {
+                        recipe = new NBTTagCompound();
+                        for (PositionedStack ingredient : ingredients) {
+                            if ((ingredient == null) || (ingredient.item == null)
+                                    || (ingredient.item.getItem() == null))
+                                continue;
+                            addIngredientToItems(ingredient, recipe, true);
+                        }
+                    }
+                    Packet_S_NEIRecipe packet = new Packet_S_NEIRecipe();
+                    packet.setRecipe(recipe);
+                    packet.player = Minecraft.getMinecraft().thePlayer;
+
+                    NetworkHandler.sendPacketToServer(packet);
+                }
+            } catch (Exception ignored) {}
+        }
+
+        protected void packIngredient(NBTTagCompound recipe, int slotIndex, PositionedStack positionedStack,
+                boolean limited) throws IOException {
+            final NBTTagList tags = new NBTTagList();
+            final List<ItemStack> list = new LinkedList<>();
+
+            // prefer pure crystals.
+            for (int x = 0; x < positionedStack.items.length; x++) {
+                if (Platform.isRecipePrioritized(positionedStack.items[x])) {
+                    list.add(0, positionedStack.items[x]);
+                } else {
+                    list.add(positionedStack.items[x]);
+                }
+            }
+
+            for (final ItemStack is : list) {
+                final NBTTagCompound tag = new NBTTagCompound();
+                is.writeToNBT(tag);
+                tags.appendTag(tag);
+                if (limited) {
+                    final NBTTagCompound test = new NBTTagCompound();
+                    test.setTag("#" + slotIndex, tags);
+                    if (testSize(test, 3 * 1024)) break;
+                }
+            }
+            recipe.setTag("#" + slotIndex, tags);
+        }
+
+        // if the packet becomes too large, limit each slot contents to 3k
+        protected boolean testSize(final NBTTagCompound recipe, int limit) throws IOException {
+            final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            final DataOutputStream outputStream = new DataOutputStream(bytes);
+            CompressedStreamTools.writeCompressed(recipe, outputStream);
+            return bytes.size() > limit;
+        }
+
+        protected abstract void addIngredientToItems(final PositionedStack ingredient, NBTTagCompound recipe,
+                boolean limited) throws IOException;
+    }
+
+    static class VanillaOverlayHandler extends ACTOverlayHandler {
+
+        @Override
+        protected void addIngredientToItems(final PositionedStack ingredient, NBTTagCompound recipe, boolean limited)
+                throws IOException {
+            final int slotX = (ingredient.relx - ModuleNEI.NEI_REGULAR_SLOT_OFFSET_X) / REGULAR_SLOT_INDEX_DIVISOR;
+            final int slotY = (ingredient.rely - ModuleNEI.NEI_REGULAR_SLOT_OFFSET_Y) / REGULAR_SLOT_INDEX_DIVISOR;
+            final int slotIndex = slotX + (slotY * 3);
+
+            packIngredient(recipe, slotIndex, ingredient, limited);
+        }
+    }
+
+    static class TCNEIOverlayHandler extends ACTOverlayHandler {
+
+        private static final int ARCANE_SLOTY_INDEX_DIVISOR = 20;
+
+        @Override
+        protected void addIngredientToItems(final PositionedStack ingredient, NBTTagCompound recipe, boolean limited)
+                throws IOException {
+            int slotX = (int) Math.round(ingredient.relx / (double) REGULAR_SLOT_INDEX_DIVISOR) - 3;
+            int slotY = (int) Math.round(ingredient.rely / (double) ARCANE_SLOTY_INDEX_DIVISOR) - 2;
+
+            // Ignore the aspect items
+            if (slotY >= 3) {
+                return;
+            }
+
+            // Roundoff fix
+            if (slotX == 3) {
+                slotX = 2;
+            }
+
+            // Calculate the slot index
+            int slotIndex = slotX + (slotY * 3);
+
+            // Bounds check the index
+            if ((slotIndex < 0) || (slotIndex > 9)) {
+                // Invalid slot
+                return;
+            }
+
+            // Add the item to the list
+            packIngredient(recipe, slotIndex, ingredient, limited);
+        }
+    }
+
+    static class ARIOverlayHandler extends ACTOverlayHandler {
+
+        @Override
+        protected void addIngredientToItems(final PositionedStack ingredient, NBTTagCompound recipe, boolean limited)
+                throws IOException {
+            int i = ArcaneSlotPositioner.getSlotIndex(ingredient);
+            if (i < 0 || i > 9) {
+                return;
+            }
+            packIngredient(recipe, i, ingredient, limited);
+        }
+    }
+
+    /**
+     * Corrects the slot positions so that NEI can find and render them.
+     *
+     * @author Nividica
+     *
+     */
+    public static class ACTSlotPositioner implements IStackPositioner {
+
+        @Override
+        public ArrayList<PositionedStack> positionStacks(final ArrayList<PositionedStack> stacks) {
+            // Adjust the position of the ghost stacks to match the crafting grid slots
+            for (PositionedStack ps : stacks) {
+                // Ensure there is a stack
+                if (ps != null) {
+                    // Adjust its position
+                    ps.relx += ContainerPartArcaneCraftingTerminal.CRAFTING_SLOT_X_POS
+                            - ModuleNEI.NEI_REGULAR_SLOT_OFFSET_X;
+                    ps.rely += ContainerPartArcaneCraftingTerminal.CRAFTING_SLOT_Y_POS
+                            - ModuleNEI.NEI_REGULAR_SLOT_OFFSET_Y;
+                }
+            }
+
+            return stacks;
+        }
+    }
+
+    static class NEIGuiHandler extends INEIGuiAdapter {
+
+        @Override
+        public boolean handleDragNDrop(GuiContainer gui, int mousex, int mousey, ItemStack draggedStack, int button) {
+            if (gui instanceof ThEBaseGui && draggedStack != null && draggedStack.getItem() != null) {
+                ((ThEBaseGui) gui).draggedStack = draggedStack;
+                draggedStack.stackSize = 0;
+            }
+
+            return super.handleDragNDrop(gui, mousex, mousey, draggedStack, button);
+        }
+    }
+
+    /**
+     * Starting X offset for slots in NEI
+     */
+    static final int NEI_REGULAR_SLOT_OFFSET_X = 25;
+
+    /**
+     * Starting Y offset for slots in NEI
+     */
+    static final int NEI_REGULAR_SLOT_OFFSET_Y = 6;
+
+    private ModuleNEI() {}
+
+    /**
+     * Integrates with Not Enough Items
+     */
+    @Optional.Method(modid = "NotEnoughItems")
+    static void init() {
+        // Register the ACT overlays
+        API.registerGuiOverlay(
+                thaumicenergistics.client.gui.GuiArcaneCraftingTerminal.class,
+                "crafting",
+                new ACTSlotPositioner());
+
+        // Create the regular overlay handler
+        ACTOverlayHandler craftingOverlayHandler = new VanillaOverlayHandler();
+
+        // Register the handlers
+        API.registerGuiOverlayHandler(
+                thaumicenergistics.client.gui.GuiArcaneCraftingTerminal.class,
+                craftingOverlayHandler,
+                "crafting");
+
+        if (ModsList.THAUMCRAFT_NEI_PLUGIN.isLoaded()) {
+            ACTOverlayHandler tcneiOverlayHandler = new TCNEIOverlayHandler();
+            API.registerGuiOverlayHandler(
+                    thaumicenergistics.client.gui.GuiArcaneCraftingTerminal.class,
+                    tcneiOverlayHandler,
+                    "arcaneshapedrecipes");
+            API.registerGuiOverlayHandler(
+                    thaumicenergistics.client.gui.GuiArcaneCraftingTerminal.class,
+                    tcneiOverlayHandler,
+                    "arcaneshapelessrecipes");
+        }
+
+        API.registerNEIGuiHandler(new NEIGuiHandler());
+
+        // Hide the crafting aspect item
+        API.hideItem(ItemEnum.CRAFTING_ASPECT.getStack());
+
+        if (ModsList.ASPECT_RECIPE_INDEX.isLoaded()) {
+            ACTOverlayHandler ariOverlayHandler = new ARIOverlayHandler();
+            API.registerGuiOverlayHandler(
+                    thaumicenergistics.client.gui.GuiArcaneCraftingTerminal.class,
+                    ariOverlayHandler,
+                    "thaumcraft.arcane.shaped");
+            API.registerGuiOverlayHandler(
+                    thaumicenergistics.client.gui.GuiArcaneCraftingTerminal.class,
+                    ariOverlayHandler,
+                    "thaumcraft.arcane.shapeless");
+            API.registerGuiOverlayHandler(
+                    thaumicenergistics.client.gui.GuiArcaneCraftingTerminal.class,
+                    ariOverlayHandler,
+                    "thaumcraft.wands");
+            registerCatalystInfo(
+                    new ShapedArcaneRecipeHandler().getOverlayIdentifier(),
+                    "thaumicenergistics:part.base:5");
+            registerCatalystInfo(
+                    new ShapedArcaneRecipeHandler().getOverlayIdentifier(),
+                    "thaumicenergistics:thaumicenergistics.block.arcane.assembler");
+            registerCatalystInfo(new WandRecipeHandler().getOverlayIdentifier(), "thaumicenergistics:part.base:5");
+            registerCatalystInfo(
+                    new WandRecipeHandler().getOverlayIdentifier(),
+                    "thaumicenergistics:thaumicenergistics.block.arcane.assembler");
+            registerCatalystInfo(
+                    new ShapelessArcaneRecipeHandler().getOverlayIdentifier(),
+                    "thaumicenergistics:part.base:5");
+            registerCatalystInfo(
+                    new ShapelessArcaneRecipeHandler().getOverlayIdentifier(),
+                    "thaumicenergistics:thaumicenergistics.block.arcane.assembler");
+        }
+    }
+
+    private static void registerCatalystInfo(String handlerName, String stack) {
+        NBTTagCompound nbt = new NBTTagCompound();
+        nbt.setString("handlerID", handlerName);
+        nbt.setString("itemName", stack);
+        nbt.setInteger("priority", -1);
+        FMLInterModComms.sendMessage("NotEnoughItems", "registerCatalystInfo", nbt);
+    }
+}
