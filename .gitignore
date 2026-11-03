@@ -27,7 +27,7 @@ classes
 *.iml
 *.ipr
 *.iws
-src/main/resources/mixins.*.json
+src/main/resources/mixins.*([!.]).json
 *.bat
 *.sh
 *.DS_Store
