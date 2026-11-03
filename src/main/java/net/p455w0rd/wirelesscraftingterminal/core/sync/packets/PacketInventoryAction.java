@@ -1,0 +1,117 @@
+package net.p455w0rd.wirelesscraftingterminal.core.sync.packets;
+
+import java.io.IOException;
+
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.inventory.Container;
+import net.p455w0rd.wirelesscraftingterminal.common.container.ContainerWirelessCraftingTerminal;
+import net.p455w0rd.wirelesscraftingterminal.common.utils.RandomUtils;
+import net.p455w0rd.wirelesscraftingterminal.core.sync.WCTPacket;
+import net.p455w0rd.wirelesscraftingterminal.core.sync.network.INetworkInfo;
+
+import appeng.api.storage.data.IAEItemStack;
+import appeng.client.ClientHelper;
+import appeng.container.AEBaseContainer;
+import appeng.helpers.InventoryAction;
+import appeng.util.Platform;
+import appeng.util.item.AEItemStack;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
+public class PacketInventoryAction extends WCTPacket {
+
+    private final InventoryAction action;
+    private final int slot;
+    private final long id;
+    private final IAEItemStack slotItem;
+
+    // automatic.
+    public PacketInventoryAction(final ByteBuf stream) throws IOException {
+        this.action = InventoryAction.values()[stream.readInt()];
+        this.slot = stream.readInt();
+        this.id = stream.readLong();
+        final boolean hasItem = stream.readBoolean();
+        if (hasItem) {
+            this.slotItem = AEItemStack.loadItemStackFromPacket(stream);
+        } else {
+            this.slotItem = null;
+        }
+    }
+
+    // api
+    public PacketInventoryAction(final InventoryAction action, final int slot, final IAEItemStack slotItem)
+            throws IOException {
+
+        if (Platform.isClient()) {
+            throw new IllegalStateException("invalid packet, client cannot post inv actions with stacks.");
+        }
+
+        this.action = action;
+        this.slot = slot;
+        this.id = 0;
+        this.slotItem = slotItem;
+
+        final ByteBuf data = Unpooled.buffer();
+
+        data.writeInt(this.getPacketID());
+        data.writeInt(action.ordinal());
+        data.writeInt(slot);
+        data.writeLong(this.id);
+
+        if (slotItem == null) {
+            data.writeBoolean(false);
+        } else {
+            data.writeBoolean(true);
+            slotItem.writeToPacket(data);
+        }
+
+        this.configureWrite(data);
+    }
+
+    // api
+    public PacketInventoryAction(final InventoryAction action, final int slot, final long id) {
+        this.action = action;
+        this.slot = slot;
+        this.id = id;
+        this.slotItem = null;
+
+        final ByteBuf data = Unpooled.buffer();
+
+        data.writeInt(this.getPacketID());
+        data.writeInt(action.ordinal());
+        data.writeInt(slot);
+        data.writeLong(id);
+        data.writeBoolean(false);
+
+        this.configureWrite(data);
+    }
+
+    @SuppressWarnings("unused")
+    @Override
+    public void serverPacketData(final INetworkInfo manager, final WCTPacket packet, final EntityPlayer player) {
+        final EntityPlayerMP sender = (EntityPlayerMP) player;
+        Container baseContainer = sender.openContainer;
+
+        if (baseContainer instanceof ContainerWirelessCraftingTerminal) {
+            if (RandomUtils.getWirelessTerm(player.inventory) == null)
+                ((ContainerWirelessCraftingTerminal) baseContainer).setValidContainer(false);
+            else((ContainerWirelessCraftingTerminal) baseContainer).doAction(sender, this.action, this.slot, this.id);
+        }
+        if (baseContainer instanceof AEBaseContainer) {
+            ((AEBaseContainer) baseContainer).doAction(sender, this.action, this.slot, this.id);
+        }
+
+    }
+
+    @Override
+    public void clientPacketData(final INetworkInfo network, final WCTPacket packet, final EntityPlayer player) {
+        if (this.action == InventoryAction.UPDATE_HAND) {
+            if (this.slotItem == null) {
+                ClientHelper.proxy.getPlayers().get(0).inventory.setItemStack(null);
+            } else {
+                ClientHelper.proxy.getPlayers().get(0).inventory.setItemStack(this.slotItem.getItemStack());
+            }
+        }
+    }
+}
