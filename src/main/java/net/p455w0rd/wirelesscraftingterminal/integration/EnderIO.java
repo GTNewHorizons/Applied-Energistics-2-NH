@@ -60,7 +60,7 @@ public class EnderIO {
                 return false;
             }
 
-            Map<Short, Short> enchants = EnchantmentHelper.getEnchantments(stack);
+            Map<Integer, Integer> enchants = EnchantmentHelper.getEnchantments(stack);
             if (enchants != null) {
                 Iterator i = enchants.keySet().iterator();
                 while (i.hasNext()) {

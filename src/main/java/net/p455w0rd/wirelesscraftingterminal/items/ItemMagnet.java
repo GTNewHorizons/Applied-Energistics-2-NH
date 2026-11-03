@@ -479,7 +479,7 @@ public class ItemMagnet extends Item {
         return true;
     }
 
-    public static List<? extends Entity> getEntitiesInRange(Class<?> entityType, World world, int x, int y, int z,
+    public static <T extends Entity> List<T> getEntitiesInRange(Class<T> entityType, World world, int x, int y, int z,
             int distance) {
         return world.getEntitiesWithinAABB(
                 entityType,
