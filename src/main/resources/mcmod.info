@@ -58,5 +58,24 @@
         "credits":"TheRealp455w0rd",
         "logoFile":"",
         "screenshots":[]
+    },
+    {
+        "modid":"thaumicenergistics",
+        "name":"Thaumic Energistics",
+        "description":"The digital age could use some magic",
+        "version":"${modVersion}",
+        "mcversion":"${minecraftVersion}",
+        "url":"https://github.com/GTNewHorizons/Applied-Energistics-2-NH",
+        "updateUrl":"",
+        "authorList":[
+         "Nividica"
+        ],
+        "credits":"Azanor & AlgorithmX2 for their respective mods. And M3gaFr3ak for giving me somewhere to start. Localization: Mrkwtkr, alvin137, puyo061, Wuestengecko, TheVizzy, Adaptivity, Joccob, & Keridos. Textures: CyanideX. Special thanks to MKoanga.",
+        "logoFile":"assets/thaumicenergistics/meta/logo.png",
+        "screenshots":[],
+        "dependencies":[
+         "appliedenergistics2",
+         "Thaumcraft"
+        ]
     }
 ]
