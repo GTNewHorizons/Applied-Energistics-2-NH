@@ -1,6 +1,15 @@
 
 import org.gradle.api.tasks.GradleBuild
 
+// For BetterP2P
+apply plugin: 'org.jetbrains.kotlin.jvm'
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = 1.8
+    }
+}
+
 // ThaumicEnergistics mixins. usesMixins can't be used because mixinsPackage must be under modGroup (appeng).
 def mixinProviderSpec = com.gtnewhorizons.gtnhgradle.UpdateableConstants.NEWEST_UNIMIXINS + ":dev"
 dependencies {
