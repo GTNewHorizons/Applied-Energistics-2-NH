@@ -1,0 +1,15 @@
+[
+  {
+    "modid": "${modId}",
+    "name": "${modName}",
+    "description": "Lets you do Crafting... with Fluids!",
+    "version": "${modVersion}",
+    "mcversion": "${minecraftVersion}",
+    "url": "https://github.com/GlodBlock/AE2FluidCraft-Rework",
+    "updateUrl": "",
+    "authorList": ["GlodBlock"],
+    "credits":"phantamanta44",
+    "logoFile": "assets/ae2fc/logo.png",
+    "screenshots": []
+  }
+]

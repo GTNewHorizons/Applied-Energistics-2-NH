@@ -1,0 +1,1205 @@
+package com.glodblock.github.client.gui;
+
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.entity.RenderItem;
+import net.minecraft.client.resources.I18n;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.inventory.Container;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.StatCollector;
+import net.minecraftforge.common.util.ForgeDirection;
+
+import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+
+import com.glodblock.github.FluidCraft;
+import com.glodblock.github.client.gui.base.FCBaseMEGui;
+import com.glodblock.github.client.gui.container.ContainerLevelTerminal;
+import com.glodblock.github.network.CPacketLevelTerminalCommands;
+import com.glodblock.github.network.CPacketLevelTerminalCommands.Action;
+import com.glodblock.github.network.SPacketLevelTerminalUpdate;
+import com.glodblock.github.util.FCGuiColors;
+import com.glodblock.github.util.ModAndClassUtil;
+import com.glodblock.github.util.NameConst;
+import com.glodblock.github.util.Util;
+
+import appeng.api.config.Settings;
+import appeng.api.config.TerminalFontSize;
+import appeng.api.config.TerminalStyle;
+import appeng.api.config.YesNo;
+import appeng.api.features.LevelItemInfo;
+import appeng.api.features.LevelState;
+import appeng.api.storage.ITerminalHost;
+import appeng.api.storage.data.IAEStack;
+import appeng.client.gui.IGuiTooltipHandler;
+import appeng.client.gui.widgets.GuiImgButton;
+import appeng.client.gui.widgets.GuiScrollbar;
+import appeng.client.gui.widgets.GuiTabButton;
+import appeng.client.gui.widgets.IDropToFillTextField;
+import appeng.client.gui.widgets.MEGuiTextField;
+import appeng.client.render.BlockPosHighlighter;
+import appeng.container.AEBaseContainer;
+import appeng.container.slot.AppEngSlot;
+import appeng.core.AEConfig;
+import appeng.core.localization.ButtonToolTips;
+import appeng.core.localization.GuiText;
+import appeng.core.localization.PlayerMessages;
+import appeng.core.sync.GuiBridge;
+import appeng.core.sync.network.NetworkHandler;
+import appeng.core.sync.packets.PacketSwitchGuis;
+import appeng.helpers.InventoryAction;
+import appeng.integration.IntegrationRegistry;
+import appeng.integration.IntegrationType;
+import appeng.util.Platform;
+import appeng.util.ReadableNumberConverter;
+
+public class GuiLevelTerminal extends FCBaseMEGui implements IDropToFillTextField, IGuiTooltipHandler {
+
+    public static final int HEADER_HEIGHT = 52;
+    public static final int INV_HEIGHT = 98;
+    public static final int VIEW_WIDTH = 174;
+    public static final int VIEW_LEFT = 8;
+    private static final ResourceLocation TEX_BG = FluidCraft.resource("textures/gui/level_terminal.png");
+    private static final RenderItem renderItem = new RenderItem();
+    private static final int offsetX = 21;
+    protected static String searchFieldOutputsText = "";
+    protected static String searchFieldNamesText = "";
+    protected static String currentMode = "OFF";
+    private final MEGuiTextField searchFieldOutputs;
+    private final MEGuiTextField searchFieldNames;
+    private GuiImgButton searchStringSave;
+    private GuiImgButton terminalStyleBox;
+
+    private ItemStack tooltipStack;
+    private List<String> buttonTooltip;
+    private boolean online;
+    private int viewHeight;
+
+    protected GuiTabButton craftingStatusBtn;
+    // TODO: @Laiff: Implement command `enable_all`, `disable_all` main consern:
+    // TODO: Scheduling of all activated maintainers should be spreaded across ticks to not request all items on one
+    // tick
+    // private GuiFCImgButton modeSwitchView;
+    // private GuiFCImgButton modeSwitchEdit;
+    private final LevelTerminalList masterList = new LevelTerminalList();
+    private final List<String> extraOptionsText = new ArrayList<>(2);
+    private static final float ITEM_STACK_Z = 100.0f;
+    private static final float ITEM_STACK_OVERLAY_Z = 200.0f;
+    private static final float SLOT_HOVER_Z = 310.0f;
+    private static final float STEP_Z = 10.0f;
+    private static final float MAGIC_RENDER_ITEM_Z = 50.0f;
+
+    public GuiLevelTerminal(InventoryPlayer inventoryPlayer, Container container) {
+        super(inventoryPlayer, container);
+        setScrollBar(new GuiScrollbar());
+        xSize = 209;
+        ySize = 255;
+
+        searchFieldOutputs = new MEGuiTextField(86, 12, ButtonToolTips.SearchFieldOutputs.getLocal()) {
+
+            @Override
+            public void onTextChange(final String oldText) {
+                masterList.markDirty();
+            }
+        };
+
+        searchFieldNames = new MEGuiTextField(71, 12, ButtonToolTips.SearchFieldNames.getLocal()) {
+
+            @Override
+            public void onTextChange(final String oldText) {
+                masterList.markDirty();
+            }
+        };
+        extraOptionsText.add(ButtonToolTips.HighlightInterface.getLocal());
+        online = true;
+    }
+
+    public GuiLevelTerminal(final InventoryPlayer inventoryPlayer, final ITerminalHost te) {
+        this(inventoryPlayer, new ContainerLevelTerminal(inventoryPlayer, te));
+    }
+
+    private void setScrollBar() {
+        int maxScroll = masterList.getHeight() - viewHeight - 1;
+        if (maxScroll <= 0) {
+            getScrollBar().setTop(52).setLeft(189).setHeight(viewHeight).setRange(0, 0, 1);
+        } else {
+            getScrollBar().setTop(52).setLeft(189).setHeight(viewHeight).setRange(0, maxScroll, 12);
+        }
+    }
+
+    @Override
+    public void initGui() {
+        super.initGui();
+        viewHeight = calculateViewHeight();
+        ySize = HEADER_HEIGHT + INV_HEIGHT + viewHeight;
+        final int unusedSpace = height - ySize;
+        guiTop = (int) Math.floor(unusedSpace / (unusedSpace < 0 ? 3.8f : 2.0f));
+
+        int offsetY = guiTop + 8;
+        terminalStyleBox = new GuiImgButton(
+                guiLeft - 18,
+                offsetY,
+                Settings.TERMINAL_STYLE,
+                AEConfig.instance.settings.getSetting(Settings.TERMINAL_STYLE));
+        offsetY += 20;
+        searchStringSave = new GuiImgButton(
+                guiLeft - 18,
+                offsetY,
+                Settings.SAVE_SEARCH,
+                AEConfig.instance.settings.getSetting(Settings.SAVE_SEARCH));
+        offsetY += 20;
+
+        searchFieldOutputs.x = guiLeft + Math.max(32, offsetX);
+        searchFieldOutputs.y = guiTop + 38;
+
+        searchFieldNames.x = guiLeft + Math.max(32, offsetX) + 99;
+        searchFieldNames.y = guiTop + 38;
+        searchFieldNames.setFocused(true);
+
+        terminalStyleBox.xPosition = guiLeft - 18;
+        terminalStyleBox.yPosition = guiTop + 8;
+        craftingStatusBtn = new GuiTabButton(
+                guiLeft + xSize - 25,
+                guiTop - 4,
+                2 + 11 * 16,
+                GuiText.CraftingStatus.getLocal(),
+                itemRender);
+        craftingStatusBtn.setHideEdge(13);
+
+        if (AEConfig.instance.preserveSearchBar || isSubGui()) {
+            setSearchString();
+        }
+        buttonList.add(terminalStyleBox);
+        buttonList.add(searchStringSave);
+        buttonList.add(craftingStatusBtn);
+
+        setScrollBar();
+        repositionSlots();
+        initCustomButtons(0, offsetY);
+    }
+
+    @Override
+    public void onGuiClosed() {
+        super.onGuiClosed();
+        searchFieldOutputsText = searchFieldOutputs.getText();
+        searchFieldNamesText = searchFieldNames.getText();
+    }
+
+    public void setSearchString() {
+        searchFieldOutputs.setText(searchFieldOutputsText);
+        searchFieldNames.setText(searchFieldNamesText);
+    }
+
+    protected void repositionSlots() {
+        for (final Object obj : inventorySlots.inventorySlots) {
+            if (obj instanceof final AppEngSlot slot) {
+                slot.yDisplayPosition = slot.getY() + ySize - 78 - 4;
+            }
+        }
+    }
+
+    private int getMaxViewHeight() {
+        return AEConfig.instance.getConfigManager().getSetting(Settings.TERMINAL_STYLE) == TerminalStyle.SMALL
+                ? AEConfig.instance.InterfaceTerminalSmallSize * 18
+                : Integer.MAX_VALUE;
+    }
+
+    protected int calculateViewHeight() {
+        final int maxViewHeight = getMaxViewHeight();
+        final boolean hasNEI = IntegrationRegistry.INSTANCE.isEnabled(IntegrationType.NEI);
+        final int NEIPadding = hasNEI ? 22 /* input */ + 18 /* top panel */ : 0;
+        final int availableSpace = height - HEADER_HEIGHT - INV_HEIGHT - NEIPadding;
+
+        // screen should use 95% of the space it can, 5% margins
+        return Math.min((int) (availableSpace * 0.95), maxViewHeight);
+    }
+
+    @Override
+    public void drawFG(final int offsetX, final int offsetY, final int mouseX, final int mouseY) {
+        fontRendererObj.drawString(
+                StatCollector.translateToLocal(NameConst.GUI_LEVEL_TERMINAL),
+                8,
+                6,
+                FCGuiColors.guiTextColorGray.getColor());
+        fontRendererObj.drawString(
+                GuiText.inventory.getLocal(),
+                GuiLevelTerminal.offsetX + 2,
+                ySize - 96 + 3,
+                FCGuiColors.guiTextColorGray.getColor());
+
+        if (!ModAndClassUtil.NEI && tooltipStack != null) {
+            renderToolTip(tooltipStack, mouseX, mouseY);
+        }
+    }
+
+    @Override
+    public void drawScreen(final int mouseX, final int mouseY, final float btn) {
+        terminalStyleBox.set(AEConfig.instance.settings.getSetting(Settings.TERMINAL_STYLE));
+
+        super.drawScreen(mouseX, mouseY, btn);
+
+        handleTooltip(mouseX, mouseY, searchFieldOutputs);
+        handleTooltip(mouseX, mouseY, searchFieldNames);
+
+        // Drawn after the viewport so the items do not cover it
+        if (buttonTooltip != null) {
+            drawHoveringText(buttonTooltip, mouseX, mouseY, fontRendererObj);
+        }
+    }
+
+    @Override
+    protected void mouseClicked(final int xCoord, final int yCoord, final int btn) {
+        boolean focusOut = searchFieldOutputs.isFocused();
+        boolean focusName = searchFieldNames.isFocused();
+
+        searchFieldOutputs.mouseClicked(xCoord, yCoord, btn);
+        searchFieldNames.mouseClicked(xCoord, yCoord, btn);
+
+        if (focusOut && !searchFieldOutputs.isFocused()) {
+            searchFieldOutputsText = searchFieldOutputs.getText();
+        } else if (focusName && !searchFieldNames.isFocused()) {
+            searchFieldNamesText = searchFieldNames.getText();
+        }
+
+        if (masterList.mouseClicked(xCoord - guiLeft - VIEW_LEFT, yCoord - guiTop - HEADER_HEIGHT, btn)) {
+            return;
+        }
+
+        super.mouseClicked(xCoord, yCoord, btn);
+    }
+
+    @Override
+    protected void actionPerformed(final GuiButton btn) {
+        if (actionPerformedCustomButtons(btn)) return;
+        if (btn == searchStringSave) {
+
+            final boolean backwards = Mouse.isButtonDown(1);
+            final GuiImgButton iBtn = (GuiImgButton) btn;
+            final Enum<?> cv = iBtn.getCurrentValue();
+            final Enum<?> next = Platform.rotateEnum(cv, backwards, iBtn.getSetting().getPossibleValues());
+            AEConfig.instance.preserveSearchBar = next == YesNo.YES;
+            AEConfig.instance.settings.putSetting(Settings.SAVE_SEARCH, next);
+            searchStringSave.set(next);
+
+        } else if (btn == craftingStatusBtn) {
+            NetworkHandler.instance.sendToServer(new PacketSwitchGuis(GuiBridge.GUI_CRAFTING_STATUS));
+        } else if (btn instanceof final GuiImgButton iBtn) {
+            if (iBtn.getSetting() != Settings.ACTIONS) {
+                final Enum<?> cv = iBtn.getCurrentValue();
+                final boolean backwards = Mouse.isButtonDown(1);
+                final Enum<?> next = Platform.rotateEnum(cv, backwards, iBtn.getSetting().getPossibleValues());
+
+                if (btn == terminalStyleBox) {
+                    AEConfig.instance.settings.putSetting(iBtn.getSetting(), next);
+                    super.scheduleGuiResize();
+                }
+
+                iBtn.set(next);
+            }
+        }
+        super.actionPerformed(btn);
+    }
+
+    @Override
+    public void drawBG(final int offsetX, final int offsetY, final int mouseX, final int mouseY) {
+        mc.getTextureManager().bindTexture(TEX_BG);
+        /* Draws the top part. */
+        drawTexturedModalRect(offsetX, offsetY, 0, 0, xSize, HEADER_HEIGHT);
+        /* Draws the middle part. */
+        final Tessellator tess = Tessellator.instance;
+        tess.startDrawingQuads();
+        addTexturedRectToTesselator(
+                offsetX,
+                offsetY + HEADER_HEIGHT,
+                offsetX + xSize,
+                offsetY + HEADER_HEIGHT + viewHeight + 1,
+                0.0f,
+                0.0f,
+                (HEADER_HEIGHT + LevelTerminalSection.TITLE_HEIGHT + 1.0f) / 256.0f,
+                xSize / 256.0f,
+                (HEADER_HEIGHT + 106.0f) / 256.0f);
+        tess.draw();
+        /* Draw the bottom part */
+        drawTexturedModalRect(offsetX, offsetY + HEADER_HEIGHT + viewHeight, 0, 158, xSize, INV_HEIGHT);
+        if (online) {
+            GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
+            GL11.glEnable(GL11.GL_BLEND);
+            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            /* (0,0) => viewPort's (0,0) */
+            GL11.glPushMatrix();
+            GL11.glTranslatef(offsetX + VIEW_LEFT, offsetY + HEADER_HEIGHT, 0);
+            tooltipStack = null;
+            buttonTooltip = null;
+            drawViewport(mouseX - offsetX - VIEW_LEFT, mouseY - offsetY - HEADER_HEIGHT - 1);
+            GL11.glPopMatrix();
+            GL11.glPopAttrib();
+        }
+        searchFieldOutputs.drawTextBox();
+        searchFieldNames.drawTextBox();
+    }
+
+    private void drawViewport(int relMouseX, int relMouseY) {
+        /* Viewport Magic */
+        final int scroll = getScrollBar().getCurrentScroll();
+        int viewY = -scroll; // current y in viewport coordinates
+        int entryIdx = 0;
+        List<LevelTerminalSection> visibleSections = masterList.getVisibleSections();
+
+        final float guiScaleX = (float) mc.displayWidth / width;
+        final float guiScaleY = (float) mc.displayHeight / height;
+        GL11.glScissor(
+                (int) ((guiLeft + VIEW_LEFT) * guiScaleX),
+                (int) ((height - (guiTop + HEADER_HEIGHT + viewHeight)) * guiScaleY),
+                (int) (VIEW_WIDTH * guiScaleX),
+                (int) (viewHeight * guiScaleY));
+        GL11.glEnable(GL11.GL_SCISSOR_TEST);
+
+        /*
+         * Render each section
+         */
+        while (viewY < viewHeight && entryIdx < visibleSections.size()) {
+            LevelTerminalSection section = visibleSections.get(entryIdx);
+            int sectionHeight = section.getHeight();
+
+            /* Is it viewable/in the viewport at all? */
+            if (viewY + sectionHeight < 0) {
+                entryIdx++;
+                viewY += sectionHeight;
+                section.visible = false;
+                continue;
+            }
+
+            section.visible = true;
+            int advanceY = drawSection(section, viewY, relMouseX, relMouseY);
+            viewY += advanceY;
+            entryIdx++;
+        }
+    }
+
+    private int drawSection(LevelTerminalSection section, int viewY, int relMouseX, int relMouseY) {
+        int title;
+        int renderY = 0;
+        final int sectionBottom = viewY + section.getHeight() - 1;
+        final int fontColor = FCGuiColors.guiTextColorGray.getColor();
+        /*
+         * Render title
+         */
+        mc.getTextureManager().bindTexture(TEX_BG);
+        if (sectionBottom > 0 && sectionBottom < LevelTerminalSection.TITLE_HEIGHT) {
+            title = sectionBottom;
+        } else if (viewY < 0) {
+            title = 0;
+        } else {
+            title = 0;
+        }
+        GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
+        Iterator<LevelTerminalEntry> visible = section.getVisible();
+        while (visible.hasNext()) {
+            if (viewY < viewHeight) {
+                renderY += drawEntry(
+                        visible.next(),
+                        viewY + LevelTerminalSection.TITLE_HEIGHT + renderY,
+                        title,
+                        relMouseX,
+                        relMouseY);
+            } else {
+                LevelTerminalEntry entry = visible.next();
+                entry.dispY = -9999;
+                entry.highlightButton.yPosition = -1;
+                entry.renameButton.yPosition = -1;
+                entry.configButton.yPosition = -1;
+            }
+        }
+        /*
+         * Render title
+         */
+        mc.getTextureManager().bindTexture(TEX_BG);
+        GL11.glTranslatef(0.0f, 0.0f, ITEM_STACK_OVERLAY_Z + ITEM_STACK_Z + STEP_Z);
+        if (sectionBottom > 0 && sectionBottom < LevelTerminalSection.TITLE_HEIGHT) {
+            /* Transition draw */
+            drawTexturedModalRect(
+                    0,
+                    0,
+                    VIEW_LEFT,
+                    HEADER_HEIGHT + LevelTerminalSection.TITLE_HEIGHT - sectionBottom,
+                    VIEW_WIDTH,
+                    sectionBottom);
+            fontRendererObj
+                    .drawString(section.name, 2, sectionBottom - LevelTerminalSection.TITLE_HEIGHT + 2, fontColor);
+        } else if (viewY < 0) {
+            /* Hidden title draw */
+            GL11.glDisable(GL11.GL_DEPTH_TEST);
+            GL11.glTranslatef(0.0f, 0.0f, 100f);
+            drawTexturedModalRect(0, 0, VIEW_LEFT, HEADER_HEIGHT, VIEW_WIDTH, LevelTerminalSection.TITLE_HEIGHT);
+            fontRendererObj.drawString(section.name, 2, 2, fontColor);
+            GL11.glEnable(GL11.GL_DEPTH_TEST);
+        } else {
+            /* Normal title draw */
+            drawTexturedModalRect(0, viewY, VIEW_LEFT, HEADER_HEIGHT, VIEW_WIDTH, LevelTerminalSection.TITLE_HEIGHT);
+            fontRendererObj.drawString(section.name, 2, viewY + 2, fontColor);
+        }
+        GL11.glTranslatef(0.0f, 0.0f, -(ITEM_STACK_OVERLAY_Z + ITEM_STACK_Z + STEP_Z));
+
+        return LevelTerminalSection.TITLE_HEIGHT + renderY;
+    }
+
+    private int drawEntry(LevelTerminalEntry entry, int viewY, int titleBottom, int relMouseX, int relMouseY) {
+        final EntityPlayer player = Minecraft.getMinecraft().thePlayer;
+        mc.getTextureManager().bindTexture(TEX_BG);
+        final Tessellator tess = Tessellator.instance;
+        tess.startDrawingQuads();
+        int relY = 0;
+        final int slotLeftMargin = (VIEW_WIDTH - entry.rowSize * 18);
+        float lastZLevel = renderItem.zLevel;
+
+        entry.dispY = viewY;
+        /* PASS 1: BG */
+        for (int row = 0; row < entry.rows; ++row) {
+            final int rowYTop = row * 18;
+            final int rowYBot = rowYTop + 18;
+
+            relY += 18;
+            /* Is the slot row in view? */
+            if (viewY + rowYBot <= titleBottom) {
+                continue;
+            }
+            for (int col = 0; col < entry.rowSize; ++col) {
+                addTexturedRectToTesselator(
+                        col * 18 + slotLeftMargin,
+                        viewY + rowYTop,
+                        18 * col + 18 + slotLeftMargin,
+                        viewY + rowYBot,
+                        0,
+                        21 / 256f,
+                        173 / 256f,
+                        (21 + 18) / 256f,
+                        (173 + 18) / 256f);
+            }
+        }
+        tess.draw();
+        /* Draw button */
+        if (viewY + entry.highlightButton.height > 0 && viewY < viewHeight) {
+            entry.highlightButton.yPosition = viewY + 1;
+            entry.renameButton.yPosition = viewY + 1;
+            entry.configButton.yPosition = viewY + 1;
+            GuiFCImgButton toRender;
+            if (isShiftKeyDown() && entry.isInPlayerDimension()) {
+                toRender = entry.renameButton;
+            } else if (isCtrlKeyDown() && entry.isInPlayerDimension()) {
+                toRender = entry.configButton;
+            } else {
+                toRender = entry.highlightButton;
+            }
+            toRender.drawButton(mc, relMouseX, relMouseY);
+            if (toRender.getMouseIn()
+                    && relMouseY >= Math.max(LevelTerminalSection.TITLE_HEIGHT, entry.highlightButton.yPosition)) {
+                List<String> tooltip = new ArrayList<>();
+                tooltip.add(toRender.getMessage());
+                if (entry.isInPlayerDimension()) {
+                    tooltip.add(StatCollector.translateToLocal(NameConst.TT_KEY + "level_terminal.hint_rename"));
+                    tooltip.add(StatCollector.translateToLocal(NameConst.TT_KEY + "level_terminal.hint_open_gui"));
+                } else {
+                    tooltip.add(
+                            StatCollector.translateToLocal(NameConst.TT_KEY + "level_terminal.hint_other_dimension"));
+                }
+                buttonTooltip = tooltip;
+            }
+        } else {
+            entry.highlightButton.yPosition = -1;
+            entry.renameButton.yPosition = -1;
+        }
+        /* PASS 2: Items */
+        for (int row = 0; row < entry.rows; ++row) {
+            final int rowYTop = row * 18;
+            final int rowYBot = rowYTop + 18;
+            /* Is the slot row in view? */
+            if (viewY + rowYBot <= titleBottom) {
+                continue;
+            }
+
+            for (int col = 0; col < entry.rowSize; ++col) {
+                final int colLeft = col * 18 + slotLeftMargin + 1;
+                final int colRight = colLeft + 18 + 1;
+                final int slotIdx = row * entry.rowSize + col;
+                LevelItemInfo info = entry.infoList[slotIdx];
+
+                boolean tooltip = relMouseX > colLeft - 1 && relMouseX < colRight - 1
+                        && relMouseY >= Math.max(viewY + rowYTop, LevelTerminalSection.TITLE_HEIGHT)
+                        && relMouseY < Math.min(viewY + rowYBot, viewHeight);
+                if (info != null) {
+                    IAEStack<?> aes = info.stack;
+                    long quantity = info.quantity;
+                    long batch = info.batchSize;
+                    LevelState state = info.state;
+
+                    GL11.glPushMatrix();
+                    GL11.glTranslatef(colLeft, viewY + rowYTop + 1, ITEM_STACK_Z);
+                    GL11.glEnable(GL12.GL_RESCALE_NORMAL);
+                    RenderHelper.enableGUIStandardItemLighting();
+                    aes.setStackSize(1);
+                    renderItem.zLevel = ITEM_STACK_Z - MAGIC_RENDER_ITEM_Z;
+                    aes.drawInGui(mc, 0, 0);
+                    aes.drawOverlayInGui(mc, 0, 0, false, false, false, false);
+                    GL11.glTranslatef(0.0f, 0.0f, ITEM_STACK_OVERLAY_Z - ITEM_STACK_Z);
+                    int color = switch (state) {
+                        case Idle -> FCGuiColors.stateIdle.getColor();
+                        case Craft -> FCGuiColors.stateCraft.getColor();
+                        case Export -> FCGuiColors.stateExport.getColor();
+                        case Error, NotFound, CantCraft -> FCGuiColors.stateError.getColor();
+                        case None -> FCGuiColors.stateNone.getColor();
+                    };
+                    int offset = 0;
+                    int size = 4;
+                    drawRect(offset, offset, offset + size, offset + size, color);
+                    GL11.glTranslatef(0.0f, 0.0f, ITEM_STACK_OVERLAY_Z - ITEM_STACK_Z);
+                    this.drawReadableAmount(fontRendererObj, quantity, true, 16777215);
+                    if (batch >= 0) {
+                        this.drawReadableAmount(fontRendererObj, batch, false, 16777215);
+                    }
+                    RenderHelper.disableStandardItemLighting();
+
+                    /*
+                     * Mouse overlay. such large z value because items are rendered at zLevel=100.0f, whatever that is
+                     */
+                    if (!tooltip) {
+                        if (entry.filteredRecipes[slotIdx]) {
+                            GL11.glTranslatef(0.0f, 0.0f, ITEM_STACK_OVERLAY_Z);
+                            drawRect(0, 0, 16, 16, FCGuiColors.itemSlotOverlayUnpowered.getColor());
+                        }
+                    } else {
+                        tooltipStack = aes.getItemStackForNEI();
+                    }
+                    GL11.glPopMatrix();
+                } else if (entry.filteredRecipes[slotIdx]) {
+                    GL11.glPushMatrix();
+                    GL11.glTranslatef(colLeft, viewY + rowYTop + 1, ITEM_STACK_OVERLAY_Z);
+                    drawRect(0, 0, 16, 16, FCGuiColors.itemSlotOverlayUnpowered.getColor());
+                    GL11.glPopMatrix();
+                }
+                if (tooltip) {
+                    // overlay highlight
+                    GL11.glDisable(GL11.GL_LIGHTING);
+                    GL11.glTranslatef(0.0f, 0.0f, SLOT_HOVER_Z);
+                    drawRect(
+                            colLeft,
+                            viewY + 1 + rowYTop,
+                            -2 + colRight,
+                            viewY - 1 + rowYBot,
+                            FCGuiColors.guiLevelTerminalOverlayHighlight.getColor());
+                    GL11.glTranslatef(0.0f, 0.0f, -SLOT_HOVER_Z);
+                }
+                GL11.glDisable(GL11.GL_LIGHTING);
+            }
+        }
+        GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+        renderItem.zLevel = lastZLevel;
+        return relY + 1;
+    }
+
+    public void drawReadableAmount(final FontRenderer fontRenderer, long amount, boolean alignBottom, int color) {
+        final TerminalFontSize fontSize = AEConfig.instance.getTerminalFontSize();
+        final String stackSize = this.getToBeRenderedStackSize(amount, fontSize);
+        final boolean unicodeFlag = fontRenderer.getUnicodeFlag();
+        float scaleFactor = 0.85f;
+        float shiftX = 0f;
+        float shiftY = 0f;
+
+        if (fontSize == TerminalFontSize.SMALL) {
+            scaleFactor = 0.5f;
+            shiftX = -2.0f;
+            shiftY = -1.0f;
+        }
+
+        final float inverseScaleFactor = 1.0f / scaleFactor;
+
+        fontRenderer.setUnicodeFlag(false);
+
+        GL11.glDisable(GL11.GL_LIGHTING);
+        GL11.glPushMatrix();
+        GL11.glScaled(scaleFactor, scaleFactor, scaleFactor);
+
+        final int X = (int) ((shiftX + 16.0f + 1.0f - fontRenderer.getStringWidth(stackSize) * scaleFactor)
+                * inverseScaleFactor);
+        final int Y = (int) (alignBottom ? (shiftY + 16.0f - 7.0f * scaleFactor) * inverseScaleFactor : 1);
+
+        fontRenderer.drawString(stackSize, X + 1, Y, 0);
+        fontRenderer.drawString(stackSize, X - 1, Y, 0);
+        fontRenderer.drawString(stackSize, X, Y + 1, 0);
+        fontRenderer.drawString(stackSize, X, Y - 1, 0);
+
+        fontRenderer.drawString(stackSize, X, Y, color);
+
+        GL11.glPopMatrix();
+        GL11.glEnable(GL11.GL_LIGHTING);
+
+        fontRenderer.setUnicodeFlag(unicodeFlag);
+    }
+
+    private String getToBeRenderedStackSize(final long originalSize, TerminalFontSize fontSize) {
+        if (fontSize == TerminalFontSize.SMALL) {
+            return ReadableNumberConverter.INSTANCE.toWideReadableForm(originalSize);
+        } else {
+            return ReadableNumberConverter.INSTANCE.toSlimReadableForm(originalSize);
+        }
+    }
+
+    @Override
+    protected void keyTyped(final char character, final int key) {
+        if (!checkHotbarKeys(key)) {
+            if (character == ' ') {
+                if ((searchFieldOutputs.getText().isEmpty() && searchFieldOutputs.isFocused())
+                        || (searchFieldNames.getText().isEmpty() && searchFieldNames.isFocused()))
+                    return;
+            } else if (character == '\t') {
+                if (handleTab()) return;
+            }
+            if (searchFieldOutputs.textboxKeyTyped(character, key)
+                    || searchFieldNames.textboxKeyTyped(character, key)) {
+                masterList.markDirty();
+            } else {
+                super.keyTyped(character, key);
+            }
+        }
+    }
+
+    private boolean handleTab() {
+        if (searchFieldOutputs.isFocused()) {
+            searchFieldOutputs.setFocused(false);
+            searchFieldNames.setFocused(true);
+            return true;
+        } else if (searchFieldNames.isFocused()) {
+            searchFieldNames.setFocused(false);
+            searchFieldOutputs.setFocused(true);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    protected boolean mouseWheelEvent(int mouseX, int mouseY, int wheel) {
+        boolean isMouseInViewport = isMouseInViewport(mouseX, mouseY);
+        GuiScrollbar scrollbar = getScrollBar();
+        if (isMouseInViewport && isCtrlKeyDown()) {
+            if (wheel < 0) {
+                scrollbar.setCurrentScroll(masterList.getHeight());
+            } else {
+                getScrollBar().setCurrentScroll(0);
+            }
+            return true;
+        } else if (isMouseInViewport && isShiftKeyDown()) {
+            // advance to the next section
+            return masterList.scrollNextSection(wheel > 0);
+        } else {
+            return super.mouseWheelEvent(mouseX, mouseY, wheel);
+        }
+    }
+
+    private boolean isMouseInViewport(int mouseX, int mouseY) {
+        return mouseX > guiLeft + VIEW_LEFT && mouseX < guiLeft + VIEW_LEFT + VIEW_WIDTH
+                && mouseY > guiTop + HEADER_HEIGHT
+                && mouseY < guiTop + HEADER_HEIGHT + viewHeight;
+    }
+
+    public void receivePackets(List<SPacketLevelTerminalUpdate.PacketEntry> packets) {
+        for (SPacketLevelTerminalUpdate.PacketEntry packet : packets) {
+            parsePacket(packet);
+        }
+        masterList.markDirty();
+    }
+
+    private void parsePacket(SPacketLevelTerminalUpdate.PacketEntry packet) {
+        if (packet instanceof SPacketLevelTerminalUpdate.PacketAdd packetAdd) {
+            LevelTerminalEntry entry = new LevelTerminalEntry(
+                    packetAdd.entryId,
+                    packetAdd.name,
+                    packetAdd.rows,
+                    packetAdd.rowSize,
+                    true).setLocation(packetAdd.x, packetAdd.y, packetAdd.z, packetAdd.dim, packetAdd.side)
+                            .setInfoList(packetAdd.infolist);
+            this.masterList.addEntry(entry);
+        } else if (packet instanceof SPacketLevelTerminalUpdate.PacketRemove packetRemove) {
+            this.masterList.removeEntry(packetRemove.entryId);
+        } else if (packet instanceof SPacketLevelTerminalUpdate.PacketRename packetRename) {
+            LevelTerminalEntry entry = masterList.list.get(packetRename.entryId);
+            if (entry == null) return;
+
+            if (StatCollector.canTranslate(packetRename.newName)) {
+                entry.customName = StatCollector.translateToLocal(packetRename.newName);
+            } else {
+                entry.customName = StatCollector.translateToFallback(packetRename.newName);
+            }
+            masterList.isDirty = true;
+        } else if (packet instanceof SPacketLevelTerminalUpdate.PacketDisconnect) {
+            online = false;
+        }
+
+        else if (packet instanceof SPacketLevelTerminalUpdate.PacketOverwriteSlot packetOverwirteSlot) {
+            LevelTerminalEntry entry = masterList.list.get(packetOverwirteSlot.entryId);
+            if (entry == null) return;
+
+            entry.infoList[packetOverwirteSlot.index] = packetOverwirteSlot.info;
+            masterList.isDirty = true;
+        } else if (packet instanceof SPacketLevelTerminalUpdate.PacketOverwirteAllSlot packetOverwirteAllSlot) {
+            LevelTerminalEntry entry = masterList.list.get(packetOverwirteAllSlot.entryId);
+            if (entry == null) return;
+
+            entry.infoList = packetOverwirteAllSlot.infoList;
+            masterList.isDirty = true;
+        }
+    }
+
+    private boolean stackMatchesSearchTerm(final IAEStack<?> stack, final String searchTerm) {
+        if (stack == null) {
+            return false;
+        }
+
+        final String displayName = stack.getDisplayName();
+        return displayName != null && displayName.toLowerCase().contains(searchTerm);
+    }
+
+    @Override
+    public boolean isOverTextField(final int mouseX, final int mouseY) {
+        return searchFieldOutputs.isMouseIn(mouseX, mouseY) || searchFieldNames.isMouseIn(mouseX, mouseY);
+    }
+
+    @Override
+    public void setTextFieldValue(final String displayName, final int mousex, final int mousey, final ItemStack stack) {
+        if (searchFieldOutputs.isMouseIn(mousex, mousey)) {
+            searchFieldOutputs.setText(displayName);
+        } else if (searchFieldNames.isMouseIn(mousex, mousey)) {
+            searchFieldNames.setText(displayName);
+        }
+    }
+
+    @Override
+    public List<String> handleItemTooltip(ItemStack stack, int mouseX, int mouseY, List<String> currentToolTip) {
+        if (stack == null || !isShiftKeyDown()) return currentToolTip;
+
+        for (LevelTerminalSection section : this.masterList.getVisibleSections()) {
+            for (LevelTerminalEntry entry : section.visibleEntries) {
+                for (LevelItemInfo info : entry.infoList) {
+                    if (info != null && info.stack.equals(stack)) {
+                        currentToolTip.add(
+                                I18n.format(NameConst.TT_LEVEL_MAINTAINER_REQUEST_SIZE, "\n", false) + ": "
+                                        + NumberFormat.getInstance().format(info.quantity));
+
+                        if (info.batchSize >= 0) {
+                            currentToolTip.add(
+                                    I18n.format(NameConst.TT_LEVEL_MAINTAINER_BATCH_SIZE, "\n", false) + ": "
+                                            + NumberFormat.getInstance().format(info.batchSize));
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        return currentToolTip;
+    }
+
+    @Override
+    public ItemStack getHoveredStack() {
+        return tooltipStack;
+    }
+
+    /**
+     * Tracks the list of entries.
+     */
+    private class LevelTerminalList {
+
+        private final Map<Long, LevelTerminalEntry> list = new HashMap<>();
+        private final Map<String, LevelTerminalSection> sections = new TreeMap<>();
+        private final List<LevelTerminalSection> visibleSections = new ArrayList<>();
+        private boolean isDirty;
+        private int height;
+
+        LevelTerminalList() {
+            isDirty = true;
+        }
+
+        /**
+         * Performs a full update.
+         */
+        private void update() {
+            height = 0;
+            visibleSections.clear();
+
+            for (LevelTerminalSection section : sections.values()) {
+                String query = GuiLevelTerminal.this.searchFieldNames.getText();
+                if (!query.isEmpty() && !section.name.toLowerCase().contains(query.toLowerCase())) {
+                    continue;
+                }
+
+                section.isDirty = true;
+                if (section.getVisible().hasNext()) {
+                    height += section.getHeight();
+                    visibleSections.add(section);
+                }
+            }
+            isDirty = false;
+        }
+
+        public void markDirty() {
+            isDirty = true;
+            setScrollBar();
+        }
+
+        public int getHeight() {
+            if (isDirty) {
+                update();
+            }
+            return height;
+        }
+
+        /**
+         * Jump between sections.
+         */
+        private boolean scrollNextSection(boolean up) {
+            GuiScrollbar scrollbar = getScrollBar();
+            int viewY = scrollbar.getCurrentScroll();
+            var sections = getVisibleSections();
+            boolean result = false;
+
+            if (up) {
+                int y = masterList.getHeight();
+                int i = sections.size() - 1;
+
+                while (y > 0 && i >= 0) {
+                    y -= sections.get(i).getHeight();
+                    i -= 1;
+                    if (y < viewY) {
+                        result = true;
+                        scrollbar.setCurrentScroll(y);
+                        break;
+                    }
+                }
+            } else {
+                int y = 0;
+
+                for (LevelTerminalSection section : sections) {
+                    if (y > viewY) {
+                        result = true;
+                        scrollbar.setCurrentScroll(y);
+                        break;
+                    }
+                    y += section.getHeight();
+                }
+            }
+            return result;
+        }
+
+        public void addEntry(LevelTerminalEntry entry) {
+            LevelTerminalSection section = sections.get(entry.customName);
+
+            if (section == null) {
+                section = new LevelTerminalSection(entry.customName);
+                sections.put(entry.customName, section);
+            }
+            section.addEntry(entry);
+            list.put(entry.id, entry);
+            isDirty = true;
+        }
+
+        public void removeEntry(long id) {
+            LevelTerminalEntry entry = list.remove(id);
+
+            if (entry != null) {
+                entry.section.removeEntry(entry);
+            }
+        }
+
+        public List<LevelTerminalSection> getVisibleSections() {
+            if (isDirty) {
+                update();
+            }
+            return visibleSections;
+        }
+
+        /**
+         * Mouse button click.
+         *
+         * @param relMouseX viewport coords mouse X
+         * @param relMouseY viewport coords mouse Y
+         * @param btn       button code
+         */
+        public boolean mouseClicked(int relMouseX, int relMouseY, int btn) {
+            if (relMouseX < 0 || relMouseX >= VIEW_WIDTH || relMouseY < 0 || relMouseY >= viewHeight) {
+                return false;
+            }
+            for (LevelTerminalSection section : getVisibleSections()) {
+                if (section.mouseClicked(relMouseX, relMouseY, btn)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    /**
+     * A section holds all the interface entries with the same name.
+     */
+    private class LevelTerminalSection {
+
+        public static final int TITLE_HEIGHT = 12;
+
+        String name;
+        List<LevelTerminalEntry> entries = new ArrayList<>();
+        Set<LevelTerminalEntry> visibleEntries = new TreeSet<>(Comparator.comparing(e -> e.customName + e.id));
+        int height;
+        private boolean isDirty = true;
+        boolean visible = false;
+
+        LevelTerminalSection(String name) {
+            this.name = name;
+        }
+
+        /**
+         * Gets the height. Includes title.
+         */
+        public int getHeight() {
+            if (isDirty) {
+                update();
+            }
+            return height;
+        }
+
+        private void update() {
+            refreshVisible();
+            if (visibleEntries.isEmpty()) {
+                height = 0;
+            } else {
+                height = TITLE_HEIGHT;
+                for (LevelTerminalEntry entry : visibleEntries) {
+                    height += entry.guiHeight;
+                }
+            }
+            isDirty = false;
+        }
+
+        public void refreshVisible() {
+            visibleEntries.clear();
+            String output = GuiLevelTerminal.this.searchFieldOutputs.getText().toLowerCase();
+
+            for (LevelTerminalEntry entry : entries) {
+                entry.dispY = -9999;
+                // Find search terms
+                if (!output.isEmpty()) {
+                    boolean shouldAdd = false;
+
+                    for (int i = 0; i < entry.infoList.length; ++i) {
+                        if (entry.infoList[i] == null) {
+                            entry.filteredRecipes[i] = true;
+                            continue;
+                        }
+
+                        if (stackMatchesSearchTerm(entry.infoList[i].stack, output)) {
+                            shouldAdd = true;
+                            entry.filteredRecipes[i] = false;
+                        } else {
+                            entry.filteredRecipes[i] = true;
+                        }
+                    }
+
+                    if (!shouldAdd) {
+                        continue;
+                    }
+                } else {
+                    Arrays.fill(entry.filteredRecipes, false);
+                }
+                visibleEntries.add(entry);
+            }
+        }
+
+        public void addEntry(LevelTerminalEntry entry) {
+            entries.add(entry);
+            entry.section = this;
+            isDirty = true;
+        }
+
+        public void removeEntry(LevelTerminalEntry entry) {
+            entries.remove(entry);
+            entry.section = null;
+            isDirty = true;
+        }
+
+        public Iterator<LevelTerminalEntry> getVisible() {
+            if (isDirty) {
+                update();
+            }
+            return visibleEntries.iterator();
+        }
+
+        public boolean mouseClicked(int relMouseX, int relMouseY, int btn) {
+            Iterator<LevelTerminalEntry> it = getVisible();
+            boolean ret = false;
+
+            while (it.hasNext() && !ret) {
+                ret = it.next().mouseClicked(relMouseX, relMouseY, btn);
+            }
+
+            return ret;
+        }
+    }
+
+    /**
+     * This class keeps track of an entry and its widgets.
+     */
+    private class LevelTerminalEntry {
+
+        String customName;
+        GuiFCImgButton highlightButton;
+        GuiFCImgButton renameButton;
+        GuiFCImgButton configButton;
+        LevelTerminalSection section;
+        long id;
+        int x, y, z, dim, side;
+        int rows, rowSize;
+        int guiHeight;
+        int dispY = -9999;
+        boolean[] filteredRecipes;
+
+        LevelItemInfo[] infoList;
+
+        LevelTerminalEntry(long id, String name, int rows, int rowSize, boolean online) {
+            this.id = id;
+            this.rows = rows;
+            this.rowSize = rowSize;
+            if (StatCollector.canTranslate(name)) {
+                customName = StatCollector.translateToLocal(name);
+            } else {
+                String fallback = name + ".name"; // its whatever. save some bytes on network but looks ugly
+                if (StatCollector.canTranslate(fallback)) {
+                    customName = StatCollector.translateToLocal(fallback);
+                } else {
+                    customName = StatCollector.translateToFallback(name);
+                }
+            }
+            highlightButton = new GuiFCImgButton(1, 0, "HIGHLIGHT", "YES");
+            renameButton = new GuiFCImgButton(1, 0, "RENAME", "YES");
+            configButton = new GuiFCImgButton(1, 0, "OPEN_GUI", "YES");
+            guiHeight = 18 * rows + 1;
+            filteredRecipes = new boolean[rows * rowSize];
+        }
+
+        LevelTerminalEntry setLocation(int x, int y, int z, int dim, int side) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.dim = dim;
+            this.side = side;
+
+            return this;
+        }
+
+        LevelTerminalEntry setInfoList(LevelItemInfo[] infoList) {
+            this.infoList = infoList;
+            return this;
+        }
+
+        private boolean isInPlayerDimension() {
+            return mc != null && mc.thePlayer != null && mc.thePlayer.dimension == this.dim;
+        }
+
+        public boolean mouseClicked(int mouseX, int mouseY, int mouseButton) {
+            if (!section.visible || mouseButton < 0 || mouseButton > 2) {
+                return false;
+            }
+            if (mouseX >= highlightButton.xPosition && mouseX < 2 + highlightButton.width
+                    && mouseY > Math.max(highlightButton.yPosition, LevelTerminalSection.TITLE_HEIGHT)
+                    && mouseY <= Math.min(highlightButton.yPosition + highlightButton.height, viewHeight)) {
+                highlightButton.func_146113_a(mc.getSoundHandler());
+                Util.DimensionalCoordSide blockPos = new Util.DimensionalCoordSide(
+                        x,
+                        y,
+                        z,
+                        dim,
+                        ForgeDirection.getOrientation(side),
+                        "");
+                if (isShiftKeyDown() && isInPlayerDimension()) {
+                    FluidCraft.proxy.netHandler.sendToServer(
+                            new CPacketLevelTerminalCommands(
+                                    Action.RENAME,
+                                    blockPos.x,
+                                    blockPos.y,
+                                    blockPos.z,
+                                    blockPos.getDimension(),
+                                    blockPos.getSide()));
+                } else if (isCtrlKeyDown() && isInPlayerDimension()) {
+                    FluidCraft.proxy.netHandler.sendToServer(
+                            new CPacketLevelTerminalCommands(
+                                    Action.EDIT,
+                                    blockPos.x,
+                                    blockPos.y,
+                                    blockPos.z,
+                                    blockPos.getDimension(),
+                                    blockPos.getSide()));
+                } else {
+                    BlockPosHighlighter.highlightBlocks(
+                            mc.thePlayer,
+                            Collections.singletonList(blockPos),
+                            PlayerMessages.LevelEmitterHighlighted.getUnlocalized(),
+                            PlayerMessages.LevelEmitterInAnotherDim.getUnlocalized());
+                    mc.thePlayer.closeScreen();
+                }
+                return true;
+            }
+
+            int offsetY = mouseY - dispY;
+            int offsetX = mouseX - (VIEW_WIDTH - rowSize * 18) - 1;
+            if (offsetX >= 0 && offsetX < (rowSize * 18)
+                    && mouseY > Math.max(dispY, LevelTerminalSection.TITLE_HEIGHT)
+                    && offsetY < Math.min(viewHeight - dispY, guiHeight)) {
+                final int col = offsetX / 18;
+                final int row = offsetY / 18;
+                final int slotIdx = row * rowSize + col;
+
+                // send packet to server, request an update
+                InventoryAction action = switch (mouseButton) {
+                    case 0 -> null; // pickup / set-down.
+                    case 1 -> null;
+                    case 2 -> {
+                        // creative dupe:
+                        if (mc.thePlayer.capabilities.isCreativeMode) {
+                            yield InventoryAction.CREATIVE_DUPLICATE;
+                        } else {
+                            yield InventoryAction.AUTO_CRAFT;
+                        }
+                    }
+                    default -> null;// drop item:
+                };
+
+                if (action != null && this.infoList[slotIdx] != null) {
+                    IAEStack<?> aeStack = this.infoList[slotIdx].stack;
+                    ((AEBaseContainer) inventorySlots).setTargetStack(aeStack);
+                    // FluidCraft.proxy.netHandler.sendToServer(new CPacketInventoryAction(action, slotIdx, 0,
+                    // aeStack));
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+    }
+}
