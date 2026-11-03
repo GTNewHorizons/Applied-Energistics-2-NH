@@ -1,0 +1,643 @@
+package com.glodblock.github.util;
+
+import static com.glodblock.github.client.UltraTerminalButtons.restockItems;
+import static com.glodblock.github.common.item.ItemBaseWirelessTerminal.infinityBoosterCard;
+import static com.glodblock.github.common.item.ItemBaseWirelessTerminal.infinityEnergyCard;
+import static com.glodblock.github.util.Util.DimensionalCoordSide.hasEnergyCard;
+import static net.minecraft.init.Items.glass_bottle;
+
+import java.io.IOException;
+import java.util.Map;
+
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.init.Items;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemPotion;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraftforge.common.util.ForgeDirection;
+import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidContainerRegistry;
+import net.minecraftforge.fluids.FluidRegistry;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.IFluidContainerItem;
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.MutablePair;
+
+import com.glodblock.github.common.item.ItemBaseWirelessTerminal;
+import com.glodblock.github.common.item.ItemFluidDrop;
+import com.glodblock.github.common.item.ItemFluidPacket;
+import com.glodblock.github.common.item.ItemWirelessUltraTerminal;
+import com.glodblock.github.inventory.IAEFluidTank;
+import com.glodblock.github.inventory.item.IFluidPortableCell;
+
+import appeng.api.AEApi;
+import appeng.api.config.Actionable;
+import appeng.api.config.PowerMultiplier;
+import appeng.api.config.SecurityPermissions;
+import appeng.api.networking.IGrid;
+import appeng.api.networking.IGridHost;
+import appeng.api.networking.IGridNode;
+import appeng.api.networking.security.ISecurityGrid;
+import appeng.api.networking.storage.IStorageGrid;
+import appeng.api.parts.IPart;
+import appeng.api.storage.IMEInventoryHandler;
+import appeng.api.storage.StorageChannel;
+import appeng.api.storage.data.IAEFluidStack;
+import appeng.api.storage.data.IAEStack;
+import appeng.api.util.DimensionalCoord;
+import appeng.container.AEBaseContainer;
+import appeng.items.tools.powered.ToolWirelessTerminal;
+import appeng.me.storage.NullInventory;
+import appeng.util.Platform;
+import appeng.util.item.AEFluidStack;
+import appeng.util.item.AEItemStack;
+import baubles.api.BaublesApi;
+import codechicken.nei.recipe.StackInfo;
+import cpw.mods.fml.common.ModContainer;
+import cpw.mods.fml.common.registry.GameData;
+import io.netty.buffer.ByteBuf;
+
+public final class Util {
+
+    public static int drainItemPower(AEBaseContainer c, InventoryPlayer ip, int slot, int ticks, double pm,
+            IFluidPortableCell wt) {
+        if (slot != -1) {
+            final ItemStack currentItem = Platform.getItemFromPlayerInventoryBySlotIndex(ip.player, slot);
+            if (wt != null) {
+                if (currentItem != wt.getItemStack()) {
+                    if (currentItem != null) {
+                        if (Platform.isSameItem(wt.getItemStack(), currentItem)) {
+                            if (slot <= Platform.baublesSlotsOffset) {
+                                ip.setInventorySlotContents(slot, wt.getItemStack());
+                            } else {
+                                BaublesApi.getBaubles(ip.player).setInventorySlotContents(slot, wt.getItemStack());
+                            }
+                        } else {
+                            c.setValidContainer(false);
+                        }
+                    } else {
+                        c.setValidContainer(false);
+                    }
+                }
+            } else {
+                c.setValidContainer(false);
+            }
+        } else {
+            c.setValidContainer(false);
+        }
+        ticks++;
+
+        if (ticks > 10 && wt != null) {
+            if (!hasEnergyCard(wt.getItemStack())) {
+                wt.extractAEPower(pm * ticks, Actionable.MODULATE, PowerMultiplier.CONFIG);
+            }
+            ticks = 0;
+        }
+
+        return ticks;
+    }
+
+    public static boolean isRestock(ItemStack is) {
+        if (is.getItem() instanceof ItemBaseWirelessTerminal) {
+            NBTTagCompound data = Platform.openNbtData(is);
+            return data.hasKey(restockItems) && data.getBoolean(restockItems);
+        }
+        return false;
+    }
+
+    public static void toggleRestock(ItemStack is) {
+        if (is.getItem() instanceof ItemWirelessUltraTerminal) {
+            NBTTagCompound data = Platform.openNbtData(is);
+            data.setBoolean(restockItems, !data.getBoolean(restockItems));
+        }
+    }
+
+    public static boolean hasInfinityBoosterCard(ItemStack is) {
+        if (is.getItem() instanceof ItemBaseWirelessTerminal) {
+            NBTTagCompound data = Platform.openNbtData(is);
+            return data.hasKey(infinityBoosterCard) && data.getBoolean(infinityBoosterCard);
+        }
+        return false;
+    }
+
+    public static IGridNode getWirelessGrid(ItemStack is) {
+        if (is.getItem() instanceof ToolWirelessTerminal wirelessTerminal) {
+            String key = wirelessTerminal.getEncryptionKey(is);
+            IGridHost securityTerminal = (IGridHost) AEApi.instance().registries().locatable()
+                    .getLocatableBy(Long.parseLong(key));
+            if (securityTerminal == null) return null;
+            return securityTerminal.getGridNode(ForgeDirection.UNKNOWN);
+        }
+        return null;
+    }
+
+    public static IMEInventoryHandler<?> getWirelessInv(ItemStack is, EntityPlayer player, StorageChannel channel) {
+        if (Platform.isClient()) return new NullInventory<>();
+
+        IGridNode gridNode = getWirelessGrid(is);
+        if (gridNode == null) return null;
+
+        IGrid grid = gridNode.getGrid();
+        if (grid == null) return null;
+
+        boolean inRange = AEApi.instance().registries().wireless().checkRange(is, player);
+        if (inRange) {
+            IStorageGrid gridCache = grid.getCache(IStorageGrid.class);
+            if (gridCache != null) {
+                if (channel == StorageChannel.FLUIDS) {
+                    return gridCache.getFluidInventory();
+                } else {
+                    return gridCache.getItemInventory();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public static ImmutablePair<Integer, ItemStack> getUltraWirelessTerm(EntityPlayer player) {
+        final ImmutablePair<Integer, ItemStack> baublesTerminal = getBaublesUltraWirelessTerm(player);
+        return baublesTerminal != null ? baublesTerminal : getInventoryUltraWirelessTerm(player);
+    }
+
+    private static ImmutablePair<Integer, ItemStack> getInventoryUltraWirelessTerm(EntityPlayer player) {
+        final int invSize = player.inventory.getSizeInventory();
+        for (int i = 0; i < invSize; ++i) {
+            ItemStack is = player.inventory.getStackInSlot(i);
+            if (is != null && is.getItem() instanceof ItemWirelessUltraTerminal) {
+                return new ImmutablePair<>(i, is);
+            }
+        }
+
+        return null;
+    }
+
+    private static ImmutablePair<Integer, ItemStack> getBaublesUltraWirelessTerm(EntityPlayer player) {
+        if (ModAndClassUtil.BAUBLES) {
+            final IInventory handler = BaublesApi.getBaubles(player);
+            if (handler != null) {
+                final int invSize = handler.getSizeInventory();
+                for (int i = 0; i < invSize; ++i) {
+                    ItemStack is = handler.getStackInSlot(i);
+                    if (is != null && is.getItem() instanceof ItemWirelessUltraTerminal) {
+                        return new ImmutablePair<>(i + Platform.baublesSlotsOffset, is);
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public static int findItemInPlayerInvSlot(EntityPlayer player, ItemStack itemStack) {
+        for (int i = 0; i < player.inventory.mainInventory.length; i++) {
+            if (player.inventory.mainInventory[i] != null && player.inventory.mainInventory[i] == itemStack) return i;
+        }
+        return -1;
+    }
+
+    public static boolean hasPermission(EntityPlayer player, SecurityPermissions permission, IGrid grid) {
+        return grid == null || hasPermission(player, permission, (ISecurityGrid) grid.getCache(ISecurityGrid.class));
+    }
+
+    public static boolean hasPermission(EntityPlayer player, SecurityPermissions permission, IGridHost host) {
+        return hasPermission(player, permission, host, ForgeDirection.UNKNOWN);
+    }
+
+    public static boolean hasPermission(EntityPlayer player, SecurityPermissions permission, IGridHost host,
+            ForgeDirection side) {
+        return host == null || hasPermission(player, permission, host.getGridNode(side));
+    }
+
+    public static boolean hasPermission(EntityPlayer player, SecurityPermissions permission, IGridNode host) {
+        return host == null || hasPermission(player, permission, host.getGrid());
+    }
+
+    public static boolean hasPermission(EntityPlayer player, SecurityPermissions permission, IPart part) {
+        return part == null || hasPermission(player, permission, part.getGridNode());
+    }
+
+    public static boolean hasPermission(EntityPlayer player, SecurityPermissions permission,
+            ISecurityGrid securityGrid) {
+        return player == null || permission == null
+                || securityGrid == null
+                || securityGrid.hasPermission(player, permission);
+    }
+
+    public static ItemStack copyStackWithSize(ItemStack itemStack, int size) {
+        if (size == 0 || itemStack == null) return null;
+        ItemStack copy = itemStack.copy();
+        copy.stackSize = size;
+        return copy;
+    }
+
+    public static AEFluidStack getAEFluidFromItem(ItemStack stack) {
+        if (stack != null) {
+            FluidStack fluid = getFluidFromItem(stack);
+
+            if (fluid != null) {
+                return AEFluidStack.create(fluid.copy());
+            }
+        }
+        return null;
+    }
+
+    public static FluidStack getFluidFromItem(ItemStack stack) {
+        if (stack == null) return null;
+
+        FluidStack fluid = null;
+
+        if (stack.getItem() instanceof IFluidContainerItem) {
+            fluid = ((IFluidContainerItem) stack.getItem()).getFluid(stack);
+        } else if (FluidContainerRegistry.isContainer(stack)) {
+            fluid = FluidContainerRegistry.getFluidForFilledItem(stack);
+        } else if (stack.getItem() instanceof ItemFluidPacket) {
+            fluid = ItemFluidPacket.getFluidStack(stack);
+        } else if (stack.getItem() instanceof ItemFluidDrop) {
+            fluid = ItemFluidDrop.getFluidStack(Util.copyStackWithSize(stack, 1));
+        }
+
+        if (fluid == null) {
+            fluid = StackInfo.getFluid(Util.copyStackWithSize(stack, 1));
+        }
+
+        if (fluid != null) {
+            FluidStack fluid0 = fluid.copy();
+            fluid0.amount *= stack.stackSize;
+            return fluid0;
+        }
+        return null;
+    }
+
+    public static boolean isFluidPacket(ItemStack stack) {
+        return stack != null && stack.getItem() instanceof ItemFluidPacket;
+    }
+
+    public static String getFluidModID(Fluid fluid) {
+        String name = FluidRegistry.getDefaultFluidName(fluid);
+        try {
+            return name.split(":")[0];
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public static ModContainer getFluidMod(Fluid fluid) {
+        return GameData.findModOwner(FluidRegistry.getDefaultFluidName(fluid));
+    }
+
+    public static int getFluidID(Fluid fluid) {
+        return GameData.getBlockRegistry().getId(fluid.getBlock());
+    }
+
+    public static String getFluidModName(Fluid fluid) {
+        try {
+            ModContainer mod = getFluidMod(fluid);
+            return mod == null ? "Minecraft" : mod.getName();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    public static void writeItemStackToNBT(ItemStack itemStack, NBTTagCompound tag) {
+        itemStack.writeToNBT(tag);
+        tag.setInteger("Count", itemStack.stackSize);
+    }
+
+    public static ItemStack loadItemStackFromNBT(NBTTagCompound tag) {
+        ItemStack itemStack = ItemStack.loadItemStackFromNBT(tag);
+        if (itemStack == null) return null;
+        itemStack.stackSize = tag.getInteger("Count");
+        return itemStack;
+    }
+
+    public static IAEFluidStack loadFluidStackFromNBT(final NBTTagCompound i) {
+        final FluidStack t = FluidRegistry.getFluidStack(i.getString("FluidName"), 1);
+        if (t == null) return null;
+        final AEFluidStack fluid = AEFluidStack.create(t);
+        fluid.setStackSize(i.getLong("Cnt"));
+        fluid.setCountRequestable(i.getLong("Req"));
+        fluid.setCraftable(i.getBoolean("Craft"));
+        return fluid;
+    }
+
+    public static void mirrorFluidToPacket(IInventory packet, IAEFluidTank fluidTank) {
+        for (int i = 0; i < fluidTank.getSlots(); i++) {
+            IAEFluidStack fluid = fluidTank.getFluidInSlot(i);
+            if (fluid == null) {
+                packet.setInventorySlotContents(i, null);
+            } else {
+                packet.setInventorySlotContents(i, ItemFluidPacket.newDisplayStack(fluid.getFluidStack()));
+            }
+        }
+    }
+
+    public static FluidStack getFluidFromVirtual(ItemStack virtual) {
+        if (virtual == null) {
+            return null;
+        }
+        if (virtual.getItem() instanceof ItemFluidPacket) {
+            return ItemFluidPacket.getFluidStack(virtual);
+        } else if (virtual.getItem() instanceof ItemFluidDrop) {
+            return ItemFluidDrop.getFluidStack(virtual);
+        }
+        return null;
+    }
+
+    public static void writeFluidMapToBuf(Map<Integer, IAEFluidStack> list, ByteBuf buf) throws IOException {
+        buf.writeInt(list.size());
+        for (Map.Entry<Integer, IAEFluidStack> fs : list.entrySet()) {
+            buf.writeInt(fs.getKey());
+            if (fs.getValue() == null) buf.writeBoolean(false);
+            else {
+                buf.writeBoolean(true);
+                fs.getValue().writeToPacket(buf);
+            }
+        }
+    }
+
+    public static void readFluidMapFromBuf(Map<Integer, IAEFluidStack> list, ByteBuf buf) throws IOException {
+        int size = buf.readInt();
+        for (int i = 0; i < size; i++) {
+            int id = buf.readInt();
+            boolean isNull = buf.readBoolean();
+            if (!isNull) list.put(id, null);
+            else {
+                IAEFluidStack fluid = AEFluidStack.loadFluidStackFromPacket(buf);
+                list.put(id, fluid);
+            }
+        }
+    }
+
+    public static void writeAEStackMapToBuf(Map<Integer, IAEStack<?>> list, ByteBuf buf) throws IOException {
+        buf.writeInt(list.size());
+        for (Map.Entry<Integer, IAEStack<?>> as : list.entrySet()) {
+            buf.writeInt(as.getKey());
+            if (as.getValue() == null) buf.writeBoolean(false);
+            else {
+                buf.writeBoolean(true);
+                as.getValue().writeToPacket(buf);
+            }
+        }
+    }
+
+    public static void readAEStackMapFromBuf(Map<Integer, IAEStack<?>> list, ByteBuf buf) throws IOException {
+        int size = buf.readInt();
+        for (int i = 0; i < size; i++) {
+            int id = buf.readInt();
+            boolean isNull = buf.readBoolean();
+            if (!isNull) list.put(id, null);
+            else {
+                IAEStack<?> as;
+                if (id > 99) {
+                    as = AEItemStack.loadItemStackFromPacket(buf);
+                } else {
+                    as = AEFluidStack.loadFluidStackFromPacket(buf);
+                }
+                list.put(id, as);
+            }
+        }
+    }
+
+    public static class GuiHelper {
+
+        public enum GuiType {
+            TILE,
+            ITEM
+        }
+
+        public enum InvType {
+            PLAYER_INV,
+            PLAYER_BAUBLES
+        }
+
+        private static final int value = 1 << 30;
+
+        public static int encodeType(int y, GuiType type) {
+            if (Math.abs(y) > (1 << 28)) {
+                throw new IllegalArgumentException("out of range");
+            }
+            return value | (type.ordinal() << 29) | y;
+        }
+
+        public static ImmutablePair<GuiType, Integer> decodeType(int y) {
+            if (Math.abs(y) > (1 << 28)) {
+                return new ImmutablePair<>(GuiType.values()[y >> 29 & 1], y - (3 << 29 & y));
+            } else {
+                return new ImmutablePair<>(GuiType.TILE, y);
+            }
+        }
+    }
+
+    public static int clamp(int value, int min, int max) {
+        return value < min ? min : (Math.min(value, max));
+    }
+
+    public static class FluidUtil {
+
+        private static final ItemStack glassBottle = new ItemStack(glass_bottle, 1);
+
+        public static ItemStack getPotion(FluidStack fs) {
+            if (fs == null) return null;
+            MutablePair<Integer, ItemStack> fillStack = Util.FluidUtil.fillStack(glassBottle, fs);
+            if (fillStack != null && fillStack.getRight() != null
+                    && fillStack.getRight().getItem() instanceof ItemPotion) {
+                return fillStack.right;
+            }
+            return null;
+        }
+
+        public static final ItemStack water_bucket = new ItemStack(Items.water_bucket, 1);
+
+        public static IAEFluidStack createAEFluidStack(Fluid fluid) {
+            return createAEFluidStack(new FluidStack(fluid, FluidContainerRegistry.BUCKET_VOLUME));
+        }
+
+        public static IAEFluidStack createAEFluidStack(Fluid fluid, long amount) {
+            return createAEFluidStack(fluid.getID(), amount);
+        }
+
+        public static IAEFluidStack createAEFluidStack(FluidStack fluid) {
+            return AEApi.instance().storage().createFluidStack(fluid);
+        }
+
+        public static IAEFluidStack createAEFluidStack(int fluidId, long amount) {
+            return createAEFluidStack(new FluidStack(FluidRegistry.getFluid(fluidId), 1)).setStackSize(amount);
+        }
+
+        public static boolean isEmpty(ItemStack itemStack) {
+            if (itemStack == null) return false;
+            Item item = itemStack.getItem();
+            if (item instanceof IFluidContainerItem) {
+                FluidStack content = ((IFluidContainerItem) item).getFluid(itemStack);
+                return content == null || content.amount <= 0;
+            }
+            return FluidContainerRegistry.isEmptyContainer(itemStack);
+        }
+
+        public static boolean isFilled(ItemStack itemStack) {
+            if (itemStack == null) return false;
+            Item item = itemStack.getItem();
+            if (item instanceof IFluidContainerItem) {
+                FluidStack content = ((IFluidContainerItem) item).getFluid(itemStack);
+                return content != null && content.amount > 0;
+            }
+            return FluidContainerRegistry.isFilledContainer(itemStack);
+        }
+
+        public static boolean isFluidContainer(ItemStack itemStack) {
+            if (itemStack == null) return false;
+            Item item = itemStack.getItem();
+            return item instanceof IFluidContainerItem || FluidContainerRegistry.isContainer(itemStack);
+        }
+
+        public static FluidStack getFluidFromContainer(ItemStack itemStack) {
+            if (itemStack == null) return null;
+
+            ItemStack container = itemStack.copy();
+            Item item = container.getItem();
+            if (item instanceof IFluidContainerItem) {
+                return ((IFluidContainerItem) item).getFluid(container);
+            } else {
+                return FluidContainerRegistry.getFluidForFilledItem(container);
+            }
+        }
+
+        public static int getCapacity(ItemStack itemStack, Fluid fluid) {
+            if (itemStack == null) return 0;
+            Item item = itemStack.getItem();
+            if (item instanceof IFluidContainerItem fluidContainerItem) {
+                int capacity = fluidContainerItem.getCapacity(itemStack);
+                FluidStack existing = fluidContainerItem.getFluid(itemStack);
+                if (existing != null) {
+                    if (!existing.getFluid().equals(fluid)) {
+                        return 0;
+                    }
+                    capacity -= existing.amount;
+                }
+                return capacity;
+            } else if (FluidContainerRegistry.isContainer(itemStack)) {
+                return FluidContainerRegistry.getContainerCapacity(new FluidStack(fluid, Integer.MAX_VALUE), itemStack);
+            }
+            return 0;
+        }
+
+        public static ItemStack clearFluid(ItemStack itemStack) {
+            if (itemStack == null) return null;
+            Item item = itemStack.getItem();
+            if (item instanceof IFluidContainerItem) {
+                ((IFluidContainerItem) item)
+                        .drain(itemStack, ((IFluidContainerItem) item).getFluid(itemStack).amount, true);
+                return itemStack;
+            } else if (FluidContainerRegistry.isContainer(itemStack)) {
+                return FluidContainerRegistry.drainFluidContainer(itemStack);
+            }
+            return null;
+        }
+
+        public static ItemStack setFluidContainerAmount(ItemStack itemStack, int amount) {
+            FluidStack fs = getFluidFromContainer(itemStack);
+            if (fs == null) return null;
+            fs.amount = amount;
+            ItemStack is = itemStack.copy();
+            is.stackSize = 1;
+            ItemStack emptyContainer = clearFluid(is);
+            if (emptyContainer == null) return null;
+            MutablePair<Integer, ItemStack> result = fillStack(emptyContainer, fs);
+            if (result != null) {
+                result.right.stackSize = itemStack.stackSize;
+                return result.right;
+            }
+            return null;
+        }
+
+        public static MutablePair<Integer, ItemStack> drainStack(ItemStack itemStack, FluidStack fluid) {
+            if (itemStack == null) return null;
+            Item item = itemStack.getItem();
+            if (item instanceof IFluidContainerItem) {
+                FluidStack drained = ((IFluidContainerItem) item).drain(itemStack, fluid.amount, true);
+                int amountDrained = drained != null && drained.getFluid() == fluid.getFluid() ? drained.amount : 0;
+                return new MutablePair<>(amountDrained, itemStack);
+            } else if (FluidContainerRegistry.isContainer(itemStack)) {
+                FluidStack content = FluidContainerRegistry.getFluidForFilledItem(itemStack);
+                int amountDrained = content != null && content.getFluid() == fluid.getFluid() ? content.amount : 0;
+                return new MutablePair<>(amountDrained, FluidContainerRegistry.drainFluidContainer(itemStack));
+            }
+
+            return null;
+        }
+
+        public static MutablePair<Integer, ItemStack> fillStack(ItemStack itemStack, FluidStack fluid) {
+            if (itemStack == null || itemStack.stackSize != 1) return null;
+            Item item = itemStack.getItem();
+            // If it's a fluid container item instance
+            if (item instanceof IFluidContainerItem) {
+                // Call the fill method on it.
+                int filled = ((IFluidContainerItem) item).fill(itemStack, fluid, true);
+
+                // Return the filled itemstack.
+                return new MutablePair<>(filled, itemStack);
+            } else if (FluidContainerRegistry.isContainer(itemStack)) {
+                // Fill it through the fluidcontainer registry.
+                ItemStack filledContainer = FluidContainerRegistry.fillFluidContainer(fluid, itemStack);
+                // get the filled fluidstack.
+                FluidStack filled = FluidContainerRegistry.getFluidForFilledItem(filledContainer);
+                // Return filled container and fill amount.
+                return new MutablePair<>(filled != null ? filled.amount : 0, filledContainer);
+            }
+            return null;
+        }
+    }
+
+    public static class DimensionalCoordSide extends DimensionalCoord {
+
+        private ForgeDirection side = ForgeDirection.UNKNOWN;
+        private final String name;
+
+        public DimensionalCoordSide(final int _x, final int _y, final int _z, final int _dim, ForgeDirection side,
+                String name) {
+            super(_x, _y, _z, _dim);
+            this.side = side;
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public ForgeDirection getSide() {
+            return this.side;
+        }
+
+        @Override
+        public void writeToNBT(NBTTagCompound data) {
+            data.setInteger("side", this.side.ordinal());
+            data.setString("name", this.name);
+            super.writeToNBT(data);
+        }
+
+        public static DimensionalCoordSide readFromNBT(final NBTTagCompound data) {
+            return new DimensionalCoordSide(
+                    data.getInteger("x"),
+                    data.getInteger("y"),
+                    data.getInteger("z"),
+                    data.getInteger("dim"),
+                    ForgeDirection.getOrientation(data.getInteger("side")),
+                    data.getString("name"));
+        }
+
+        public static boolean hasEnergyCard(ItemStack is) {
+            if (is.getItem() instanceof ItemBaseWirelessTerminal) {
+                NBTTagCompound data = Platform.openNbtData(is);
+                return (data.hasKey(infinityEnergyCard) && data.getBoolean(infinityEnergyCard));
+            }
+            return false;
+        }
+
+    }
+}
