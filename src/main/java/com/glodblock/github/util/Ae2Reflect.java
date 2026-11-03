@@ -1,0 +1,166 @@
+package com.glodblock.github.util;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+
+import net.minecraftforge.fluids.IFluidHandler;
+
+import appeng.api.implementations.IUpgradeableHost;
+import appeng.api.networking.IGrid;
+import appeng.api.networking.crafting.ICraftingJob;
+import appeng.api.storage.IMEInventory;
+import appeng.container.implementations.ContainerCraftConfirm;
+import appeng.container.implementations.ContainerUpgradeable;
+import appeng.container.implementations.CraftingCPURecord;
+import appeng.helpers.DualityInterface;
+import appeng.me.cluster.implementations.CraftingCPUCluster;
+import appeng.me.helpers.AENetworkProxy;
+import appeng.me.storage.MEInventoryHandler;
+import appeng.me.storage.MEPassThrough;
+import appeng.parts.p2p.PartP2PLiquids;
+import appeng.util.inv.ItemSlot;
+import appeng.util.prioitylist.IPartitionList;
+
+public class Ae2Reflect {
+
+    private static final Field fInventory_containerUpgrade;
+    private static final Field fAEPass_internal;
+    private static final Field fAEInv_partitionList;
+    private static final Field fCPU_myName;
+    private static final Field fContainerUpgradeable_upgradeable;
+    private static final Field fDualInterface_gridProxy;
+    private static final Field fCraftConfirm_result;
+    private static final Method mItemSlot_setExtractable;
+    private static final Method mCPU_getGrid;
+    private static final Method mP2PLiquids_getTarget;
+    private static final Method mCraftConfirm_getGrid;
+
+    static {
+        try {
+            fInventory_containerUpgrade = reflectField(ContainerUpgradeable.class, "upgradeable");
+            fAEPass_internal = reflectField(MEPassThrough.class, "internal");
+            fAEInv_partitionList = reflectField(MEInventoryHandler.class, "myPartitionList");
+            fCPU_myName = Ae2Reflect.reflectField(CraftingCPURecord.class, "myName");
+            fContainerUpgradeable_upgradeable = Ae2Reflect.reflectField(ContainerUpgradeable.class, "upgradeable");
+            mItemSlot_setExtractable = reflectMethod(ItemSlot.class, "setExtractable", boolean.class);
+            fDualInterface_gridProxy = reflectField(DualityInterface.class, "gridProxy");
+            mCPU_getGrid = reflectMethod(CraftingCPUCluster.class, "getGrid");
+            mP2PLiquids_getTarget = reflectMethod(PartP2PLiquids.class, "getTarget");
+            fCraftConfirm_result = reflectField(ContainerCraftConfirm.class, "result");
+            mCraftConfirm_getGrid = reflectMethod(ContainerCraftConfirm.class, "getGrid");
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to initialize AE2 reflection hacks!", e);
+        }
+    }
+
+    public static Method reflectMethod(Class<?> owner, String name, Class<?>... paramTypes)
+            throws NoSuchMethodException {
+        Method m = owner.getDeclaredMethod(name, paramTypes);
+        m.setAccessible(true);
+        return m;
+    }
+
+    public static Field reflectField(Class<?> owner, String... names) throws NoSuchFieldException {
+        Field f = null;
+        for (String name : names) {
+            try {
+                f = owner.getDeclaredField(name);
+                // IntelliJ misses that the exception is ignored and thus "f" can indeed be null.
+                // noinspection ConstantValue
+                if (f != null) break;
+            } catch (NoSuchFieldException ignore) {}
+        }
+        if (f == null) throw new NoSuchFieldException("Can't find field from " + Arrays.toString(names));
+        f.setAccessible(true);
+        return f;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T readField(Object owner, Field field) {
+        try {
+            return (T) field.get(owner);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to read field: " + field);
+        }
+    }
+
+    public static void writeField(Object owner, Field field, Object value) {
+        try {
+            field.set(owner, value);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to write field: " + field);
+        }
+    }
+
+    @Deprecated
+    public static IPartitionList<?> getPartitionList(MEInventoryHandler<?> me) {
+        return Ae2Reflect.readField(me, fAEInv_partitionList);
+    }
+
+    @Deprecated
+    public static IMEInventory<?> getInternal(MEPassThrough<?> me) {
+        return Ae2Reflect.readField(me, fAEPass_internal);
+    }
+
+    @Deprecated
+    public static void setItemSlotExtractable(ItemSlot slot, boolean extractable) {
+        try {
+            mItemSlot_setExtractable.invoke(slot, extractable);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to invoke method: " + mItemSlot_setExtractable, e);
+        }
+    }
+
+    @Deprecated
+    public static String getName(CraftingCPURecord cpu) {
+        return Ae2Reflect.readField(cpu, fCPU_myName);
+    }
+
+    @Deprecated
+    public static IUpgradeableHost getUpgradeList(ContainerUpgradeable container) {
+        return Ae2Reflect.readField(container, fInventory_containerUpgrade);
+    }
+
+    @Deprecated
+    public static IGrid getGrid(CraftingCPUCluster cpu) {
+        try {
+            return (IGrid) mCPU_getGrid.invoke(cpu);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to invoke method: " + mCPU_getGrid, e);
+        }
+    }
+
+    @Deprecated
+    public static IGrid getGrid(ContainerCraftConfirm ccc) {
+        try {
+            return (IGrid) mCraftConfirm_getGrid.invoke(ccc);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to invoke method: " + mCPU_getGrid, e);
+        }
+    }
+
+    @Deprecated
+    public static ICraftingJob getResult(ContainerCraftConfirm ccc) {
+        return Ae2Reflect.readField(ccc, fCraftConfirm_result);
+    }
+
+    @Deprecated
+    public static IUpgradeableHost getUpgradeableHost(ContainerUpgradeable owner) {
+        return Ae2Reflect.readField(owner, fContainerUpgradeable_upgradeable);
+    }
+
+    @Deprecated
+    public static AENetworkProxy getInterfaceProxy(DualityInterface owner) {
+        return Ae2Reflect.readField(owner, fDualInterface_gridProxy);
+    }
+
+    @Deprecated
+    public static IFluidHandler getP2PLiquidTarget(PartP2PLiquids p2p) {
+        try {
+            return (IFluidHandler) mP2PLiquids_getTarget.invoke(p2p);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to invoke method: " + mP2PLiquids_getTarget, e);
+        }
+    }
+}

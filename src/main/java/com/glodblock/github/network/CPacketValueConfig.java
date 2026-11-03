@@ -1,0 +1,120 @@
+package com.glodblock.github.network;
+
+import static com.glodblock.github.util.Util.toggleRestock;
+
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.Container;
+import net.minecraft.inventory.ContainerPlayer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.StatCollector;
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
+
+import com.glodblock.github.util.NameConst;
+import com.glodblock.github.util.Util;
+
+import appeng.api.AEApi;
+import appeng.api.config.Actionable;
+import appeng.api.networking.IGrid;
+import appeng.api.networking.IGridNode;
+import appeng.api.networking.security.PlayerSource;
+import appeng.api.networking.storage.IStorageGrid;
+import appeng.api.storage.IMEMonitor;
+import appeng.api.storage.data.IAEItemStack;
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import io.netty.buffer.ByteBuf;
+
+public class CPacketValueConfig implements IMessage {
+
+    private long amount;
+    private int valueIndex;
+
+    public CPacketValueConfig() {}
+
+    public CPacketValueConfig(long amount, int valueIndex) {
+        this.amount = amount;
+        this.valueIndex = valueIndex;
+    }
+
+    @Override
+    public void fromBytes(ByteBuf buf) {
+        this.amount = buf.readLong();
+        this.valueIndex = buf.readInt();
+    }
+
+    @Override
+    public void toBytes(ByteBuf buf) {
+        buf.writeLong(amount);
+        buf.writeInt(valueIndex);
+    }
+
+    public static class Handler implements IMessageHandler<CPacketValueConfig, IMessage> {
+
+        @Override
+        public IMessage onMessage(CPacketValueConfig message, MessageContext ctx) {
+            EntityPlayer player = ctx.getServerHandler().playerEntity;
+            Container container = player.openContainer;
+            if (container != null) {
+                if (container instanceof ContainerPlayer) {
+                    ImmutablePair<Integer, ItemStack> result = Util.getUltraWirelessTerm(player);
+                    if (result != null) {
+                        final ItemStack wirelessTerm = result.getRight();
+                        if (message.valueIndex == 1) {
+                            toggleRestock(wirelessTerm);
+                            player.addChatMessage(
+                                    new ChatComponentText(
+                                            StatCollector.translateToLocal(
+                                                    Util.isRestock(wirelessTerm)
+                                                            ? NameConst.TT_ULTRA_TERMINAL_RESTOCK_ON
+                                                            : NameConst.TT_ULTRA_TERMINAL_RESTOCK_OFF)));
+                        } else {
+                            IGridNode gridNode = Util.getWirelessGrid(wirelessTerm);
+                            boolean inRange = AEApi.instance().registries().wireless().checkRange(wirelessTerm, player);
+
+                            if (gridNode != null && Util.isRestock(wirelessTerm) && inRange) {
+                                restockItems(wirelessTerm, gridNode, result.getLeft(), player);
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        @SuppressWarnings("unchecked")
+        private void restockItems(ItemStack terminal, IGridNode gridNode, int slot, EntityPlayer player) {
+            IGrid targetGrid = gridNode.getGrid();
+            IMEMonitor<IAEItemStack> itemStorage = null;
+
+            if (targetGrid != null) {
+                IStorageGrid sg = targetGrid.getCache(IStorageGrid.class);
+                if (sg != null) {
+                    itemStorage = sg.getItemInventory();
+                }
+            }
+
+            if (itemStorage != null) {
+                for (int i = 0; i < 9; i++) {
+                    ItemStack is = player.inventory.mainInventory[i];
+                    if (is != null) {
+                        int maxSize = is.getMaxStackSize();
+                        if (is.stackSize < maxSize) {
+                            int fillSize = maxSize - is.stackSize;
+                            IAEItemStack ias = AEApi.instance().storage().createItemStack(is);
+                            ias.setStackSize(fillSize);
+
+                            IAEItemStack extractedItem = itemStorage
+                                    .extractItems(ias, Actionable.MODULATE, new PlayerSource(player, null));
+                            if (extractedItem != null) {
+                                player.inventory.addItemStackToInventory(extractedItem.getItemStack());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
