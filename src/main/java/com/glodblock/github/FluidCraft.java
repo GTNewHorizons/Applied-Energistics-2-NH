@@ -14,6 +14,7 @@ import com.glodblock.github.util.FluidCellHandler;
 import com.glodblock.github.util.ModAndClassUtil;
 
 import appeng.api.AEApi;
+import appeng.core.BuildTags;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
@@ -26,11 +27,11 @@ import cpw.mods.fml.common.network.NetworkRegistry;
         modid = FluidCraft.MODID,
         version = FluidCraft.VERSION,
         name = FluidCraft.MODNAME,
-        dependencies = "required-after:appliedenergistics2@[rv3-beta-238,);after:waila;after:thaumicenergistics;after:ae2wct")
+        dependencies = "required-after:appliedenergistics2;after:waila;after:thaumicenergistics;after:ae2wct")
 public class FluidCraft {
 
     public static final String MODID = "ae2fc";
-    public static final String VERSION = FCTags.VERSION;
+    public static final String VERSION = BuildTags.VERSION;
     public static final String MODNAME = "AE2 Fluid Crafting";
 
     @Mod.Instance(MODID)
