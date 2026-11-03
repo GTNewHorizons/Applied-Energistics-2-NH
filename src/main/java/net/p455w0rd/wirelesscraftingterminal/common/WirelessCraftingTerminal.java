@@ -43,7 +43,7 @@ import cpw.mods.fml.common.network.NetworkRegistry;
                 + net.minecraftforge.common.ForgeVersion.buildVersion
                 + ",);"
                 + "required-after:"
-                + "appliedenergistics2@[rv3-beta-754,);after:"
+                + "appliedenergistics2;after:"
                 + "NotEnoughItems;")
 public class WirelessCraftingTerminal {
 

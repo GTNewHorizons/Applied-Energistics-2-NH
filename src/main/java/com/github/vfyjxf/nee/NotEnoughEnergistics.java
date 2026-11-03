@@ -36,7 +36,7 @@ public class NotEnoughEnergistics {
     public static final String VERSION = BuildTags.VERSION;
     public static final String DEPENDENCIES = "required-after:" + "NotEnoughItems;required-after:"
             + "appliedenergistics2;after:"
-            + "ae2wct@[1.12.10,);after:"
+            + "ae2wct;after:"
             + "ae2fc;";
     public static final String GUI_FACTORY = "com.github.vfyjxf.nee.config.NEEConfigGuiFactory";
     public static final Logger logger = LogManager.getLogger("NotEnoughEnergistics");
