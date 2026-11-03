@@ -584,7 +584,7 @@ class GuiAdvancedMemoryCard(msg: S2COpenGui) : GuiScreen(), TextureBound {
         return super.keyTyped(char, key)
     }
 
-    public override fun drawHoveringText(textLines: List<Any?>?, x: Int, y: Int, font: FontRenderer?) {
+    public override fun drawHoveringText(textLines: List<String>?, x: Int, y: Int, font: FontRenderer?) {
         super.drawHoveringText(textLines, x, y, font)
     }
 
