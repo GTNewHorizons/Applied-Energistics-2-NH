@@ -1,0 +1,194 @@
+package net.p455w0rd.wirelesscraftingterminal.integration.modules;
+
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.inventory.GuiContainer;
+import net.minecraft.client.renderer.entity.RenderItem;
+import net.minecraft.inventory.Slot;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.p455w0rd.wirelesscraftingterminal.client.gui.GuiWirelessCraftingTerminal;
+import net.p455w0rd.wirelesscraftingterminal.common.container.ContainerWirelessCraftingTerminal;
+import net.p455w0rd.wirelesscraftingterminal.core.sync.network.NetworkHandler;
+import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketNEIRecipe;
+import net.p455w0rd.wirelesscraftingterminal.helpers.Reflected;
+import net.p455w0rd.wirelesscraftingterminal.integration.IIntegrationModule;
+import net.p455w0rd.wirelesscraftingterminal.integration.IntegrationHelper;
+import net.p455w0rd.wirelesscraftingterminal.integration.abstraction.INEI;
+import net.p455w0rd.wirelesscraftingterminal.integration.modules.NEIHelpers.NEIAEShapedRecipeHandler;
+
+import appeng.container.slot.SlotCraftingMatrix;
+import appeng.container.slot.SlotFakeCraftingMatrix;
+import appeng.integration.modules.NEIHelpers.NEIAEShapelessRecipeHandler;
+import appeng.util.Platform;
+import codechicken.nei.PositionedStack;
+import codechicken.nei.api.API;
+import codechicken.nei.api.IOverlayHandler;
+import codechicken.nei.api.IStackPositioner;
+import codechicken.nei.guihook.GuiContainerManager;
+import codechicken.nei.guihook.IContainerTooltipHandler;
+import codechicken.nei.recipe.IRecipeHandler;
+
+public class NEI implements INEI, IContainerTooltipHandler, IIntegrationModule {
+
+    @Reflected
+    public static NEI instance;
+
+    @SuppressWarnings("unused")
+    private final Class<?> apiClass;
+
+    @Reflected
+    public NEI() throws ClassNotFoundException {
+        IntegrationHelper.testClassExistence(this, codechicken.nei.api.API.class);
+        IntegrationHelper.testClassExistence(this, codechicken.nei.api.IStackPositioner.class);
+        IntegrationHelper.testClassExistence(this, codechicken.nei.guihook.GuiContainerManager.class);
+        IntegrationHelper.testClassExistence(this, codechicken.nei.PositionedStack.class);
+        IntegrationHelper.testClassExistence(this, codechicken.nei.recipe.IRecipeHandler.class);
+        this.apiClass = Class.forName("codechicken.nei.api.API");
+    }
+
+    @Override
+    public void init() throws Throwable {
+        // large stack tooltips
+        GuiContainerManager.addTooltipHandler(this);
+
+        // wireless crafting terminal...
+
+        API.registerGuiOverlay(
+                net.p455w0rd.wirelesscraftingterminal.client.gui.GuiWirelessCraftingTerminal.class,
+                "crafting",
+                new WCTSlotPositioner());
+        API.registerGuiOverlayHandler(
+                net.p455w0rd.wirelesscraftingterminal.client.gui.GuiWirelessCraftingTerminal.class,
+                new WCTOverlayHandler(),
+                "crafting");
+        API.registerRecipeHandler(new NEIAEShapedRecipeHandler());
+        API.registerRecipeHandler(new NEIAEShapelessRecipeHandler());
+    }
+
+    @Override
+    public void postInit() {}
+
+    @Override
+    public void drawSlot(final Slot s) {
+        if (s == null) {
+            return;
+        }
+
+        final ItemStack stack = s.getStack();
+
+        if (stack == null) {
+            return;
+        }
+
+        final Minecraft mc = Minecraft.getMinecraft();
+        final FontRenderer fontRenderer = mc.fontRenderer;
+        final int x = s.xDisplayPosition;
+        final int y = s.yDisplayPosition;
+
+        GuiContainerManager.drawItems.renderItemAndEffectIntoGUI(fontRenderer, mc.getTextureManager(), stack, x, y);
+        GuiContainerManager.drawItems.renderItemOverlayIntoGUI(
+                fontRenderer,
+                mc.getTextureManager(),
+                stack,
+                x,
+                y,
+                String.valueOf(stack.stackSize));
+    }
+
+    @Override
+    public RenderItem setItemRender(final RenderItem renderItem) {
+        try {
+            final RenderItem ri = GuiContainerManager.drawItems;
+            GuiContainerManager.drawItems = renderItem;
+            return ri;
+        } catch (final Throwable t) {
+            throw new IllegalStateException("Invalid version of NEI, please update", t);
+        }
+    }
+
+    static final int NEI_REGULAR_SLOT_OFFSET_X = 25;
+    static final int NEI_REGULAR_SLOT_OFFSET_Y = 6;
+
+    public class WCTSlotPositioner implements IStackPositioner {
+
+        @Override
+        public ArrayList<PositionedStack> positionStacks(final ArrayList<PositionedStack> stacks) {
+            // Adjust the position of the ghost stacks to match the crafting
+            // grid slots
+
+            for (final PositionedStack positionedStack : stacks) {
+                if (positionedStack.items != null && positionedStack.items.length > 0) {
+                    positionedStack.relx += ContainerWirelessCraftingTerminal.CRAFTING_SLOT_X_POS
+                            - NEI.NEI_REGULAR_SLOT_OFFSET_X;
+                    positionedStack.rely += ContainerWirelessCraftingTerminal.CRAFTING_SLOT_Y_POS
+                            - NEI.NEI_REGULAR_SLOT_OFFSET_Y;
+                }
+            }
+            return stacks;
+        }
+    }
+
+    public class WCTOverlayHandler implements IOverlayHandler {
+
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        @Override
+        public void overlayRecipe(final GuiContainer gui, final IRecipeHandler recipe, final int recipeIndex,
+                final boolean shift) {
+            try {
+                final List ingredients = recipe.getIngredientStacks(recipeIndex);
+                this.overlayRecipe(gui, ingredients, shift);
+            } catch (final Exception ignored) {} catch (final Error ignored) {}
+        }
+
+        @SuppressWarnings("unchecked")
+        private void overlayRecipe(final GuiContainer gui, final List<PositionedStack> ingredients,
+                final boolean shift) {
+            try {
+                final NBTTagCompound recipe = new NBTTagCompound();
+
+                if (gui instanceof GuiWirelessCraftingTerminal) {
+                    for (final PositionedStack positionedStack : ingredients) {
+                        final int col = (positionedStack.relx - 25) / 18;
+                        final int row = (positionedStack.rely - 6) / 18;
+                        if (positionedStack.items != null && positionedStack.items.length > 0) {
+                            for (final Slot slot : (List<Slot>) gui.inventorySlots.inventorySlots) {
+                                if (slot instanceof SlotCraftingMatrix || slot instanceof SlotFakeCraftingMatrix) {
+                                    if (slot.getSlotIndex() == col + row * 3) {
+                                        final NBTTagList tags = new NBTTagList();
+                                        final List<ItemStack> list = new LinkedList<ItemStack>();
+
+                                        // prefer regular crystals.
+                                        for (int x = 0; x < positionedStack.items.length; x++) {
+                                            if (!Platform.isRecipePrioritized(positionedStack.items[x])) {
+                                                list.add(0, positionedStack.items[x]);
+                                            } else {
+                                                list.add(positionedStack.items[x]);
+                                            }
+                                        }
+
+                                        for (final ItemStack is : list) {
+                                            final NBTTagCompound tag = new NBTTagCompound();
+                                            is.writeToNBT(tag);
+                                            tags.appendTag(tag);
+                                        }
+
+                                        recipe.setTag("#" + slot.getSlotIndex(), tags);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    NetworkHandler.instance.sendToServer(new PacketNEIRecipe(recipe));
+                }
+            } catch (final Exception ignored) {} catch (final Error ignored) {}
+        }
+    }
+}
