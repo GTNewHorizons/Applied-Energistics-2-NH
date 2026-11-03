@@ -8,6 +8,7 @@ import net.minecraft.item.ItemStack;
 
 import appeng.api.AEApi;
 import appeng.api.storage.data.AEStackTypeRegistry;
+import appeng.core.BuildTags;
 import cpw.mods.fml.common.LoaderState;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
@@ -17,7 +18,6 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.network.NetworkRegistry;
-import thaumicenergistics.Tags;
 import thaumicenergistics.api.IThEConfig;
 import thaumicenergistics.api.ThEApi;
 import thaumicenergistics.common.entities.WirelessGolemHandler;
@@ -42,7 +42,7 @@ import thaumicenergistics.common.utils.ThELog;
         modid = ThaumicEnergistics.MOD_ID,
         name = "Thaumic Energistics",
         version = ThaumicEnergistics.VERSION,
-        dependencies = "required-after:appliedenergistics2@[rv3-beta-817,);required-after:Thaumcraft@[4.2.3.5,);after:Waila")
+        dependencies = "required-after:appliedenergistics2;required-after:Thaumcraft@[4.2.3.5,);after:Waila")
 public class ThaumicEnergistics {
 
     /**
@@ -58,7 +58,7 @@ public class ThaumicEnergistics {
     /**
      * Current version of the mod.
      */
-    public static final String VERSION = Tags.VERSION;
+    public static final String VERSION = BuildTags.VERSION;
 
     /**
      * Singleton instance
