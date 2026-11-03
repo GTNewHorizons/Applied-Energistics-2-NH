@@ -1,5 +1,6 @@
 package com.projecturanus.betterp2p
 
+import appeng.core.BuildTags
 import com.projecturanus.betterp2p.config.BetterP2PConfig
 import com.projecturanus.betterp2p.item.ItemAdvancedMemoryCard
 import com.projecturanus.betterp2p.network.ModNetwork
@@ -19,7 +20,7 @@ const val MODID = "betterp2p"
  * Better P2P is created by LasmGratel.
  * GlodBlock backported this to 1.7.10
  */
-@Mod(modid = MODID, version = BuildTags.VERSION, modLanguageAdapter = "net.shadowfacts.forgelin.KotlinAdapter", dependencies = "required-after:appliedenergistics2@[rv3-beta-238,); required-after:forgelin;")
+@Mod(modid = MODID, version = BuildTags.VERSION, modLanguageAdapter = "net.shadowfacts.forgelin.KotlinAdapter", dependencies = "required-after:appliedenergistics2;required-after:forgelin;")
 object BetterP2P {
 
     lateinit var logger: Logger

@@ -1,7 +1,0 @@
-apply plugin: 'org.jetbrains.kotlin.jvm'
-
-compileKotlin {
-    kotlinOptions {
-        jvmTarget = 1.8
-    }
-}

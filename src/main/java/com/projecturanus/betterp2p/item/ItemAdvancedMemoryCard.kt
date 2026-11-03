@@ -38,7 +38,7 @@ object ItemAdvancedMemoryCard : Item() {
     }
 
     @SideOnly(Side.CLIENT)
-    override fun addInformation(stack: ItemStack, player: EntityPlayer, tooltip: MutableList<Any?>, boolean: Boolean) {
+    override fun addInformation(stack: ItemStack, player: EntityPlayer, tooltip: MutableList<String>, boolean: Boolean) {
         val info = getInfo(stack)
         tooltip += StatCollector.translateToLocal("gui.advanced_memory_card.mode.${info.mode.name.lowercase(Locale.getDefault())}")
     }
