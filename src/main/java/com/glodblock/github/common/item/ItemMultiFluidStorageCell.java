@@ -1,0 +1,127 @@
+package com.glodblock.github.common.item;
+
+import java.util.EnumSet;
+import java.util.HashMap;
+
+import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.IIcon;
+import net.minecraft.util.StatCollector;
+
+import com.glodblock.github.FluidCraft;
+import com.glodblock.github.common.Config;
+import com.glodblock.github.common.storage.CellType;
+import com.glodblock.github.common.tabs.FluidCraftingTabs;
+import com.glodblock.github.loader.IRegister;
+import com.glodblock.github.loader.ItemAndBlockHolder;
+import com.glodblock.github.util.NameConst;
+import com.google.common.base.Optional;
+
+import appeng.api.exceptions.MissingDefinition;
+import appeng.core.features.AEFeature;
+import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+
+public class ItemMultiFluidStorageCell extends FCBaseItemCell implements IRegister<ItemMultiFluidStorageCell> {
+
+    private static final HashMap<Integer, IIcon> icon = new HashMap<>();
+    private final int housingValue;
+
+    @SuppressWarnings("Guava")
+    public ItemMultiFluidStorageCell(final CellType whichCell, final int housingValue, final long kilobytes) {
+        super(Optional.of(kilobytes + "k"));
+        this.setFeature(EnumSet.of(AEFeature.StorageCells));
+        this.setMaxStackSize(1);
+        this.totalBytes = kilobytes * 1024;
+        this.component = whichCell;
+        this.housingValue = housingValue;
+        this.totalTypes = 5;
+        setUnlocalizedName(NameConst.ITEM_MULTI_FLUID_STORAGE + "." + kilobytes);
+
+        switch (this.component) {
+            case Cell1kPart -> {
+                this.idleDrain = 0.5;
+                this.perType = 8;
+            }
+            case Cell4kPart -> {
+                this.idleDrain = 1.0;
+                this.perType = 32;
+            }
+            case Cell16kPart -> {
+                this.idleDrain = 1.5;
+                this.perType = 128;
+            }
+            case Cell64kPart -> {
+                this.idleDrain = 2.0;
+                this.perType = 512;
+            }
+            case Cell256kPart -> {
+                this.idleDrain = 2.5;
+                this.perType = 2048;
+            }
+            case Cell1024kPart -> {
+                this.idleDrain = 3.0;
+                this.perType = 8192;
+            }
+            case Cell4096kPart -> {
+                this.idleDrain = 3.5;
+                this.perType = 32768;
+            }
+            case Cell16384kPart -> {
+                this.idleDrain = 4.0;
+                this.perType = 131072;
+            }
+            default -> {
+                this.idleDrain = 0.0;
+                this.perType = 8;
+            }
+        }
+    }
+
+    @Override
+    public ItemStack getHousing() {
+        return ItemAndBlockHolder.CELL_HOUSING.stack(1, this.housingValue);
+    }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return StatCollector.translateToLocalFormatted(
+                "item.multi_fluid_storage." + this.totalBytes / 1024 + ".name",
+                CellType.getTypeColor(this.component),
+                EnumChatFormatting.RESET);
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void registerIcons(IIconRegister iconRegister) {
+        icon.put(
+                (int) (this.totalBytes / 1024),
+                iconRegister.registerIcon(
+                        NameConst.RES_KEY + NameConst.ITEM_MULTI_FLUID_STORAGE + "." + this.totalBytes / 1024));
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public IIcon getIconFromDamage(int meta) {
+        int id = (int) (this.totalBytes / 1024);
+        return icon.get(id);
+    }
+
+    @Override
+    public ItemStack getContainerItem(final ItemStack itemStack) {
+        if (this.getHousing() != null) {
+            return this.getHousing();
+        }
+        throw new MissingDefinition("Tried to use empty storage cells while basic storage cells are defined.");
+    }
+
+    @Override
+    public ItemMultiFluidStorageCell register() {
+        if (!Config.fluidCells) return null;
+        GameRegistry.registerItem(this, NameConst.ITEM_MULTI_FLUID_STORAGE + this.totalBytes / 1024, FluidCraft.MODID);
+        setCreativeTab(FluidCraftingTabs.INSTANCE);
+        return this;
+    }
+}

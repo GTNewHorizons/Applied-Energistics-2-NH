@@ -13,5 +13,88 @@
         "credits":"AlgorithmX2",
         "logoFile":"assets/appliedenergistics2/meta/logo.png",
         "screenshots":[]
+    },
+    {
+        "modid":"ae2fc",
+        "name":"AE2 Fluid Crafting",
+        "description":"Lets you do Crafting... with Fluids!",
+        "version":"${modVersion}",
+        "mcversion":"${minecraftVersion}",
+        "url":"https://github.com/GTNewHorizons/Applied-Energistics-2-NH",
+        "updateUrl":"",
+        "authorList":[
+         "GlodBlock"
+        ],
+        "credits":"phantamanta44",
+        "logoFile":"assets/ae2fc/logo.png",
+        "screenshots":[]
+    },
+    {
+        "modid":"neenergistics",
+        "name":"NotEnoughEnergistics",
+        "description":"This mod replaces AE2's default NEI integration for the Pattern Terminal.",
+        "version":"${modVersion}",
+        "mcversion":"${minecraftVersion}",
+        "url":"https://github.com/GTNewHorizons/Applied-Energistics-2-NH",
+        "updateUrl":"",
+        "authorList":[
+         "vfyjxf"
+        ],
+        "credits":"Thanks TheRealp455w0rd",
+        "logoFile":"assets/neenergistics/meta/logo.png",
+        "screenshots":[]
+    },
+    {
+        "modid":"ae2wct",
+        "name":"AE2 Wireless Crafting Terminal",
+        "description":"Adds a wireless version of the AE2 Crafting Terminal",
+        "version":"${modVersion}",
+        "mcversion":"${minecraftVersion}",
+        "url":"https://github.com/GTNewHorizons/Applied-Energistics-2-NH",
+        "updateUrl":"",
+        "authorList":[
+         "TheRealp455w0rd"
+        ],
+        "credits":"TheRealp455w0rd",
+        "logoFile":"",
+        "screenshots":[]
+    },
+    {
+        "modid":"thaumicenergistics",
+        "name":"Thaumic Energistics",
+        "description":"The digital age could use some magic",
+        "version":"${modVersion}",
+        "mcversion":"${minecraftVersion}",
+        "url":"https://github.com/GTNewHorizons/Applied-Energistics-2-NH",
+        "updateUrl":"",
+        "authorList":[
+         "Nividica"
+        ],
+        "credits":"Azanor & AlgorithmX2 for their respective mods. And M3gaFr3ak for giving me somewhere to start. Localization: Mrkwtkr, alvin137, puyo061, Wuestengecko, TheVizzy, Adaptivity, Joccob, & Keridos. Textures: CyanideX. Special thanks to MKoanga.",
+        "logoFile":"assets/thaumicenergistics/meta/logo.png",
+        "screenshots":[],
+        "dependencies":[
+         "appliedenergistics2",
+         "Thaumcraft"
+        ]
+    },
+    {
+        "modid":"betterp2p",
+        "name":"BetterP2P",
+        "description":"An AE2 submod",
+        "version":"${modVersion}",
+        "mcversion":"${minecraftVersion}",
+        "url":"https://github.com/GTNewHorizons/Applied-Energistics-2-NH",
+        "updateUrl":"",
+        "authorList":[
+         "AlgorithmX2", "GlodBlock"
+        ],
+        "credits":"Lasm Gratel",
+        "logoFile":"assets/betterp2p/logo.png",
+        "screenshots":[],
+        "dependencies":[
+         "appliedenergistics2",
+         "forgelin"
+        ]
     }
 ]
