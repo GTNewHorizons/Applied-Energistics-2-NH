@@ -10,16 +10,27 @@
 
 package appeng.transformer;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.common.eventbus.EventBus;
+import com.gtnewhorizon.gtnhmixins.IEarlyMixinLoader;
+import com.gtnewhorizon.gtnhmixins.builders.IMixins;
 
 import appeng.core.AEConfig;
+import appeng.mixins.Mixins;
 import cpw.mods.fml.common.DummyModContainer;
+import cpw.mods.fml.common.FMLLog;
 import cpw.mods.fml.common.LoadController;
+import cpw.mods.fml.common.Loader;
+import cpw.mods.fml.common.LoaderState.ModState;
 import cpw.mods.fml.common.Mod.EventHandler;
+import cpw.mods.fml.common.ModContainer;
 import cpw.mods.fml.common.ModMetadata;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.relauncher.FMLRelaunchLog;
@@ -27,7 +38,7 @@ import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin.MCVersion;
 
 @MCVersion("1.7.10")
-public final class AppEngCore extends DummyModContainer implements IFMLLoadingPlugin {
+public final class AppEngCore extends DummyModContainer implements IFMLLoadingPlugin, IEarlyMixinLoader {
 
     private final ModMetadata metadata = new ModMetadata();
 
@@ -69,6 +80,16 @@ public final class AppEngCore extends DummyModContainer implements IFMLLoadingPl
     public void injectData(final Map<String, Object> data) {}
 
     @Override
+    public String getMixinConfig() {
+        return "mixins.appliedenergistics2.early.json";
+    }
+
+    @Override
+    public List<String> getMixins(final Set<String> loadedCoreMods) {
+        return IMixins.getEarlyMixins(Mixins.class, loadedCoreMods);
+    }
+
+    @Override
     public String getAccessTransformerClass() {
         return "appeng.transformer.asm.ASMTweaker";
     }
@@ -93,9 +114,45 @@ public final class AppEngCore extends DummyModContainer implements IFMLLoadingPl
         return AEConfig.VERSION;
     }
 
+    /**
+     * Called from {@code LoadController.buildModList} for each mod in {@code Loader.mods} order. Injected coremod
+     * containers come before discovered mods in both vanilla FML and JarJar's LoaderV2, so this runs before
+     * ThaumicEnergistics is registered and before the mod list is sorted.
+     */
     @Override
     public boolean registerBus(final EventBus bus, final LoadController controller) {
+        removeThaumicEnergisticsWithoutThaumcraft(controller);
         return true;
+    }
+
+    /**
+     * Removes the embedded ThaumicEnergistics when Thaumcraft is not installed, so that it behaves as if it was not
+     * installed at all.
+     * <p>
+     * {@code buildModList} iterates over a copy of {@code Loader.mods}, so the container is also disabled to keep it
+     * out of the active mod list. Disabling alone is not enough: {@code ModSorter} crashes when another mod declares
+     * {@code after:thaumicenergistics} while it is still in {@code Loader.namedMods}.
+     * <p>
+     * This is not a mixin into {@link LoadController} because some coremods load it before mixins are prepared.
+     */
+    private static void removeThaumicEnergisticsWithoutThaumcraft(final LoadController controller) {
+        // Loader.mods and Loader.namedMods are made public by appeng_at.cfg
+        final Loader loader = Loader.instance();
+        final ModContainer thaumicEnergistics = loader.namedMods.get("thaumicenergistics");
+        if (thaumicEnergistics == null || loader.namedMods.containsKey("Thaumcraft")) {
+            return;
+        }
+        // buildModList has not reached it yet only if this coremod container comes first
+        if (controller.getModState(thaumicEnergistics) != ModState.AVAILABLE) {
+            throw new IllegalStateException(
+                    "thaumicenergistics was registered before appliedenergistics2-core, so it can't be removed");
+        }
+
+        FMLLog.info("[AppEng] Thaumcraft is not installed, skipping embedded mod thaumicenergistics");
+        thaumicEnergistics.setEnabledState(false);
+        loader.mods.remove(thaumicEnergistics);
+        loader.namedMods = ImmutableMap
+                .copyOf(Maps.filterKeys(loader.namedMods, modId -> !"thaumicenergistics".equals(modId)));
     }
 
     @Override
