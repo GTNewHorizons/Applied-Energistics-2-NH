@@ -1,0 +1,589 @@
+package com.glodblock.github.util;
+
+import static appeng.util.item.AEFluidStackType.FLUID_STACK_TYPE;
+import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
+
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+
+import net.minecraft.inventory.IInventory;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraftforge.common.util.ForgeDirection;
+import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidTankInfo;
+import net.minecraftforge.fluids.IFluidHandler;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import com.glodblock.github.common.item.ItemFluidDrop;
+import com.glodblock.github.common.item.ItemFluidPacket;
+import com.glodblock.github.inventory.AEFluidInventory;
+import com.glodblock.github.inventory.IAEFluidInventory;
+import com.glodblock.github.inventory.IAEFluidTank;
+import com.google.common.collect.ImmutableSet;
+
+import appeng.api.config.Actionable;
+import appeng.api.config.Upgrades;
+import appeng.api.implementations.IUpgradeableHost;
+import appeng.api.networking.GridFlags;
+import appeng.api.networking.IGridNode;
+import appeng.api.networking.crafting.ICraftingLink;
+import appeng.api.networking.events.MENetworkChannelsChanged;
+import appeng.api.networking.events.MENetworkPowerStatusChange;
+import appeng.api.networking.security.BaseActionSource;
+import appeng.api.networking.security.MachineSource;
+import appeng.api.networking.storage.IStorageGrid;
+import appeng.api.networking.ticking.IGridTickable;
+import appeng.api.networking.ticking.TickRateModulation;
+import appeng.api.networking.ticking.TickingRequest;
+import appeng.api.storage.IMEInventory;
+import appeng.api.storage.IMEMonitor;
+import appeng.api.storage.IStorageMonitorable;
+import appeng.api.storage.data.AEStackTypeRegistry;
+import appeng.api.storage.data.IAEFluidStack;
+import appeng.api.storage.data.IAEItemStack;
+import appeng.api.storage.data.IAEStack;
+import appeng.api.storage.data.IAEStackType;
+import appeng.api.util.IConfigManager;
+import appeng.core.settings.TickRates;
+import appeng.helpers.IInterfaceHost;
+import appeng.helpers.MultiCraftingTracker;
+import appeng.me.GridAccessException;
+import appeng.me.helpers.AENetworkProxy;
+import appeng.me.storage.MEMonitorIFluidHandler;
+import appeng.me.storage.MEMonitorPassThrough;
+import appeng.me.storage.NullInventory;
+import appeng.util.ConfigManager;
+import appeng.util.IConfigManagerHost;
+import appeng.util.Platform;
+import appeng.util.item.AEFluidStack;
+
+public class DualityFluidInterface implements IGridTickable, IStorageMonitorable, IAEFluidInventory, IUpgradeableHost,
+        IConfigManagerHost, IFluidHandler {
+
+    public static final int NUMBER_OF_TANKS = 6;
+    public static final long TANK_CAPACITY = 16000;
+    private final ConfigManager cm = new ConfigManager(this);
+    private final AENetworkProxy gridProxy;
+    private final IInterfaceHost iHost;
+    private final BaseActionSource mySource;
+    private boolean hasConfig = false;
+    private final AEFluidInventory tanks = new AEFluidInventory(this, NUMBER_OF_TANKS, (int) TANK_CAPACITY);
+    private final AEFluidInventory config = new AEFluidInventory(this, NUMBER_OF_TANKS, Integer.MAX_VALUE);
+    private final IAEFluidStack[] requireWork;
+    private int isWorking = -1;
+    private final Map<IAEStackType<?>, MEMonitorPassThrough<?>> monitorMap;
+    private final MultiCraftingTracker craftingTracker;
+
+    public DualityFluidInterface(final AENetworkProxy networkProxy, final IInterfaceHost ih) {
+        this.gridProxy = networkProxy;
+        this.gridProxy.setFlags(GridFlags.REQUIRE_CHANNEL);
+        this.iHost = ih;
+        this.mySource = new MachineSource(this.iHost);
+
+        this.monitorMap = new IdentityHashMap<>();
+        for (IAEStackType<?> type : AEStackTypeRegistry.getAllTypes()) {
+            MEMonitorPassThrough<?> monitor = new MEMonitorPassThrough(new NullInventory<>(), type);
+            monitor.setChangeSource(mySource);
+            this.monitorMap.put(type, monitor);
+        }
+
+        this.requireWork = new IAEFluidStack[6];
+
+        for (int i = 0; i < 6; ++i) {
+            this.requireWork[i] = null;
+        }
+
+        this.craftingTracker = new MultiCraftingTracker(this.iHost, NUMBER_OF_TANKS);
+    }
+
+    public IAEFluidStack getStandardFluid(IAEFluidStack fluid) {
+        if (fluid == null) {
+            return null;
+        } else {
+            return AEFluidStack.create(new FluidStack(fluid.getFluid(), 8000));
+        }
+    }
+
+    public IAEFluidStack getStandardFluid(FluidStack fluid) {
+        if (fluid == null) {
+            return null;
+        } else {
+            return AEFluidStack.create(new FluidStack(fluid.getFluid(), 8000));
+        }
+    }
+
+    public void onChannelStateChange(final MENetworkChannelsChanged c) {
+        this.notifyNeighbors();
+    }
+
+    public void onPowerStateChange(final MENetworkPowerStatusChange c) {
+        this.notifyNeighbors();
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public void gridChanged() {
+        try {
+            for (var entry : this.monitorMap.entrySet()) {
+                MEMonitorPassThrough<?> monitor = entry.getValue();
+                IMEMonitor internal = this.gridProxy.getStorage().getMEMonitor(entry.getKey());
+                monitor.setInternal(internal);
+            }
+        } catch (final GridAccessException gae) {
+            for (var monitor : this.monitorMap.values()) {
+                monitor.setInternal(new NullInventory<>());
+            }
+        }
+        this.notifyNeighbors();
+    }
+
+    public void writeToNBT(NBTTagCompound data) {
+        this.tanks.writeToNBT(data, "storage");
+        this.config.writeToNBT(data, "config");
+    }
+
+    public void readFromNBT(NBTTagCompound data) {
+        this.config.readFromNBT(data, "config");
+        this.tanks.readFromNBT(data, "storage");
+        this.readConfig();
+    }
+
+    public void writeCraftingTrackerToNBT(NBTTagCompound data) {
+        final NBTTagCompound tracker = new NBTTagCompound();
+        this.craftingTracker.writeToNBT(tracker);
+        data.setTag("fluidCraftingLinks", tracker);
+    }
+
+    public void readCraftingTrackerFromNBT(NBTTagCompound data) {
+        if (data.hasKey("fluidCraftingLinks")) {
+            this.craftingTracker.readFromNBT(data.getCompoundTag("fluidCraftingLinks"));
+        }
+    }
+
+    public void writeConfigToNBT(NBTTagCompound data, String name) {
+        this.config.writeToNBT(data, name);
+    }
+
+    public void readConfigFromNBT(NBTTagCompound data, String name) {
+        this.config.readFromNBT(data, name);
+        this.readConfig();
+        this.saveChanges();
+    }
+
+    public AEFluidInventory getConfig() {
+        return this.config;
+    }
+
+    public void loadConfigFromPacket(IInventory packet) {
+        for (int i = 0; i < packet.getSizeInventory(); i++) {
+            FluidStack fluid = ItemFluidPacket.getFluidStack(packet.getStackInSlot(i));
+            config.setFluidInSlot(i, this.getStandardFluid(fluid));
+        }
+    }
+
+    public AEFluidInventory getTanks() {
+        return this.tanks;
+    }
+
+    private IMEMonitor<IAEFluidStack> getFluidGrid() {
+        if (!this.gridProxy.isActive()) return null;
+
+        try {
+            return gridProxy.getGrid().<IStorageGrid>getCache(IStorageGrid.class).getFluidInventory();
+        } catch (GridAccessException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public int getInstalledUpgrades(Upgrades u) {
+        return this.iHost.getInstalledUpgrades(u);
+    }
+
+    @Override
+    public TileEntity getTile() {
+        return (TileEntity) (this.iHost instanceof TileEntity ? this.iHost : null);
+    }
+
+    @Override
+    public IInventory getInventoryByName(String name) {
+        return iHost.getInventoryByName(name);
+    }
+
+    public IFluidHandler getFluidInventoryByName(String name) {
+        return name.equals("config") ? this.config : null;
+    }
+
+    @Override
+    public TickingRequest getTickingRequest(IGridNode node) {
+        return new TickingRequest(
+                TickRates.Interface.getMin(),
+                TickRates.Interface.getMax(),
+                !this.hasWorkToDo(),
+                true);
+    }
+
+    @Override
+    public TickRateModulation tickingRequest(IGridNode node, int TicksSinceLastCall) {
+        if (!this.gridProxy.isActive()) {
+            return TickRateModulation.SLEEP;
+        } else {
+            boolean couldDoWork = this.updateStorage();
+            return this.hasWorkToDo() ? (couldDoWork ? TickRateModulation.URGENT : TickRateModulation.SLOWER)
+                    : TickRateModulation.SLEEP;
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public IMEMonitor<IAEItemStack> getItemInventory() {
+        if (this.hasConfig) {
+            return null;
+        }
+        return (IMEMonitor<IAEItemStack>) this.monitorMap.get(ITEM_STACK_TYPE);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public IMEMonitor<IAEFluidStack> getFluidInventory() {
+        if (this.hasConfig) {
+            return new InterfaceInventory(this);
+        }
+        return (IMEMonitor<IAEFluidStack>) this.monitorMap.get(FLUID_STACK_TYPE);
+    }
+
+    @Override
+    @Nullable
+    public IMEMonitor<?> getMEMonitor(@NotNull IAEStackType<?> type) {
+        if (type == ITEM_STACK_TYPE) {
+            return this.getItemInventory();
+        } else if (type == FLUID_STACK_TYPE) {
+            return this.getFluidInventory();
+        }
+
+        if (this.hasConfig) {
+            return null;
+        }
+
+        return this.monitorMap.get(type);
+    }
+
+    @Override
+    public IConfigManager getConfigManager() {
+        return this.cm;
+    }
+
+    @Override
+    public void updateSetting(IConfigManager manager, @SuppressWarnings("rawtypes") Enum settingName,
+            @SuppressWarnings("rawtypes") Enum newValue) {}
+
+    @Override
+    public void onFluidInventoryChanged(IAEFluidTank inventory, int slot) {
+        if (this.isWorking != slot) {
+            boolean had;
+            if (inventory == this.config) {
+                had = this.hasConfig;
+                this.readConfig();
+                if (had != this.hasConfig) {
+                    this.notifyNeighbors();
+                }
+            } else if (inventory == this.tanks) {
+                this.saveChanges();
+                had = this.hasWorkToDo();
+                this.updatePlan(slot);
+                boolean now = this.hasWorkToDo();
+                if (had != now) {
+                    try {
+                        if (now) {
+                            this.gridProxy.getTick().alertDevice(this.gridProxy.getNode());
+                        } else {
+                            this.gridProxy.getTick().sleepDevice(this.gridProxy.getNode());
+                        }
+                    } catch (GridAccessException ignored) {}
+                }
+            }
+        }
+    }
+
+    @Override
+    public AEFluidInventory getInternalFluid() {
+        return this.tanks;
+    }
+
+    private boolean hasWorkToDo() {
+        for (IAEFluidStack requiredWork : this.requireWork) {
+            if (requiredWork != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean updateStorage() {
+        boolean didSomething = false;
+        for (int x = 0; x < 6; ++x) {
+            if (this.requireWork[x] != null) {
+                didSomething = this.usePlan(x) || didSomething;
+            }
+        }
+        return didSomething;
+    }
+
+    private boolean usePlan(int slot) {
+        IAEFluidStack work = this.requireWork[slot];
+        this.isWorking = slot;
+        boolean changed = false;
+
+        IMEInventory<IAEFluidStack> dest = getFluidGrid();
+        if (dest == null) {
+            this.isWorking = -1;
+            return false;
+        }
+        IAEFluidStack toStore;
+        if (work.getStackSize() > 0L) {
+            if (this.craftingTracker.isBusy(slot)) {
+                changed = this.handleCrafting(slot, work);
+            } else if ((long) this.tanks.fill(slot, work.getFluidStack(), false) != work.getStackSize()) {
+                changed = true;
+            } else {
+                toStore = dest.extractItems(work, Actionable.MODULATE, this.mySource);
+                if (toStore != null) {
+                    changed = true;
+                    int filled = this.tanks.fill(slot, toStore.getFluidStack(), true);
+                    if ((long) filled != toStore.getStackSize()) {
+                        throw new IllegalStateException("bad attempt at managing tanks. ( fill )");
+                    }
+                } else {
+                    changed = this.handleCrafting(slot, work);
+                }
+            }
+        } else if (work.getStackSize() < 0L) {
+            toStore = work.copy();
+            toStore.setStackSize(-toStore.getStackSize());
+            FluidStack canExtract = this.tanks.drain(slot, toStore.getFluidStack(), false);
+            if (canExtract != null && (long) canExtract.amount == toStore.getStackSize()) {
+                IAEFluidStack notStored = dest.injectItems(toStore, Actionable.MODULATE, this.mySource);
+                toStore.setStackSize(toStore.getStackSize() - (notStored == null ? 0L : notStored.getStackSize()));
+                if (toStore.getStackSize() > 0L) {
+                    changed = true;
+                    FluidStack removed = this.tanks.drain(slot, toStore.getFluidStack(), true);
+                    if (removed == null || toStore.getStackSize() != (long) removed.amount) {
+                        throw new IllegalStateException("bad attempt at managing tanks. ( drain )");
+                    }
+                }
+            } else {
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            this.updatePlan(slot);
+        }
+
+        this.isWorking = -1;
+        return changed;
+    }
+
+    private boolean handleCrafting(final int slot, final IAEFluidStack fluidStack) {
+        try {
+            if (this.getInstalledUpgrades(Upgrades.CRAFTING) > 0 && fluidStack != null) {
+                return this.craftingTracker.handleCrafting(
+                        slot,
+                        fluidStack.getStackSize(),
+                        (IAEStack<?>) fluidStack,
+                        this.iHost.getTileEntity().getWorldObj(),
+                        this.gridProxy.getGrid(),
+                        this.gridProxy.getCrafting(),
+                        this.mySource);
+            }
+        } catch (final GridAccessException e) {
+            // :P
+        }
+        return false;
+    }
+
+    public ImmutableSet<ICraftingLink> getRequestedJobs() {
+        return this.craftingTracker.getRequestedJobs();
+    }
+
+    public IAEStack<?> injectCraftedItems(final ICraftingLink link, final IAEStack<?> acquired, final Actionable mode) {
+        final int slot = this.craftingTracker.getSlot(link);
+
+        if (acquired instanceof IAEFluidStack afs && slot >= 0 && slot < NUMBER_OF_TANKS) {
+            if (mode == Actionable.SIMULATE) {
+                final int filled = this.tanks.fill(slot, afs.getFluidStack(), false);
+                return filled >= afs.getFluidStack().amount ? null
+                        : AEFluidStack.create(drainRemainder(afs.getFluidStack(), filled));
+            } else {
+                final int filled = this.tanks.fill(slot, afs.getFluidStack(), true);
+                this.updatePlan(slot);
+                return filled >= afs.getFluidStack().amount ? null
+                        : AEFluidStack.create(drainRemainder(afs.getFluidStack(), filled));
+            }
+        }
+
+        return acquired;
+    }
+
+    private static FluidStack drainRemainder(final FluidStack original, final int accepted) {
+        final FluidStack remainder = original.copy();
+        remainder.amount -= accepted;
+        return remainder;
+    }
+
+    public void jobStateChange(final ICraftingLink link) {
+        this.craftingTracker.jobStateChange(link);
+    }
+
+    private void updatePlan(int slot) {
+        IAEFluidStack req = this.config.getFluidInSlot(slot);
+        IAEFluidStack stored = this.tanks.getFluidInSlot(slot);
+        IAEFluidStack work;
+        if (req == null && stored != null && stored.getStackSize() > 0L) {
+            work = stored.copy();
+            this.requireWork[slot] = work.setStackSize(-work.getStackSize());
+        } else {
+            if (req != null) {
+                if (stored == null || stored.getStackSize() == 0L) {
+                    this.requireWork[slot] = req.copy();
+                    this.requireWork[slot].setStackSize(TANK_CAPACITY);
+                    return;
+                }
+
+                if (!req.equals(stored)) {
+                    work = stored.copy();
+                    this.requireWork[slot] = work.setStackSize(-work.getStackSize());
+                    return;
+                }
+
+                if (stored.getStackSize() < TANK_CAPACITY) {
+                    this.requireWork[slot] = req.copy();
+                    this.requireWork[slot].setStackSize(TANK_CAPACITY - stored.getStackSize());
+                    return;
+                }
+            }
+            this.requireWork[slot] = null;
+        }
+    }
+
+    public void notifyNeighbors() {
+        if (this.gridProxy.isActive()) {
+            try {
+                this.gridProxy.getTick().wakeDevice(this.gridProxy.getNode());
+            } catch (GridAccessException ignored) {}
+        }
+        TileEntity te = this.iHost.getTileEntity();
+        if (te != null && te.getWorldObj() != null) {
+            Platform.notifyBlocksOfNeighbors(te.getWorldObj(), te.xCoord, te.yCoord, te.zCoord);
+        }
+    }
+
+    public void saveChanges() {
+        this.iHost.saveChanges();
+    }
+
+    private void readConfig() {
+        this.hasConfig = false;
+
+        for (int i = 0; i < this.config.getSlots(); ++i) {
+            if (this.config.getFluidInSlot(i) != null) {
+                this.hasConfig = true;
+                break;
+            }
+        }
+
+        boolean had = this.hasWorkToDo();
+
+        for (int x = 0; x < 6; ++x) {
+            this.updatePlan(x);
+        }
+
+        boolean has = this.hasWorkToDo();
+        if (had != has) {
+            try {
+                if (has) {
+                    this.gridProxy.getTick().alertDevice(this.gridProxy.getNode());
+                } else {
+                    this.gridProxy.getTick().sleepDevice(this.gridProxy.getNode());
+                }
+            } catch (GridAccessException ignored) {}
+        }
+
+        this.notifyNeighbors();
+    }
+
+    @Override
+    public int fill(ForgeDirection from, FluidStack resource, boolean doFill) {
+        IMEMonitor<IAEFluidStack> fluidGrid = getFluidGrid();
+        if (fluidGrid == null || resource == null) return 0;
+        int ori = resource.amount;
+        IAEFluidStack remove;
+        if (doFill) {
+            remove = fluidGrid.injectItems(AEFluidStack.create(resource), Actionable.MODULATE, this.mySource);
+            if (remove == null) {} else {
+                FluidStack copy = resource.copy();
+                copy.amount -= (int) remove.getStackSize();
+            }
+        } else {
+            remove = fluidGrid.injectItems(AEFluidStack.create(resource), Actionable.SIMULATE, this.mySource);
+        }
+        return remove == null ? ori : (int) (ori - remove.getStackSize());
+    }
+
+    @Override
+    public FluidStack drain(ForgeDirection from, FluidStack resource, boolean doDrain) {
+        return this.tanks.drain(from, resource, doDrain);
+    }
+
+    @Override
+    public FluidStack drain(ForgeDirection from, int maxDrain, boolean doDrain) {
+        return this.tanks.drain(from, maxDrain, doDrain);
+    }
+
+    @Override
+    public boolean canFill(ForgeDirection from, Fluid fluid) {
+        return true;
+    }
+
+    @Override
+    public boolean canDrain(ForgeDirection from, Fluid fluid) {
+        return true;
+    }
+
+    @Override
+    public FluidTankInfo[] getTankInfo(ForgeDirection from) {
+        return this.tanks.getTankInfo(from);
+    }
+
+    private static class InterfaceInventory extends MEMonitorIFluidHandler {
+
+        InterfaceInventory(DualityFluidInterface tileInterface) {
+            super(tileInterface.tanks);
+        }
+    }
+
+    public void addDrops(final List<ItemStack> drops) {
+        for (int i = 0; i < NUMBER_OF_TANKS; i++) {
+            ItemStack is = ItemFluidPacket.newStack(this.tanks.getFluidStackInSlot(i));
+            if (is != null) {
+                drops.add(is);
+            }
+        }
+    }
+
+    public void convertDrops(final List<ItemStack> drops, final List<ItemStack> waitingToSend) {
+        if (waitingToSend != null) {
+            for (final ItemStack is : waitingToSend) {
+                if (is != null && is.getItem() instanceof ItemFluidDrop) {
+                    drops.add(ItemFluidPacket.newStack(ItemFluidDrop.getFluidStack(is)));
+                    is.stackSize = 0;
+                }
+            }
+        }
+    }
+}
