@@ -1,6 +1,5 @@
 package thaumicenergistics.mixins;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -8,8 +7,7 @@ import javax.annotation.Nonnull;
 
 import com.gtnewhorizon.gtnhmixins.ILateMixinLoader;
 import com.gtnewhorizon.gtnhmixins.LateMixin;
-
-import cpw.mods.fml.relauncher.FMLLaunchHandler;
+import com.gtnewhorizon.gtnhmixins.builders.IMixins;
 
 @LateMixin
 public class ThaumicEnergisticsLateMixinLoader implements ILateMixinLoader {
@@ -22,14 +20,6 @@ public class ThaumicEnergisticsLateMixinLoader implements ILateMixinLoader {
     @Nonnull
     @Override
     public List<String> getMixins(Set<String> loadedMods) {
-        List<String> mixins = new ArrayList<>();
-        if (FMLLaunchHandler.side().isClient()) {
-            mixins.add("thaumcraft.MixinRenderGolemBase");
-        }
-        mixins.add("thaumcraft.MixinAspect");
-        mixins.add("thaumcraft.MixinEntityGolemBase");
-        mixins.add("thaumcraft.MixinItemGolemBell");
-        mixins.add("thaumcraft.MixinItemGolemPlacer");
-        return mixins;
+        return IMixins.getLateMixins(Mixins.class, loadedMods);
     }
 }
