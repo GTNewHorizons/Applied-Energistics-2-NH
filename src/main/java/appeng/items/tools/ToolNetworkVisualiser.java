@@ -345,6 +345,8 @@ public class ToolNetworkVisualiser extends AEBaseItem {
         final EnumSet<VLinkFlags> flags = EnumSet.of(VLinkFlags.EXTERNAL);
         for (IExternalLinkProvider provider : EXTERNAL_LINK_PROVIDERS) {
             provider.addLinks(grid, world, (a, b) -> {
+                // Nodes are keyed by position only, so a link with an end in another dimension must be dropped.
+                if (!a.isInWorld(world) || !b.isInWorld(world)) return;
                 VNode n1 = nodesByPos.get(posKey(a.x, a.y, a.z));
                 VNode n2 = nodesByPos.get(posKey(b.x, b.y, b.z));
                 if (n1 != null && n2 != null && !n1.isAtSameLocation(n2)) {
