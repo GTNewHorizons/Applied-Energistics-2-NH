@@ -12,6 +12,17 @@ This project is a GTNH fork of Applied Energistics 2 for Minecraft 1.7.10
 > [!WARNING]
 > AE2NH is currently undergoing a major rewrite, so its API is unstable and may change without notice.
 
+## Bundled Addons
+
+The following addons are bundled into AE2NH and no longer need to be installed separately.
+
+* AE2FluidCraft-Rework
+* Not Enough Energistics
+* AE2 Wireless Crafting Terminal
+* BetterP2P
+* Thaumic Energistics
+  - Only loaded when Thaumcraft is installed. Without Thaumcraft, it is skipped and AE2NH works as if it were not bundled.
+
 ## License
 
 * Applied Energistics 2 API
