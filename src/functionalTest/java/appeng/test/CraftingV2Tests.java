@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import appeng.api.config.CraftingMode;
 import appeng.api.networking.crafting.ICraftingPatternDetails;
 import appeng.api.networking.security.PlayerSource;
 import appeng.api.storage.data.IAEItemStack;
@@ -1089,6 +1090,26 @@ public class CraftingV2Tests {
                 job,
                 AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(20),
                 AEItemStack.create(new ItemStack(Items.diamond, 20)));
+    }
+
+    @Test
+    void ignoreMissingJobsAreNotReplanned() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        aeSystem.addStoredItem(new ItemStack(Items.gold_ingot, 64));
+        addExpensiveStickPatterns(aeSystem);
+        final CraftingJobV2 job = aeSystem.makeCraftingJob(new ItemStack(Items.stick, 13), CraftingMode.IGNORE_MISSING);
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+
+        // The crafting CPU waits for items that are missing in this mode, a re-plan would make the job unsubmittable
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 5));
+        assertFalse(job.reconcileWithLiveStorage(), "Ignore-missing jobs should not be re-planned");
+        assertFalse(job.isSimulation());
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 13)));
     }
 
     @Test

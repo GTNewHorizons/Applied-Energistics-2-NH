@@ -236,8 +236,11 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
                 taskState = context.doWork();
                 totalByteCost = -1;
                 // The plan was made against a snapshot of the AE system from when the job started, check it still
-                // holds. A plan with missing items can't be started anyway, so there is nothing to keep up to date.
-                if (taskState == CraftingTask.State.SUCCESS && !context.wasSimulated && reconcile()) {
+                // holds. A plan with missing items can't be started anyway, so there is nothing to keep up to date,
+                // and neither is a job that got cancelled in the meantime.
+                if (taskState == CraftingTask.State.SUCCESS && state == State.RUNNING
+                        && !context.wasSimulated
+                        && reconcile()) {
                     taskState = CraftingTask.State.NEEDS_MORE_WORK;
                 }
             } while (taskState.needsMoreWork && System.currentTimeMillis() < finishTime && (state == State.RUNNING));
@@ -299,6 +302,11 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private boolean reconcile() {
+        if (getCraftingMode() == CraftingMode.IGNORE_MISSING) {
+            // The crafting CPU waits for whatever is missing when such a job starts (see ExtractItemTask.startOnCpu),
+            // re-planning would only turn the job into a simulation that can't be submitted at all
+            return false;
+        }
         final IStorageGrid sg = context.meGrid.getCache(IStorageGrid.class);
         if (sg == null) {
             return false;

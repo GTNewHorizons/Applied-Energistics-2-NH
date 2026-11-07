@@ -13,6 +13,7 @@ import net.minecraft.world.World;
 
 import appeng.api.AEApi;
 import appeng.api.config.Actionable;
+import appeng.api.config.CraftingMode;
 import appeng.api.networking.crafting.ICraftingGrid;
 import appeng.api.networking.security.BaseActionSource;
 import appeng.api.networking.storage.IStorageGrid;
@@ -72,11 +73,19 @@ public class MockAESystem implements ICellProvider {
     }
 
     public CraftingJobV2 makeCraftingJob(ItemStack request, BaseActionSource actionSource) {
+        return makeCraftingJob(request, actionSource, CraftingMode.STANDARD);
+    }
+
+    public CraftingJobV2 makeCraftingJob(ItemStack request, CraftingMode craftingMode) {
+        return makeCraftingJob(request, dummyActionSource, craftingMode);
+    }
+
+    public CraftingJobV2 makeCraftingJob(ItemStack request, BaseActionSource actionSource, CraftingMode craftingMode) {
         if (dirtyPatterns) {
             dirtyPatterns = false;
             this.cgCache.setMockPatternsFromMethods();
         }
-        return new CraftingJobV2(world, grid, actionSource, AEItemStack.create(request), null);
+        return new CraftingJobV2(world, grid, actionSource, AEItemStack.create(request), craftingMode, null);
     }
 
     public PatternBuilder newProcessingPattern() {
