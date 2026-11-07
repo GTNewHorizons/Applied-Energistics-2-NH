@@ -15,7 +15,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Preconditions;
 
@@ -35,7 +35,7 @@ public final class ConfigLoader implements IRecipeLoader {
     }
 
     @Override
-    public BufferedReader getFile(@Nonnull final String relativeFilePath) throws Exception {
+    public BufferedReader getFile(@NonNull final String relativeFilePath) throws Exception {
         Preconditions.checkNotNull(relativeFilePath);
         Preconditions.checkArgument(
                 !relativeFilePath.isEmpty(),

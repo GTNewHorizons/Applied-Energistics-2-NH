@@ -13,9 +13,9 @@ package appeng.core.worlddata;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.annotation.Nonnull;
-
 import net.minecraftforge.common.config.ConfigCategory;
+
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -37,7 +37,7 @@ final class PlayerMapping implements IWorldPlayerMapping {
         this.mappings = init.getPlayerMappings();
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Optional<UUID> get(final int id) {
         final UUID maybe = this.mappings.get(id);
@@ -46,7 +46,7 @@ final class PlayerMapping implements IWorldPlayerMapping {
     }
 
     @Override
-    public void put(final int id, @Nonnull final UUID uuid) {
+    public void put(final int id, @NonNull final UUID uuid) {
         Preconditions.checkNotNull(uuid);
 
         this.mappings.put(id, uuid);

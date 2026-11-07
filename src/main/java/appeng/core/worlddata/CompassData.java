@@ -12,7 +12,7 @@ package appeng.core.worlddata;
 
 import java.io.File;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Preconditions;
 
@@ -25,10 +25,10 @@ import appeng.services.CompassService;
  */
 final class CompassData implements IWorldCompassData, IOnWorldStoppable {
 
-    @Nonnull
+    @NonNull
     private final CompassService service;
 
-    public CompassData(@Nonnull final File compassDirectory, @Nonnull final CompassService service) {
+    public CompassData(@NonNull final File compassDirectory, @NonNull final CompassService service) {
         Preconditions.checkNotNull(compassDirectory);
         Preconditions.checkNotNull(service);
 

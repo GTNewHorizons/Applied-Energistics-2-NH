@@ -18,7 +18,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.ForgeEventFactory;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Optional;
 import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
@@ -461,6 +461,6 @@ public abstract class AEBaseCell extends AEBaseItem implements IStorageCell, IIt
     }
 
     @Override
-    @NotNull
+    @NonNull
     public abstract IAEStackType<?> getStackType();
 }

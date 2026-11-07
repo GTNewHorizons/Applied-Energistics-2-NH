@@ -1,6 +1,6 @@
 package thaumicenergistics.common.integration.tc;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 public enum GolemCoreType {
 

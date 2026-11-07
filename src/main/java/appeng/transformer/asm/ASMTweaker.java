@@ -12,11 +12,10 @@ package appeng.transformer.asm;
 
 import java.util.Iterator;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.launchwrapper.IClassTransformer;
 
 import org.apache.logging.log4j.Level;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;

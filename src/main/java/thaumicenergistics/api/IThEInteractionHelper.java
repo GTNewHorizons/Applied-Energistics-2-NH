@@ -1,9 +1,9 @@
 package thaumicenergistics.api;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.NonNull;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -22,7 +22,7 @@ public interface IThEInteractionHelper {
      *
      * @param handler
      */
-    void registerGolemHookHandler(@Nonnull IGolemHookHandler handler);
+    void registerGolemHookHandler(@NonNull IGolemHookHandler handler);
 
     /**
      * Attempts to set the Arcane Crafting Terminals recipe to the items specified for the current player.<br>
@@ -37,8 +37,8 @@ public interface IThEInteractionHelper {
      * Null items are allowed.
      */
     @SideOnly(Side.CLIENT)
-    void setArcaneCraftingTerminalRecipe(@Nonnull ItemStack[] items);
+    void setArcaneCraftingTerminalRecipe(@NonNull ItemStack[] items);
 
     @Deprecated
-    void openWirelessTerminalGui(@Nonnull EntityPlayer player);
+    void openWirelessTerminalGui(@NonNull EntityPlayer player);
 }

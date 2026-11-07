@@ -19,7 +19,7 @@ import java.util.Iterator;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a list of items in AE.

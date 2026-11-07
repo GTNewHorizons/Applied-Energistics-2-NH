@@ -8,7 +8,7 @@ import java.util.Map.Entry;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.util.Constants.NBT;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.HealthSortOrder;
@@ -153,7 +153,7 @@ public class TileStorageReshuffle extends AENetworkTile
     }
 
     @Override
-    @NotNull
+    @NonNull
     public AEStackTypeFilter getTypeFilters() {
         return this.typeFilters;
     }

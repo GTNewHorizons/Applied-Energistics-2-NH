@@ -1,9 +1,9 @@
 package net.p455w0rd.wirelesscraftingterminal.api;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.NonNull;
 
 public interface IWCTItemDescription {
 
@@ -19,7 +19,7 @@ public interface IWCTItemDescription {
      *
      * @return
      */
-    @Nonnull
+    @NonNull
     Item getItem();
 
     /**
@@ -27,7 +27,7 @@ public interface IWCTItemDescription {
      *
      * @return
      */
-    @Nonnull
+    @NonNull
     ItemStack getStack();
 
     /**
@@ -36,6 +36,6 @@ public interface IWCTItemDescription {
      * @param amount
      * @return
      */
-    @Nonnull
+    @NonNull
     ItemStack getStacks(int amount);
 }

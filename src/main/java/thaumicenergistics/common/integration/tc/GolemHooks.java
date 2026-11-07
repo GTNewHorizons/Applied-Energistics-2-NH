@@ -3,12 +3,12 @@ package thaumicenergistics.common.integration.tc;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.entity.DataWatcher;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+
+import org.jspecify.annotations.NonNull;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -563,7 +563,7 @@ public class GolemHooks {
      *
      * @param handler
      */
-    public static void registerHandler(final @Nonnull IGolemHookHandler handler) {
+    public static void registerHandler(final @NonNull IGolemHookHandler handler) {
         try {
             // Add the handler
             GolemHooks.registeredHandlers.add(handler);

@@ -2,12 +2,12 @@ package com.github.vfyjxf.nee.network;
 
 import static com.github.vfyjxf.nee.NotEnoughEnergistics.instance;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.Nullable;
 
 import com.github.vfyjxf.nee.block.tile.TilePatternInterface;
 import com.github.vfyjxf.nee.client.gui.GuiPatternInterface;

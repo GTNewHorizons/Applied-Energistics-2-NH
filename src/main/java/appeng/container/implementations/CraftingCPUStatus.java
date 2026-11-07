@@ -7,10 +7,10 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.text.NumberFormat;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.CraftingAllow;
 import appeng.api.networking.crafting.ICraftingCPU;

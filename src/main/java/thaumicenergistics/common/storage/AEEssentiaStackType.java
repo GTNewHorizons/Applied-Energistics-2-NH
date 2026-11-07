@@ -10,9 +10,9 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IIcon;
 import net.minecraft.util.ResourceLocation;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.gtnewhorizons.aspectrecipeindex.common.items.ItemAspect;
 
@@ -87,7 +87,7 @@ public class AEEssentiaStackType implements IAEStackType<AEEssentiaStack> {
     }
 
     @Override
-    public @Nullable AEEssentiaStack getStackFromContainerItem(@NotNull ItemStack container) {
+    public @Nullable AEEssentiaStack getStackFromContainerItem(@NonNull ItemStack container) {
         if (container.getItem() instanceof IEssentiaContainerItem essentiaContainer) {
             AspectList list = essentiaContainer.getAspects(container);
             if (list != null) {
@@ -101,7 +101,7 @@ public class AEEssentiaStackType implements IAEStackType<AEEssentiaStack> {
     }
 
     @Override
-    public @Nullable AEEssentiaStack convertStackFromItem(@NotNull ItemStack itemStack) {
+    public @Nullable AEEssentiaStack convertStackFromItem(@NonNull ItemStack itemStack) {
         if (ModsList.ASPECT_RECIPE_INDEX.isLoaded() && itemStack.getItem() instanceof ItemAspect) {
             Aspect aspect = ItemAspect.getAspect(itemStack);
             if (aspect != null) {
@@ -121,13 +121,13 @@ public class AEEssentiaStackType implements IAEStackType<AEEssentiaStack> {
     }
 
     @Override
-    public long getContainerItemCapacity(@NotNull ItemStack itemStack, @NotNull AEEssentiaStack aeEssentiaStack) {
+    public long getContainerItemCapacity(@NonNull ItemStack itemStack, @NonNull AEEssentiaStack aeEssentiaStack) {
         return EssentiaItemContainerHelper.INSTANCE.getContainerInfo(itemStack).maximumCapacity();
     }
 
     @Override
-    public @NotNull ObjectLongPair<ItemStack> drainStackFromContainer(@NotNull ItemStack container,
-            @NotNull AEEssentiaStack stack) {
+    public @NonNull ObjectLongPair<ItemStack> drainStackFromContainer(@NonNull ItemStack container,
+            @NonNull AEEssentiaStack stack) {
         if (EssentiaItemContainerHelper.INSTANCE.getItemType(container)
                 != EssentiaItemContainerHelper.AspectItemType.EssentiaContainer) {
             return new ObjectLongImmutablePair<>(container, 0);
@@ -206,7 +206,7 @@ public class AEEssentiaStackType implements IAEStackType<AEEssentiaStack> {
     }
 
     @Override
-    public @Nullable ItemStack clearFilledContainer(@NotNull ItemStack container) {
+    public @Nullable ItemStack clearFilledContainer(@NonNull ItemStack container) {
         Item containerItem = container.getItem();
         if (containerItem instanceof ItemEssence) {
             // Create an empty phial for the output
@@ -236,8 +236,8 @@ public class AEEssentiaStackType implements IAEStackType<AEEssentiaStack> {
     }
 
     @Override
-    public @NotNull ObjectLongPair<ItemStack> fillContainer(@NotNull ItemStack container,
-            @NotNull AEEssentiaStack stack) {
+    public @NonNull ObjectLongPair<ItemStack> fillContainer(@NonNull ItemStack container,
+            @NonNull AEEssentiaStack stack) {
         if (EssentiaItemContainerHelper.INSTANCE.getItemType(container)
                 != EssentiaItemContainerHelper.AspectItemType.EssentiaContainer) {
             return new ObjectLongImmutablePair<>(null, 0);
@@ -392,11 +392,11 @@ public class AEEssentiaStackType implements IAEStackType<AEEssentiaStack> {
         };
     }
 
-    @NotNull
+    @NonNull
     private final AEEssentiaStack testStack = new AEEssentiaStack(Aspect.AIR);
 
     @Override
-    @NotNull
+    @NonNull
     public AEEssentiaStack getTestStack() {
         return this.testStack.copy();
     }

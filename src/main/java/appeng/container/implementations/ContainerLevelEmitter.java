@@ -16,7 +16,7 @@ import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.LevelType;
@@ -56,9 +56,9 @@ public class ContainerLevelEmitter extends ContainerUpgradeable implements ICont
 
     private final LongSyncHandler emitterValueSync;
     private final LongSyncHandler storedSync;
-    private final DeltaObjectSyncHandler<@NotNull AEStackTypeFilter, TypeFilterDelta> typeFiltersSync;
-    private final ConfigEnumSyncHandler<@NotNull LevelType> levelModeSync;
-    private final ConfigEnumSyncHandler<@NotNull YesNo> craftingModeSync;
+    private final DeltaObjectSyncHandler<@NonNull AEStackTypeFilter, TypeFilterDelta> typeFiltersSync;
+    private final ConfigEnumSyncHandler<@NonNull LevelType> levelModeSync;
+    private final ConfigEnumSyncHandler<@NonNull YesNo> craftingModeSync;
     public final AEStackInventorySyncHandler configSync;
 
     public ContainerLevelEmitter(final InventoryPlayer ip, final ILevelEmitter te) {
@@ -219,12 +219,12 @@ public class ContainerLevelEmitter extends ContainerUpgradeable implements ICont
         this.levelModeSync.rotate(backwards);
     }
 
-    @NotNull
+    @NonNull
     public AEStackTypeFilter getTypeFilters() {
         return this.typeFiltersSync.get();
     }
 
-    public void toggleTypeFilter(@NotNull final IAEStackType<?> type) {
+    public void toggleTypeFilter(@NonNull final IAEStackType<?> type) {
         this.typeFiltersSync.applyAndQueueDelta(TypeFilterDelta.toggle(type));
     }
 

@@ -14,9 +14,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -25,6 +22,9 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.networking.IGridNode;
 import appeng.api.parts.IFacadeContainer;
@@ -326,7 +326,7 @@ public class TileCableBus extends AEBaseTile implements AEMultiTile, ICustomColl
     }
 
     @Override
-    public <T> @Nullable T getCapability(@Nonnull Class<T> capability, @Nonnull ForgeDirection side) {
+    public <T> @Nullable T getCapability(@NonNull Class<T> capability, @NonNull ForgeDirection side) {
         IPart part = getPart(side);
 
         if (part != null) {

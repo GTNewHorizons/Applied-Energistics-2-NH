@@ -1,9 +1,9 @@
 package thaumicenergistics.api.grid;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.networking.IGrid;
 import appeng.api.util.DimensionalCoord;
@@ -24,7 +24,7 @@ public interface IDigiVisSource {
      * @param amount
      * @return The amount drained.
      */
-    int consumeVis(@Nonnull Aspect digiVisAspect, int amount);
+    int consumeVis(@NonNull Aspect digiVisAspect, int amount);
 
     /**
      * Get's the AE grid the source is attached to.
@@ -39,7 +39,7 @@ public interface IDigiVisSource {
      *
      * @return
      */
-    @Nonnull
+    @NonNull
     DimensionalCoord getLocation();
 
     /**
@@ -48,7 +48,7 @@ public interface IDigiVisSource {
      *
      * @return
      */
-    @Nonnull
+    @NonNull
     ForgeDirection getSide();
 
     /**

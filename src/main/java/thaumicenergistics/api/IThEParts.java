@@ -1,6 +1,6 @@
 package thaumicenergistics.api;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Thaumic Energistics AE2 cable parts.
@@ -13,60 +13,60 @@ public abstract class IThEParts {
     /**
      * Arcane crafting terminal.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription ArcaneCrafting_Terminal;
 
     /**
      * Essentia export bus.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription Essentia_ExportBus;
 
     /**
      * Essentia import bus.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription Essentia_ImportBus;
 
     /**
      * Essentia level emitter.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription Essentia_LevelEmitter;
 
     /**
      * Essentia storage bus.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription Essentia_StorageBus;
 
     /**
      * Essentia terminal.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription Essentia_Terminal;
 
     /**
      * Vis relay interface.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription VisRelay_Interface;
 
     /**
      * Essentia storage monitor.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription Essentia_StorageMonitor;
 
     /**
      * Essentia conversion monitor.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription Essentia_ConversionMonitor;
 
     /**
      * Creative vis relay interface.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription CreativeVisRelay_Interface;
 }

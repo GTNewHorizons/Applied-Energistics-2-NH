@@ -6,9 +6,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.NonNull;
 
 import com.github.vfyjxf.nee.config.NEEConfig;
 
@@ -24,7 +24,7 @@ import gregapi.recipes.Recipe;
  */
 public class GregTech6RecipeProcessor implements IRecipeProcessor {
 
-    @Nonnull
+    @NonNull
     @Override
     public Set<String> getAllOverlayIdentifier() {
         Set<String> identifiers = new HashSet<>();
@@ -36,13 +36,13 @@ public class GregTech6RecipeProcessor implements IRecipeProcessor {
         return identifiers;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String getRecipeProcessorId() {
         return "GregTech6";
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public List<PositionedStack> getRecipeInput(IRecipeHandler recipe, int recipeIndex, String identifier) {
         List<PositionedStack> recipeInputs = new ArrayList<>();
@@ -86,7 +86,7 @@ public class GregTech6RecipeProcessor implements IRecipeProcessor {
         return recipeInputs;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public List<PositionedStack> getRecipeOutput(IRecipeHandler recipe, int recipeIndex, String identifier) {
         List<PositionedStack> recipeOutput = new ArrayList<>();

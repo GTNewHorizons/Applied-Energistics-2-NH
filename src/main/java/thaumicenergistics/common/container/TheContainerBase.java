@@ -2,13 +2,13 @@ package thaumicenergistics.common.container;
 
 import java.util.HashMap;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.Slot;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import thaumicenergistics.common.utils.ThELog;
 
@@ -49,7 +49,7 @@ public abstract class TheContainerBase extends Container {
      * Adds a slot to the container and the slot map.
      */
     @Override
-    protected Slot addSlotToContainer(@Nonnull final Slot slot) {
+    protected Slot addSlotToContainer(@NonNull final Slot slot) {
         // Call super
         super.addSlotToContainer(slot);
 
@@ -74,7 +74,7 @@ public abstract class TheContainerBase extends Container {
      *
      * @return
      */
-    protected boolean detectAndSendChangesMP(@Nonnull final EntityPlayerMP playerMP) {
+    protected boolean detectAndSendChangesMP(@NonNull final EntityPlayerMP playerMP) {
         return false;
     }
 
@@ -118,7 +118,7 @@ public abstract class TheContainerBase extends Container {
      * Clears the slot map.
      */
     @Override
-    public void onContainerClosed(@Nonnull final EntityPlayer player) {
+    public void onContainerClosed(@NonNull final EntityPlayer player) {
         // Call super
         super.onContainerClosed(player);
 

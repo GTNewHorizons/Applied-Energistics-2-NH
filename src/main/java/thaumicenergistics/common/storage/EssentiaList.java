@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.storage.data.IAEStackType;
@@ -132,7 +132,7 @@ public class EssentiaList implements IItemList<AEEssentiaStack> {
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public Iterator<AEEssentiaStack> iterator() {
         return new MeaningfulAEStackIterator<>(this.records.iterator());
     }

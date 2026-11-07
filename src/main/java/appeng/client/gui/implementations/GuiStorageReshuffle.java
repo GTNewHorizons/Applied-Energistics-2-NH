@@ -19,7 +19,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IIcon;
 import net.minecraft.util.ResourceLocation;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
@@ -456,7 +456,7 @@ public class GuiStorageReshuffle extends AEBaseGui {
         }
     }
 
-    private static @NotNull List<String> getStackPartitionsLines(IAEStack<?> stack, List<ScanRecord> partitionsList) {
+    private static @NonNull List<String> getStackPartitionsLines(IAEStack<?> stack, List<ScanRecord> partitionsList) {
         final List<String> lines = new ArrayList<>();
         lines.add(GuiText.ReshuffleScanDuplicatePartitionStackNameStyle.getLocal() + stack.getDisplayName());
         for (int i = 0; i < partitionsList.size(); i++) {

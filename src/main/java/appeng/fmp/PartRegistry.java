@@ -10,9 +10,9 @@
 
 package appeng.fmp;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.block.Block;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.block.AEBaseBlock;
 import appeng.block.misc.BlockQuartzTorch;

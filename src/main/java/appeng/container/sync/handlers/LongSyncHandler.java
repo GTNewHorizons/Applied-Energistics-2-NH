@@ -2,8 +2,8 @@ package appeng.container.sync.handlers;
 
 import java.io.IOException;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.container.sync.AbstractSyncHandler;
 import appeng.container.sync.SyncDirection;
@@ -55,13 +55,13 @@ public class LongSyncHandler extends AbstractSyncHandler {
         this.markDirtyInternal();
     }
 
-    @NotNull
+    @NonNull
     public LongSyncHandler onClientChange(final LongChangeListener listener) {
         this.clientChangeListener = listener;
         return this;
     }
 
-    @NotNull
+    @NonNull
     public LongSyncHandler onServerChange(final LongChangeListener listener) {
         this.serverChangeListener = listener;
         return this;

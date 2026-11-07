@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.storage.data.IAEStack;
 import appeng.container.sync.AbstractSyncHandler;
@@ -28,10 +28,10 @@ public class AEStackInventorySyncHandler extends AbstractSyncHandler {
     @FunctionalInterface
     public interface InventoryChangeListener {
 
-        void onChange(@NotNull IAEStackInventory inventory);
+        void onChange(@NonNull IAEStackInventory inventory);
     }
 
-    private final @NotNull IAEStackInventory inventory;
+    private final @NonNull IAEStackInventory inventory;
     private final List<AEStackInventoryDelta> pendingDeltas = new ArrayList<>();
     private IAEStack<?>[] lastSentSnapshot;
     private int diffCheckInterval;
@@ -40,7 +40,7 @@ public class AEStackInventorySyncHandler extends AbstractSyncHandler {
     private @Nullable InventoryChangeListener serverChangeListener;
 
     public AEStackInventorySyncHandler(final SyncManager manager, final String key, final String fullKey,
-            final SyncDirection direction, final @NotNull IAEStackInventory inventory) {
+            final SyncDirection direction, final @NonNull IAEStackInventory inventory) {
         super(manager, key, fullKey, direction);
         this.inventory = Objects.requireNonNull(inventory, "inventory");
         this.lastSentSnapshot = this.copyInventory();
@@ -49,7 +49,7 @@ public class AEStackInventorySyncHandler extends AbstractSyncHandler {
         this.dirty = false;
     }
 
-    public @NotNull IAEStackInventory get() {
+    public @NonNull IAEStackInventory get() {
         return this.inventory;
     }
 
@@ -68,8 +68,8 @@ public class AEStackInventorySyncHandler extends AbstractSyncHandler {
      * Sets how often the handler performs a periodic full inventory diff without a dirty mark. Dirty marks, queued
      * deltas, and forced full resyncs are still sent immediately. Use 0 to disable periodic checks.
      */
-    public @NotNull AEStackInventorySyncHandler setDiffCheckInterval(final int ticks,
-            final @NotNull SyncDirection applicableDirection) {
+    public @NonNull AEStackInventorySyncHandler setDiffCheckInterval(final int ticks,
+            final @NonNull SyncDirection applicableDirection) {
         if (!applicableDirection.canSendFrom(this.getLocalEndpoint())) {
             return this;
         }
@@ -80,12 +80,12 @@ public class AEStackInventorySyncHandler extends AbstractSyncHandler {
         return this;
     }
 
-    public @NotNull AEStackInventorySyncHandler onClientChange(final InventoryChangeListener listener) {
+    public @NonNull AEStackInventorySyncHandler onClientChange(final InventoryChangeListener listener) {
         this.clientChangeListener = listener;
         return this;
     }
 
-    public @NotNull AEStackInventorySyncHandler onServerChange(final InventoryChangeListener listener) {
+    public @NonNull AEStackInventorySyncHandler onServerChange(final InventoryChangeListener listener) {
         this.serverChangeListener = listener;
         return this;
     }

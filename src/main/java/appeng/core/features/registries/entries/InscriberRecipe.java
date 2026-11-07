@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.base.Optional;
 
@@ -23,23 +23,23 @@ import appeng.api.features.InscriberProcessType;
  */
 public class InscriberRecipe implements IInscriberRecipe {
 
-    @Nonnull
+    @NonNull
     private final List<ItemStack> inputs;
 
-    @Nonnull
+    @NonNull
     private final ItemStack output;
 
-    @Nonnull
+    @NonNull
     private final Optional<ItemStack> maybeTop;
 
-    @Nonnull
+    @NonNull
     private final Optional<ItemStack> maybeBot;
 
-    @Nonnull
+    @NonNull
     private final InscriberProcessType type;
 
-    public InscriberRecipe(@Nonnull final Collection<ItemStack> inputs, @Nonnull final ItemStack output,
-            @Nullable final ItemStack top, @Nullable final ItemStack bot, @Nonnull final InscriberProcessType type) {
+    public InscriberRecipe(@NonNull final Collection<ItemStack> inputs, @NonNull final ItemStack output,
+            @Nullable final ItemStack top, @Nullable final ItemStack bot, @NonNull final InscriberProcessType type) {
         this.inputs = new ArrayList<>(inputs.size());
         this.inputs.addAll(inputs);
 
@@ -50,31 +50,31 @@ public class InscriberRecipe implements IInscriberRecipe {
         this.type = type;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public final List<ItemStack> getInputs() {
         return this.inputs;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public final ItemStack getOutput() {
         return this.output;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public final Optional<ItemStack> getTopOptional() {
         return this.maybeTop;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public final Optional<ItemStack> getBottomOptional() {
         return this.maybeBot;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public final InscriberProcessType getProcessType() {
         return this.type;

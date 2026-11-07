@@ -4,11 +4,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+
+import org.jspecify.annotations.NonNull;
 
 import thaumcraft.api.aspects.IAspectContainer;
 import thaumcraft.api.aspects.IEssentiaContainerItem;
@@ -340,7 +340,7 @@ class ThETransportPermissions implements IThETransportPermissions {
     }
 
     @Override
-    public boolean doesAspectContainerTileShareCapacity(@Nonnull IAspectContainer container) {
+    public boolean doesAspectContainerTileShareCapacity(@NonNull IAspectContainer container) {
         if (this.tileCapacities.containsKey(container.getClass())) {
             return this.tileCapacities.get(container.getClass()).isCapacityShared(container);
         }

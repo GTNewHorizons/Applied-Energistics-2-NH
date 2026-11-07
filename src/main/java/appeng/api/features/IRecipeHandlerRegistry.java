@@ -13,7 +13,7 @@
 
 package appeng.api.features;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.recipes.ICraftHandler;
 import appeng.api.recipes.IRecipeHandler;

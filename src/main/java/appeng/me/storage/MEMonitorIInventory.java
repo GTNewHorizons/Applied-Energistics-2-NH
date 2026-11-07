@@ -17,9 +17,9 @@ import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.AEApi;
 import appeng.api.config.AccessRestriction;
@@ -274,7 +274,7 @@ public class MEMonitorIInventory implements IStorageBusMonitor<IAEItemStack> {
     }
 
     @Override
-    public IAEItemStack getAvailableItem(@Nonnull IAEItemStack request, int iteration) {
+    public IAEItemStack getAvailableItem(@NonNull IAEItemStack request, int iteration) {
         long count = 0;
         if (!init) {
             this.onTick();

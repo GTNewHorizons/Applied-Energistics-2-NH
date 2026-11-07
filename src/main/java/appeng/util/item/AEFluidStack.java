@@ -20,9 +20,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.Tessellator;
@@ -37,6 +34,8 @@ import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 
 import com.glodblock.github.common.item.ItemFluidPacket;
@@ -76,7 +75,7 @@ public final class AEFluidStack extends AEStack<IAEFluidStack> implements IAEFlu
         this.myHash = is.myHash;
     }
 
-    private AEFluidStack(@Nonnull final FluidStack is) {
+    private AEFluidStack(@NonNull final FluidStack is) {
         this.fluid = is.getFluid();
 
         if (this.fluid == null) {

@@ -11,8 +11,8 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.common.util.Constants.NBT;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.PinsRows;
 import appeng.api.config.PinsState;
@@ -44,7 +44,7 @@ public class PinsHolder implements IAEAppEngInventory {
         this.initialized = true;
     }
 
-    public void writeToNBT(@NotNull ItemStack stack, String name) {
+    public void writeToNBT(@NonNull ItemStack stack, String name) {
         if (!stack.hasTagCompound()) {
             stack.setTagCompound(new NBTTagCompound());
         }

@@ -13,13 +13,13 @@
 
 package appeng.api.util;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.IBlockAccess;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.definitions.IBlockDefinition;
 import appeng.api.definitions.IComparableDefinition;

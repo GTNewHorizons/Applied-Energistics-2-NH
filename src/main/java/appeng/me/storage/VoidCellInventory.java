@@ -3,12 +3,10 @@ package appeng.me.storage;
 import static appeng.util.item.AEFluidStackType.FLUID_STACK_TYPE;
 import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.FuzzyMode;
@@ -58,7 +56,7 @@ public class VoidCellInventory<StackType extends IAEStack<StackType>> implements
     }
 
     @Override
-    public StackType getAvailableItem(@Nonnull StackType request, int iteration) {
+    public StackType getAvailableItem(@NonNull StackType request, int iteration) {
         return null;
     }
 
@@ -75,7 +73,7 @@ public class VoidCellInventory<StackType extends IAEStack<StackType>> implements
     }
 
     @Override
-    @NotNull
+    @NonNull
     public IAEStackType<?> getStackType() {
         return cellType.getStackType();
     }

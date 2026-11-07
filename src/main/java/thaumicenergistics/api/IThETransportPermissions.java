@@ -1,10 +1,10 @@
 package thaumicenergistics.api;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+
+import org.jspecify.annotations.NonNull;
 
 import thaumcraft.api.aspects.IAspectContainer;
 import thaumcraft.api.aspects.IEssentiaContainerItem;
@@ -28,7 +28,7 @@ public interface IThETransportPermissions {
      * @return True if added to the lists, False if not.
      */
     <T extends TileEntity & IAspectContainer> boolean addAspectContainerTileToBothPermissions(
-            @Nonnull Class<T> tileClass, int capacity);
+            @NonNull Class<T> tileClass, int capacity);
 
     /**
      * Adds a tile entity to both inject & extract whitelists. The tile must implement the interface
@@ -37,7 +37,7 @@ public interface IThETransportPermissions {
      * @param tileClass
      * @return True if added to the lists, False if not.
      */
-    <T extends TileEntity & IAspectStorage> boolean addAspectStorageTileToBothPermissions(@Nonnull Class<T> tileClass);
+    <T extends TileEntity & IAspectStorage> boolean addAspectStorageTileToBothPermissions(@NonNull Class<T> tileClass);
 
     /**
      * Adds a tile entity to the extract whitelist. The tile must implement the interface {@link IAspectContainer}<br>
@@ -48,7 +48,7 @@ public interface IThETransportPermissions {
      * @return True if added to the list or already present, False otherwise.
      */
     <T extends TileEntity & IAspectContainer> boolean addAspectContainerTileToExtractPermissions(
-            @Nonnull Class<T> tileClass, int capacity);
+            @NonNull Class<T> tileClass, int capacity);
 
     /**
      * Adds a tile entity to the extract whitelist. The tile must implement the interface {@link IAspectStorage}
@@ -57,7 +57,7 @@ public interface IThETransportPermissions {
      * @return True if added to the list or already present, False otherwise.
      */
     <T extends TileEntity & IAspectStorage> boolean addAspectStorageTileToExtractPermissions(
-            @Nonnull Class<T> tileClass);
+            @NonNull Class<T> tileClass);
 
     /**
      * Adds a tile entity to the inject whitelist. The tile must implement the interface {@link IAspectContainer}<br>
@@ -68,7 +68,7 @@ public interface IThETransportPermissions {
      * @return True if added to the list, False if not.
      */
     <T extends TileEntity & IAspectContainer> boolean addAspectContainerTileToInjectPermissions(
-            @Nonnull Class<T> tileClass, int capacity);
+            @NonNull Class<T> tileClass, int capacity);
 
     /**
      * Adds a tile entity to the inject whitelist. The tile must implement the interface {@link IAspectStorage}
@@ -77,7 +77,7 @@ public interface IThETransportPermissions {
      * @return True if added to the list, False if not.
      */
     <T extends TileEntity & IAspectStorage> boolean addAspectStorageTileToInjectPermissions(
-            @Nonnull Class<T> tileClass);
+            @NonNull Class<T> tileClass);
 
     /**
      * Adds an item to the whitelist that must match the specified damage value.
@@ -87,7 +87,7 @@ public interface IThETransportPermissions {
      * @param damageValue
      * @param canHoldPartialAmount
      */
-    void addEssentiaContainerItemToTransportPermissions(@Nonnull Class<? extends IEssentiaContainerItem> itemClass,
+    void addEssentiaContainerItemToTransportPermissions(@NonNull Class<? extends IEssentiaContainerItem> itemClass,
             int capacity, int damageValue, boolean canHoldPartialAmount);
 
     /**
@@ -97,7 +97,7 @@ public interface IThETransportPermissions {
      * @param capacity
      * @param canHoldPartialAmount
      */
-    void addEssentiaContainerItemToTransportPermissions(@Nonnull ItemStack containerItem, int capacity,
+    void addEssentiaContainerItemToTransportPermissions(@NonNull ItemStack containerItem, int capacity,
             boolean canHoldPartialAmount);
 
     /**
@@ -106,7 +106,7 @@ public interface IThETransportPermissions {
      * @param container
      * @return
      */
-    boolean canExtractFromAspectContainerTile(@Nonnull IAspectContainer container);
+    boolean canExtractFromAspectContainerTile(@NonNull IAspectContainer container);
 
     /**
      * Checks if the container can be injected into
@@ -114,7 +114,7 @@ public interface IThETransportPermissions {
      * @param container
      * @return
      */
-    boolean canInjectToAspectContainerTile(@Nonnull IAspectContainer container);
+    boolean canInjectToAspectContainerTile(@NonNull IAspectContainer container);
 
     /**
      * Returns the registered capacity of the specified container.
@@ -122,7 +122,7 @@ public interface IThETransportPermissions {
      * @param container
      * @return Registered capacity, or -1 if not registered.
      */
-    int getAspectContainerTileCapacity(@Nonnull IAspectContainer container);
+    int getAspectContainerTileCapacity(@NonNull IAspectContainer container);
 
     /**
      * Returns whether the capacity of aspect container is shared among all aspects.
@@ -130,7 +130,7 @@ public interface IThETransportPermissions {
      * @param container
      * @return True if container shares capacity among all aspects; False if doesn't.
      */
-    boolean doesAspectContainerTileShareCapacity(@Nonnull IAspectContainer container);
+    boolean doesAspectContainerTileShareCapacity(@NonNull IAspectContainer container);
 
     /**
      * Gets the information about the container as it was registered to the whitelist.
@@ -139,5 +139,5 @@ public interface IThETransportPermissions {
      * @param damageValue
      * @return Info if was registered, null otherwise.
      */
-    IThEEssentiaContainerPermission getEssentiaContainerInfo(@Nonnull Class<? extends Item> itemClass, int damageValue);
+    IThEEssentiaContainerPermission getEssentiaContainerInfo(@NonNull Class<? extends Item> itemClass, int damageValue);
 }

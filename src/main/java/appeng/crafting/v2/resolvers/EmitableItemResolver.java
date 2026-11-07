@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IItemList;
@@ -100,10 +100,10 @@ public class EmitableItemResolver implements CraftingRequestResolver {
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public List<CraftingTask> provideCraftingRequestResolvers(@Nonnull CraftingRequest request,
-            @Nonnull CraftingContext context) {
+    public List<CraftingTask> provideCraftingRequestResolvers(@NonNull CraftingRequest request,
+            @NonNull CraftingContext context) {
         if (context.craftingGrid.canEmitFor(request.stack)) {
             return Collections.singletonList(new EmitItemTask(request));
         } else {
