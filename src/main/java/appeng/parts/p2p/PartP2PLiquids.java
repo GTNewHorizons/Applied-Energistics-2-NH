@@ -10,6 +10,7 @@
 
 package appeng.parts.p2p;
 
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,7 +30,7 @@ import appeng.me.GridAccessException;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-public class PartP2PLiquids extends PartP2PTunnelNormal<PartP2PLiquids> implements IFluidHandler {
+public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implements IFluidHandler {
 
     private static final ThreadLocal<Stack<PartP2PLiquids>> DEPTH = new ThreadLocal<>();
     private static final FluidTankInfo[] ACTIVE_TANK = { new FluidTankInfo(null, 10000) };
@@ -42,6 +43,11 @@ public class PartP2PLiquids extends PartP2PTunnelNormal<PartP2PLiquids> implemen
     }
 
     @Override
+    protected P2PTransportPolicy getTransportPolicy() {
+        return P2PTransportPolicy.TWO_WAY_PUSH;
+    }
+
+    @Override
     @SideOnly(Side.CLIENT)
     public IIcon getTypeTexture() {
         return Blocks.lapis_block.getBlockTextureFromSide(0);
@@ -50,106 +56,82 @@ public class PartP2PLiquids extends PartP2PTunnelNormal<PartP2PLiquids> implemen
     @Override
     public void onTunnelNetworkChange() {
         this.cachedTank = null;
+        super.onTunnelNetworkChange();
     }
 
     @Override
     public void onNeighborChanged() {
         this.cachedTank = null;
-        if (this.isOutput()) {
-            final PartP2PLiquids in = this.getInput();
-            if (in != null) {
-                in.onTunnelNetworkChange();
-            }
-        }
+        super.onNeighborChanged();
     }
 
     @Override
     public int fill(final ForgeDirection from, final FluidStack resource, final boolean doFill) {
-        if (resource == null || resource.getFluid() == null) return 0;
+        if (resource == null || resource.getFluid() == null || isBusy()) return 0;
 
         final Stack<PartP2PLiquids> stack = this.getDepth();
 
-        for (final PartP2PLiquids t : stack) {
-            if (t == this) {
-                return 0;
-            }
-        }
-
         stack.push(this);
 
-        final List<PartP2PLiquids> list = this.getOutputs(resource.getFluid());
-        PartP2PLiquids input = getInput();
-        if (input != null) {
-            list.add(input);
-        }
+        try {
+            final List<PartP2PLiquids> list = this.getInsertTargets(resource.getFluid());
 
-        long requestTotal = 0;
+            long requestTotal = 0;
 
-        Iterator<PartP2PLiquids> i = list.iterator();
-        while (i.hasNext()) {
-            final PartP2PLiquids l = i.next();
-            if (l == this) continue;
-            final IFluidHandler tank = l.getTarget();
-            if (tank != null) {
-                l.tmpUsed = tank.fill(l.getSide().getOpposite(), resource.copy(), false);
-            } else {
-                l.tmpUsed = 0;
+            Iterator<PartP2PLiquids> i = list.iterator();
+            while (i.hasNext()) {
+                final PartP2PLiquids l = i.next();
+                final IFluidHandler tank = l.getTarget();
+                if (tank != null) {
+                    l.tmpUsed = tank.fill(l.getSide().getOpposite(), resource.copy(), false);
+                } else {
+                    l.tmpUsed = 0;
+                }
+
+                if (l.tmpUsed <= 0) {
+                    i.remove();
+                } else {
+                    requestTotal += l.tmpUsed;
+                }
             }
 
-            if (l.tmpUsed <= 0) {
-                i.remove();
-            } else {
-                requestTotal += l.tmpUsed;
-            }
-        }
-
-        if (requestTotal <= 0) {
-            if (stack.pop() != this) {
-                throw new IllegalStateException("Invalid Recursion detected.");
+            if (requestTotal <= 0) {
+                return 0;
             }
 
-            return 0;
-        }
-
-        if (!doFill) {
-            if (stack.pop() != this) {
-                throw new IllegalStateException("Invalid Recursion detected.");
+            if (!doFill) {
+                return (int) Math.min(resource.amount, requestTotal);
             }
 
-            return (int) Math.min(resource.amount, requestTotal);
-        }
+            int available = resource.amount;
 
-        int available = resource.amount;
+            i = list.iterator();
+            int used = 0;
+            while (i.hasNext()) {
+                final PartP2PLiquids l = i.next();
 
-        i = list.iterator();
-        int used = 0;
-        while (i.hasNext()) {
-            final PartP2PLiquids l = i.next();
-            if (l == this) continue;
+                final FluidStack insert = resource.copy();
+                insert.amount = (int) Math.ceil(insert.amount * ((double) l.tmpUsed / (double) requestTotal));
+                if (insert.amount > available) {
+                    insert.amount = available;
+                }
 
-            final FluidStack insert = resource.copy();
-            insert.amount = (int) Math.ceil(insert.amount * ((double) l.tmpUsed / (double) requestTotal));
-            if (insert.amount > available) {
-                insert.amount = available;
+                final IFluidHandler tank = l.getTarget();
+                if (tank != null) {
+                    l.tmpUsed = tank.fill(l.getSide().getOpposite(), insert, true);
+                } else {
+                    l.tmpUsed = 0;
+                }
+
+                available -= l.tmpUsed;
+                used += l.tmpUsed;
+                if (available == 0) break;
             }
 
-            final IFluidHandler tank = l.getTarget();
-            if (tank != null) {
-                l.tmpUsed = tank.fill(l.getSide().getOpposite(), insert, true);
-            } else {
-                l.tmpUsed = 0;
-            }
-
-            available -= l.tmpUsed;
-            used += l.tmpUsed;
-            if (available == 0) break;
+            return used;
+        } finally {
+            stack.pop();
         }
-
-        if (stack.pop() != this) {
-            throw new IllegalStateException("Invalid Recursion detected.");
-        }
-
-        return used;
     }
 
     private Stack<PartP2PLiquids> getDepth() {
@@ -162,24 +144,29 @@ public class PartP2PLiquids extends PartP2PTunnelNormal<PartP2PLiquids> implemen
         return s;
     }
 
-    private List<PartP2PLiquids> getOutputs(final Fluid input) {
-        final List<PartP2PLiquids> outs = new LinkedList<>();
-        if (input == null) return outs;
-        try {
-            for (final PartP2PLiquids l : this.getOutputs()) {
-                if (l == this) continue;
-                final IFluidHandler handler = l.getTarget();
-                if (handler != null) {
-                    if (handler.canFill(l.getSide().getOpposite(), input)) {
-                        outs.add(l);
-                    }
-                }
+    private List<PartP2PLiquids> getInsertTargets(final Fluid input) {
+        final List<PartP2PLiquids> tunnels = new LinkedList<>();
+        if (input == null) return tunnels;
+        for (final PartP2PLiquids l : this.getInsertTargets()) {
+            final IFluidHandler handler = l.getTarget();
+            if (handler != null && handler.canFill(l.getSide().getOpposite(), input)) {
+                tunnels.add(l);
             }
-        } catch (final GridAccessException e) {
-            // :P
         }
 
-        return outs;
+        return tunnels;
+    }
+
+    private List<PartP2PLiquids> getExtractTargets(final Fluid fluid) {
+        final List<PartP2PLiquids> tunnels = new LinkedList<>();
+        if (fluid == null) return tunnels;
+        for (final PartP2PLiquids l : this.getExtractTargets()) {
+            final IFluidHandler handler = l.getTarget();
+            if (handler != null && handler.canDrain(l.getSide().getOpposite(), fluid)) {
+                tunnels.add(l);
+            }
+        }
+        return tunnels;
     }
 
     public IFluidHandler getTarget() {
@@ -204,36 +191,58 @@ public class PartP2PLiquids extends PartP2PTunnelNormal<PartP2PLiquids> implemen
 
     @Override
     public FluidStack drain(final ForgeDirection from, final FluidStack resource, final boolean doDrain) {
-        return null;
+        if (resource == null || resource.getFluid() == null || resource.amount <= 0) {
+            return null;
+        }
+        return this.drainTargets(resource, resource.amount, doDrain);
     }
 
     @Override
     public FluidStack drain(final ForgeDirection from, final int maxDrain, final boolean doDrain) {
-        return null;
+        if (maxDrain <= 0) {
+            return null;
+        }
+        return this.drainTargets(null, maxDrain, doDrain);
     }
 
-    private boolean inputAcceptsFluid(Fluid input) {
-        PartP2PLiquids l = getInput();
-        if (l == null || l == this || input == null) return false;
-        final IFluidHandler handler = l.getTarget();
-        return handler != null && handler.canFill(l.getSide().getOpposite(), input);
+    private FluidStack drainTargets(final FluidStack filter, final int maxDrain, final boolean doDrain) {
+        if (isBusy()) {
+            return null;
+        }
+
+        final Stack<PartP2PLiquids> stack = this.getDepth();
+        stack.push(this);
+        try {
+            final List<PartP2PLiquids> extractTargets = filter == null ? this.getExtractTargets()
+                    : this.getExtractTargets(filter.getFluid());
+            for (final PartP2PLiquids t : extractTargets) {
+                final IFluidHandler tank = t.getTarget();
+                if (tank == null) {
+                    continue;
+                }
+                final ForgeDirection side = t.getSide().getOpposite();
+                final FluidStack drained = filter == null ? tank.drain(side, maxDrain, doDrain)
+                        : tank.drain(side, new FluidStack(filter, maxDrain), doDrain);
+                if (drained != null && drained.amount > 0) {
+                    return drained;
+                }
+            }
+            return null;
+        } finally {
+            stack.pop();
+        }
     }
 
     @Override
     public boolean canFill(final ForgeDirection from, final Fluid fluid) {
-        if (from != this.getSide()) {
+        if (from != this.getSide() || isBusy()) {
             return false;
         }
 
         final Stack<PartP2PLiquids> stack = this.getDepth();
-        for (final PartP2PLiquids t : stack) {
-            if (t == this) {
-                return false;
-            }
-        }
         stack.push(this);
         try {
-            return !this.getOutputs(fluid).isEmpty() || inputAcceptsFluid(fluid);
+            return !this.getInsertTargets(fluid).isEmpty();
         } finally {
             stack.pop();
         }
@@ -241,15 +250,45 @@ public class PartP2PLiquids extends PartP2PTunnelNormal<PartP2PLiquids> implemen
 
     @Override
     public boolean canDrain(final ForgeDirection from, final Fluid fluid) {
-        return false;
+        if (from != this.getSide() || isBusy()) {
+            return false;
+        }
+        final Stack<PartP2PLiquids> stack = this.getDepth();
+        stack.push(this);
+        try {
+            return !this.getExtractTargets(fluid).isEmpty();
+        } finally {
+            stack.pop();
+        }
     }
 
     @Override
     public FluidTankInfo[] getTankInfo(final ForgeDirection from) {
-        if (from == this.getSide()) {
-            return this.getTank();
+        if (from != this.getSide()) {
+            return new FluidTankInfo[0];
         }
-        return new FluidTankInfo[0];
+
+        if (this.getSideAccess().extract() != P2PTransportPolicy.Route.NONE && !this.isBusy()) {
+            final Stack<PartP2PLiquids> stack = this.getDepth();
+            stack.push(this);
+            try {
+                final List<FluidTankInfo> infos = new LinkedList<>();
+                for (final PartP2PLiquids t : this.getExtractTargets()) {
+                    final IFluidHandler tank = t.getTarget();
+                    final FluidTankInfo[] targetInfos = tank != null ? tank.getTankInfo(t.getSide().getOpposite())
+                            : null;
+                    if (targetInfos != null) {
+                        Collections.addAll(infos, targetInfos);
+                    }
+                }
+                if (!infos.isEmpty()) {
+                    return infos.toArray(new FluidTankInfo[0]);
+                }
+            } finally {
+                stack.pop();
+            }
+        }
+        return this.getTank();
     }
 
     private FluidTankInfo[] getTank() {
@@ -268,5 +307,14 @@ public class PartP2PLiquids extends PartP2PTunnelNormal<PartP2PLiquids> implemen
             }
         }
         return INACTIVE_TANK;
+    }
+
+    private boolean isBusy() {
+        for (final PartP2PLiquids t : this.getDepth()) {
+            if (t == this) {
+                return true;
+            }
+        }
+        return false;
     }
 }

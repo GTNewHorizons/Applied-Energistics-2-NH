@@ -21,7 +21,7 @@ import net.minecraft.item.ItemStack;
 
 import com.google.common.collect.ImmutableList;
 
-public class WrapperChainedInventory implements IInventory {
+public class WrapperChainedInventory implements IInventory, IInventoryWrapper {
 
     private int fullSize = 0;
     private List<IInventory> l;
@@ -176,6 +176,15 @@ public class WrapperChainedInventory implements IInventory {
         final InvOffset io = this.offsets.get(idx);
         if (io != null) {
             return io.i.isItemValidForSlot(idx - io.offset, itemstack);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean canRemoveItemFromSlot(int x, ItemStack is) {
+        final InvOffset io = this.offsets.get(x);
+        if (io != null) {
+            return !(io.i instanceof IInventoryWrapper wrapper) || wrapper.canRemoveItemFromSlot(x - io.offset, is);
         }
         return false;
     }
