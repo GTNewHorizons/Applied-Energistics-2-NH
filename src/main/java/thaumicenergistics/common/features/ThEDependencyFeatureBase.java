@@ -1,7 +1,7 @@
 package thaumicenergistics.common.features;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import thaumicenergistics.api.IThEConfig;
 import thaumicenergistics.api.ThEApi;
@@ -51,15 +51,14 @@ public abstract class ThEDependencyFeatureBase extends ThEFeatureBase {
     /**
      * Checks if this feature can be enabled based on ThE, TC and/or AE configs.
      */
-    protected abstract boolean checkConfigs(@Nonnull IThEConfig theConfig);
+    protected abstract boolean checkConfigs(@NonNull IThEConfig theConfig);
 
     /**
      * Gets the features required items.
      *
      * @return
      */
-    @Nullable
-    protected abstract Object[] getItemReqs(CommonDependantItems cdi);
+    protected abstract Object @Nullable [] getItemReqs(CommonDependantItems cdi);
 
     @Override
     protected void registerAdditional() {}

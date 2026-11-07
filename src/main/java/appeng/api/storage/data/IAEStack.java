@@ -15,9 +15,6 @@ package appeng.api.storage.data;
 
 import java.io.IOException;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -27,7 +24,8 @@ import net.minecraft.util.IChatComponent;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.storage.StorageChannel;
@@ -177,7 +175,7 @@ public interface IAEStack<StackType extends IAEStack> {
      * 
      * @param tag to be written data
      */
-    default void writeToNBTGeneric(@Nonnull NBTTagCompound tag) {
+    default void writeToNBTGeneric(@NonNull NBTTagCompound tag) {
         tag.setString("StackType", this.getStackType().getId());
         this.writeToNBT(tag);
     }
@@ -185,7 +183,7 @@ public interface IAEStack<StackType extends IAEStack> {
     /**
      * @return NBTTagCompound with StackType
      */
-    @Nonnull
+    @NonNull
     default NBTTagCompound toNBTGeneric() {
         NBTTagCompound tag = new NBTTagCompound();
         tag.setString("StackType", this.getStackType().getId());
@@ -199,7 +197,7 @@ public interface IAEStack<StackType extends IAEStack> {
      * @return stack for StackType. null if {@code tag} has no tags.
      */
     @Nullable
-    static IAEStack<?> fromNBTGeneric(@Nonnull NBTTagCompound tag) {
+    static IAEStack<?> fromNBTGeneric(@NonNull NBTTagCompound tag) {
         if (tag.hasNoTags()) return null;
 
         String id = tag.getString("StackType");
@@ -224,7 +222,7 @@ public interface IAEStack<StackType extends IAEStack> {
      */
     void writeToPacket(ByteBuf data) throws IOException;
 
-    static void writeToPacketGeneric(@NotNull ByteBuf buffer, @Nullable IAEStack<?> stack) throws IOException {
+    static void writeToPacketGeneric(@NonNull ByteBuf buffer, @Nullable IAEStack<?> stack) throws IOException {
         if (stack == null) {
             buffer.writeByte(AEStackTypeRegistry.NULL_NETWORK_ID);
         } else {

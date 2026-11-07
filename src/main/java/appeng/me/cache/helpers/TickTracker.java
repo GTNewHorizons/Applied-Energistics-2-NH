@@ -10,9 +10,9 @@
 
 package appeng.me.cache.helpers;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.crash.CrashReportCategory;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.ticking.IGridTickable;
@@ -60,7 +60,7 @@ public class TickTracker implements Comparable<TickTracker> {
     }
 
     @Override
-    public int compareTo(@Nonnull final TickTracker t) {
+    public int compareTo(@NonNull final TickTracker t) {
         final int nextTick = (int) ((this.getLastTick() - this.host.getCurrentTick()) + this.getCurrentRate());
         final int ts_nextTick = (int) ((t.getLastTick() - this.host.getCurrentTick()) + t.getCurrentRate());
         return nextTick - ts_nextTick;

@@ -10,9 +10,9 @@
 
 package appeng.client.me;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.util.StatCollector;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.tile.inventory.AppEngInternalInventory;
 import appeng.util.ItemSorters;
@@ -45,7 +45,7 @@ public class ClientDCInternalInv implements Comparable<ClientDCInternalInv> {
     }
 
     @Override
-    public int compareTo(@Nonnull final ClientDCInternalInv o) {
+    public int compareTo(@NonNull final ClientDCInternalInv o) {
         return ItemSorters.compareLong(this.sortBy, o.sortBy);
     }
 

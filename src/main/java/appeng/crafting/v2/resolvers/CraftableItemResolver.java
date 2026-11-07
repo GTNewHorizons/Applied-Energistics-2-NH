@@ -13,11 +13,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.world.World;
 
 import org.apache.logging.log4j.Level;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.CraftingMode;
@@ -691,10 +690,10 @@ public class CraftableItemResolver implements CraftingRequestResolver {
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public List<CraftingTask> provideCraftingRequestResolvers(@Nonnull CraftingRequest request,
-            @Nonnull CraftingContext context) {
+    public List<CraftingTask> provideCraftingRequestResolvers(@NonNull CraftingRequest request,
+            @NonNull CraftingContext context) {
         final ArrayList<CraftingTask> tasks = new ArrayList<>();
         final Set<ICraftingPatternDetails> denyList = request.patternParents;
         final List<ICraftingPatternDetails> patterns = new ArrayList<>(context.getPrecisePatternsFor(request.stack));

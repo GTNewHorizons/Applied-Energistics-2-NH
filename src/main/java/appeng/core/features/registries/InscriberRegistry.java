@@ -17,9 +17,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.features.IInscriberRecipe;
 import appeng.api.features.IInscriberRecipeBuilder;
@@ -44,25 +44,25 @@ public final class InscriberRegistry implements IInscriberRegistry {
         this.recipes = new HashSet<>();
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Collection<IInscriberRecipe> getRecipes() {
         return Collections.unmodifiableCollection(this.recipes);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Set<ItemStack> getOptionals() {
         return this.optionals;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Set<ItemStack> getInputs() {
         return this.inputs;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public IInscriberRecipeBuilder builder() {
         return new Builder();
@@ -99,48 +99,48 @@ public final class InscriberRegistry implements IInscriberRegistry {
         private ItemStack bottomOptional;
         private InscriberProcessType type;
 
-        @Nonnull
+        @NonNull
         @Override
-        public Builder withInputs(@Nonnull final Collection<ItemStack> inputs) {
+        public Builder withInputs(@NonNull final Collection<ItemStack> inputs) {
             this.inputs = new ArrayList<>(inputs.size());
             this.inputs.addAll(inputs);
 
             return this;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public Builder withOutput(@Nonnull final ItemStack output) {
+        public Builder withOutput(@NonNull final ItemStack output) {
             this.output = output;
 
             return this;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public Builder withTopOptional(@Nonnull final ItemStack topOptional) {
+        public Builder withTopOptional(@NonNull final ItemStack topOptional) {
             this.topOptional = topOptional;
 
             return this;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public Builder withBottomOptional(@Nonnull final ItemStack bottomOptional) {
+        public Builder withBottomOptional(@NonNull final ItemStack bottomOptional) {
             this.bottomOptional = bottomOptional;
 
             return this;
         }
 
-        @Nonnull
+        @NonNull
         @Override
-        public Builder withProcessType(@Nonnull final InscriberProcessType type) {
+        public Builder withProcessType(@NonNull final InscriberProcessType type) {
             this.type = type;
 
             return this;
         }
 
-        @Nonnull
+        @NonNull
         @Override
         public IInscriberRecipe build() {
             if (this.inputs == null) {

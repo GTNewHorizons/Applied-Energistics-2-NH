@@ -2,7 +2,7 @@ package appeng.container.implementations;
 
 import java.io.IOException;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.storage.data.IAEStack;
 import appeng.util.ScheduledReason;
@@ -16,7 +16,7 @@ public class CraftingCpuEntry {
     private final long pendingAmount;
     private final ScheduledReason scheduledReason;
 
-    public CraftingCpuEntry(@NotNull final IAEStack<?> stack, final long storedAmount, final long activeAmount,
+    public CraftingCpuEntry(@NonNull final IAEStack<?> stack, final long storedAmount, final long activeAmount,
             final long pendingAmount, final ScheduledReason scheduledReason) {
         this.stack = stack;
         this.storedAmount = storedAmount;

@@ -13,13 +13,13 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
+
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.collect.ClassToInstanceMap;
 import com.google.common.collect.ImmutableList;
@@ -133,7 +133,7 @@ public final class CraftingContext {
     private final IdentityHashMap<ICraftingPatternDetails, Boolean> isPatternComplexCache = new IdentityHashMap<>();
     private final ClassToInstanceMap<Object> userCaches = MutableClassToInstanceMap.create();
 
-    public CraftingContext(@Nonnull World world, @Nonnull IGrid meGrid, @Nonnull BaseActionSource actionSource) {
+    public CraftingContext(@NonNull World world, @NonNull IGrid meGrid, @NonNull BaseActionSource actionSource) {
         this.world = world;
         this.meGrid = meGrid;
         this.craftingGrid = meGrid.getCache(ICraftingGrid.class);
@@ -158,7 +158,7 @@ public final class CraftingContext {
         return instance;
     }
 
-    public void addRequest(@Nonnull CraftingRequest request) {
+    public void addRequest(@NonNull CraftingRequest request) {
         if (doingWork) {
             throw new IllegalStateException(
                     "Trying to add requests while inside a CraftingTask handler, return requests in the StepOutput instead");
@@ -175,7 +175,7 @@ public final class CraftingContext {
         queueNextTaskOf(processing, true);
     }
 
-    public IAEItemStack getCrafterIconForPattern(@Nonnull ICraftingPatternDetails pattern) {
+    public IAEItemStack getCrafterIconForPattern(@NonNull ICraftingPatternDetails pattern) {
         return crafterIconCache.computeIfAbsent(pattern, ignored -> {
             if (craftingGrid instanceof CraftingGridCache) {
                 final List<ICraftingMedium> mediums = ((CraftingGridCache) craftingGrid).getMediums(pattern);
@@ -190,7 +190,7 @@ public final class CraftingContext {
         });
     }
 
-    public List<ICraftingPatternDetails> getPrecisePatternsFor(@Nonnull IAEStack<?> stack) {
+    public List<ICraftingPatternDetails> getPrecisePatternsFor(@NonNull IAEStack<?> stack) {
         return precisePatternCache.compute(stack, (key, value) -> {
             if (value == null) {
                 return availablePatterns.getOrDefault(stack, ImmutableList.of());
@@ -200,7 +200,7 @@ public final class CraftingContext {
         });
     }
 
-    public List<ICraftingPatternDetails> getFuzzyPatternsFor(@Nonnull IAEStack<?> stack) {
+    public List<ICraftingPatternDetails> getFuzzyPatternsFor(@NonNull IAEStack<?> stack) {
         if (stack instanceof IAEItemStack aiStack) {
             if (!fuzzyPatternCache.isPopulated()) {
                 for (final ImmutableList<ICraftingPatternDetails> patternSet : availablePatterns.values()) {
@@ -222,7 +222,7 @@ public final class CraftingContext {
      * @return Whether the pattern has complex behavior leaving items in the crafting grid, requiring 1-by-1 simulation
      *         using a fake player
      */
-    public boolean isPatternComplex(@Nonnull ICraftingPatternDetails pattern) {
+    public boolean isPatternComplex(@NonNull ICraftingPatternDetails pattern) {
         if (!pattern.isCraftable()) {
             return false;
         }
@@ -240,7 +240,7 @@ public final class CraftingContext {
         return isComplex;
     }
 
-    private boolean hasReusableSubstituteInput(@Nonnull ICraftingPatternDetails pattern, IAEStack<?>[] inputs) {
+    private boolean hasReusableSubstituteInput(@NonNull ICraftingPatternDetails pattern, IAEStack<?>[] inputs) {
         if (!pattern.canSubstitute()) {
             return false;
         }

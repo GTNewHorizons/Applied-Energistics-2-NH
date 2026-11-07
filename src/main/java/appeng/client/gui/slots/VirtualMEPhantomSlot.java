@@ -6,11 +6,11 @@ import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.AEStackTypeRegistry;

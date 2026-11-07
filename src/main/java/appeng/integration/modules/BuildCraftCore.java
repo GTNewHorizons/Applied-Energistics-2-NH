@@ -10,11 +10,11 @@
 
 package appeng.integration.modules;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.AEApi;
 import appeng.api.config.TunnelType;
@@ -44,13 +44,13 @@ public final class BuildCraftCore implements IBuildCraftCore, IIntegrationModule
     }
 
     @Override
-    public boolean canWrench(@Nonnull final Item wrench, final EntityPlayer wrencher, final int x, final int y,
+    public boolean canWrench(@NonNull final Item wrench, final EntityPlayer wrencher, final int x, final int y,
             final int z) {
         return ((IToolWrench) wrench).canWrench(wrencher, x, y, z);
     }
 
     @Override
-    public void wrenchUsed(@Nonnull final Item wrench, final EntityPlayer wrencher, final int x, final int y,
+    public void wrenchUsed(@NonNull final Item wrench, final EntityPlayer wrencher, final int x, final int y,
             final int z) {
         ((IToolWrench) wrench).wrenchUsed(wrencher, x, y, z);
     }

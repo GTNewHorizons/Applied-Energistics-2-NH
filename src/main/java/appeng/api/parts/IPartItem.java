@@ -13,9 +13,9 @@
 
 package appeng.api.parts;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.Nullable;
 
 // @formatter:off
 

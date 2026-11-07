@@ -19,9 +19,6 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.Item;
@@ -33,7 +30,8 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTankInfo;
 import net.minecraftforge.fluids.IFluidHandler;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.AEApi;
 import appeng.api.config.AccessRestriction;
@@ -129,7 +127,7 @@ public class TileChest extends AENetworkPowerTile implements IMEChest, IFluidHan
     @SuppressWarnings("rawtypes")
     private final Map<IAEStackType<?>, MEMonitorHandler> cellMap = new IdentityHashMap<>();
     private boolean displayNeedsUpdate;
-    @NotNull
+    @NonNull
     private final TerminalSettings terminalSettings = new TerminalSettings();
 
     public TileChest() {
@@ -472,7 +470,7 @@ public class TileChest extends AENetworkPowerTile implements IMEChest, IFluidHan
 
     @Nullable
     @Override
-    public IMEMonitor<?> getMEMonitor(@Nonnull IAEStackType<?> type) {
+    public IMEMonitor<?> getMEMonitor(@NonNull IAEStackType<?> type) {
         return this.cellMap.get(type);
     }
 
@@ -577,7 +575,7 @@ public class TileChest extends AENetworkPowerTile implements IMEChest, IFluidHan
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public List<IMEInventoryHandler> getCellArray(final IAEStackType<?> type) {
         if (this.getProxy().isActive()) {
             try {
@@ -788,7 +786,7 @@ public class TileChest extends AENetworkPowerTile implements IMEChest, IFluidHan
     }
 
     @Override
-    @NotNull
+    @NonNull
     public Reference2BooleanMap<IAEStackType<?>> getTypeFilter(EntityPlayer player) {
         return this.terminalSettings.getFilters(player).getFiltersMap();
     }

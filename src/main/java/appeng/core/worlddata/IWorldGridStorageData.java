@@ -10,8 +10,8 @@
 
 package appeng.core.worlddata;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.me.GridStorage;
 
@@ -25,7 +25,7 @@ public interface IWorldGridStorageData {
     @Nullable
     GridStorage getGridStorage(long storageID);
 
-    @Nonnull
+    @NonNull
     GridStorage getNewGridStorage();
 
     long nextGridStorage();

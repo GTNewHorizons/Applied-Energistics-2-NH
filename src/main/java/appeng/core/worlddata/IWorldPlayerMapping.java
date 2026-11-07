@@ -12,7 +12,7 @@ package appeng.core.worlddata;
 
 import java.util.UUID;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Optional;
 
@@ -29,7 +29,7 @@ public interface IWorldPlayerMapping {
      * @param id ID of the to be searched player
      * @return maybe the UUID of the searched player
      */
-    @Nonnull
+    @NonNull
     Optional<UUID> get(int id);
 
     /**
@@ -38,5 +38,5 @@ public interface IWorldPlayerMapping {
      * @param id   id of new player
      * @param uuid UUID of new player
      */
-    void put(int id, @Nonnull UUID uuid);
+    void put(int id, @NonNull UUID uuid);
 }

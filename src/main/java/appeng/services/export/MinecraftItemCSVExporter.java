@@ -19,9 +19,6 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.block.Block;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.init.Blocks;
@@ -30,6 +27,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.StatCollector;
 
 import org.apache.commons.io.FileUtils;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -55,13 +54,13 @@ final class MinecraftItemCSVExporter implements Exporter {
     private static final String EXPORT_SUCCESSFUL_MESSAGE = "Exported successfully %d items into %s";
     private static final String EXPORT_UNSUCCESSFUL_MESSAGE = "Exporting was unsuccessful.";
 
-    @Nonnull
+    @NonNull
     private final File exportDirectory;
 
-    @Nonnull
+    @NonNull
     private final FMLControlledNamespacedRegistry<Item> itemRegistry;
 
-    @Nonnull
+    @NonNull
     private final ExportMode mode;
 
     /**
@@ -70,8 +69,8 @@ final class MinecraftItemCSVExporter implements Exporter {
      *                        can only happen in init (pre-init is the phase when all items are determined)
      * @param mode            mode in which the export should be operated. Resulting CSV will change depending on this.
      */
-    MinecraftItemCSVExporter(@Nonnull final File exportDirectory,
-            @Nonnull final FMLControlledNamespacedRegistry<Item> itemRegistry, @Nonnull final ExportMode mode) {
+    MinecraftItemCSVExporter(@NonNull final File exportDirectory,
+            @NonNull final FMLControlledNamespacedRegistry<Item> itemRegistry, @NonNull final ExportMode mode) {
         this.exportDirectory = Preconditions.checkNotNull(exportDirectory);
         Preconditions.checkArgument(!exportDirectory.isFile());
         this.itemRegistry = Preconditions.checkNotNull(itemRegistry);
@@ -119,13 +118,13 @@ final class MinecraftItemCSVExporter implements Exporter {
         private static final String EXTRACTING_NULL_MESSAGE = "extracting type null";
         private static final String EXTRACTING_ITEM_MESSAGE = "extracting type %s:%d";
 
-        @Nonnull
+        @NonNull
         private final String itemName;
 
-        @Nonnull
+        @NonNull
         private final ExportMode mode;
 
-        private TypeExtractFunction(@Nonnull final String itemName, @Nonnull final ExportMode mode) {
+        private TypeExtractFunction(@NonNull final String itemName, @NonNull final ExportMode mode) {
             this.itemName = Preconditions.checkNotNull(itemName);
             Preconditions.checkArgument(!itemName.isEmpty());
 
@@ -185,18 +184,18 @@ final class MinecraftItemCSVExporter implements Exporter {
         private static final String EXPORTING_SUBTYPES_MESSAGE = "Exporting input %s with subtypes: %b";
         private static final String EXPORTING_SUBTYPES_FAILED_MESSAGE = "Could not export subtypes of: %s";
 
-        @Nonnull
+        @NonNull
         private final FMLControlledNamespacedRegistry<Item> itemRegistry;
 
-        @Nonnull
+        @NonNull
         private final ExportMode mode;
 
         /**
          * @param itemRegistry used to retrieve the name of the item
          * @param mode         extracts more or less information from item depending on mode
          */
-        ItemRowExtractFunction(@Nonnull final FMLControlledNamespacedRegistry<Item> itemRegistry,
-                @Nonnull final ExportMode mode) {
+        ItemRowExtractFunction(@NonNull final FMLControlledNamespacedRegistry<Item> itemRegistry,
+                @NonNull final ExportMode mode) {
             this.itemRegistry = Preconditions.checkNotNull(itemRegistry);
             this.mode = Preconditions.checkNotNull(mode);
         }

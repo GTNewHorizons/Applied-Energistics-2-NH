@@ -8,7 +8,7 @@ import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.input.Keyboard;
 
 import appeng.api.implementations.ICraftingPatternItem;
@@ -33,7 +33,7 @@ public class NEIInputHandler implements IContainerInputHandler {
     private List<ItemStack> draggedBookmarkGroup;
 
     @Override
-    public boolean keyTyped(@NotNull GuiContainer gui, char keyChar, int keyCode) {
+    public boolean keyTyped(@NonNull GuiContainer gui, char keyChar, int keyCode) {
         if (!(gui instanceof GuiPatternTerm terminal) || !NEIClientConfig.isLoaded()
                 || terminal.isSearchFieldManuallyFocused()
                 || NEI.searchField.focused()) {

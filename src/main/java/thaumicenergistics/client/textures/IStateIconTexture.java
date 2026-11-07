@@ -1,8 +1,8 @@
 package thaumicenergistics.client.textures;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.util.ResourceLocation;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Icon from a state texture.
@@ -24,7 +24,7 @@ public interface IStateIconTexture {
      *
      * @return
      */
-    @Nonnull
+    @NonNull
     ResourceLocation getTexture();
 
     /**

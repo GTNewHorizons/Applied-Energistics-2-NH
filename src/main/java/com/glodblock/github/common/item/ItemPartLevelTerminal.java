@@ -4,12 +4,12 @@ import static net.minecraft.client.gui.GuiScreen.isShiftKeyDown;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
+
+import org.jspecify.annotations.Nullable;
 
 import com.glodblock.github.FluidCraft;
 import com.glodblock.github.common.parts.PartLevelTerminal;

@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nonnull;
-
 import net.minecraftforge.fluids.FluidStack;
+
+import org.jspecify.annotations.NonNull;
 
 import com.github.vfyjxf.nee.config.NEEConfig;
 import com.github.vfyjxf.nee.utils.ItemUtils;
@@ -43,7 +43,7 @@ public class GregTech5RecipeProcessor implements IRecipeProcessor {
         this.isNH = isNH;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Set<String> getAllOverlayIdentifier() {
         if (isNH) {
@@ -70,13 +70,13 @@ public class GregTech5RecipeProcessor implements IRecipeProcessor {
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String getRecipeProcessorId() {
         return "GregTech5";
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public List<PositionedStack> getRecipeInput(IRecipeHandler recipe, int recipeIndex, String identifier) {
         List<PositionedStack> recipeInputs = new ArrayList<>();
@@ -99,7 +99,7 @@ public class GregTech5RecipeProcessor implements IRecipeProcessor {
         return recipeInputs;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public List<PositionedStack> getRecipeOutput(IRecipeHandler recipe, int recipeIndex, String identifier) {
         List<PositionedStack> recipeOutputs = new ArrayList<>();

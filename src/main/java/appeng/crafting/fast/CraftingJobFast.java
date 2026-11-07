@@ -9,7 +9,7 @@ import java.util.concurrent.Future;
 
 import net.minecraft.world.World;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.CraftingMode;

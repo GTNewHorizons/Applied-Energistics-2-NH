@@ -2,10 +2,10 @@ package thaumicenergistics.common.features;
 
 import static thaumicenergistics.common.registries.ResearchRegistry.*;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import thaumcraft.api.ThaumcraftApi;
 import thaumcraft.api.aspects.Aspect;
@@ -23,13 +23,12 @@ public class FeatureCellMicroscope extends ThEThaumcraftResearchFeature {
     }
 
     @Override
-    protected boolean checkConfigs(@Nonnull IThEConfig theConfig) {
+    protected boolean checkConfigs(@NonNull IThEConfig theConfig) {
         return true;
     }
 
-    @Nullable
     @Override
-    protected Object[] getItemReqs(CommonDependantItems cdi) {
+    protected Object @Nullable [] getItemReqs(CommonDependantItems cdi) {
         return new Object[] {};
     }
 

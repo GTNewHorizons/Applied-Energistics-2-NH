@@ -2,8 +2,8 @@ package net.p455w0rd.wirelesscraftingterminal.api;
 
 import java.lang.reflect.Method;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public abstract class WCTApi {
 
@@ -33,9 +33,9 @@ public abstract class WCTApi {
         return WCTApi.api;
     }
 
-    @Nonnull
+    @NonNull
     public abstract IWCTInteractionHelper interact();
 
-    @Nonnull
+    @NonNull
     public abstract IWCTItems items();
 }

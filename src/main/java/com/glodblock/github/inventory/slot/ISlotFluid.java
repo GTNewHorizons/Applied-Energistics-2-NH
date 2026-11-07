@@ -1,6 +1,6 @@
 package com.glodblock.github.inventory.slot;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.storage.data.IAEItemStack;
 

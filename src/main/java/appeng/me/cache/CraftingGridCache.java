@@ -35,14 +35,12 @@ import java.util.concurrent.ThreadFactory;
 import java.util.function.Predicate;
 import java.util.stream.StreamSupport;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableCollection;
@@ -460,7 +458,7 @@ public class CraftingGridCache
     }
 
     @Override
-    public @NotNull List<IMEInventoryHandler> getCellArray(IAEStackType<?> type) {
+    public @NonNull List<IMEInventoryHandler> getCellArray(IAEStackType<?> type) {
         return Collections.singletonList(this);
     }
 
@@ -551,7 +549,7 @@ public class CraftingGridCache
     }
 
     @Override
-    public IAEStack getAvailableItem(@Nonnull IAEStack request, int iteration) {
+    public IAEStack getAvailableItem(@NonNull IAEStack request, int iteration) {
         return null;
     }
 

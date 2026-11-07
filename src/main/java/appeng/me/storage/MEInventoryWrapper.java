@@ -3,7 +3,7 @@ package appeng.me.storage;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.security.BaseActionSource;
@@ -43,7 +43,7 @@ public class MEInventoryWrapper<T extends IAEStack<T>> implements IMEInventory<T
     }
 
     @Override
-    public T getAvailableItem(@NotNull T request, int iteration) {
+    public T getAvailableItem(@NonNull T request, int iteration) {
         return this.delegate.getAvailableItem(request, iteration);
     }
 

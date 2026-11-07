@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.container.sync.AbstractSyncHandler;
 import appeng.container.sync.DeltaSyncCodec;
@@ -70,12 +70,12 @@ public class ObjectSyncHandler<T> extends AbstractSyncHandler {
         this.markDirty();
     }
 
-    public @NotNull ObjectSyncHandler<T> onClientChange(final ObjectChangeListener<T> listener) {
+    public @NonNull ObjectSyncHandler<T> onClientChange(final ObjectChangeListener<T> listener) {
         this.clientChangeListener = listener;
         return this;
     }
 
-    public @NotNull ObjectSyncHandler<T> onServerChange(final ObjectChangeListener<T> listener) {
+    public @NonNull ObjectSyncHandler<T> onServerChange(final ObjectChangeListener<T> listener) {
         this.serverChangeListener = listener;
         return this;
     }

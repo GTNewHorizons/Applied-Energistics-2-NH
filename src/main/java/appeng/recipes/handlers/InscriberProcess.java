@@ -2,9 +2,9 @@ package appeng.recipes.handlers;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.exceptions.MissingIngredientError;
 import appeng.api.exceptions.RecipeError;

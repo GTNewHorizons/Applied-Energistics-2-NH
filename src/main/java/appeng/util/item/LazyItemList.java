@@ -7,7 +7,7 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.storage.data.IAEStack;

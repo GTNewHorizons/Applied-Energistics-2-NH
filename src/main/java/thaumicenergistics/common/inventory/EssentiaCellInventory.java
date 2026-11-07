@@ -2,10 +2,10 @@ package thaumicenergistics.common.inventory;
 
 import static thaumicenergistics.common.storage.AEEssentiaStackType.ESSENTIA_STACK_TYPE;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.exceptions.AppEngException;
 import appeng.api.storage.ISaveProvider;
@@ -95,7 +95,7 @@ public class EssentiaCellInventory extends CellInventory<AEEssentiaStack> {
         this.tagCompound.setLong(this.getStackCountTag(), count);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public IAEStackType<?> getStackType() {
         return ESSENTIA_STACK_TYPE;

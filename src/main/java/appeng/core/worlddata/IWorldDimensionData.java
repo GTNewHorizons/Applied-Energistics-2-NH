@@ -10,9 +10,9 @@
 
 package appeng.core.worlddata;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.network.NetworkManager;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.util.WorldCoord;
 

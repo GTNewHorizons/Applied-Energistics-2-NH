@@ -2,8 +2,8 @@ package thaumicenergistics.api;
 
 import java.lang.reflect.Method;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Thaumic Energistics API
@@ -43,13 +43,13 @@ public abstract class ThEApi {
     /**
      * Blocks
      */
-    @Nonnull
+    @NonNull
     public abstract IThEBlocks blocks();
 
     /**
      * Configuration
      */
-    @Nonnull
+    @NonNull
     public abstract IThEConfig config();
 
     /**
@@ -57,24 +57,24 @@ public abstract class ThEApi {
      *
      * @return
      */
-    @Nonnull
+    @NonNull
     public abstract IThEInteractionHelper interact();
 
     /**
      * Items
      */
-    @Nonnull
+    @NonNull
     public abstract IThEItems items();
 
     /**
      * Cable Parts
      */
-    @Nonnull
+    @NonNull
     public abstract IThEParts parts();
 
     /**
      * Transport Permissions.
      */
-    @Nonnull
+    @NonNull
     public abstract IThETransportPermissions transportPermissions();
 }
