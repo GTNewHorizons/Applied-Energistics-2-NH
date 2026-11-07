@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -347,7 +348,9 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
                             + shortfalls);
         }
 
-        final Set<CraftingRequest> toReopen = Collections.newSetFromMap(new IdentityHashMap<>());
+        // Insertion ordered, so the requests get reopened (and the new tasks queued) in the same order every time.
+        // Requests don't override equals, so this still de-duplicates by identity.
+        final Set<CraftingRequest> toReopen = new LinkedHashSet<>();
         /** How much of each stack the plan gave up on extracting */
         final IItemList<IAEStack<?>> shrunkByStack = AEApi.instance().storage().createAEStackList();
         for (IAEStack<?> shortStack : shortfalls) {
