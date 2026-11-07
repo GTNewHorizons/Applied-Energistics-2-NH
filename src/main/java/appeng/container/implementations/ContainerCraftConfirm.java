@@ -63,8 +63,6 @@ public class ContainerCraftConfirm extends ContainerSubGui implements ICraftingC
 
     private Future<ICraftingJob> job;
     protected ICraftingJob result;
-    /** The plan last sent to the client, if any */
-    private IItemList<IAEStack<?>> sentPlan;
     private final ITerminalHost host;
 
     @GuiSync(0)
@@ -176,24 +174,14 @@ public class ContainerCraftConfirm extends ContainerSubGui implements ICraftingC
                 try {
                     final PacketMEInventoryUpdate storageUpdate = new PacketMEInventoryUpdate((byte) 0);
                     final PacketMEInventoryUpdate pendingUpdate = new PacketMEInventoryUpdate((byte) 1);
-                    final PacketMEInventoryUpdate missingUpdate = this.result.isSimulation() || this.sentPlan != null
+                    final PacketMEInventoryUpdate missingUpdate = this.result.isSimulation()
                             ? new PacketMEInventoryUpdate((byte) 2)
                             : null;
 
+                    // The client replaces its shown plan when the storage packet arrives, so a re-planned job needs no
+                    // clearing of the previous plan here
                     final IItemList<IAEStack<?>> plan = AEApi.instance().storage().createAEStackList();
                     this.result.populatePlan(plan);
-
-                    if (this.sentPlan != null) {
-                        // The job was re-planned, clear what the client still shows from the previous plan
-                        for (final IAEStack<?> sent : this.sentPlan) {
-                            final IAEStack<?> cleared = sent.copy();
-                            cleared.reset();
-                            storageUpdate.appendItem(cleared);
-                            pendingUpdate.appendItem(cleared);
-                            missingUpdate.appendItem(cleared);
-                        }
-                    }
-                    this.sentPlan = plan;
 
                     this.setUsedBytes(this.result.getByteTotal());
                     this.setErrorMessage(this.result.getErrorMessage());

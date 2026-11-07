@@ -798,6 +798,15 @@ public class GuiCraftConfirm extends GuiSub implements ICraftingCPUTableHolder, 
     }
 
     public void postUpdate(final List<IAEStack<?>> list, final byte ref) {
+        if (ref == 0) {
+            // The server sends a plan as one storage packet, followed by the pending and (for simulations) missing
+            // packets, and never splits a plan across packets. A storage packet therefore always begins a fresh plan
+            // that replaces what is shown, e.g. after the job was re-planned because ingredients went missing.
+            this.storage.resetStatus();
+            this.pending.resetStatus();
+            this.missing.resetStatus();
+            this.visual.clear();
+        }
         for (final IAEStack<?> stack : list) {
             switch (ref) {
                 case 0 -> {
@@ -893,8 +902,8 @@ public class GuiCraftConfirm extends GuiSub implements ICraftingCPUTableHolder, 
 
             if (a != null) {
                 a.setStackSize(l.getStackSize());
-                // Entries get reused when a re-planned job is sent, after being reset by the clearing update. Keep
-                // every displayed field up to date, not just the amount.
+                // Entries get reused when a re-planned job is sent, after being reset for the new plan. Keep every
+                // displayed field up to date, not just the amount.
                 a.setCountRequestableCrafts(l.getCountRequestableCrafts());
                 a.setUsedPercent(l.getUsedPercent());
             }
