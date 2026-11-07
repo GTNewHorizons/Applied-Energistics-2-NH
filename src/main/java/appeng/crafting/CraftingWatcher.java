@@ -60,15 +60,13 @@ public class CraftingWatcher implements ICraftingWatcher {
         return new ItemWatcherIterator(this, this.myInterests.iterator());
     }
 
-    @NonNull
     @Override
-    public Object[] toArray() {
+    public Object @NonNull [] toArray() {
         return this.myInterests.toArray();
     }
 
-    @NonNull
     @Override
-    public <T> T[] toArray(@NonNull final T[] a) {
+    public <T> T @NonNull [] toArray(final T @NonNull [] a) {
         return this.myInterests.toArray(a);
     }
 

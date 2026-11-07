@@ -58,9 +58,8 @@ public final class ASMTweaker implements IClassTransformer {
         this.privateToPublicMethods.put("appeng.tile.AEBaseTile", new PublicLine("a", "(Ldh;)V"));
     }
 
-    @Nullable
     @Override
-    public byte[] transform(final String name, final String transformedName, final byte[] basicClass) {
+    public byte @Nullable [] transform(final String name, final String transformedName, final byte[] basicClass) {
         if (basicClass == null) {
             return null;
         }
