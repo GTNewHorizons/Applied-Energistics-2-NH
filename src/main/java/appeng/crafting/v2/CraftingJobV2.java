@@ -419,7 +419,9 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
         final long cachedAmount = cached == null ? 0 : cached.getStackSize();
         final IAEStack<?> shrunk = shrunkByStack.findPrecise((IAEStack) stack);
         final long delta = liveAmount - cachedAmount + (shrunk == null ? 0 : shrunk.getStackSize());
-        if (delta != 0) {
+        // The item being crafted was taken out of the model by ignore() in the constructor, so the plan never extracts
+        // the very thing it is making. Keep it out, only the snapshot learns the live amount.
+        if (delta != 0 && !stack.equals(originalRequest.stack)) {
             final IAEStack<?> modelled = context.itemModel.findPrecise((IAEStack) stack);
             final long modelledAmount = modelled == null ? 0 : modelled.getStackSize();
             setAvailableAmount(context.itemModel, stack, Math.max(0, modelledAmount + delta));

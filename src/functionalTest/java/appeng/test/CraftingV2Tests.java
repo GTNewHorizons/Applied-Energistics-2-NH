@@ -949,6 +949,42 @@ public class CraftingV2Tests {
     }
 
     @Test
+    void replanKeepsTheRequestedItemOutOfTheItemModel() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.stick, 10));
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        aeSystem.addStoredItem(new ItemStack(Items.gold_ingot, 64));
+        addExpensiveStickPatterns(aeSystem);
+        final CraftingJobV2 job = aeSystem.makeCraftingJob(new ItemStack(Items.stick, 13));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+        // Stored sticks are never extracted to fulfill a stick request
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 13)));
+
+        // More sticks arrive while diamonds go missing. The snapshot has to learn about the sticks, the item model
+        // must not, otherwise a re-planned sub-request could extract the item the job is crafting.
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 5));
+        aeSystem.addStoredItem(new ItemStack(Items.stick, 20));
+        assertTrue(job.reconcileWithLiveStorage());
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+        final IAEItemStack stick = AEItemStack.create(new ItemStack(Items.stick, 1));
+        final IAEItemStack modelledSticks = job.getContext().itemModel.findPrecise(stick);
+        assertTrue(
+                modelledSticks == null || modelledSticks.getStackSize() == 0,
+                () -> "The requested item leaked back into the item model: " + modelledSticks);
+        assertEquals(30, job.getStorageAtBeginning().getAvailableItem(stick).getStackSize());
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 8)).setCountRequestable(5),
+                AEItemStack.create(new ItemStack(Items.gold_ingot, 5)));
+    }
+
+    @Test
     void fuzzyExtractionReplansAfterPartialRefund() {
         MockAESystem aeSystem = new MockAESystem(dummyWorld);
         aeSystem.addStoredItem(new ItemStack(Blocks.planks, 8, 0));
