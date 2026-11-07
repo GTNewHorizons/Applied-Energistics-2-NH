@@ -58,8 +58,7 @@ public abstract class ThEDependencyFeatureBase extends ThEFeatureBase {
      *
      * @return
      */
-    @Nullable
-    protected abstract Object[] getItemReqs(CommonDependantItems cdi);
+    protected abstract Object @Nullable [] getItemReqs(CommonDependantItems cdi);
 
     @Override
     protected void registerAdditional() {}

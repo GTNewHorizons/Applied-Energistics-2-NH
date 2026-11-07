@@ -4,6 +4,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -37,7 +38,7 @@ public interface IThEInteractionHelper {
      * Null items are allowed.
      */
     @SideOnly(Side.CLIENT)
-    void setArcaneCraftingTerminalRecipe(@NonNull ItemStack[] items);
+    void setArcaneCraftingTerminalRecipe(@Nullable ItemStack @NonNull [] items);
 
     @Deprecated
     void openWirelessTerminalGui(@NonNull EntityPlayer player);

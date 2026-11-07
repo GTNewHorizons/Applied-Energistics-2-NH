@@ -20,8 +20,7 @@ import io.netty.buffer.Unpooled;
 
 public class PacketPinsUpdate extends AppEngPacket {
 
-    @Nullable
-    private final IAEStack<?>[] list;
+    private final IAEStack<?> @Nullable [] list;
     private final int craftingRowsOrdinal;
     private final int playerRowsOrdinal;
 

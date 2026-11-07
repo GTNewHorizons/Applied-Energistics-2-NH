@@ -149,8 +149,7 @@ public class RecipeResourceCopier {
      * @throws IOException                   if jar path can not be decoded
      * @throws UnsupportedOperationException if it is neither in jar nor in file path
      */
-    @NonNull
-    private String[] getResourceListing(@NonNull final Class<?> clazz, @NonNull final String path)
+    private String @NonNull [] getResourceListing(@NonNull final Class<?> clazz, @NonNull final String path)
             throws URISyntaxException, IOException {
         assert clazz != null;
         assert path != null;
