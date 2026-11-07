@@ -893,6 +893,8 @@ public class GuiCraftConfirm extends GuiSub implements ICraftingCPUTableHolder, 
 
             if (a != null) {
                 a.setStackSize(l.getStackSize());
+                // Entries get reused when a re-planned job is sent, keep the step count up to date as well
+                a.setCountRequestableCrafts(l.getCountRequestableCrafts());
             }
         }
     }

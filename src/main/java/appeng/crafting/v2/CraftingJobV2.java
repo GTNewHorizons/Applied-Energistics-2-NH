@@ -1,29 +1,46 @@
 package appeng.crafting.v2;
 
 import java.io.IOException;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.ChatComponentTranslation;
+import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.IChatComponent;
 import net.minecraft.world.World;
 
 import org.apache.logging.log4j.Level;
 
+import appeng.api.AEApi;
+import appeng.api.config.Actionable;
 import appeng.api.config.CraftingMode;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.crafting.ICraftingCPU;
 import appeng.api.networking.crafting.ICraftingCallback;
 import appeng.api.networking.crafting.ICraftingJob;
 import appeng.api.networking.security.BaseActionSource;
+import appeng.api.networking.security.PlayerSource;
+import appeng.api.networking.storage.IStorageGrid;
+import appeng.api.storage.IMEMonitor;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IItemList;
 import appeng.core.AELog;
+import appeng.core.localization.PlayerMessages;
 import appeng.crafting.MECraftingInventory;
 import appeng.crafting.v2.CraftingContext.RequestInProcessing;
 import appeng.crafting.v2.CraftingRequest.SubstitutionMode;
 import appeng.crafting.v2.resolvers.CraftingTask;
+import appeng.crafting.v2.resolvers.ExtractItemResolver.ExtractItemTask;
 import appeng.hooks.TickHandler;
 import appeng.me.cluster.implementations.CraftingCPUCluster;
 import cpw.mods.fml.common.network.ByteBufUtils;
@@ -55,6 +72,15 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
     }
 
     protected State state = State.RUNNING;
+
+    /**
+     * Limits how often the plan gets re-resolved because items disappeared, in case the network keeps changing.
+     */
+    private static final int MAX_RECONCILE_ROUNDS_PLAYER = 5;
+    private static final int MAX_RECONCILE_ROUNDS_MACHINE = 1;
+    /** How many of the items that went missing are named in the chat message, the rest are shortened */
+    private static final int MAX_REPORTED_MISSING_STACKS = 3;
+    private int reconcileRounds = 0;
 
     public CraftingJobV2(final World world, final IGrid meGrid, final BaseActionSource actionSource,
             final StackType what, final ICraftingCallback callback) {
@@ -209,6 +235,10 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
             do {
                 taskState = context.doWork();
                 totalByteCost = -1;
+                // The plan was made against a snapshot of the AE system from when the job started, check it still holds
+                if (taskState == CraftingTask.State.SUCCESS && reconcile()) {
+                    taskState = CraftingTask.State.NEEDS_MORE_WORK;
+                }
             } while (taskState.needsMoreWork && System.currentTimeMillis() < finishTime && (state == State.RUNNING));
         } catch (Exception e) {
             AELog.error(e, "Error while simulating crafting for " + originalRequest);
@@ -233,6 +263,164 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
         }
 
         return taskState.needsMoreWork;
+    }
+
+    /**
+     * Checks a finished plan against the current contents of the AE system. If items it plans to extract have
+     * disappeared since the calculation started (e.g. used by another craft), the missing amount gets resolved again as
+     * part of this same job: crafted if possible, otherwise shown as missing.
+     *
+     * @return If the job went back to running, in which case it has to be scheduled again before it can be started
+     */
+    public boolean reconcileWithLiveStorage() {
+        if (this.state != State.FINISHED || !reconcile()) {
+            return false;
+        }
+        this.state = State.RUNNING;
+        return true;
+    }
+
+    /**
+     * @return If any requests got reopened and need more work
+     */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private boolean reconcile() {
+        if (reconcileRounds >= getMaxReconcileRounds()) {
+            return false;
+        }
+        final IStorageGrid sg = context.meGrid.getCache(IStorageGrid.class);
+        if (sg == null) {
+            return false;
+        }
+
+        final Set<CraftingTask> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        final List<ExtractItemTask<?>> extractTasks = new ArrayList<>();
+        final IItemList<IAEStack<?>> planned = AEApi.instance().storage().createAEStackList();
+        for (CraftingTask task : context.getResolvedTasks()) {
+            if (task instanceof ExtractItemTask<?>extractTask && seen.add(task)) {
+                extractTasks.add(extractTask);
+                for (IAEStack<?> removed : extractTask.removedFromSystem) {
+                    planned.add(removed.copy());
+                }
+            }
+        }
+
+        final Set<CraftingRequest> toReopen = Collections.newSetFromMap(new IdentityHashMap<>());
+        final List<IAEStack<?>> plannedStacks = new ArrayList<>();
+        final List<IAEStack<?>> liveStacks = new ArrayList<>();
+        final List<IAEStack<?>> wentMissing = new ArrayList<>();
+        for (IAEStack<?> plannedStack : planned) {
+            final IMEMonitor monitor = sg.getMEMonitor(plannedStack.getStackType());
+            final IAEStack<?> found = monitor == null ? null
+                    : (IAEStack<?>) monitor.getStorageList().findPrecise(plannedStack);
+            final long live = found == null ? 0 : Math.max(0, found.getStackSize());
+            long shortfall = plannedStack.getStackSize() - live;
+            long totalShrunk = 0;
+            // Latest extractions first, those are the furthest from the root of the tree
+            for (int i = extractTasks.size() - 1; i >= 0 && shortfall > 0; i--) {
+                final ExtractItemTask<?> task = extractTasks.get(i);
+                final long shrunk = task.shrinkSystemExtraction(plannedStack, shortfall);
+                if (shrunk > 0) {
+                    shortfall -= shrunk;
+                    totalShrunk += shrunk;
+                    plannedStack.setStackSize(plannedStack.getStackSize() - shrunk);
+                    toReopen.add(task.request);
+                }
+            }
+            if (totalShrunk > 0) {
+                wentMissing.add(plannedStack.copy().setStackSize(totalShrunk));
+            }
+            plannedStacks.add(plannedStack);
+            liveStacks.add(plannedStack.copy().setStackSize(live));
+        }
+        if (toReopen.isEmpty()) {
+            return false;
+        }
+
+        // Bring the snapshot up to date for everything the plan uses, so re-resolving doesn't plan with items that are
+        // gone, and the plan shown to the player compares against the right amounts
+        for (int i = 0; i < plannedStacks.size(); i++) {
+            final long live = liveStacks.get(i).getStackSize();
+            setAvailableAmount(
+                    context.itemModel,
+                    plannedStacks.get(i),
+                    Math.max(0, live - plannedStacks.get(i).getStackSize()));
+            setAvailableAmount(context.availableCache, plannedStacks.get(i), live);
+        }
+
+        reconcileRounds++;
+        notifyPlayerOfRetry(wentMissing);
+        boolean queued = false;
+        for (CraftingRequest request : toReopen) {
+            queued |= context.reopenRequest(request);
+        }
+        totalByteCost = -1;
+        if (AELog.isCraftingDebugLogEnabled()) {
+            AELog.log(
+                    Level.INFO,
+                    "Crafting job for %s re-resolving %d requests whose items disappeared",
+                    originalRequest.toString(),
+                    toReopen.size());
+        }
+        return queued;
+    }
+
+    /**
+     * Players get several attempts to keep up with a changing network, machines (e.g. level maintainers) only one, they
+     * will simply request again later.
+     */
+    private int getMaxReconcileRounds() {
+        return context.actionSource != null && context.actionSource.isPlayer() ? MAX_RECONCILE_ROUNDS_PLAYER
+                : MAX_RECONCILE_ROUNDS_MACHINE;
+    }
+
+    /**
+     * Tells the player who requested the job that it is being recalculated, and which ingredients caused it.
+     */
+    private void notifyPlayerOfRetry(List<IAEStack<?>> wentMissing) {
+        if (!(context.actionSource instanceof PlayerSource playerSource) || playerSource.player == null
+                || wentMissing.isEmpty()) {
+            return;
+        }
+        try {
+            final IChatComponent missingList = new ChatComponentText("");
+            final NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.getDefault());
+            for (int i = 0; i < wentMissing.size(); i++) {
+                if (i >= MAX_REPORTED_MISSING_STACKS) {
+                    missingList.appendText(", ...");
+                    break;
+                }
+                if (i > 0) {
+                    missingList.appendText(", ");
+                }
+                final IAEStack<?> stack = wentMissing.get(i);
+                final IChatComponent name = stack.getChatComponent();
+                name.getChatStyle().setColor(EnumChatFormatting.GOLD);
+                missingList.appendText(
+                        EnumChatFormatting.RED + numberFormat.format(stack.getStackSize())
+                                + EnumChatFormatting.RESET
+                                + " * ");
+                missingList.appendSibling(name);
+            }
+            playerSource.player.addChatMessage(
+                    new ChatComponentTranslation(
+                            PlayerMessages.CraftingIngredientsChangedRetry.getUnlocalized(),
+                            reconcileRounds,
+                            getMaxReconcileRounds(),
+                            missingList));
+        } catch (Exception e) {
+            AELog.error(e, "Could not notify player of crafting recalculation");
+        }
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private static void setAvailableAmount(MECraftingInventory inventory, IAEStack<?> stack, long amount) {
+        final IAEStack<?> existing = inventory.findPrecise((IAEStack) stack);
+        if (existing != null) {
+            existing.setStackSize(amount);
+        } else if (amount > 0) {
+            inventory.injectItems(stack.copy().setStackSize(amount), Actionable.MODULATE);
+        }
     }
 
     @Override

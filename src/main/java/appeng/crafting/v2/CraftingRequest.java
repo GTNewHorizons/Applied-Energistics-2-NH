@@ -112,6 +112,11 @@ public class CraftingRequest implements ITreeSerializable {
      * A set of all patterns used to resolve this request and its parents, used for avoiding infinite recursion.
      */
     public final Set<ICraftingPatternDetails> patternParents = new HashSet<>();
+    /**
+     * The patterns used by the parents of this request, as copied into {@link #patternParents} when the request was
+     * added. Unlike {@link #patternParents} it doesn't include the patterns used to resolve this request itself.
+     */
+    public Set<ICraftingPatternDetails> inheritedPatternParents = Collections.emptySet();
 
     @Override
     public List<? extends ITreeSerializable> serializeTree(CraftingTreeSerializer serializer) throws IOException {
@@ -282,6 +287,34 @@ public class CraftingRequest implements ITreeSerializable {
         this.byteCost = CraftingCalculations.adjustByteCost(this, untransformedByteCost);
         this.remainingToProcess -= input.getStackSize();
         this.usedResolvers.add(new UsedResolverEntry(this, origin, input.copy()));
+    }
+
+    /**
+     * Reverses a previous {@link #fulfill} by {@code origin}, marking {@code amount} of {@code resolved} as needing to
+     * be processed again. The requested amount is unchanged, unlike in {@link #partialRefund}. The origin task is
+     * responsible for updating its own state.
+     */
+    public void unfulfill(CraftingTask origin, IAEStack<?> resolved, final long amount) {
+        if (amount < 0) {
+            throw new IllegalArgumentException("Can't unfulfill a negative amount of " + resolved + " : " + this);
+        }
+        long remaining = amount;
+        for (int i = usedResolvers.size() - 1; i >= 0 && remaining > 0; i--) {
+            final UsedResolverEntry entry = usedResolvers.get(i);
+            if (entry.task != origin || !entry.resolvedStack.equals(resolved)) {
+                continue;
+            }
+            final long taken = Math.min(remaining, entry.resolvedStack.getStackSize());
+            entry.resolvedStack.setStackSize(entry.resolvedStack.getStackSize() - taken);
+            remaining -= taken;
+        }
+        if (remaining != 0) {
+            throw new IllegalStateException(
+                    "Unfulfilled more of " + resolved + " than was resolved by " + origin + " for request " + this);
+        }
+        this.remainingToProcess += amount;
+        this.untransformedByteCost -= amount;
+        this.byteCost = CraftingCalculations.adjustByteCost(this, untransformedByteCost);
     }
 
     /**

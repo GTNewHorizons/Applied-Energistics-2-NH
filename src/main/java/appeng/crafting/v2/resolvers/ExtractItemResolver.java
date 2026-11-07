@@ -159,6 +159,45 @@ public class ExtractItemResolver implements CraftingRequestResolver {
             removedFromSystem.clear();
         }
 
+        /**
+         * Gives up on extracting up to {@code amount} of {@code stack} from the AE system because it is no longer
+         * there, leaving the difference unresolved in the request. Does not touch the item model, the caller must keep
+         * it in sync.
+         *
+         * @return The amount actually given up, which can exceed {@code amount} to keep fuzzy groups whole
+         */
+        public long shrinkSystemExtraction(final IAEStack<?> stack, final long amount) {
+            long extractedOfStack = 0;
+            for (IAEStack<?> removed : removedFromSystem) {
+                if (removed.equals(stack)) {
+                    extractedOfStack += removed.getStackSize();
+                }
+            }
+            long toShrink = Math.min(amount, extractedOfStack);
+            if (request.substitutionMode == CraftingRequest.SubstitutionMode.ACCEPT_FUZZY) {
+                final long groupSize = request.substitutionGroupSize;
+                toShrink = Math.min(extractedOfStack, Platform.ceilDiv(toShrink, groupSize) * groupSize);
+            }
+            if (toShrink <= 0) {
+                return 0;
+            }
+            long remaining = toShrink;
+            for (int i = removedFromSystem.size() - 1; i >= 0 && remaining > 0; i--) {
+                final IAEStack<?> removed = removedFromSystem.get(i);
+                if (!removed.equals(stack)) {
+                    continue;
+                }
+                final long taken = Math.min(remaining, removed.getStackSize());
+                removed.setStackSize(removed.getStackSize() - taken);
+                remaining -= taken;
+                if (removed.getStackSize() <= 0) {
+                    removedFromSystem.remove(i);
+                }
+            }
+            request.unfulfill(this, stack, toShrink);
+            return toShrink;
+        }
+
         @Override
         public void populatePlan(IItemList<IAEStack<?>> targetPlan) {
             for (IAEStack<?> removed : removedFromSystem) {

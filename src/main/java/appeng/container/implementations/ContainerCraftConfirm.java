@@ -63,6 +63,8 @@ public class ContainerCraftConfirm extends ContainerSubGui implements ICraftingC
 
     private Future<ICraftingJob> job;
     protected ICraftingJob result;
+    /** The plan last sent to the client, if any */
+    private IItemList<IAEStack<?>> sentPlan;
     private final ITerminalHost host;
 
     @GuiSync(0)
@@ -174,12 +176,24 @@ public class ContainerCraftConfirm extends ContainerSubGui implements ICraftingC
                 try {
                     final PacketMEInventoryUpdate storageUpdate = new PacketMEInventoryUpdate((byte) 0);
                     final PacketMEInventoryUpdate pendingUpdate = new PacketMEInventoryUpdate((byte) 1);
-                    final PacketMEInventoryUpdate missingUpdate = this.result.isSimulation()
+                    final PacketMEInventoryUpdate missingUpdate = this.result.isSimulation() || this.sentPlan != null
                             ? new PacketMEInventoryUpdate((byte) 2)
                             : null;
 
                     final IItemList<IAEStack<?>> plan = AEApi.instance().storage().createAEStackList();
                     this.result.populatePlan(plan);
+
+                    if (this.sentPlan != null) {
+                        // The job was re-planned, clear what the client still shows from the previous plan
+                        for (final IAEStack<?> sent : this.sentPlan) {
+                            final IAEStack<?> cleared = sent.copy();
+                            cleared.reset();
+                            storageUpdate.appendItem(cleared);
+                            pendingUpdate.appendItem(cleared);
+                            missingUpdate.appendItem(cleared);
+                        }
+                    }
+                    this.sentPlan = plan;
 
                     this.setUsedBytes(this.result.getByteTotal());
                     this.setErrorMessage(this.result.getErrorMessage());
@@ -313,8 +327,16 @@ public class ContainerCraftConfirm extends ContainerSubGui implements ICraftingC
         startJob(false);
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void startJob(final boolean followCraft) {
         if (this.result != null && !this.isSimulation() && getGrid() != null) {
+            if (this.result instanceof CraftingJobV2<?>job && job.reconcileWithLiveStorage()) {
+                // Items the plan needs disappeared since it was calculated, re-plan those before starting. Auto start
+                // stays enabled, otherwise the updated plan is shown to be confirmed again.
+                this.setSimulation(true);
+                this.setJob((Future) job.schedule());
+                return;
+            }
             final ICraftingGrid cc = this.getGrid().getCache(ICraftingGrid.class);
             CraftingCPUStatus selected = this.cpuTable.getSelectedCPU();
             final ICraftingLink g = cc.submitJob(

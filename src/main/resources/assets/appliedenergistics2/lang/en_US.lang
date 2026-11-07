@@ -133,6 +133,7 @@ chat.appliedenergistics2.LevelEmitterHighlighted=The level emitter is now highli
 chat.appliedenergistics2.P2PInAnotherDim=P2P located in dimension: %d and can't be highlighted
 chat.appliedenergistics2.P2PHighlighted=The P2P is now highlighted at %d, %d, %d
 chat.appliedenergistics2.CraftingItemsWentMissing=Missing ingredient: %d * %s
+chat.appliedenergistics2.CraftingIngredientsChangedRetry=Ingredients went missing, recalculating (attempt %s/%s): %s
 chat.appliedenergistics2.FBOUnsupported=OpenGL FBOs not supported, cannot export image
 chat.appliedenergistics2.PriorityInvalidTarget=Target has no priority
 chat.appliedenergistics2.PriorityReadout=Current priority is %d

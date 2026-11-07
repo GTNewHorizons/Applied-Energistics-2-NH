@@ -57,12 +57,26 @@ public class MockAESystem implements ICellProvider {
         return this;
     }
 
+    public MockAESystem removeStoredItem(ItemStack stack) {
+        final IAEItemStack aeStack = AEItemStack.create(stack);
+        this.itemStorage.extractItems(aeStack, Actionable.MODULATE);
+        this.sgCache.postAlterationOfStoredItems(
+                StorageChannel.ITEMS,
+                Collections.singletonList(aeStack.copy().setStackSize(-aeStack.getStackSize())),
+                dummyActionSource);
+        return this;
+    }
+
     public CraftingJobV2 makeCraftingJob(ItemStack request) {
+        return makeCraftingJob(request, dummyActionSource);
+    }
+
+    public CraftingJobV2 makeCraftingJob(ItemStack request, BaseActionSource actionSource) {
         if (dirtyPatterns) {
             dirtyPatterns = false;
             this.cgCache.setMockPatternsFromMethods();
         }
-        return new CraftingJobV2(world, grid, dummyActionSource, AEItemStack.create(request), null);
+        return new CraftingJobV2(world, grid, actionSource, AEItemStack.create(request), null);
     }
 
     public PatternBuilder newProcessingPattern() {
