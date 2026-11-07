@@ -2,6 +2,7 @@ package appeng.crafting.v2;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
@@ -297,9 +298,9 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
     }
 
     /**
-     * @return If any requests got reopened and need more work. Throws if a shrunk request could not be reopened, or if
-     *         items are missing but the plan has already been re-resolved as often as allowed: the plan must never be
-     *         started short.
+     * @return If any requests got reopened and need more work. Throws if a shrunk request could not be reopened, or
+     *         {@link CraftingIngredientsKeptChanging} if items are missing but the plan has already been re-resolved as
+     *         often as allowed: the plan must never be started short.
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private boolean reconcile() {
@@ -342,10 +343,14 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
             return false;
         }
         if (reconcileRounds >= getMaxReconcileRounds()) {
-            throw new IllegalStateException(
-                    "Ingredients are still missing after re-planning " + reconcileRounds
-                            + " time(s), the network keeps changing. Missing: "
-                            + shortfalls);
+            final String detail = "Ingredients are still missing after re-planning " + reconcileRounds
+                    + " time(s), the network keeps changing. Missing: "
+                    + formatMissingForLog(shortfalls);
+            // The exception's toString() is a translation key for the confirm screen, so the catch sites' error log
+            // would not show which items are missing. Log the detail here.
+            AELog.warn("Crafting job for %s gave up: %s", originalRequest.toString(), detail);
+            notifyPlayer(PlayerMessages.CraftingIngredientsChangedGaveUp, shortfalls, reconcileRounds);
+            throw new CraftingIngredientsKeptChanging(detail);
         }
 
         // Insertion ordered, so the requests get reopened (and the new tasks queued) in the same order every time.
@@ -375,7 +380,11 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
         resyncSnapshot(sg, shrunkByStack);
 
         reconcileRounds++;
-        notifyPlayerOfRetry(shrunkByStack);
+        notifyPlayer(
+                PlayerMessages.CraftingIngredientsChangedRetry,
+                shrunkByStack,
+                reconcileRounds,
+                getMaxReconcileRounds());
         for (CraftingRequest request : toReopen) {
             // The extractions are already shrunk, so a request that can't be reopened would leave the plan short and
             // the job would stall on the CPU. Fail the job instead.
@@ -452,37 +461,64 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
     }
 
     /**
-     * Tells the player who requested the job that it is being recalculated, and which ingredients caused it.
+     * Tells the player who requested the job about ingredients that went missing.
+     *
+     * @param leadingArgs Translation arguments before the list of missing items, which is always the last argument
      */
-    private void notifyPlayerOfRetry(IItemList<IAEStack<?>> wentMissing) {
+    private void notifyPlayer(PlayerMessages message, IItemList<IAEStack<?>> wentMissing, Object... leadingArgs) {
         if (!(context.actionSource instanceof PlayerSource playerSource) || playerSource.player == null
                 || wentMissing.isEmpty()) {
             return;
         }
         try {
-            final IChatComponent missingList = new ChatComponentText("");
-            int reported = 0;
-            for (IAEStack<?> stack : wentMissing) {
-                if (reported >= MAX_REPORTED_MISSING_STACKS) {
-                    missingList.appendText(", ...");
-                    break;
-                }
-                if (reported > 0) {
-                    missingList.appendText(", ");
-                }
-                missingList.appendText(Platform.formatChatCount(stack.getStackSize()) + " * ");
-                missingList.appendSibling(Platform.formatChatStackName(stack));
-                reported++;
-            }
-            playerSource.player.addChatMessage(
-                    new ChatComponentTranslation(
-                            PlayerMessages.CraftingIngredientsChangedRetry.getUnlocalized(),
-                            reconcileRounds,
-                            getMaxReconcileRounds(),
-                            missingList));
+            final Object[] args = Arrays.copyOf(leadingArgs, leadingArgs.length + 1);
+            args[leadingArgs.length] = formatMissingForChat(wentMissing);
+            playerSource.player.addChatMessage(new ChatComponentTranslation(message.getUnlocalized(), args));
         } catch (Exception e) {
             AELog.error(e, "Could not notify player of crafting recalculation");
         }
+    }
+
+    /**
+     * @return "count * name" for each stack, coloured and hoverable, shortened after
+     *         {@link #MAX_REPORTED_MISSING_STACKS}
+     */
+    private static IChatComponent formatMissingForChat(IItemList<IAEStack<?>> stacks) {
+        final IChatComponent list = new ChatComponentText("");
+        int reported = 0;
+        for (IAEStack<?> stack : stacks) {
+            if (reported >= MAX_REPORTED_MISSING_STACKS) {
+                list.appendText(", ...");
+                break;
+            }
+            if (reported > 0) {
+                list.appendText(", ");
+            }
+            list.appendText(Platform.formatChatCount(stack.getStackSize()) + " * ");
+            list.appendSibling(Platform.formatChatStackName(stack));
+            reported++;
+        }
+        return list;
+    }
+
+    /**
+     * @return The same list as {@link #formatMissingForChat}, as plain text for the log
+     */
+    private static String formatMissingForLog(IItemList<IAEStack<?>> stacks) {
+        final StringBuilder list = new StringBuilder();
+        int reported = 0;
+        for (IAEStack<?> stack : stacks) {
+            if (reported >= MAX_REPORTED_MISSING_STACKS) {
+                list.append(", ...");
+                break;
+            }
+            if (reported > 0) {
+                list.append(", ");
+            }
+            list.append(stack.getStackSize()).append(" * ").append(Platform.getItemDisplayName(stack));
+            reported++;
+        }
+        return list.toString();
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })

@@ -44,6 +44,7 @@ public enum PlayerMessages implements Localization {
     P2PHighlighted,
     CraftingItemsWentMissing,
     CraftingIngredientsChangedRetry,
+    CraftingIngredientsChangedGaveUp,
     PriorityInvalidTarget,
     PriorityReadout,
     PriorityConfigured,

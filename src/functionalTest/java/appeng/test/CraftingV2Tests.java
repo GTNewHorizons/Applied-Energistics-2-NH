@@ -26,6 +26,7 @@ import appeng.api.config.CraftingMode;
 import appeng.api.networking.crafting.ICraftingPatternDetails;
 import appeng.api.networking.security.PlayerSource;
 import appeng.api.storage.data.IAEItemStack;
+import appeng.core.localization.GuiText;
 import appeng.crafting.v2.CraftingJobV2;
 import appeng.crafting.v2.CraftingRequest;
 import appeng.crafting.v2.CraftingRequest.UsedResolverEntry;
@@ -1155,7 +1156,7 @@ public class CraftingV2Tests {
         assertTrue(job.reconcileWithLiveStorage(), "A second shortfall must still be noticed");
         assertTrue(job.isCancelled(), "Machine requests should only be re-planned once");
         assertTrue(job.isSimulation(), "A cancelled job must not be submittable");
-        assertFalse(job.getErrorMessage().isEmpty());
+        assertEquals(GuiText.CraftingIngredientsKeptChanging.getUnlocalized(), job.getErrorMessage());
     }
 
     @Test
@@ -1187,7 +1188,7 @@ public class CraftingV2Tests {
         assertTrue(job.reconcileWithLiveStorage(), "The shortfall must still be noticed after the last retry");
         assertTrue(job.isCancelled());
         assertTrue(job.isSimulation());
-        assertFalse(job.getErrorMessage().isEmpty());
+        assertEquals(GuiText.CraftingIngredientsKeptChanging.getUnlocalized(), job.getErrorMessage());
     }
 
     @Test
