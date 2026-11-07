@@ -25,7 +25,6 @@ import org.jspecify.annotations.NonNull;
 import com.google.common.collect.ClassToInstanceMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.MutableClassToInstanceMap;
 
 import appeng.api.AEApi;
@@ -42,6 +41,7 @@ import appeng.api.storage.data.IItemList;
 import appeng.container.ContainerNull;
 import appeng.core.AEConfig;
 import appeng.crafting.MECraftingInventory;
+import appeng.crafting.v2.resolvers.CraftableItemResolver.CraftFromPatternTask;
 import appeng.crafting.v2.resolvers.CraftingTask;
 import appeng.crafting.v2.resolvers.CraftingTask.State;
 import appeng.crafting.v2.resolvers.SimulateMissingItemResolver.ConjureItemTask;
@@ -206,9 +206,15 @@ public final class CraftingContext {
         processing.resolvers.clear();
         // The patterns this request was already resolved with are in its patternParents to stop its children from
         // recursing, but the request itself may use them again for the remainder. Only the parents' patterns must
-        // stay denied.
-        final Set<ICraftingPatternDetails> ownPatterns = new HashSet<>(request.patternParents);
-        ownPatterns.removeAll(request.inheritedPatternParents);
+        // stay denied. A pattern task that failed removed its pattern again, so the request's own patterns are exactly
+        // those of the pattern tasks among its used resolvers.
+        final Set<ICraftingPatternDetails> ownPatterns = new HashSet<>();
+        for (CraftingRequest.UsedResolverEntry entry : request.usedResolvers) {
+            if (entry.task instanceof CraftFromPatternTask patternTask) {
+                ownPatterns.add(patternTask.pattern);
+            }
+        }
+        ownPatterns.retainAll(request.patternParents);
         request.patternParents.removeAll(ownPatterns);
         reopeningRequest = true;
         try {
@@ -416,7 +422,6 @@ public final class CraftingContext {
             for (int ri = out.extraInputsRequired.size() - 1; ri >= 0; ri--) {
                 final CraftingRequest request = out.extraInputsRequired.get(ri);
                 request.patternParents.addAll(parentPatterns);
-                request.inheritedPatternParents = ImmutableSet.copyOf(parentPatterns);
                 this.addRequest(request);
             }
         } else if (newState == CraftingTask.State.SUCCESS) {

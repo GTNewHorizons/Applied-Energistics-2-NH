@@ -114,11 +114,6 @@ public class CraftingRequest implements ITreeSerializable {
      * A set of all patterns used to resolve this request and its parents, used for avoiding infinite recursion.
      */
     public final Set<ICraftingPatternDetails> patternParents = new HashSet<>();
-    /**
-     * The patterns used by the parents of this request, as copied into {@link #patternParents} when the request was
-     * added. Unlike {@link #patternParents} it doesn't include the patterns used to resolve this request itself.
-     */
-    public Set<ICraftingPatternDetails> inheritedPatternParents = Collections.emptySet();
 
     @Override
     public List<? extends ITreeSerializable> serializeTree(CraftingTreeSerializer serializer) throws IOException {
