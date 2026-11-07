@@ -307,6 +307,10 @@ public class CraftingRequest implements ITreeSerializable {
             final long taken = Math.min(remaining, entry.resolvedStack.getStackSize());
             entry.resolvedStack.setStackSize(entry.resolvedStack.getStackSize() - taken);
             remaining -= taken;
+            if (entry.resolvedStack.getStackSize() <= 0) {
+                // Nothing left to show for this entry, drop it so it doesn't end up as a 0-sized node in the tree
+                usedResolvers.remove(i);
+            }
         }
         if (remaining != 0) {
             throw new IllegalStateException(
