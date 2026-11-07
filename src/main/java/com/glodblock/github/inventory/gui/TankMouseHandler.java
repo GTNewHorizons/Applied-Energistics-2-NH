@@ -3,11 +3,11 @@ package com.glodblock.github.inventory.gui;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.Nullable;
 
 import com.glodblock.github.inventory.IAEFluidTank;
 import com.glodblock.github.util.NameConst;

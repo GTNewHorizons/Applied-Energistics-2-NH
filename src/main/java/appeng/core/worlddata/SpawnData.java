@@ -19,10 +19,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
+
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Preconditions;
 
@@ -35,16 +35,16 @@ import appeng.core.AELog;
  */
 final class SpawnData implements IWorldSpawnData, IOnWorldStoppable {
 
-    @Nonnull
+    @NonNull
     private final File spawnDirectory;
 
-    @Nonnull
+    @NonNull
     private final MeteorDataNameEncoder encoder;
 
     private final HashMap<String, NBTTagCompound> cache = new HashMap<>();
     private final HashSet<String> dirty = new HashSet<>();
 
-    public SpawnData(@Nonnull final File spawnDirectory) {
+    public SpawnData(@NonNull final File spawnDirectory) {
         Preconditions.checkNotNull(spawnDirectory);
 
         this.spawnDirectory = spawnDirectory;

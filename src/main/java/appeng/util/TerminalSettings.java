@@ -10,8 +10,8 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.common.util.Constants;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public class TerminalSettings {
 
@@ -43,7 +43,7 @@ public class TerminalSettings {
         }
     }
 
-    public void writeToNBT(@NotNull ItemStack stack) {
+    public void writeToNBT(@NonNull ItemStack stack) {
         if (!stack.hasTagCompound()) {
             stack.setTagCompound(new NBTTagCompound());
         }

@@ -4,12 +4,12 @@ import static thaumicenergistics.common.storage.AEEssentiaStackType.ESSENTIA_STA
 
 import java.util.ArrayList;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.AEApi;
 import appeng.api.implementations.tiles.IWirelessAccessPoint;
@@ -64,7 +64,7 @@ public abstract class WirelessAELink implements IStorageMonitorable {
      */
     protected BaseActionSource actionSource;
 
-    public WirelessAELink(final @Nullable EntityPlayer player, @Nonnull final String encryptionKey) {
+    public WirelessAELink(final @Nullable EntityPlayer player, @NonNull final String encryptionKey) {
         // Set the player
         this.player = player;
 

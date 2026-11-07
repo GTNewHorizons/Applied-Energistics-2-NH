@@ -17,8 +17,8 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
 
@@ -91,7 +91,7 @@ public class PortableCellViewer<StackType extends IAEStack<?>> extends MEMonitor
     }
 
     @Override
-    public @Nullable IMEMonitor<?> getMEMonitor(@NotNull IAEStackType<?> type) {
+    public @Nullable IMEMonitor<?> getMEMonitor(@NonNull IAEStackType<?> type) {
         if (this.type == type) {
             return this;
         }

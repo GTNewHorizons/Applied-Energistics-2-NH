@@ -15,14 +15,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.ICrafting;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.world.World;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.AEApi;
 import appeng.api.config.Actionable;
@@ -447,7 +447,7 @@ public class ContainerCraftConfirm extends ContainerSubGui implements ICraftingC
         return this.myName;
     }
 
-    private void setName(@Nonnull final String myName) {
+    private void setName(@NonNull final String myName) {
         this.myName = myName;
     }
 
@@ -475,7 +475,7 @@ public class ContainerCraftConfirm extends ContainerSubGui implements ICraftingC
         this.job = job;
     }
 
-    public void setItemToCraft(@Nonnull final IAEStack<?> itemToCraft) {
+    public void setItemToCraft(@NonNull final IAEStack<?> itemToCraft) {
         ByteBuf serialized = Unpooled.buffer();
         Platform.writeStackByte(itemToCraft, serialized);
         this.serializedItemToCraft = serialized.toString(StandardCharsets.ISO_8859_1);

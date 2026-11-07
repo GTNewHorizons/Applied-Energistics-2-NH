@@ -3,8 +3,6 @@ package com.glodblock.github.common.item;
 import java.util.List;
 import java.util.Objects;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
@@ -18,6 +16,8 @@ import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
+
+import org.jspecify.annotations.Nullable;
 
 import com.glodblock.github.FluidCraft;
 import com.glodblock.github.loader.ItemAndBlockHolder;

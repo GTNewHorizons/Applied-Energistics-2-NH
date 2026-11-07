@@ -13,13 +13,13 @@ package appeng.core.features.registries;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.oredict.OreDictionary;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.AEApi;
 import appeng.api.config.TunnelType;

@@ -1,6 +1,6 @@
 package appeng.container.sync;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.Settings;
 import appeng.api.util.IConfigManager;
@@ -20,94 +20,94 @@ public interface SyncRegistrar {
      * Creates a child registrar whose handlers are registered under the given key as an additional fullKey scope
      * segment.
      */
-    @NotNull
-    SyncRegistrar child(@NotNull String key);
+    @NonNull
+    SyncRegistrar child(@NonNull String key);
 
-    @NotNull
-    IntSyncHandler intS2C(@NotNull String key);
+    @NonNull
+    IntSyncHandler intS2C(@NonNull String key);
 
-    @NotNull
-    IntSyncHandler intC2S(@NotNull String key);
+    @NonNull
+    IntSyncHandler intC2S(@NonNull String key);
 
-    @NotNull
-    IntSyncHandler intSync(@NotNull String key);
+    @NonNull
+    IntSyncHandler intSync(@NonNull String key);
 
-    @NotNull
-    LongSyncHandler longS2C(@NotNull String key);
+    @NonNull
+    LongSyncHandler longS2C(@NonNull String key);
 
-    @NotNull
-    LongSyncHandler longC2S(@NotNull String key);
+    @NonNull
+    LongSyncHandler longC2S(@NonNull String key);
 
-    @NotNull
-    LongSyncHandler longSync(@NotNull String key);
+    @NonNull
+    LongSyncHandler longSync(@NonNull String key);
 
-    @NotNull
-    BooleanSyncHandler booleanS2C(@NotNull String key);
+    @NonNull
+    BooleanSyncHandler booleanS2C(@NonNull String key);
 
-    @NotNull
-    BooleanSyncHandler booleanC2S(@NotNull String key);
+    @NonNull
+    BooleanSyncHandler booleanC2S(@NonNull String key);
 
-    @NotNull
-    BooleanSyncHandler booleanSync(@NotNull String key);
+    @NonNull
+    BooleanSyncHandler booleanSync(@NonNull String key);
 
-    @NotNull
-    DoubleSyncHandler doubleS2C(@NotNull String key);
+    @NonNull
+    DoubleSyncHandler doubleS2C(@NonNull String key);
 
-    @NotNull
-    DoubleSyncHandler doubleC2S(@NotNull String key);
+    @NonNull
+    DoubleSyncHandler doubleC2S(@NonNull String key);
 
-    @NotNull
-    DoubleSyncHandler doubleSync(@NotNull String key);
+    @NonNull
+    DoubleSyncHandler doubleSync(@NonNull String key);
 
-    @NotNull
-    <T, D> DeltaObjectSyncHandler<T, D> objectS2C(@NotNull String key, @NotNull DeltaSyncCodec<T, D> codec,
+    @NonNull
+    <T, D> DeltaObjectSyncHandler<T, D> objectS2C(@NonNull String key, @NonNull DeltaSyncCodec<T, D> codec,
             T initialValue);
 
-    @NotNull
-    <T> ObjectSyncHandler<T> objectS2C(@NotNull String key, @NotNull SyncCodec<T> codec, T initialValue);
+    @NonNull
+    <T> ObjectSyncHandler<T> objectS2C(@NonNull String key, @NonNull SyncCodec<T> codec, T initialValue);
 
-    @NotNull
-    <T, D> DeltaObjectSyncHandler<T, D> objectC2S(@NotNull String key, @NotNull DeltaSyncCodec<T, D> codec,
+    @NonNull
+    <T, D> DeltaObjectSyncHandler<T, D> objectC2S(@NonNull String key, @NonNull DeltaSyncCodec<T, D> codec,
             T initialValue);
 
-    @NotNull
-    <T> ObjectSyncHandler<T> objectC2S(@NotNull String key, @NotNull SyncCodec<T> codec, T initialValue);
+    @NonNull
+    <T> ObjectSyncHandler<T> objectC2S(@NonNull String key, @NonNull SyncCodec<T> codec, T initialValue);
 
-    @NotNull
-    <T, D> DeltaObjectSyncHandler<T, D> object(@NotNull String key, @NotNull DeltaSyncCodec<T, D> codec,
+    @NonNull
+    <T, D> DeltaObjectSyncHandler<T, D> object(@NonNull String key, @NonNull DeltaSyncCodec<T, D> codec,
             T initialValue);
 
-    @NotNull
-    <T> ObjectSyncHandler<T> object(@NotNull String key, @NotNull SyncCodec<T> codec, T initialValue);
+    @NonNull
+    <T> ObjectSyncHandler<T> object(@NonNull String key, @NonNull SyncCodec<T> codec, T initialValue);
 
-    @NotNull
-    <T> ActionHandler<T> actionS2C(@NotNull String key, @NotNull StreamCodec<T> codec);
+    @NonNull
+    <T> ActionHandler<T> actionS2C(@NonNull String key, @NonNull StreamCodec<T> codec);
 
-    @NotNull
-    ActionHandler<Void> actionS2C(@NotNull String key);
+    @NonNull
+    ActionHandler<Void> actionS2C(@NonNull String key);
 
-    @NotNull
-    <T> ActionHandler<T> actionC2S(@NotNull String key, @NotNull StreamCodec<T> codec);
+    @NonNull
+    <T> ActionHandler<T> actionC2S(@NonNull String key, @NonNull StreamCodec<T> codec);
 
-    @NotNull
-    ActionHandler<Void> actionC2S(@NotNull String key);
+    @NonNull
+    ActionHandler<Void> actionC2S(@NonNull String key);
 
-    @NotNull
-    <T> ActionHandler<T> action(@NotNull String key, @NotNull StreamCodec<T> codec);
+    @NonNull
+    <T> ActionHandler<T> action(@NonNull String key, @NonNull StreamCodec<T> codec);
 
-    @NotNull
-    ActionHandler<Void> action(@NotNull String key);
+    @NonNull
+    ActionHandler<Void> action(@NonNull String key);
 
-    @NotNull
-    <E extends Enum<E>> ConfigEnumSyncHandler<E> configEnum(@NotNull String key, @NotNull Settings setting,
-            @NotNull Class<E> enumClass, @NotNull IConfigManager configManager);
+    @NonNull
+    <E extends Enum<E>> ConfigEnumSyncHandler<E> configEnum(@NonNull String key, @NonNull Settings setting,
+            @NonNull Class<E> enumClass, @NonNull IConfigManager configManager);
 
-    @NotNull
-    AEStackInventorySyncHandler aeStackInventoryS2C(@NotNull String key, @NotNull IAEStackInventory inventory);
+    @NonNull
+    AEStackInventorySyncHandler aeStackInventoryS2C(@NonNull String key, @NonNull IAEStackInventory inventory);
 
-    @NotNull
-    AEStackInventorySyncHandler aeStackInventoryC2S(@NotNull String key, @NotNull IAEStackInventory inventory);
+    @NonNull
+    AEStackInventorySyncHandler aeStackInventoryC2S(@NonNull String key, @NonNull IAEStackInventory inventory);
 
-    @NotNull
-    AEStackInventorySyncHandler aeStackInventory(@NotNull String key, @NotNull IAEStackInventory inventory);
+    @NonNull
+    AEStackInventorySyncHandler aeStackInventory(@NonNull String key, @NonNull IAEStackInventory inventory);
 }

@@ -12,13 +12,13 @@ package appeng.parts.p2p;
 
 import java.util.function.BiConsumer;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.World;
+
+import org.jspecify.annotations.Nullable;
 
 import com.gtnewhorizon.gtnhlib.capability.Capabilities;
 

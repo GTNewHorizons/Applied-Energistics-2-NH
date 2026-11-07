@@ -1,13 +1,12 @@
 package com.glodblock.github.inventory.gui;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.jspecify.annotations.Nullable;
 
 import com.glodblock.github.inventory.item.IItemInventory;
 import com.glodblock.github.util.Util;

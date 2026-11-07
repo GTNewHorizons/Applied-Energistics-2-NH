@@ -2,7 +2,7 @@ package appeng.container.sync.handlers;
 
 import java.io.IOException;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import appeng.container.sync.AbstractSyncHandler;
 import appeng.container.sync.SyncDirection;

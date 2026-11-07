@@ -15,11 +15,11 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.base.Preconditions;
 
@@ -43,7 +43,7 @@ final class StorageData implements IWorldGridStorageData, IOnWorldStartable, IOn
     private final Configuration config;
     private long lastGridStorage;
 
-    public StorageData(@Nonnull final Configuration settingsFile) {
+    public StorageData(@NonNull final Configuration settingsFile) {
         Preconditions.checkNotNull(settingsFile);
 
         this.config = settingsFile;
@@ -97,7 +97,7 @@ final class StorageData implements IWorldGridStorageData, IOnWorldStartable, IOn
     /**
      * create a new storage
      */
-    @Nonnull
+    @NonNull
     @Override
     public GridStorage getNewGridStorage() {
         final long storageID = this.nextGridStorage();

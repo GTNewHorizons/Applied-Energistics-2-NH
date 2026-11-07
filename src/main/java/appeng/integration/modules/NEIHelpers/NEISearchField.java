@@ -3,9 +3,9 @@ package appeng.integration.modules.NEIHelpers;
 import java.lang.reflect.Field;
 import java.util.function.Predicate;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.client.gui.widgets.MEGuiTextField;
 import codechicken.nei.ItemList;

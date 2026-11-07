@@ -19,8 +19,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.OverridingMethodsMustInvokeSuper;
 
 import net.minecraft.entity.player.EntityPlayer;
@@ -33,6 +31,9 @@ import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.gtnewhorizon.gtnhlib.capability.CapabilityProvider;
 
@@ -79,7 +80,7 @@ public class AEBaseTile extends TileEntity implements IOrientable, ICommonTile, 
         return !this.worldObj.blockExists(this.xCoord, this.yCoord, this.zCoord);
     }
 
-    @Nonnull
+    @NonNull
     public TileEntity getTile() {
         return this;
     }
@@ -272,7 +273,7 @@ public class AEBaseTile extends TileEntity implements IOrientable, ICommonTile, 
         return true;
     }
 
-    @Nonnull
+    @NonNull
     private List<AETileEventHandler> getHandlerListFor(final TileEventType type) {
         final Map<TileEventType, List<AETileEventHandler>> eventToHandlers = this.getEventToHandlers();
         final List<AETileEventHandler> handlers = this.getHandlers(eventToHandlers, type);
@@ -280,7 +281,7 @@ public class AEBaseTile extends TileEntity implements IOrientable, ICommonTile, 
         return handlers;
     }
 
-    @Nonnull
+    @NonNull
     private Map<TileEventType, List<AETileEventHandler>> getEventToHandlers() {
         final Class<? extends AEBaseTile> clazz = this.getClass();
         final Map<TileEventType, List<AETileEventHandler>> storedHandlers = HANDLERS.get(clazz);
@@ -303,7 +304,7 @@ public class AEBaseTile extends TileEntity implements IOrientable, ICommonTile, 
         }
     }
 
-    @Nonnull
+    @NonNull
     private List<AETileEventHandler> getHandlers(final Map<TileEventType, List<AETileEventHandler>> eventToHandlers,
             final TileEventType event) {
         final List<AETileEventHandler> oldHandlers = eventToHandlers.get(event);
@@ -479,7 +480,7 @@ public class AEBaseTile extends TileEntity implements IOrientable, ICommonTile, 
 
     @Override
     @OverridingMethodsMustInvokeSuper
-    public <T> @Nullable T getCapability(@Nonnull Class<T> capability, @Nonnull ForgeDirection side) {
+    public <T> @Nullable T getCapability(@NonNull Class<T> capability, @NonNull ForgeDirection side) {
         return null;
     }
 }

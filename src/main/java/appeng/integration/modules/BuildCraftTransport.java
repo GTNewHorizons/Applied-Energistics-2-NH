@@ -10,15 +10,15 @@
 
 package appeng.integration.modules;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.IIcon;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.AEApi;
 import appeng.api.IAppEngApi;
@@ -74,7 +74,7 @@ public class BuildCraftTransport implements IBuildCraftTransport, IIntegrationMo
 
     @Nullable
     @Override
-    public IFacadePart createFacadePart(final Block blk, final int meta, @Nonnull final ForgeDirection side) {
+    public IFacadePart createFacadePart(final Block blk, final int meta, @NonNull final ForgeDirection side) {
         try {
             final ItemFacade.FacadeState state = ItemFacade.FacadeState.create(blk, meta);
             final ItemStack facade = ItemFacade.getFacade(state);
@@ -88,13 +88,13 @@ public class BuildCraftTransport implements IBuildCraftTransport, IIntegrationMo
     }
 
     @Override
-    public IFacadePart createFacadePart(@Nonnull final ItemStack fs, @Nonnull final ForgeDirection side) {
+    public IFacadePart createFacadePart(@NonNull final ItemStack fs, @NonNull final ForgeDirection side) {
         return new FacadePart(fs, side);
     }
 
     @Nullable
     @Override
-    public ItemStack getTextureForFacade(@Nonnull final ItemStack facade) {
+    public ItemStack getTextureForFacade(@NonNull final ItemStack facade) {
         final Item maybeFacadeItem = facade.getItem();
 
         if (maybeFacadeItem instanceof IFacadeItem facadeItem) {
@@ -122,7 +122,7 @@ public class BuildCraftTransport implements IBuildCraftTransport, IIntegrationMo
     }
 
     @Override
-    public boolean isPipe(final TileEntity te, @Nonnull final ForgeDirection dir) {
+    public boolean isPipe(final TileEntity te, @NonNull final ForgeDirection dir) {
         if (te instanceof IPipeTile pipeTile) {
             return !pipeTile.hasPipePluggable(dir.getOpposite());
         }
@@ -146,7 +146,7 @@ public class BuildCraftTransport implements IBuildCraftTransport, IIntegrationMo
 
     @Override
     public boolean addItemsToPipe(@Nullable final TileEntity te, @Nullable final ItemStack is,
-            @Nonnull final ForgeDirection dir) {
+            @NonNull final ForgeDirection dir) {
         if (is != null && te != null && te instanceof IInjectable pt) {
             if (pt.canInjectItems(dir)) {
                 final int amt = pt.injectItem(is, false, dir, null);

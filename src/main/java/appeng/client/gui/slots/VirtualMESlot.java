@@ -6,11 +6,10 @@ import static net.minecraft.client.gui.Gui.drawRect;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
 
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 
 import appeng.api.storage.data.IAEStack;

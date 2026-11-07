@@ -13,7 +13,7 @@ package appeng.util.inv;
 import java.util.Collection;
 import java.util.Iterator;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.storage.data.IAEStack;

@@ -2,8 +2,6 @@ package net.p455w0rd.wirelesscraftingterminal.common.container;
 
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.IInventory;
@@ -30,6 +28,8 @@ import net.p455w0rd.wirelesscraftingterminal.common.inventory.WCTInventoryViewCe
 import net.p455w0rd.wirelesscraftingterminal.common.utils.RandomUtils;
 import net.p455w0rd.wirelesscraftingterminal.helpers.WTCGuiObject;
 import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.AEApi;
 import appeng.api.implementations.tiles.IViewCellStorage;
@@ -343,8 +343,8 @@ public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
     }
 
     @Override
-    @Nonnull
-    public List<AppEngSlot> getValidDestinationSlots(boolean isPlayerSideSlot, @Nonnull ItemStack stackInSlot) {
+    @NonNull
+    public List<AppEngSlot> getValidDestinationSlots(boolean isPlayerSideSlot, @NonNull ItemStack stackInSlot) {
         List<AppEngSlot> list = super.getValidDestinationSlots(isPlayerSideSlot, stackInSlot);
         list.removeIf(slot -> slot instanceof SlotTrash);
         return list;

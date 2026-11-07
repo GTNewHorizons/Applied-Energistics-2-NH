@@ -1,10 +1,9 @@
 package appeng.transformer.asm;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.launchwrapper.IClassTransformer;
 
 import org.apache.logging.log4j.Level;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -26,9 +25,8 @@ public final class GuiButtonColorizer implements IClassTransformer {
     @Reflected
     public GuiButtonColorizer() {}
 
-    @Nullable
     @Override
-    public byte[] transform(final String name, final String transformedName, final byte[] basicClass) {
+    public byte @Nullable [] transform(final String name, final String transformedName, final byte[] basicClass) {
         if (basicClass == null || !transformedName.equals(GUI_BUTTON)) {
             return basicClass;
         }

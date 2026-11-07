@@ -10,14 +10,14 @@
 
 package appeng.recipes.game;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.world.World;
+
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.base.Optional;
 

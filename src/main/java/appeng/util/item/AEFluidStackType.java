@@ -13,9 +13,9 @@ import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidContainerItem;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.AEApi;
 import appeng.api.storage.data.IAEFluidStack;
@@ -83,14 +83,14 @@ public class AEFluidStackType implements IAEStackType<IAEFluidStack> {
     }
 
     @Override
-    public @Nullable IAEFluidStack getStackFromContainerItem(@NotNull ItemStack container) {
+    public @Nullable IAEFluidStack getStackFromContainerItem(@NonNull ItemStack container) {
         FluidStack fluidStack = FluidUtils.getFluidFromContainer(container);
         if (fluidStack == null) return null;
         return AEFluidStack.create(fluidStack);
     }
 
     @Override
-    public @Nullable IAEFluidStack convertStackFromItem(@NotNull ItemStack itemStack) {
+    public @Nullable IAEFluidStack convertStackFromItem(@NonNull ItemStack itemStack) {
         if (FluidUtils.isFluidContainer(itemStack)) return null;
 
         itemStack = itemStack.copy();
@@ -102,13 +102,13 @@ public class AEFluidStackType implements IAEStackType<IAEFluidStack> {
     }
 
     @Override
-    public long getContainerItemCapacity(@NotNull ItemStack container, @NotNull IAEFluidStack stack) {
+    public long getContainerItemCapacity(@NonNull ItemStack container, @NonNull IAEFluidStack stack) {
         return FluidUtils.getFluidContainerCapacity(container, stack.getFluidStack());
     }
 
     @Override
-    public @NotNull ObjectLongPair<ItemStack> drainStackFromContainer(@NotNull ItemStack itemStack,
-            @NotNull IAEFluidStack stack) {
+    public @NonNull ObjectLongPair<ItemStack> drainStackFromContainer(@NonNull ItemStack itemStack,
+            @NonNull IAEFluidStack stack) {
         itemStack.stackSize = 1;
         if (itemStack.getItem() instanceof IFluidContainerItem container) {
             FluidStack fluid = container.getFluid(itemStack);
@@ -136,13 +136,13 @@ public class AEFluidStackType implements IAEStackType<IAEFluidStack> {
     }
 
     @Override
-    public @Nullable ItemStack clearFilledContainer(@NotNull ItemStack container) {
+    public @Nullable ItemStack clearFilledContainer(@NonNull ItemStack container) {
         return FluidUtils.clearFluidContainer(container);
     }
 
     @Override
-    public @NotNull ObjectLongPair<ItemStack> fillContainer(@NotNull ItemStack container,
-            @NotNull IAEFluidStack stack) {
+    public @NonNull ObjectLongPair<ItemStack> fillContainer(@NonNull ItemStack container,
+            @NonNull IAEFluidStack stack) {
         return FluidUtils.fillFluidContainer(container, stack.getFluidStack());
     }
 
@@ -204,12 +204,12 @@ public class AEFluidStackType implements IAEStackType<IAEFluidStack> {
         };
     }
 
-    @NotNull
+    @NonNull
     private final IAEFluidStack testStack = Objects
             .requireNonNull(this.getStackFromContainerItem(new ItemStack(Items.water_bucket, 1)));
 
     @Override
-    @NotNull
+    @NonNull
     public IAEFluidStack getTestStack() {
         return this.testStack.copy();
     }

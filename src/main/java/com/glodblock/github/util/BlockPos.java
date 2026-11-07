@@ -2,11 +2,11 @@ package com.glodblock.github.util;
 
 import java.util.Objects;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.NonNull;
 
 public class BlockPos {
 
@@ -29,7 +29,7 @@ public class BlockPos {
         this.w = w;
     }
 
-    public BlockPos(@Nonnull TileEntity te) {
+    public BlockPos(@NonNull TileEntity te) {
         this.x = te.xCoord;
         this.y = te.yCoord;
         this.z = te.zCoord;

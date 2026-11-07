@@ -5,8 +5,6 @@ import static appeng.items.tools.ToolWirelessKit.getConfigManager;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -15,6 +13,8 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.AdvancedWirelessToolMode;
 import appeng.api.config.Settings;
