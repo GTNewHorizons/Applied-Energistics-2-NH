@@ -271,15 +271,26 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
      * @return If the job went back to running, in which case it has to be scheduled again before it can be started
      */
     public boolean reconcileWithLiveStorage() {
-        if (this.state != State.FINISHED || !reconcile()) {
+        if (this.state != State.FINISHED) {
             return false;
+        }
+        try {
+            if (!reconcile()) {
+                return false;
+            }
+        } catch (Exception e) {
+            // Called from the confirm screen's start button, surface the problem there instead of throwing out of it
+            AELog.error(e, "Error while re-planning crafting for " + originalRequest);
+            errorMessage = e.toString();
+            this.state = State.CANCELLED;
+            return true;
         }
         this.state = State.RUNNING;
         return true;
     }
 
     /**
-     * @return If any requests got reopened and need more work
+     * @return If any requests got reopened and need more work. Throws if a shrunk request could not be reopened.
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private boolean reconcile() {
@@ -348,9 +359,13 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
 
         reconcileRounds++;
         notifyPlayerOfRetry(wentMissing);
-        boolean queued = false;
         for (CraftingRequest request : toReopen) {
-            queued |= context.reopenRequest(request);
+            // The extractions are already shrunk, so a request that can't be reopened would leave the plan short and
+            // the job would stall on the CPU. Fail the job instead.
+            if (!context.reopenRequest(request)) {
+                throw new IllegalStateException(
+                        "Could not re-resolve " + request + " after the items it planned to extract went missing");
+            }
         }
         totalByteCost = -1;
         if (AELog.isCraftingDebugLogEnabled()) {
@@ -360,7 +375,7 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
                     originalRequest.toString(),
                     toReopen.size());
         }
-        return queued;
+        return true;
     }
 
     /**
