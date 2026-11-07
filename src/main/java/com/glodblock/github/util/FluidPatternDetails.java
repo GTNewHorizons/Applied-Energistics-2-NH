@@ -6,14 +6,14 @@ import static appeng.util.Platform.stackConvert;
 import java.util.Arrays;
 import java.util.Objects;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.networking.crafting.ICraftingPatternDetails;
 import appeng.api.storage.data.IAEItemStack;

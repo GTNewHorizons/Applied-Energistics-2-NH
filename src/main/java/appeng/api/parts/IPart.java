@@ -17,8 +17,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Random;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.OverridingMethodsMustInvokeSuper;
 
 import net.minecraft.client.renderer.RenderBlocks;
@@ -32,6 +30,9 @@ import net.minecraft.util.IIcon;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.gtnewhorizon.gtnhlib.capability.CapabilityProvider;
 
@@ -283,7 +284,7 @@ public interface IPart extends IBoxProvider, CapabilityProvider {
 
     @Override
     @OverridingMethodsMustInvokeSuper
-    default <T> @Nullable T getCapability(@Nonnull Class<T> capability, @Nonnull ForgeDirection side) {
+    default <T> @Nullable T getCapability(@NonNull Class<T> capability, @NonNull ForgeDirection side) {
         return null;
     }
 }

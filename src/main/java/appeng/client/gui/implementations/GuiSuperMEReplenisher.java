@@ -4,7 +4,7 @@ import static appeng.util.Platform.fmt;
 
 import net.minecraft.entity.player.InventoryPlayer;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.input.Keyboard;
 
 import appeng.api.storage.data.IAEStack;

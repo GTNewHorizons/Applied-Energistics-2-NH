@@ -25,8 +25,8 @@ import net.minecraftforge.common.util.Constants.NBT;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.ForgeEventFactory;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
 
@@ -341,7 +341,7 @@ public class ToolMemoryCard extends AEBaseItem implements IMemoryCard {
     }
 
     @Nullable
-    private static ItemStack extractUpgrade(final List<ItemStack> upgrades, @NotNull final ItemStack requested) {
+    private static ItemStack extractUpgrade(final List<ItemStack> upgrades, @NonNull final ItemStack requested) {
         for (int i = 0; i < upgrades.size(); i++) {
             final ItemStack upgrade = upgrades.get(i);
             if (isMatchingUpgrade(requested, upgrade)) {
@@ -354,7 +354,7 @@ public class ToolMemoryCard extends AEBaseItem implements IMemoryCard {
     }
 
     @Nullable
-    private static ItemStack extractUpgradeFromPlayer(final EntityPlayer player, @NotNull final ItemStack requested) {
+    private static ItemStack extractUpgradeFromPlayer(final EntityPlayer player, @NonNull final ItemStack requested) {
         for (int i = 0; i < player.inventory.getSizeInventory(); i++) {
             final ItemStack stack = player.inventory.getStackInSlot(i);
             if (isMatchingUpgrade(requested, stack)) {
@@ -376,8 +376,8 @@ public class ToolMemoryCard extends AEBaseItem implements IMemoryCard {
     }
 
     @Nullable
-    private static ItemStack extractUpgradeFromNetworkTool(@NotNull final ItemStack toolStack,
-            @NotNull final INetworkToolItem networkTool, @NotNull final ItemStack requested) {
+    private static ItemStack extractUpgradeFromNetworkTool(@NonNull final ItemStack toolStack,
+            @NonNull final INetworkToolItem networkTool, @NonNull final ItemStack requested) {
         final NetworkToolViewer networkToolInventory = new NetworkToolViewer(
                 toolStack,
                 null,
@@ -396,7 +396,7 @@ public class ToolMemoryCard extends AEBaseItem implements IMemoryCard {
         return null;
     }
 
-    private static boolean isMatchingUpgrade(@NotNull final ItemStack requested, @Nullable final ItemStack candidate) {
+    private static boolean isMatchingUpgrade(@NonNull final ItemStack requested, @Nullable final ItemStack candidate) {
         return candidate != null && candidate.stackSize > 0 && requested.isItemEqual(candidate);
     }
 }

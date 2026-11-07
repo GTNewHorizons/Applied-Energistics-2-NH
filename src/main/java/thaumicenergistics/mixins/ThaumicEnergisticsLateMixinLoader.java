@@ -3,7 +3,7 @@ package thaumicenergistics.mixins;
 import java.util.List;
 import java.util.Set;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import com.gtnewhorizon.gtnhmixins.ILateMixinLoader;
 import com.gtnewhorizon.gtnhmixins.LateMixin;
@@ -17,7 +17,7 @@ public class ThaumicEnergisticsLateMixinLoader implements ILateMixinLoader {
         return "mixins.thaumicenergistics.late.json";
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public List<String> getMixins(Set<String> loadedMods) {
         return IMixins.getLateMixins(Mixins.class, loadedMods);

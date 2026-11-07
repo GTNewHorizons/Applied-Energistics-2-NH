@@ -9,7 +9,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants.NBT;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.AEApi;
 import appeng.api.implementations.ICraftingPatternItem;
@@ -138,7 +138,7 @@ public interface IPatternTerminal extends IIAEStackInventory, ITerminalHost, ICo
     boolean encode(IEnergySource powerSource, IMEMonitor<IAEItemStack> itemMonitor, BaseActionSource actionSource,
             String auther, World world);
 
-    @NotNull
+    @NonNull
     static IAEItemStack createBlankPattern() {
         return AEItemStack.create(AEApi.instance().definitions().materials().blankPattern().maybeStack(1).get());
     }

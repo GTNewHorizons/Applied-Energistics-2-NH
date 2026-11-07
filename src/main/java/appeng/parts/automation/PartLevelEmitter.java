@@ -28,7 +28,7 @@ import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.LevelType;
@@ -807,7 +807,7 @@ public class PartLevelEmitter extends PartUpgradeable implements ILevelEmitter {
     }
 
     @Override
-    public void uploadSettings(@NotNull SettingsFrom from, @NotNull NBTTagCompound compound) {
+    public void uploadSettings(@NonNull SettingsFrom from, @NonNull NBTTagCompound compound) {
         super.uploadSettings(from, compound);
         this.reportingValue = compound.getLong("reportingValue");
         this.typeFilters.readFromNBT(compound);
@@ -815,8 +815,8 @@ public class PartLevelEmitter extends PartUpgradeable implements ILevelEmitter {
     }
 
     @Override
-    @NotNull
-    public NBTTagCompound downloadSettings(@NotNull SettingsFrom from) {
+    @NonNull
+    public NBTTagCompound downloadSettings(@NonNull SettingsFrom from) {
         NBTTagCompound nbt = super.downloadSettings(from);
         nbt.setLong("reportingValue", this.reportingValue);
         this.typeFilters.writeToNBT(nbt);

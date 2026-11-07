@@ -4,8 +4,8 @@ import java.util.stream.IntStream;
 
 import net.minecraftforge.common.util.ForgeDirection;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.gtnewhorizon.gtnhlib.item.ImmutableItemStack;
 import com.gtnewhorizon.gtnhlib.item.InsertionItemStack;
@@ -65,7 +65,7 @@ public class MEItemIO extends SimpleItemIO {
     }
 
     @Override
-    protected @NotNull InventoryIterator iterator(int[] allowedSlots) {
+    protected @NonNull InventoryIterator iterator(int[] allowedSlots) {
         return new StandardInventoryIterator(this.duality.getStorage(), ForgeDirection.UNKNOWN, SLOTS, allowedSlots);
     }
 

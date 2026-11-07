@@ -1,8 +1,8 @@
 package thaumicenergistics.api.gui;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.client.gui.FontRenderer;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * GUI that displays widgets.
@@ -17,7 +17,7 @@ public interface IWidgetHost {
      *
      * @return
      */
-    @Nonnull
+    @NonNull
     FontRenderer getFontRenderer();
 
     /**

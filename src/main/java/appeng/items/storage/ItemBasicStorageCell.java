@@ -12,7 +12,7 @@ package appeng.items.storage;
 
 import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Optional;
 
@@ -31,7 +31,7 @@ public class ItemBasicStorageCell extends AEBaseCell {
     }
 
     @Override
-    @NotNull
+    @NonNull
     public IAEStackType<?> getStackType() {
         return ITEM_STACK_TYPE;
     }

@@ -18,8 +18,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.Vec3;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.Settings;
 import appeng.api.config.SortDir;
@@ -151,7 +151,7 @@ public abstract class AbstractPartTerminal extends AbstractPartDisplay implement
     }
 
     @Override
-    public @Nullable IMEMonitor<?> getMEMonitor(@NotNull IAEStackType<?> type) {
+    public @Nullable IMEMonitor<?> getMEMonitor(@NonNull IAEStackType<?> type) {
         try {
             return this.getProxy().getStorage().getMEMonitor(type);
         } catch (final GridAccessException e) {
@@ -187,7 +187,7 @@ public abstract class AbstractPartTerminal extends AbstractPartDisplay implement
     public abstract ItemStack getPrimaryGuiIcon();
 
     @Override
-    @NotNull
+    @NonNull
     public Reference2BooleanMap<IAEStackType<?>> getTypeFilter(EntityPlayer player) {
         return this.terminalSettings.getFilters(player).getFiltersMap();
     }

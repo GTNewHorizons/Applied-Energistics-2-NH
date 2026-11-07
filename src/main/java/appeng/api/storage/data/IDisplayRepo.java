@@ -2,9 +2,9 @@ package appeng.api.storage.data;
 
 import java.util.Map;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.helpers.IPinsHandler;
 import appeng.me.cache.ItemFlowGridCache.FlowRate;
@@ -50,7 +50,7 @@ public interface IDisplayRepo extends IPinsHandler {
 
     String getSearchString();
 
-    void setSearchString(@Nonnull final String searchString);
+    void setSearchString(@NonNull final String searchString);
 
     boolean isPaused();
 

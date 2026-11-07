@@ -13,10 +13,10 @@ package appeng.me.storage;
 import static appeng.util.item.AEFluidStackType.FLUID_STACK_TYPE;
 import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.NonNull;
 
 import com.glodblock.github.util.Util;
 
@@ -91,7 +91,7 @@ public class CreativeCellInventory<StackType extends IAEStack<StackType>>
     }
 
     @Override
-    public StackType getAvailableItem(@Nonnull StackType request, int iteration) {
+    public StackType getAvailableItem(@NonNull StackType request, int iteration) {
         final StackType local = this.listCache.findPrecise(request);
         if (local == null) {
             return null;
@@ -112,7 +112,7 @@ public class CreativeCellInventory<StackType extends IAEStack<StackType>>
         return null;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public IAEStackType<?> getStackType() {
         return this.cellType.getStackType();

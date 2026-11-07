@@ -1,11 +1,11 @@
 package thaumicenergistics.api;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Item information.
@@ -35,7 +35,7 @@ public interface IThEItemDescription {
      *
      * @return
      */
-    @Nonnull
+    @NonNull
     Item getItem();
 
     /**
@@ -43,7 +43,7 @@ public interface IThEItemDescription {
      *
      * @return
      */
-    @Nonnull
+    @NonNull
     ItemStack getStack();
 
     /**
@@ -52,6 +52,6 @@ public interface IThEItemDescription {
      * @param amount
      * @return
      */
-    @Nonnull
+    @NonNull
     ItemStack getStacks(int amount);
 }

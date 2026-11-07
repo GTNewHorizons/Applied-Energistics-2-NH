@@ -12,9 +12,8 @@ package appeng.services.export;
 
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
 import org.apache.commons.codec.digest.DigestUtils;
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Preconditions;
 
@@ -31,13 +30,13 @@ final class ModListChecker implements Checker<List<ModContainer>> {
 
     private final String configHashValue;
 
-    @Nonnull
+    @NonNull
     private final ExportConfig config;
 
     /**
      * @param config uses the config to retrieve the old hash of the mod list
      */
-    ModListChecker(@Nonnull final ExportConfig config) {
+    ModListChecker(@NonNull final ExportConfig config) {
         this.config = Preconditions.checkNotNull(config);
         this.configHashValue = Preconditions.checkNotNull(config.getCache());
     }
@@ -50,9 +49,9 @@ final class ModListChecker implements Checker<List<ModContainer>> {
      *                      the previous instance
      * @return CheckType.EQUAL if no change was detected
      */
-    @Nonnull
+    @NonNull
     @Override
-    public CheckType isEqual(@Nonnull final List<ModContainer> modContainers) {
+    public CheckType isEqual(@NonNull final List<ModContainer> modContainers) {
         Preconditions.checkNotNull(modContainers);
 
         final StringBuilder builder = new StringBuilder();

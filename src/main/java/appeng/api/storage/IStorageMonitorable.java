@@ -16,8 +16,8 @@ package appeng.api.storage;
 import static appeng.util.item.AEFluidStackType.FLUID_STACK_TYPE;
 import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.implementations.tiles.ITileStorageMonitorable;
 import appeng.api.storage.data.IAEFluidStack;
@@ -46,7 +46,7 @@ public interface IStorageMonitorable {
     }
 
     @Nullable
-    default IMEMonitor<?> getMEMonitor(@Nonnull IAEStackType<?> type) {
+    default IMEMonitor<?> getMEMonitor(@NonNull IAEStackType<?> type) {
         if (type == ITEM_STACK_TYPE) {
             return this.getItemInventory();
         } else if (type == FLUID_STACK_TYPE) {

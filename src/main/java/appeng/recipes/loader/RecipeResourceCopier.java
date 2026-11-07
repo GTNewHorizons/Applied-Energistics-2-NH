@@ -25,9 +25,8 @@ import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.annotation.Nonnull;
-
 import org.apache.commons.io.FileUtils;
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Preconditions;
 
@@ -60,7 +59,7 @@ public class RecipeResourceCopier {
      * @param root source root folder of the recipes inside the jar.
      * @throws NullPointerException if root is <tt>null</tt>
      */
-    public RecipeResourceCopier(@Nonnull final String root) {
+    public RecipeResourceCopier(@NonNull final String root) {
         Preconditions.checkNotNull(root);
 
         this.root = root;
@@ -77,7 +76,7 @@ public class RecipeResourceCopier {
      * @throws NullPointerException     if either parameter is <tt>null</tt>
      * @throws IllegalArgumentException if destination is not a directory
      */
-    public void copyTo(@Nonnull final String identifier, @Nonnull final File destination)
+    public void copyTo(@NonNull final String identifier, @NonNull final File destination)
             throws URISyntaxException, IOException {
         Preconditions.checkNotNull(destination);
         Preconditions.checkArgument(destination.isDirectory());
@@ -93,8 +92,8 @@ public class RecipeResourceCopier {
      *                            possible
      * @see {RecipeResourceCopier#copyTo(File)}
      */
-    private void copyTo(@Nonnull final String identifier, @Nonnull final File destination,
-            @Nonnull final String directory) throws URISyntaxException, IOException {
+    private void copyTo(@NonNull final String identifier, @NonNull final File destination,
+            @NonNull final String directory) throws URISyntaxException, IOException {
         assert identifier != null;
         assert destination != null;
         assert directory != null;
@@ -123,8 +122,8 @@ public class RecipeResourceCopier {
      * @param fileName    the file to copy
      * @throws IOException if copying the file is not possible
      */
-    private void copyFile(@Nonnull final File destination, @Nonnull final String directory,
-            @Nonnull final String fileName) throws IOException {
+    private void copyFile(@NonNull final File destination, @NonNull final String directory,
+            @NonNull final String fileName) throws IOException {
         assert destination != null;
         assert directory != null;
         assert fileName != null;
@@ -150,8 +149,8 @@ public class RecipeResourceCopier {
      * @throws IOException                   if jar path can not be decoded
      * @throws UnsupportedOperationException if it is neither in jar nor in file path
      */
-    @Nonnull
-    private String[] getResourceListing(@Nonnull final Class<?> clazz, @Nonnull final String path)
+    @NonNull
+    private String[] getResourceListing(@NonNull final Class<?> clazz, @NonNull final String path)
             throws URISyntaxException, IOException {
         assert clazz != null;
         assert path != null;

@@ -2,9 +2,9 @@ package com.glodblock.github.inventory.gui;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.entity.player.EntityPlayer;
+
+import org.jspecify.annotations.Nullable;
 
 import com.glodblock.github.client.gui.GuiFluidAutoFiller;
 import com.glodblock.github.client.gui.GuiFluidInterface;

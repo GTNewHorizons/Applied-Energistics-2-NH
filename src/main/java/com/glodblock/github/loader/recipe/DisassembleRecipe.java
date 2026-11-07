@@ -5,13 +5,13 @@ import static com.glodblock.github.loader.ItemAndBlockHolder.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.world.World;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.AEApi;
 import appeng.api.storage.IMEInventory;

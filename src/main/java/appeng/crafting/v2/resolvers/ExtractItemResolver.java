@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.FuzzyMode;
@@ -242,10 +242,10 @@ public class ExtractItemResolver implements CraftingRequestResolver {
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public List<CraftingTask> provideCraftingRequestResolvers(@Nonnull CraftingRequest request,
-            @Nonnull CraftingContext context) {
+    public List<CraftingTask> provideCraftingRequestResolvers(@NonNull CraftingRequest request,
+            @NonNull CraftingContext context) {
         if (request.substitutionMode == CraftingRequest.SubstitutionMode.PRECISE_FRESH) {
             return Collections.emptyList();
         } else {

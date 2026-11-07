@@ -10,14 +10,14 @@
 
 package appeng.parts.p2p;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.IIcon;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.ticking.IGridTickable;
@@ -46,7 +46,7 @@ public final class PartP2PPressure extends PartP2PTunnelNormal<PartP2PPressure>
 
     private static final int VOLUME = 1000;
 
-    @Nonnull
+    @NonNull
     private final IAirHandler handler;
 
     private boolean isConnected = false;
@@ -134,7 +134,7 @@ public final class PartP2PPressure extends PartP2PTunnelNormal<PartP2PPressure>
         this.getInternalHandler().readFromNBTI(data.getCompoundTag(PRESSURE_NBT_TAG));
     }
 
-    @Nonnull
+    @NonNull
     private IAirHandler getInternalHandler() {
         return this.handler;
     }

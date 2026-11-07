@@ -10,10 +10,10 @@
 
 package appeng.integration.modules.BCHelpers;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.security.BaseActionSource;
@@ -67,7 +67,7 @@ public class BCPipeInventory implements IMEInventory<IAEItemStack> {
     }
 
     @Override
-    public IAEItemStack getAvailableItem(@Nonnull IAEItemStack request, int iteration) {
+    public IAEItemStack getAvailableItem(@NonNull IAEItemStack request, int iteration) {
         return null;
     }
 

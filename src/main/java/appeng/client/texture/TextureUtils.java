@@ -1,11 +1,11 @@
 package appeng.client.texture;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.util.IIcon;
+
+import org.jspecify.annotations.NonNull;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -13,13 +13,13 @@ import cpw.mods.fml.relauncher.SideOnly;
 public class TextureUtils {
 
     @SideOnly(Side.CLIENT)
-    @Nonnull
+    @NonNull
     public static IIcon checkTexture(IIcon val) {
         return checkTexture(val, true);
     }
 
     @SideOnly(Side.CLIENT)
-    @Nonnull
+    @NonNull
     public static IIcon checkTexture(IIcon val, boolean isBlock) {
         if (val == null) {
             val = isBlock ? getMissingBlock() : getMissingItem();

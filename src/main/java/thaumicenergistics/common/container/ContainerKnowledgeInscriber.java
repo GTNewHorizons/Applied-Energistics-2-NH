@@ -3,8 +3,6 @@ package thaumicenergistics.common.container;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.ICrafting;
@@ -13,6 +11,8 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 import net.minecraftforge.oredict.OreDictionary;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.storage.data.IAEItemStack;
 import appeng.container.slot.SlotFake;
@@ -401,7 +401,7 @@ public class ContainerKnowledgeInscriber extends ContainerWithPlayerInventory {
      * @return
      */
     @Override
-    protected boolean detectAndSendChangesMP(@Nonnull final EntityPlayerMP playerMP) {
+    protected boolean detectAndSendChangesMP(@NonNull final EntityPlayerMP playerMP) {
         // Has a core changed?
         if (!this.kCoreHandler.isHandlingCore(this.kCoreSlot.getStack())) {
             if (this.kCoreSlot.getHasStack()) {

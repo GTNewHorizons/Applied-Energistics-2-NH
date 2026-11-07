@@ -5,8 +5,8 @@ import java.util.NoSuchElementException;
 
 import net.minecraft.item.ItemStack;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.collect.Iterators;
 import com.gtnewhorizon.gtnhlib.capability.item.ItemIO;
@@ -260,7 +260,7 @@ public class AdaptorItemIO extends InventoryAdaptor {
     }
 
     @Override
-    public @NotNull Iterator<ItemSlot> iterator() {
+    public @NonNull Iterator<ItemSlot> iterator() {
         InventoryIterator source = itemIO.sourceIterator();
         InventoryIterator sink = itemIO.sinkIterator();
 

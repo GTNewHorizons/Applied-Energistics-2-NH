@@ -12,8 +12,8 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.glodblock.github.common.Config;
 import com.glodblock.github.common.item.ItemFluidDrop;
@@ -395,7 +395,7 @@ public class TileLevelMaintainer extends AENetworkTile
         this.saveChanges();
     }
 
-    private void updateState(int idx, @NotNull LevelState state) {
+    private void updateState(int idx, @NonNull LevelState state) {
         if (requests[idx] == null) return;
         requests[idx].state = state;
         this.saveChanges();
@@ -672,7 +672,7 @@ public class TileLevelMaintainer extends AENetworkTile
     }
 
     @Override
-    public @NotNull TileEntity getTile() {
+    public @NonNull TileEntity getTile() {
         return this;
     }
 
@@ -689,7 +689,7 @@ public class TileLevelMaintainer extends AENetworkTile
     public static class RequestInfo {
 
         private final TileLevelMaintainer tile;
-        private @NotNull IAEStack<?> stack;
+        private @NonNull IAEStack<?> stack;
         private long quantity;
         private long batchSize;
         private boolean enable;
@@ -699,7 +699,7 @@ public class TileLevelMaintainer extends AENetworkTile
         @Nullable
         private ICraftingLink link;
 
-        public RequestInfo(@NotNull IAEStack<?> stack, TileLevelMaintainer tile) {
+        public RequestInfo(@NonNull IAEStack<?> stack, TileLevelMaintainer tile) {
             this.tile = tile;
             this.stack = stack.copy();
             quantity = 0;
@@ -770,7 +770,7 @@ public class TileLevelMaintainer extends AENetworkTile
             return tag;
         }
 
-        @NotNull
+        @NonNull
         public IAEStack<?> getAEStack() {
             return this.stack;
         }

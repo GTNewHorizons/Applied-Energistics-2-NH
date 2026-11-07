@@ -15,7 +15,7 @@ package appeng.api.config;
 
 import java.util.EnumSet;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.items.tools.ToolNetworkVisualiser.VisualisationModes;
 
@@ -119,7 +119,7 @@ public enum Settings {
 
     private final EnumSet<? extends Enum<?>> values;
 
-    Settings(@Nonnull final EnumSet<? extends Enum<?>> possibleOptions) {
+    Settings(@NonNull final EnumSet<? extends Enum<?>> possibleOptions) {
         if (possibleOptions.isEmpty()) {
             throw new IllegalArgumentException("Tried to instantiate an empty setting.");
         }

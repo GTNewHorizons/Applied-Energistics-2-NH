@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import com.github.vfyjxf.nee.utils.ItemUtils;
 
@@ -24,7 +24,7 @@ public class GTPPRecipeProcessor implements IRecipeProcessor {
         this.isNH = isNH;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Set<String> getAllOverlayIdentifier() {
         HashSet<String> identifiers = new HashSet<>();
@@ -51,13 +51,13 @@ public class GTPPRecipeProcessor implements IRecipeProcessor {
         return identifiers;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String getRecipeProcessorId() {
         return "GT++";
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public List<PositionedStack> getRecipeInput(IRecipeHandler recipe, int recipeIndex, String identifier) {
         List<PositionedStack> recipeInputs = new ArrayList<>();
@@ -71,7 +71,7 @@ public class GTPPRecipeProcessor implements IRecipeProcessor {
         return recipeInputs;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public List<PositionedStack> getRecipeOutput(IRecipeHandler recipe, int recipeIndex, String identifier) {
         List<PositionedStack> recipeOutputs = new ArrayList<>();

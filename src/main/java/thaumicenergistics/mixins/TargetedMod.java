@@ -1,6 +1,6 @@
 package thaumicenergistics.mixins;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import com.gtnewhorizon.gtnhmixins.builders.ITargetMod;
 import com.gtnewhorizon.gtnhmixins.builders.TargetModBuilder;
@@ -15,7 +15,7 @@ public enum TargetedMod implements ITargetMod {
         this.builder = new TargetModBuilder().setModId(modId);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public TargetModBuilder getBuilder() {
         return builder;

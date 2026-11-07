@@ -13,7 +13,7 @@ package appeng.integration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import cpw.mods.fml.relauncher.FMLLaunchHandler;
 import cpw.mods.fml.relauncher.Side;
@@ -75,7 +75,7 @@ public enum IntegrationRegistry {
         return node != null && node.isActive();
     }
 
-    @Nonnull
+    @NonNull
     public Object getInstance(final IntegrationType name) {
         final IntegrationNode node = this.modules.get(name);
         if (node != null && node.isActive()) {

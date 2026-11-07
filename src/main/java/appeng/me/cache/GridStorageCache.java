@@ -24,8 +24,8 @@ import java.util.Set;
 
 import net.minecraft.item.ItemStack;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
@@ -341,7 +341,7 @@ public class GridStorageCache implements IStorageGrid {
     }
 
     @Override
-    public @Nullable IMEMonitor<?> getMEMonitor(@NotNull IAEStackType<?> type) {
+    public @Nullable IMEMonitor<?> getMEMonitor(@NonNull IAEStackType<?> type) {
         return this.monitors.get(type);
     }
 

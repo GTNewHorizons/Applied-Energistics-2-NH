@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.container.sync.DeltaSyncCodec;
 import appeng.container.sync.SyncDirection;
@@ -47,13 +47,13 @@ public class DeltaObjectSyncHandler<T, D> extends ObjectSyncHandler<T> {
     }
 
     @Override
-    public @NotNull DeltaObjectSyncHandler<T, D> onClientChange(final ObjectChangeListener<T> listener) {
+    public @NonNull DeltaObjectSyncHandler<T, D> onClientChange(final ObjectChangeListener<T> listener) {
         super.onClientChange(listener);
         return this;
     }
 
     @Override
-    public @NotNull DeltaObjectSyncHandler<T, D> onServerChange(final ObjectChangeListener<T> listener) {
+    public @NonNull DeltaObjectSyncHandler<T, D> onServerChange(final ObjectChangeListener<T> listener) {
         super.onServerChange(listener);
         return this;
     }

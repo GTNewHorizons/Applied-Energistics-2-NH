@@ -12,14 +12,14 @@ package appeng.client.render;
 
 import java.util.EnumSet;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.IIcon;
 import net.minecraft.world.IBlockAccess;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;

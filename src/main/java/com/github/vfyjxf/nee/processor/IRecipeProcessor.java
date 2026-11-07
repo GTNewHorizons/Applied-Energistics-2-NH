@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.IRecipeHandler;
@@ -14,18 +14,18 @@ import codechicken.nei.recipe.IRecipeHandler;
  */
 public interface IRecipeProcessor {
 
-    @Nonnull
+    @NonNull
     default Set<String> getAllOverlayIdentifier() {
         return Collections.emptySet();
     }
 
-    @Nonnull
+    @NonNull
     String getRecipeProcessorId();
 
-    @Nonnull
+    @NonNull
     List<PositionedStack> getRecipeInput(IRecipeHandler recipe, int recipeIndex, String identifier);
 
-    @Nonnull
+    @NonNull
     List<PositionedStack> getRecipeOutput(IRecipeHandler recipe, int recipeIndex, String identifier);
 
     default boolean mergeStacks(IRecipeHandler recipe, int recipeIndex, String identifier) {

@@ -10,11 +10,11 @@
 
 package appeng.integration.abstraction;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Contains wrench behaviour
@@ -44,7 +44,7 @@ public interface IBuildCraftCore {
      * @throws NullPointerException if {@code wrench} is {@code null}
      * @throws ClassCastException   if {@code wrench} is not an {@link buildcraft.api.tools.IToolWrench}
      */
-    boolean canWrench(@Nonnull Item wrench, EntityPlayer wrencher, int x, int y, int z);
+    boolean canWrench(@NonNull Item wrench, EntityPlayer wrencher, int x, int y, int z);
 
     /**
      * @param wrench   to be checked item, must be an {@link buildcraft.api.tools.IToolWrench}
@@ -55,5 +55,5 @@ public interface IBuildCraftCore {
      * @throws NullPointerException if {@code wrench} is {@code null}
      * @throws ClassCastException   if {@code wrench} is not an {@link buildcraft.api.tools.IToolWrench}
      */
-    void wrenchUsed(@Nonnull Item wrench, EntityPlayer wrencher, int x, int y, int z);
+    void wrenchUsed(@NonNull Item wrench, EntityPlayer wrencher, int x, int y, int z);
 }

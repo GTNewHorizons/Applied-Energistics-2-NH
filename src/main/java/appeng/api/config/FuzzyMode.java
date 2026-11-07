@@ -13,9 +13,9 @@
 
 package appeng.api.config;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.NonNull;
 
 import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
 
@@ -42,8 +42,8 @@ public enum FuzzyMode {
         return (int) ((this.percentage * maxDamage) / 100.0f);
     }
 
-    @Nonnull
-    public static FuzzyMode fromItemStack(@Nonnull ItemStack is) {
+    @NonNull
+    public static FuzzyMode fromItemStack(@NonNull ItemStack is) {
         final String fz = ItemStackNBT.getString(is, "FuzzyMode");
         if (fz == null || fz.isEmpty()) {
             return FuzzyMode.IGNORE_ALL;

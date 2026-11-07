@@ -2,14 +2,14 @@ package appeng.api.storage;
 
 import net.minecraft.entity.player.EntityPlayer;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.storage.data.IAEStackType;
 import it.unimi.dsi.fastutil.objects.Reference2BooleanMap;
 
 public interface ITerminalTypeFilterProvider {
 
-    @NotNull
+    @NonNull
     Reference2BooleanMap<IAEStackType<?>> getTypeFilter(EntityPlayer player);
 
     void saveTypeFilter();
