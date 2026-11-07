@@ -293,13 +293,12 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
     }
 
     /**
-     * @return If any requests got reopened and need more work. Throws if a shrunk request could not be reopened.
+     * @return If any requests got reopened and need more work. Throws if a shrunk request could not be reopened, or if
+     *         items are missing but the plan has already been re-resolved as often as allowed: the plan must never be
+     *         started short.
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private boolean reconcile() {
-        if (reconcileRounds >= getMaxReconcileRounds()) {
-            return false;
-        }
         final IStorageGrid sg = context.meGrid.getCache(IStorageGrid.class);
         if (sg == null) {
             return false;
@@ -317,22 +316,41 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
             }
         }
 
-        final Set<CraftingRequest> toReopen = Collections.newSetFromMap(new IdentityHashMap<>());
-        /** How much of each stack the plan gave up on extracting */
-        final IItemList<IAEStack<?>> shrunkByStack = AEApi.instance().storage().createAEStackList();
+        // Find out what is short before changing anything, so that a plan which can't be re-resolved anymore is left
+        // intact for the error instead of being shrunk
+        final IItemList<IAEStack<?>> shortfalls = AEApi.instance().storage().createAEStackList();
         for (IAEStack<?> plannedStack : planned) {
             final IMEMonitor monitor = sg.getMEMonitor(plannedStack.getStackType());
             final IAEStack<?> found = monitor == null ? null
                     : (IAEStack<?>) monitor.getStorageList().findPrecise(plannedStack);
             final long live = found == null ? 0 : Math.max(0, found.getStackSize());
-            long shortfall = plannedStack.getStackSize() - live;
+            final long shortfall = plannedStack.getStackSize() - live;
+            if (shortfall > 0) {
+                shortfalls.add(plannedStack.copy().setStackSize(shortfall));
+            }
+        }
+        if (shortfalls.isEmpty()) {
+            return false;
+        }
+        if (reconcileRounds >= getMaxReconcileRounds()) {
+            throw new IllegalStateException(
+                    "Ingredients are still missing after re-planning " + reconcileRounds
+                            + " time(s), the network keeps changing. Missing: "
+                            + shortfalls);
+        }
+
+        final Set<CraftingRequest> toReopen = Collections.newSetFromMap(new IdentityHashMap<>());
+        /** How much of each stack the plan gave up on extracting */
+        final IItemList<IAEStack<?>> shrunkByStack = AEApi.instance().storage().createAEStackList();
+        for (IAEStack<?> shortStack : shortfalls) {
+            long shortfall = shortStack.getStackSize();
             // Latest extractions first, those are the furthest from the root of the tree
             for (int i = extractTasks.size() - 1; i >= 0 && shortfall > 0; i--) {
                 final ExtractItemTask<?> task = extractTasks.get(i);
-                final long shrunk = task.shrinkSystemExtraction(plannedStack, shortfall);
+                final long shrunk = task.shrinkSystemExtraction(shortStack, shortfall);
                 if (shrunk > 0) {
                     shortfall -= shrunk;
-                    shrunkByStack.add(plannedStack.copy().setStackSize(shrunk));
+                    shrunkByStack.add(shortStack.copy().setStackSize(shrunk));
                     toReopen.add(task.request);
                 }
             }

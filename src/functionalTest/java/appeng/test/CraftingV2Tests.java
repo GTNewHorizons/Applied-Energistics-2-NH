@@ -1093,8 +1093,44 @@ public class CraftingV2Tests {
         simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
         assertFalse(job.isSimulation());
 
+        // The only retry is used up, items going missing again must fail the job instead of starting it short
         aeSystem.removeStoredItem(new ItemStack(Items.diamond, 3));
-        assertFalse(job.reconcileWithLiveStorage(), "Machine requests should only be re-planned once");
+        assertTrue(job.reconcileWithLiveStorage(), "A second shortfall must still be noticed");
+        assertTrue(job.isCancelled(), "Machine requests should only be re-planned once");
+        assertTrue(job.isSimulation(), "A cancelled job must not be submittable");
+        assertFalse(job.getErrorMessage().isEmpty());
+    }
+
+    @Test
+    void playerRequestsFailAfterTheLastRetry() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        aeSystem.addStoredItem(new ItemStack(Items.gold_ingot, 64));
+        addExpensiveStickPatterns(aeSystem);
+        final CraftingJobV2 job = aeSystem
+                .makeCraftingJob(new ItemStack(Items.stick, 13), new PlayerSource(null, null));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+
+        // Players get 5 re-plans
+        for (int round = 1; round <= 5; round++) {
+            aeSystem.removeStoredItem(new ItemStack(Items.diamond, 1));
+            assertTrue(job.reconcileWithLiveStorage(), "Re-plan " + round + " should happen");
+            simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+            assertFalse(job.isSimulation(), "Re-plan " + round + " should craft the missing diamond");
+        }
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 8)).setCountRequestable(5),
+                AEItemStack.create(new ItemStack(Items.gold_ingot, 5)));
+
+        // No re-plans left: the job must fail rather than start with an extraction the network can't satisfy
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 1));
+        assertTrue(job.reconcileWithLiveStorage(), "The shortfall must still be noticed after the last retry");
+        assertTrue(job.isCancelled());
+        assertTrue(job.isSimulation());
+        assertFalse(job.getErrorMessage().isEmpty());
     }
 
     @Test
