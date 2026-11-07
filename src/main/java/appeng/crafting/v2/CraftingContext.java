@@ -186,6 +186,12 @@ public final class CraftingContext {
      * <p>
      * The task that requested this one has already finished and will not backtrack, so the remainder must always get
      * resolved. If nothing else can, it is simulated, so that it shows up as missing instead of breaking the plan.
+     * <p>
+     * This deliberately overrides {@link CraftingRequest#allowSimulation}: that flag means "fail here so the parent
+     * tries another pattern", which a finished plan can no longer do. The only alternatives are to conjure the
+     * remainder (the job becomes a simulation that can't be started and lists the item as missing) or to fail the whole
+     * job without telling the player what is missing. The simulated-pattern fallback of the craftable item resolver is
+     * forced on for the same reason, see {@link #isReopeningRequest()}.
      *
      * @return If any work was queued
      */
@@ -212,6 +218,7 @@ public final class CraftingContext {
             request.patternParents.addAll(ownPatterns);
         }
         if (!request.allowSimulation) {
+            // Requests that allow simulation already got a ConjureItemTask from the SimulateMissingItemResolver
             processing.resolvers.add(new ConjureItemTask(request)); // lowest priority, keeps the list sorted
         }
         processing.refresh();
@@ -222,7 +229,8 @@ public final class CraftingContext {
     /**
      * @return If resolvers are currently being generated for a request reopened by {@link #reopenRequest}. Such a
      *         request is part of an already finished plan that will not backtrack, so resolvers must not hold back
-     *         their fallbacks in the hope that a parent request finds another way.
+     *         their fallbacks in the hope that a parent request finds another way, even if the request itself does not
+     *         allow simulation.
      */
     public boolean isReopeningRequest() {
         return reopeningRequest;
