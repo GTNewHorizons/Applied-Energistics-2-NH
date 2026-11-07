@@ -2,9 +2,9 @@ package appeng.api.features;
 
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Optional;
 
@@ -26,7 +26,7 @@ public interface IInscriberRecipe {
      *
      * @return inputs the inscriber will accept
      */
-    @Nonnull
+    @NonNull
     List<ItemStack> getInputs();
 
     /**
@@ -34,7 +34,7 @@ public interface IInscriberRecipe {
      *
      * @return output that the recipe will produce
      */
-    @Nonnull
+    @NonNull
     ItemStack getOutput();
 
     /**
@@ -42,7 +42,7 @@ public interface IInscriberRecipe {
      *
      * @return item which is used top
      */
-    @Nonnull
+    @NonNull
     Optional<ItemStack> getTopOptional();
 
     /**
@@ -50,7 +50,7 @@ public interface IInscriberRecipe {
      *
      * @return item which is used bottom
      */
-    @Nonnull
+    @NonNull
     Optional<ItemStack> getBottomOptional();
 
     /**
@@ -58,6 +58,6 @@ public interface IInscriberRecipe {
      *
      * @return type of process the inscriber is doing
      */
-    @Nonnull
+    @NonNull
     InscriberProcessType getProcessType();
 }

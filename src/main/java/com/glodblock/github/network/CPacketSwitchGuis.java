@@ -2,14 +2,13 @@ package com.glodblock.github.network;
 
 import java.util.Objects;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.jspecify.annotations.Nullable;
 
 import com.glodblock.github.FluidCraft;
 import com.glodblock.github.common.item.ItemWirelessUltraTerminal;

@@ -22,11 +22,11 @@ import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.storage.data.IAEStack;
 import appeng.client.gui.implementations.GuiCraftConfirm;

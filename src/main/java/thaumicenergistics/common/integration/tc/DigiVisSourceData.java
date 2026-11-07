@@ -2,13 +2,13 @@ package thaumicenergistics.common.integration.tc;
 
 import java.lang.ref.WeakReference;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.networking.IGrid;
 import appeng.api.util.DimensionalCoord;
@@ -181,7 +181,7 @@ public class DigiVisSourceData {
         } catch (Exception e) {}
     }
 
-    private IDigiVisSource tryGetSource(@Nonnull final IGrid destinationGrid, final boolean forceUpdate) {
+    private IDigiVisSource tryGetSource(@NonNull final IGrid destinationGrid, final boolean forceUpdate) {
         IDigiVisSource source = null;
         try {
             // Get this source

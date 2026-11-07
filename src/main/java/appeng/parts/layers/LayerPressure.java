@@ -10,9 +10,9 @@
 
 package appeng.parts.layers;
 
-import javax.annotation.Nullable;
-
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.parts.IPart;
 import appeng.api.parts.LayerBase;

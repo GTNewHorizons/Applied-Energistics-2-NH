@@ -1,6 +1,6 @@
 package appeng.mixins;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import com.gtnewhorizon.gtnhmixins.builders.IMixins;
 import com.gtnewhorizon.gtnhmixins.builders.MixinBuilder;
@@ -17,7 +17,7 @@ public enum Mixins implements IMixins {
         this.builder = builder;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public MixinBuilder getBuilder() {
         return builder;

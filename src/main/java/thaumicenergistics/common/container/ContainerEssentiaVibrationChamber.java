@@ -1,10 +1,10 @@
 package thaumicenergistics.common.container;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.tile.misc.TileVibrationChamber;
 import thaumcraft.api.aspects.Aspect;
@@ -202,7 +202,7 @@ public class ContainerEssentiaVibrationChamber extends TheContainerBase {
     }
 
     @Override
-    public void onContainerClosed(@Nonnull final EntityPlayer player) {
+    public void onContainerClosed(@NonNull final EntityPlayer player) {
         // Call super
         super.onContainerClosed(player);
 

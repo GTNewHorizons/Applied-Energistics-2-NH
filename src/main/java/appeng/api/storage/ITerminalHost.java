@@ -13,9 +13,9 @@
 
 package appeng.api.storage;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.entity.player.EntityPlayer;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.util.IConfigurableObject;
 import appeng.core.localization.GuiText;

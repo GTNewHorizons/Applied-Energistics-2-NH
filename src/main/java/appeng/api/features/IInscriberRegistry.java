@@ -3,9 +3,9 @@ package appeng.api.features;
 import java.util.Collection;
 import java.util.Set;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Lets you manipulate Inscriber Recipes, by adding or editing existing ones.
@@ -25,7 +25,7 @@ public interface IInscriberRegistry {
      * @see IInscriberRegistry#addRecipe(IInscriberRecipe)
      * @see IInscriberRegistry#removeRecipe(IInscriberRecipe)
      */
-    @Nonnull
+    @NonNull
     Collection<IInscriberRecipe> getRecipes();
 
     /**
@@ -33,7 +33,7 @@ public interface IInscriberRegistry {
      *
      * @return set of all optional items
      */
-    @Nonnull
+    @NonNull
     Set<ItemStack> getOptionals();
 
     /**
@@ -41,7 +41,7 @@ public interface IInscriberRegistry {
      *
      * @return set of all input items
      */
-    @Nonnull
+    @NonNull
     Set<ItemStack> getInputs();
 
     /**
@@ -49,7 +49,7 @@ public interface IInscriberRegistry {
      *
      * @return builder for inscriber recipes
      */
-    @Nonnull
+    @NonNull
     IInscriberRecipeBuilder builder();
 
     /**

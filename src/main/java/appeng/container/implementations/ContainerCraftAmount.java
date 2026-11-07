@@ -10,8 +10,6 @@
 
 package appeng.container.implementations;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -19,6 +17,8 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.SecurityPermissions;
 import appeng.api.networking.IGrid;
@@ -84,7 +84,7 @@ public class ContainerCraftAmount extends ContainerSubGui {
         return this.itemToCreate;
     }
 
-    public void setItemToCraft(@Nonnull final IAEStack<?> itemToCreate) {
+    public void setItemToCraft(@NonNull final IAEStack<?> itemToCreate) {
         this.itemToCreate = itemToCreate;
 
         final PacketVirtualSlot p = new PacketVirtualSlot(StorageName.NONE, 0, itemToCreate);

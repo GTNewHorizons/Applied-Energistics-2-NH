@@ -2,14 +2,14 @@ package com.github.vfyjxf.nee.network.packet;
 
 import java.lang.reflect.Field;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+
+import org.jspecify.annotations.NonNull;
 
 import com.github.vfyjxf.nee.utils.ItemUtils;
 
@@ -31,7 +31,7 @@ public class PacketExtremeRecipe implements IMessage {
 
     public PacketExtremeRecipe() {}
 
-    public PacketExtremeRecipe(@Nonnull NBTTagCompound input) {
+    public PacketExtremeRecipe(@NonNull NBTTagCompound input) {
         this.input = input;
     }
 

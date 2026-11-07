@@ -1,6 +1,6 @@
 package com.glodblock.github.network;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import com.glodblock.github.client.gui.container.ContainerLevelMaintainer;
 

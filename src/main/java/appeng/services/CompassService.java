@@ -20,12 +20,12 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.block.Block;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.event.world.WorldEvent;
+
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Preconditions;
 
@@ -48,7 +48,7 @@ public final class CompassService {
      */
     private final File worldCompassFolder;
 
-    public CompassService(@Nonnull final File worldCompassFolder, @Nonnull final ThreadFactory factory) {
+    public CompassService(@NonNull final File worldCompassFolder, @NonNull final ThreadFactory factory) {
         Preconditions.checkNotNull(worldCompassFolder);
 
         this.worldCompassFolder = worldCompassFolder;

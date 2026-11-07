@@ -1,6 +1,6 @@
 package thaumicenergistics.api.items;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import thaumcraft.api.aspects.Aspect;
 import thaumcraft.api.aspects.IEssentiaContainerItem;
@@ -19,5 +19,5 @@ public interface IRestrictedEssentiaContainerItem extends IEssentiaContainerItem
      * @param aspect
      * @return
      */
-    boolean acceptsAspect(@Nonnull Aspect aspect);
+    boolean acceptsAspect(@NonNull Aspect aspect);
 }

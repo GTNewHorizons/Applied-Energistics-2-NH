@@ -9,7 +9,7 @@ import net.minecraft.util.MathHelper;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.Upgrades;
 import appeng.api.parts.IPart;

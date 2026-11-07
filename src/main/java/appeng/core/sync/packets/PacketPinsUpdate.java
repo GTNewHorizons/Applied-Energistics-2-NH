@@ -2,12 +2,12 @@ package appeng.core.sync.packets;
 
 import java.io.IOException;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.PinsRows;
 import appeng.api.storage.data.IAEStack;

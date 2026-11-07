@@ -3,9 +3,9 @@ package com.glodblock.github.inventory.gui;
 import java.util.Collections;
 import java.util.List;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.client.resources.I18n;
+
+import org.jspecify.annotations.Nullable;
 
 import com.glodblock.github.FluidCraft;
 import com.glodblock.github.client.gui.ITankDump;

@@ -16,7 +16,7 @@ import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.features.IRecipeHandlerRegistry;
 import appeng.api.recipes.ICraftHandler;

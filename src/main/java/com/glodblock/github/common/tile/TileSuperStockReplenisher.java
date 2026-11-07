@@ -3,8 +3,6 @@ package com.glodblock.github.common.tile;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
@@ -17,7 +15,8 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTankInfo;
 import net.minecraftforge.fluids.IFluidHandler;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.glodblock.github.common.item.ItemFluidPacket;
 import com.glodblock.github.inventory.AEFluidInventory;
@@ -430,7 +429,7 @@ public class TileSuperStockReplenisher extends AENetworkInvTile implements IAEFl
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public IInventory getInternalInventory() {
         return invItems;

@@ -10,9 +10,9 @@
 
 package appeng.core.features.registries;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.entity.player.EntityPlayer;
+
+import org.jspecify.annotations.Nullable;
 
 import com.mojang.authlib.GameProfile;
 

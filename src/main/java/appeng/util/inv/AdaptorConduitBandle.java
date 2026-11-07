@@ -7,7 +7,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTankInfo;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.InsertionMode;
@@ -125,7 +125,7 @@ public class AdaptorConduitBandle extends InventoryAdaptor {
     }
 
     @Override
-    public @NotNull Iterator<ItemSlot> iterator() {
+    public @NonNull Iterator<ItemSlot> iterator() {
         return new NullIterator<>();
     }
 }

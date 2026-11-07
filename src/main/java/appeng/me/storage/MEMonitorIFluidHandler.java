@@ -9,8 +9,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.event.ClickEvent;
 import net.minecraft.event.HoverEvent;
 import net.minecraft.server.MinecraftServer;
@@ -22,7 +20,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTankInfo;
 import net.minecraftforge.fluids.IFluidHandler;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.AEApi;
 import appeng.api.config.AccessRestriction;
@@ -149,7 +147,7 @@ public class MEMonitorIFluidHandler implements IStorageBusMonitor<IAEFluidStack>
     }
 
     @Override
-    public @NotNull IAEStackType<?> getStackType() {
+    public @NonNull IAEStackType<?> getStackType() {
         return FLUID_STACK_TYPE;
     }
 
@@ -254,7 +252,7 @@ public class MEMonitorIFluidHandler implements IStorageBusMonitor<IAEFluidStack>
     }
 
     @Override
-    public IAEFluidStack getAvailableItem(@Nonnull IAEFluidStack request, int iteration) {
+    public IAEFluidStack getAvailableItem(@NonNull IAEFluidStack request, int iteration) {
         if (!init) {
             this.onTick();
             init = true;

@@ -20,7 +20,7 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.FuzzyMode;
@@ -137,7 +137,7 @@ public interface IMEInventory<StackType extends IAEStack> {
     @SuppressWarnings("unchecked") // changing the generic StackType to be correct here is too much of a breaking API
     // change
     @Deprecated
-    default StackType getAvailableItem(@Nonnull StackType request) {
+    default StackType getAvailableItem(@NonNull StackType request) {
         var ret = getAvailableItem(request, IterationCounter.incrementGlobalDepth());
         IterationCounter.decrementGlobalDepth();
         return ret;
@@ -154,7 +154,7 @@ public interface IMEInventory<StackType extends IAEStack> {
      */
     @SuppressWarnings("unchecked") // changing the generic StackType to be correct here is too much of a breaking API
                                    // change
-    default StackType getAvailableItem(@Nonnull StackType request, int iteration) {
+    default StackType getAvailableItem(@NonNull StackType request, int iteration) {
         return getAvailableItems(
                 (IItemList<StackType>) getStackType().createList(),
                 iteration,
@@ -198,7 +198,7 @@ public interface IMEInventory<StackType extends IAEStack> {
     /**
      * @return stack type your handler should be part of
      */
-    @Nonnull
+    @NonNull
     default IAEStackType<?> getStackType() {
         return switch (this.getChannel()) {
             case ITEMS -> ITEM_STACK_TYPE;

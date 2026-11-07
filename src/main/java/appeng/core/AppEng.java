@@ -13,10 +13,10 @@ package appeng.core;
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.Nonnull;
-
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
+
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Stopwatch;
 
@@ -88,7 +88,7 @@ public final class AppEng {
                     + ",);" // buildVersion
                     + "required-after:gtnhlib@[0.11.14,)"; // require gtnhlib
 
-    @Nonnull
+    @NonNull
     private static final AppEng INSTANCE = new AppEng();
 
     private final Registration registration;
@@ -115,13 +115,13 @@ public final class AppEng {
         this.registration = new Registration();
     }
 
-    @Nonnull
+    @NonNull
     @Mod.InstanceFactory
     public static AppEng instance() {
         return INSTANCE;
     }
 
-    @Nonnull
+    @NonNull
     public final Registration getRegistration() {
         return this.registration;
     }

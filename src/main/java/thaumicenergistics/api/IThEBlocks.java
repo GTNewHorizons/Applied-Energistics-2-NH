@@ -1,6 +1,6 @@
 package thaumicenergistics.api;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Thaumic Energistics Blocks.
@@ -13,54 +13,54 @@ public abstract class IThEBlocks {
     /**
      * Arcane Assembler.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription ArcaneAssembler;
 
     /**
      * Distilation Pattern Encoder.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription DistillationPatternEncoder;
 
     /**
      * Essentia Provider.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription EssentiaProvider;
 
     /**
      * Essentia Vibration Chamber.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription EssentiaVibrationChamber;
 
     /**
      * Infusion Provider.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription InfusionProvider;
 
     /**
      * Advanced Infusion Provider.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription AdvancedInfusionProvider;
 
     /**
      * Iron Gearbox.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription IronGearBox;
 
     /**
      * Knowledge Inscriber.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription KnowledgeInscriber;
 
     /**
      * Thaumium Gearbox.
      */
-    @Nonnull
+    @NonNull
     public IThEItemDescription ThaumiumGearBox;
 }

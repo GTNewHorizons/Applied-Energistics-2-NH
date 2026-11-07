@@ -3,7 +3,7 @@ package appeng.util.item;
 import net.minecraft.item.Item;
 import net.minecraft.nbt.NBTTagCompound;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import com.gtnewhorizon.gtnhlib.item.ImmutableItemStack;
 
@@ -36,7 +36,7 @@ public class ImmutableAEItemStackWrapper implements ImmutableItemStack {
     }
 
     @Override
-    public @NotNull Item getItem() {
+    public @NonNull Item getItem() {
         return stack.getItem();
     }
 

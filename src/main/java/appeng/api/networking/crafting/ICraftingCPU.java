@@ -15,9 +15,8 @@ package appeng.api.networking.crafting;
 
 import static appeng.util.Platform.stackConvert;
 
-import javax.annotation.Nullable;
-
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.CraftingAllow;
 import appeng.api.networking.security.BaseActionSource;

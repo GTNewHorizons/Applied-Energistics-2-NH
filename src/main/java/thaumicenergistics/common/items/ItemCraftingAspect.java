@@ -2,8 +2,6 @@ package thaumicenergistics.common.items;
 
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
@@ -13,6 +11,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;
+
+import org.jspecify.annotations.NonNull;
 
 import cpw.mods.fml.common.ModContainer;
 import cpw.mods.fml.relauncher.Side;
@@ -47,7 +47,7 @@ public class ItemCraftingAspect extends Item {
      * @param aspect
      * @return
      */
-    public static boolean canPlayerSeeAspect(@Nonnull final EntityPlayer player, @Nonnull final Aspect aspect) {
+    public static boolean canPlayerSeeAspect(@NonNull final EntityPlayer player, @NonNull final Aspect aspect) {
         return Thaumcraft.proxy.playerKnowledge.hasDiscoveredAspect(player.getCommandSenderName(), aspect);
     }
 

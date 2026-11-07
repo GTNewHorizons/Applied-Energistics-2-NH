@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
@@ -33,7 +31,8 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IIcon;
 import net.minecraft.util.ResourceLocation;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
@@ -1135,7 +1134,7 @@ public class GuiMEMonitorable extends AEBaseGui
     }
 
     @Override
-    protected boolean handleClickOrDragSlot(@NotNull Slot slot, @org.jetbrains.annotations.Nullable ItemStack stack,
+    protected boolean handleClickOrDragSlot(@NonNull Slot slot, @org.jspecify.annotations.Nullable ItemStack stack,
             int mouseButton) {
 
         if (isCtrlKeyDown() && mouseButton == 0

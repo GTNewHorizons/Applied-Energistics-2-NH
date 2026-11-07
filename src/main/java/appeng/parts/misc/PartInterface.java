@@ -13,9 +13,6 @@ package appeng.parts.misc;
 import java.util.EnumSet;
 import java.util.List;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
@@ -28,7 +25,8 @@ import net.minecraft.util.IIcon;
 import net.minecraft.util.Vec3;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.collect.ImmutableSet;
 import com.gtnewhorizon.gtnhlib.capability.item.ItemIO;
@@ -258,7 +256,7 @@ public class PartInterface extends PartBasicState
     }
 
     @Override
-    public @Nullable IMEMonitor<?> getMEMonitor(@NotNull IAEStackType<?> type) {
+    public @Nullable IMEMonitor<?> getMEMonitor(@NonNull IAEStackType<?> type) {
         return this.duality.getMEMonitor(type);
     }
 
@@ -437,7 +435,7 @@ public class PartInterface extends PartBasicState
     }
 
     @Override
-    public <T> @Nullable T getCapability(@Nonnull Class<T> capability, @Nonnull ForgeDirection side) {
+    public <T> @Nullable T getCapability(@NonNull Class<T> capability, @NonNull ForgeDirection side) {
         if (capability == ItemSource.class || capability == ItemSink.class || capability == ItemIO.class) {
             return capability.cast(getItemIO());
         }

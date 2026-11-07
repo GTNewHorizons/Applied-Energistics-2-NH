@@ -10,7 +10,7 @@
 
 package appeng.services.export;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Checks against a specific type with its own check type for clear outcome.
@@ -28,6 +28,6 @@ interface Checker<T> {
      * @return non null being either equal or unequal
      * @since rv3 - 01.09.2015
      */
-    @Nonnull
-    CheckType isEqual(@Nonnull final T checkedAgainst);
+    @NonNull
+    CheckType isEqual(@NonNull final T checkedAgainst);
 }

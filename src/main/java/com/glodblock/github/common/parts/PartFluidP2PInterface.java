@@ -5,8 +5,6 @@ import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -17,7 +15,8 @@ import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTankInfo;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.glodblock.github.client.FluidInterfaceButtons;
 import com.glodblock.github.common.item.ItemFluidPacket;
@@ -109,13 +108,13 @@ public class PartFluidP2PInterface extends PartP2PInterface implements IDualHost
     }
 
     @Override
-    public void uploadSettings(@NotNull SettingsFrom from, @NotNull NBTTagCompound compound) {
+    public void uploadSettings(@NonNull SettingsFrom from, @NonNull NBTTagCompound compound) {
         super.uploadSettings(from, compound);
         DualHostSettings.uploadSettings(this, compound);
     }
 
     @Override
-    @NotNull
+    @NonNull
     public NBTTagCompound downloadSettings(SettingsFrom from) {
         NBTTagCompound output = super.downloadSettings(from);
         DualHostSettings.downloadSettings(this, output);
@@ -235,7 +234,7 @@ public class PartFluidP2PInterface extends PartP2PInterface implements IDualHost
 
     @Override
     @Nullable
-    public IMEMonitor<?> getMEMonitor(@NotNull IAEStackType<?> type) {
+    public IMEMonitor<?> getMEMonitor(@NonNull IAEStackType<?> type) {
         if (type == ITEM_STACK_TYPE) {
             return this.getItemInventory();
         } else if (type == FLUID_STACK_TYPE) {

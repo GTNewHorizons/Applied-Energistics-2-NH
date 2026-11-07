@@ -34,8 +34,8 @@ import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.cleanroommc.bogosorter.api.IBogoSortAPI;
 import com.glodblock.github.common.parts.PartFluidStorageBus;
@@ -465,8 +465,8 @@ public abstract class AEBaseContainer extends Container {
      * @param stackInSlot      item stack in clicked slot
      * @return valid destination slot list
      */
-    @NotNull
-    public List<AppEngSlot> getValidDestinationSlots(boolean isPlayerSideSlot, @NotNull ItemStack stackInSlot) {
+    @NonNull
+    public List<AppEngSlot> getValidDestinationSlots(boolean isPlayerSideSlot, @NonNull ItemStack stackInSlot) {
         final List<AppEngSlot> selectedSlots = new ArrayList<>();
 
         // Gather a list of valid destinations.
@@ -494,7 +494,7 @@ public abstract class AEBaseContainer extends Container {
      * @return valid destination fake slot
      */
     @Nullable
-    public SlotFake getValidDestinationFakeSlot(@NotNull ItemStack stackInSlot) {
+    public SlotFake getValidDestinationFakeSlot(@NonNull ItemStack stackInSlot) {
         for (final Object inventorySlot : this.inventorySlots) {
             final AppEngSlot cs = (AppEngSlot) inventorySlot;
             final ItemStack destination = cs.getStack();
