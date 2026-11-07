@@ -18,6 +18,8 @@ import net.minecraft.world.World;
 
 import org.apache.logging.log4j.Level;
 
+import com.github.bsideup.jabel.Desugar;
+
 import appeng.api.AEApi;
 import appeng.api.config.Actionable;
 import appeng.api.config.CraftingMode;
@@ -316,32 +318,26 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
         }
 
         final Set<CraftingRequest> toReopen = Collections.newSetFromMap(new IdentityHashMap<>());
-        final List<IAEStack<?>> plannedStacks = new ArrayList<>();
-        final List<IAEStack<?>> liveStacks = new ArrayList<>();
-        final List<IAEStack<?>> wentMissing = new ArrayList<>();
+        final List<PlannedStack> plannedStacks = new ArrayList<>();
+        /** How much of each stack the plan gave up on extracting */
+        final IItemList<IAEStack<?>> shrunkByStack = AEApi.instance().storage().createAEStackList();
         for (IAEStack<?> plannedStack : planned) {
             final IMEMonitor monitor = sg.getMEMonitor(plannedStack.getStackType());
             final IAEStack<?> found = monitor == null ? null
                     : (IAEStack<?>) monitor.getStorageList().findPrecise(plannedStack);
             final long live = found == null ? 0 : Math.max(0, found.getStackSize());
             long shortfall = plannedStack.getStackSize() - live;
-            long totalShrunk = 0;
             // Latest extractions first, those are the furthest from the root of the tree
             for (int i = extractTasks.size() - 1; i >= 0 && shortfall > 0; i--) {
                 final ExtractItemTask<?> task = extractTasks.get(i);
                 final long shrunk = task.shrinkSystemExtraction(plannedStack, shortfall);
                 if (shrunk > 0) {
                     shortfall -= shrunk;
-                    totalShrunk += shrunk;
-                    plannedStack.setStackSize(plannedStack.getStackSize() - shrunk);
+                    shrunkByStack.add(plannedStack.copy().setStackSize(shrunk));
                     toReopen.add(task.request);
                 }
             }
-            if (totalShrunk > 0) {
-                wentMissing.add(plannedStack.copy().setStackSize(totalShrunk));
-            }
-            plannedStacks.add(plannedStack);
-            liveStacks.add(plannedStack.copy().setStackSize(live));
+            plannedStacks.add(new PlannedStack(plannedStack, live));
         }
         if (toReopen.isEmpty()) {
             return false;
@@ -349,17 +345,15 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
 
         // Bring the snapshot up to date for everything the plan uses, so re-resolving doesn't plan with items that are
         // gone, and the plan shown to the player compares against the right amounts
-        for (int i = 0; i < plannedStacks.size(); i++) {
-            final long live = liveStacks.get(i).getStackSize();
-            setAvailableAmount(
-                    context.itemModel,
-                    plannedStacks.get(i),
-                    Math.max(0, live - plannedStacks.get(i).getStackSize()));
-            setAvailableAmount(context.availableCache, plannedStacks.get(i), live);
+        for (PlannedStack plannedStack : plannedStacks) {
+            final IAEStack<?> shrunk = shrunkByStack.findPrecise(plannedStack.stack);
+            final long stillPlanned = plannedStack.stack.getStackSize() - (shrunk == null ? 0 : shrunk.getStackSize());
+            setAvailableAmount(context.itemModel, plannedStack.stack, Math.max(0, plannedStack.live - stillPlanned));
+            setAvailableAmount(context.availableCache, plannedStack.stack, plannedStack.live);
         }
 
         reconcileRounds++;
-        notifyPlayerOfRetry(wentMissing);
+        notifyPlayerOfRetry(shrunkByStack);
         for (CraftingRequest request : toReopen) {
             // The extractions are already shrunk, so a request that can't be reopened would leave the plan short and
             // the job would stall on the CPU. Fail the job instead.
@@ -380,6 +374,12 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
     }
 
     /**
+     * A stack the plan extracts from the AE system, with how much of it the system currently holds.
+     */
+    @Desugar
+    private record PlannedStack(IAEStack<?> stack, long live) {}
+
+    /**
      * Players get several attempts to keep up with a changing network, machines (e.g. level maintainers) only one, they
      * will simply request again later.
      */
@@ -391,24 +391,25 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
     /**
      * Tells the player who requested the job that it is being recalculated, and which ingredients caused it.
      */
-    private void notifyPlayerOfRetry(List<IAEStack<?>> wentMissing) {
+    private void notifyPlayerOfRetry(IItemList<IAEStack<?>> wentMissing) {
         if (!(context.actionSource instanceof PlayerSource playerSource) || playerSource.player == null
                 || wentMissing.isEmpty()) {
             return;
         }
         try {
             final IChatComponent missingList = new ChatComponentText("");
-            for (int i = 0; i < wentMissing.size(); i++) {
-                if (i >= MAX_REPORTED_MISSING_STACKS) {
+            int reported = 0;
+            for (IAEStack<?> stack : wentMissing) {
+                if (reported >= MAX_REPORTED_MISSING_STACKS) {
                     missingList.appendText(", ...");
                     break;
                 }
-                if (i > 0) {
+                if (reported > 0) {
                     missingList.appendText(", ");
                 }
-                final IAEStack<?> stack = wentMissing.get(i);
                 missingList.appendText(Platform.formatChatCount(stack.getStackSize()) + " * ");
                 missingList.appendSibling(Platform.formatChatStackName(stack));
+                reported++;
             }
             playerSource.player.addChatMessage(
                     new ChatComponentTranslation(
