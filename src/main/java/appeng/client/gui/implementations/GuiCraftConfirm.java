@@ -893,8 +893,10 @@ public class GuiCraftConfirm extends GuiSub implements ICraftingCPUTableHolder, 
 
             if (a != null) {
                 a.setStackSize(l.getStackSize());
-                // Entries get reused when a re-planned job is sent, keep the step count up to date as well
+                // Entries get reused when a re-planned job is sent, after being reset by the clearing update. Keep
+                // every displayed field up to date, not just the amount.
                 a.setCountRequestableCrafts(l.getCountRequestableCrafts());
+                a.setUsedPercent(l.getUsedPercent());
             }
         }
     }
