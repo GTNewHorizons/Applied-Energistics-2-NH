@@ -2,7 +2,7 @@ package appeng.api.implementations.tiles;
 
 import net.minecraft.inventory.IInventory;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.implementations.IUpgradeableHost;
 import appeng.api.storage.ICellWorkbenchItem;

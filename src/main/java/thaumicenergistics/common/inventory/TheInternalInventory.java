@@ -1,13 +1,13 @@
 package thaumicenergistics.common.inventory;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
+
+import org.jspecify.annotations.NonNull;
 
 import thaumicenergistics.common.utils.ThEUtils;
 
@@ -199,7 +199,7 @@ public class TheInternalInventory implements IInventory {
         return true;
     }
 
-    public boolean isUseableByPlayer(@Nonnull final EntityPlayer player, @Nonnull final TileEntity tile) {
+    public boolean isUseableByPlayer(@NonNull final EntityPlayer player, @NonNull final TileEntity tile) {
         return ThEUtils.canPlayerInteractWith(player, tile);
     }
 

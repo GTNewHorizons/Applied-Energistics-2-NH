@@ -5,9 +5,6 @@ import static thaumicenergistics.common.storage.AEEssentiaStackType.ESSENTIA_STA
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -15,7 +12,8 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.djgiannuzz.thaumcraftneiplugin.ModItems;
 import com.djgiannuzz.thaumcraftneiplugin.items.ItemAspect;
@@ -41,20 +39,20 @@ public class AEEssentiaStack extends AEStack<AEEssentiaStack> {
     private static final String NBTKEY_ASPECT_AMOUNT = "Amount";
     private static final String NBTKEY_CRAFTABLE = "Craftable";
 
-    @Nonnull
+    @NonNull
     private final Aspect aspect;
 
-    public AEEssentiaStack(@Nonnull Aspect aspect) {
+    public AEEssentiaStack(@NonNull Aspect aspect) {
         this.aspect = aspect;
         this.setStackSize(1);
     }
 
-    public AEEssentiaStack(@Nonnull Aspect aspect, long amount) {
+    public AEEssentiaStack(@NonNull Aspect aspect, long amount) {
         this.aspect = aspect;
         this.setStackSize(amount);
     }
 
-    private AEEssentiaStack(@Nonnull AEEssentiaStack stack) {
+    private AEEssentiaStack(@NonNull AEEssentiaStack stack) {
         this.aspect = stack.aspect;
         this.setStackSize(stack.getStackSize());
         this.setCraftable(stack.isCraftable());
@@ -63,7 +61,7 @@ public class AEEssentiaStack extends AEStack<AEEssentiaStack> {
         this.setUsedPercent(stack.getUsedPercent());
     }
 
-    @NotNull
+    @NonNull
     public Aspect getAspect() {
         return this.aspect;
     }

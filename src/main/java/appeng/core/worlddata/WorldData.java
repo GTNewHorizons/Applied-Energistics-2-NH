@@ -14,11 +14,11 @@ import java.io.File;
 import java.util.List;
 import java.util.concurrent.ThreadFactory;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.config.Configuration;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -60,7 +60,7 @@ public final class WorldData implements IWorldData {
     private final File spawnDirectory;
     private final File compassDirectory;
 
-    private WorldData(@Nonnull final File worldDirectory) {
+    private WorldData(@NonNull final File worldDirectory) {
         Preconditions.checkNotNull(worldDirectory);
         Preconditions.checkArgument(worldDirectory.isDirectory());
 
@@ -96,7 +96,7 @@ public final class WorldData implements IWorldData {
      * @deprecated do not use singletons which are dependent on specific world state
      */
     @Deprecated
-    @Nonnull
+    @NonNull
     public static IWorldData instance() {
         return instance;
     }
@@ -152,31 +152,31 @@ public final class WorldData implements IWorldData {
         instance = null;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public IWorldGridStorageData storageData() {
         return this.storageData;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public IWorldPlayerData playerData() {
         return this.playerData;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public IWorldDimensionData dimensionData() {
         return this.dimensionData;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public IWorldCompassData compassData() {
         return this.compassData;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public IWorldSpawnData spawnData() {
         return this.spawnData;

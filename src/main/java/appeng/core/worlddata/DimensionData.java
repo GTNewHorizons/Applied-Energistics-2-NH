@@ -12,13 +12,13 @@ package appeng.core.worlddata;
 
 import java.util.List;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.network.NetworkManager;
 import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -53,7 +53,7 @@ final class DimensionData implements IWorldDimensionData, IOnWorldStartable, IOn
     private final Configuration config;
     private final List<Integer> storageCellDimensionIDs;
 
-    DimensionData(@Nonnull final Configuration parentFile) {
+    DimensionData(@NonNull final Configuration parentFile) {
         Preconditions.checkNotNull(parentFile);
 
         this.config = parentFile;

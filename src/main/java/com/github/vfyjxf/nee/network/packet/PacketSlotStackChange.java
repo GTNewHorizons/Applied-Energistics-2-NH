@@ -2,7 +2,7 @@ package com.github.vfyjxf.nee.network.packet;
 
 import java.io.IOException;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import com.github.vfyjxf.nee.NotEnoughEnergistics;
 
@@ -25,7 +25,7 @@ public class PacketSlotStackChange implements IMessage {
 
     public PacketSlotStackChange() {}
 
-    public PacketSlotStackChange(@Nonnull Int2ObjectMap<IAEStack<?>> slotStacks) {
+    public PacketSlotStackChange(@NonNull Int2ObjectMap<IAEStack<?>> slotStacks) {
         this.slotStacks = slotStacks;
     }
 

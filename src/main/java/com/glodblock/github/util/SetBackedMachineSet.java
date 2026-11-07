@@ -5,7 +5,7 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.networking.IGridHost;
 import appeng.api.networking.IGridNode;
@@ -21,7 +21,7 @@ public class SetBackedMachineSet implements IMachineSet {
         this.backingSet = backingSet;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Class<? extends IGridHost> getMachineClass() {
         return machineClass;

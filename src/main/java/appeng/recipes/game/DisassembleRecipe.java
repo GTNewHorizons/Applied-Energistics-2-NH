@@ -15,14 +15,14 @@ import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.world.World;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.base.Optional;
 
@@ -120,7 +120,7 @@ public final class DisassembleRecipe implements IRecipe {
         return output;
     }
 
-    @Nonnull
+    @NonNull
     private Optional<ItemStack> getCellOutput(final ItemStack compared) {
         for (final Map.Entry<IItemDefinition, IItemDefinition> entry : this.cellMappings.entrySet()) {
             if (entry.getKey().isSameAs(compared)) {
@@ -131,7 +131,7 @@ public final class DisassembleRecipe implements IRecipe {
         return Optional.absent();
     }
 
-    @Nonnull
+    @NonNull
     private Optional<ItemStack> getNonCellOutput(final ItemStack compared) {
         for (final Map.Entry<IItemDefinition, IItemDefinition> entry : this.nonCellMappings.entrySet()) {
             if (entry.getKey().isSameAs(compared)) {

@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
@@ -163,7 +163,7 @@ public class CraftingRequest implements ITreeSerializable {
      * @param substitutionMode       Whether and how to allow substitutions when resolving this request
      * @param acceptableSubstituteFn A predicate testing if a given item (in fuzzy mode) can fulfill the request
      */
-    public CraftingRequest(CraftingRequest parentRequest, @Nonnull IAEStack<?> stack, SubstitutionMode substitutionMode,
+    public CraftingRequest(CraftingRequest parentRequest, @NonNull IAEStack<?> stack, SubstitutionMode substitutionMode,
             boolean allowSimulation, CraftingMode craftingMode, Predicate<IAEStack<?>> acceptableSubstituteFn) {
         this(parentRequest, stack, substitutionMode, allowSimulation, craftingMode, acceptableSubstituteFn, 1);
     }
@@ -175,7 +175,7 @@ public class CraftingRequest implements ITreeSerializable {
      * @param acceptableSubstituteFn A predicate testing if a given item (in fuzzy mode) can fulfill the request
      * @param substitutionGroupSize  The amount that must be fulfilled by a single substitute stack in fuzzy mode
      */
-    public CraftingRequest(CraftingRequest parentRequest, @Nonnull IAEStack<?> stack, SubstitutionMode substitutionMode,
+    public CraftingRequest(CraftingRequest parentRequest, @NonNull IAEStack<?> stack, SubstitutionMode substitutionMode,
             boolean allowSimulation, CraftingMode craftingMode, Predicate<IAEStack<?>> acceptableSubstituteFn,
             long substitutionGroupSize) {
         this.parentRequest = parentRequest;

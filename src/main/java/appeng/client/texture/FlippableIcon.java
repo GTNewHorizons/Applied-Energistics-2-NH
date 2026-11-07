@@ -10,9 +10,9 @@
 
 package appeng.client.texture;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.util.IIcon;
+
+import org.jspecify.annotations.NonNull;
 
 public class FlippableIcon implements IIcon {
 
@@ -125,7 +125,7 @@ public class FlippableIcon implements IIcon {
         this.flip_v = flipV;
     }
 
-    public void setOriginal(@Nonnull final IIcon original) {
+    public void setOriginal(@NonNull final IIcon original) {
         this.original = original;
     }
 }

@@ -24,9 +24,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.inventory.GuiContainer;
@@ -44,7 +41,8 @@ import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent.InitGuiEvent;
 import net.minecraftforge.common.MinecraftForge;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
@@ -462,7 +460,7 @@ public abstract class AEBaseGui extends GuiContainer implements IGuiTooltipHandl
         return false;
     }
 
-    protected boolean handleClickOrDragSlot(@NotNull Slot slot, @Nullable ItemStack stack, int mouseButton) {
+    protected boolean handleClickOrDragSlot(@NonNull Slot slot, @Nullable ItemStack stack, int mouseButton) {
         if (slot instanceof SlotFake slotFake) {
             handleClickOrDragFakeSlot(slotFake, stack, mouseButton);
             return true;
@@ -471,7 +469,7 @@ public abstract class AEBaseGui extends GuiContainer implements IGuiTooltipHandl
         return false;
     }
 
-    private void handleClickOrDragFakeSlot(@NotNull SlotFake slot, @Nullable ItemStack stack, int mouseButton) {
+    private void handleClickOrDragFakeSlot(@NonNull SlotFake slot, @Nullable ItemStack stack, int mouseButton) {
         boolean isSingle = mouseButton == 1;
         if (isSingle && stack != null) {
             stack = stack.copy();
@@ -1120,7 +1118,7 @@ public abstract class AEBaseGui extends GuiContainer implements IGuiTooltipHandl
         }
     }
 
-    private void drawVirtualSlots(@Nonnull List<VirtualMESlot> slots, int mouseX, int mouseY) {
+    private void drawVirtualSlots(@NonNull List<VirtualMESlot> slots, int mouseX, int mouseY) {
         final int x = mouseX - this.guiLeft + 1;
         final int y = mouseY - this.guiTop + 1;
         GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_LIGHTING_BIT);

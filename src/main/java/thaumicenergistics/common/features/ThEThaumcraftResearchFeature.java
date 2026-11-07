@@ -1,7 +1,7 @@
 package thaumicenergistics.common.features;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Defines a feature that has Thaumcraft research.
@@ -21,7 +21,7 @@ public abstract class ThEThaumcraftResearchFeature extends ThEDependencyFeatureB
      *
      * @param parent
      */
-    public ThEThaumcraftResearchFeature(@Nonnull final String researchKey) {
+    public ThEThaumcraftResearchFeature(@NonNull final String researchKey) {
         this.researchKey = researchKey;
     }
 

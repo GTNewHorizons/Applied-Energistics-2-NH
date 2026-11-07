@@ -8,8 +8,8 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
 
@@ -38,7 +38,7 @@ public class ItemMEStackPacket extends AEBaseItem {
     }
 
     @Nullable
-    public static IAEStack<?> toAEStack(@NotNull final ItemStack is) {
+    public static IAEStack<?> toAEStack(@NonNull final ItemStack is) {
         if (is.getItem() instanceof ItemMEStackPacket) {
             return IAEStack.fromNBTGeneric(ItemStackNBT.get(is));
         }

@@ -20,9 +20,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
@@ -34,6 +31,9 @@ import net.minecraft.util.IIcon;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.base.Preconditions;
 
@@ -79,14 +79,14 @@ public final class ItemMultiPart extends AEBaseItem implements IPartItem, IItemG
         instance = this;
     }
 
-    @Nonnull
+    @NonNull
     public final ItemStackSrc createPart(final PartType mat) {
         Preconditions.checkNotNull(mat);
 
         return this.createPart(mat, 0, false);
     }
 
-    @Nonnull
+    @NonNull
     public ItemStackSrc createPart(final PartType mat, final AEColor color, boolean deprecated) {
         Preconditions.checkNotNull(mat);
         Preconditions.checkNotNull(color);
@@ -96,7 +96,7 @@ public final class ItemMultiPart extends AEBaseItem implements IPartItem, IItemG
         return this.createPart(mat, varID, deprecated);
     }
 
-    @Nonnull
+    @NonNull
     private ItemStackSrc createPart(final PartType mat, final int varID, boolean deprecated) {
         assert mat != null;
         assert varID >= 0;
@@ -281,7 +281,7 @@ public final class ItemMultiPart extends AEBaseItem implements IPartItem, IItemG
         return this.nameResolver.getName(typeName);
     }
 
-    @Nonnull
+    @NonNull
     public PartType getTypeByStack(final ItemStack is) {
         Preconditions.checkNotNull(is);
 

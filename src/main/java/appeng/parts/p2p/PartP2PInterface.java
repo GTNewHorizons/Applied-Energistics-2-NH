@@ -18,8 +18,8 @@ import net.minecraft.util.IIcon;
 import net.minecraft.util.Vec3;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -424,7 +424,7 @@ public class PartP2PInterface extends PartP2PTunnelStatic<PartP2PInterface>
     }
 
     @Override
-    public @Nullable IMEMonitor<?> getMEMonitor(@NotNull IAEStackType<?> type) {
+    public @Nullable IMEMonitor<?> getMEMonitor(@NonNull IAEStackType<?> type) {
         return this.duality.getMEMonitor(type);
     }
 

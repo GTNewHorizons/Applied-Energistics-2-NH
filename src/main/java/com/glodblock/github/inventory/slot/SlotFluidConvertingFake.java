@@ -1,11 +1,11 @@
 package com.glodblock.github.inventory.slot;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fluids.FluidContainerRegistry;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.IFluidContainerItem;
+
+import org.jspecify.annotations.Nullable;
 
 import com.glodblock.github.common.item.ItemFluidPacket;
 import com.glodblock.github.inventory.AeItemStackHandler;

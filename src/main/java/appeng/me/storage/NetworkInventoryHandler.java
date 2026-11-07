@@ -21,9 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import javax.annotation.Nonnull;
-
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.AccessRestriction;
 import appeng.api.config.Actionable;
@@ -452,7 +450,7 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
     }
 
     @Override
-    public T getAvailableItem(@Nonnull T request, int iteration) {
+    public T getAvailableItem(@NonNull T request, int iteration) {
         long count = 0;
 
         final List<IMEInventoryHandler<T>> priorityInventory = this.priorityInventory;
@@ -551,7 +549,7 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
     }
 
     @Override
-    public @NotNull IAEStackType<?> getStackType() {
+    public @NonNull IAEStackType<?> getStackType() {
         return this.type;
     }
 

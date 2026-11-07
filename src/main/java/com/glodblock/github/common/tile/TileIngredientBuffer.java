@@ -2,8 +2,6 @@ package com.glodblock.github.common.tile;
 
 import java.io.IOException;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -12,6 +10,8 @@ import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTankInfo;
 import net.minecraftforge.fluids.IFluidHandler;
+
+import org.jspecify.annotations.NonNull;
 
 import com.glodblock.github.inventory.AEFluidInventory;
 import com.glodblock.github.inventory.IAEFluidInventory;
@@ -35,7 +35,7 @@ public class TileIngredientBuffer extends AEBaseInvTile implements IAEFluidInven
         this.invItems = new AppEngInternalInventory(this, 9);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public IInventory getInternalInventory() {
         return invItems;

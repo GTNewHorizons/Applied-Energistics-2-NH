@@ -29,8 +29,8 @@ import net.minecraftforge.common.util.Constants.NBT;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.oredict.OreDictionary;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.FuzzyMode;
@@ -226,8 +226,8 @@ public class PacketNEIRecipe extends AppEngPacket {
      * @param patternItem which {@link ItemStack} to extract
      * @return null or a found {@link ItemStack}
      */
-    private @Nullable ItemStack extractItemFromPlayerInventory(final @NotNull EntityPlayer player,
-            final @NotNull Actionable mode, final @NotNull ItemStack patternItem) {
+    private @Nullable ItemStack extractItemFromPlayerInventory(final @NonNull EntityPlayer player,
+            final @NonNull Actionable mode, final @NonNull ItemStack patternItem) {
         final InventoryAdaptor ia = InventoryAdaptor.getAdaptor(player, ForgeDirection.UNKNOWN);
         final boolean isSimulated = mode == Actionable.SIMULATE;
         if (patternItem.getItemDamage() == OreDictionary.WILDCARD_VALUE) {

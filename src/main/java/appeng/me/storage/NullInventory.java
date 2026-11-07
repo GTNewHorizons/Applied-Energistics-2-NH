@@ -10,7 +10,7 @@
 
 package appeng.me.storage;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.AccessRestriction;
 import appeng.api.config.Actionable;
@@ -38,7 +38,7 @@ public class NullInventory<T extends IAEStack<T>> implements IMEInventoryHandler
     }
 
     @Override
-    public T getAvailableItem(@Nonnull T request, int iteration) {
+    public T getAvailableItem(@NonNull T request, int iteration) {
         return null;
     }
 

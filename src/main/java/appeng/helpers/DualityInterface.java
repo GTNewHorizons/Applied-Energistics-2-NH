@@ -49,8 +49,8 @@ import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.fluids.FluidTankInfo;
 import net.minecraftforge.fluids.IFluidHandler;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.glodblock.github.inventory.IDualHost;
 import com.google.common.collect.ImmutableSet;
@@ -944,7 +944,7 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
 
     @Override
     @Nullable
-    public IMEMonitor<?> getMEMonitor(@NotNull IAEStackType<?> type) {
+    public IMEMonitor<?> getMEMonitor(@NonNull IAEStackType<?> type) {
         if (type == ITEM_STACK_TYPE) {
             return this.getItemInventory();
         } else if (type == FLUID_STACK_TYPE) {

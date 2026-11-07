@@ -15,11 +15,10 @@ package appeng.api.implementations.items;
 
 import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.item.ItemStack;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.storage.ICellWorkbenchItem;
 import appeng.api.storage.data.IAEItemStack;
@@ -124,7 +123,7 @@ public interface IStorageCell extends ICellWorkbenchItem {
      */
     double getIdleDrain();
 
-    @NotNull
+    @NonNull
     default IAEStackType<?> getStackType() {
         return ITEM_STACK_TYPE;
     }

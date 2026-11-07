@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.Actionable;
 import it.unimi.dsi.fastutil.objects.ObjectLongImmutablePair;

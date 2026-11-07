@@ -396,7 +396,7 @@ public class InvTweakSortingModule {
             }
         }
 
-        @javax.annotation.Nonnull
+        @org.jspecify.annotations.NonNull
         private List<InvTweaksItemTreeItem> addUnrecognizedItem(String id, int damage) {
             InvTweaksItemTreeItem newItemId = new InvTweaksItemTreeItem(
                     String.format("%s-%d", id, damage),

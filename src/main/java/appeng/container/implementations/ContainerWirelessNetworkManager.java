@@ -4,7 +4,7 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
 
@@ -23,9 +23,9 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 public class ContainerWirelessNetworkManager extends AEBaseContainer {
 
     private final ItemStack terminal;
-    private final @NotNull ActionHandler<Byte> switchAction;
-    private final @NotNull ActionHandler<Byte> removeAction;
-    private final @NotNull ActionHandler<NewName> renameAction;
+    private final @NonNull ActionHandler<Byte> switchAction;
+    private final @NonNull ActionHandler<Byte> removeAction;
+    private final @NonNull ActionHandler<NewName> renameAction;
 
     private final static class NewName {
 
