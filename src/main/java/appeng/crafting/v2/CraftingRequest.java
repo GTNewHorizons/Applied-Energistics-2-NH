@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSet.Builder;
@@ -298,27 +299,48 @@ public class CraftingRequest implements ITreeSerializable {
         if (amount < 0) {
             throw new IllegalArgumentException("Can't unfulfill a negative amount of " + resolved + " : " + this);
         }
-        long remaining = amount;
-        for (int i = usedResolvers.size() - 1; i >= 0 && remaining > 0; i--) {
-            final UsedResolverEntry entry = usedResolvers.get(i);
-            if (entry.task != origin || !entry.resolvedStack.equals(resolved)) {
-                continue;
-            }
-            final long taken = Math.min(remaining, entry.resolvedStack.getStackSize());
-            entry.resolvedStack.setStackSize(entry.resolvedStack.getStackSize() - taken);
-            remaining -= taken;
-            if (entry.resolvedStack.getStackSize() <= 0) {
-                // Nothing left to show for this entry, drop it so it doesn't end up as a 0-sized node in the tree
-                usedResolvers.remove(i);
-            }
+        long remaining = reduceEntriesOf(origin, resolved, amount);
+        if (remaining > 0) {
+            // The entries of a task are kept in step with it by total, not by stack: an extract task hands back fuzzy
+            // substitutes in a different order than they were recorded, so the per-stack split can differ after a
+            // partial refund. Fall back to the task's other entries, which only affects what the tree view shows.
+            AELog.debug(
+                    "Resolver entries of %s for %s don't match its extractions by stack, unfulfilling %d from its other entries",
+                    origin,
+                    this,
+                    remaining);
+            remaining = reduceEntriesOf(origin, null, remaining);
         }
         if (remaining != 0) {
             throw new IllegalStateException(
                     "Unfulfilled more of " + resolved + " than was resolved by " + origin + " for request " + this);
         }
+        // Nothing left to show for emptied entries, drop them so they don't end up as 0-sized nodes in the tree
+        usedResolvers.removeIf(entry -> entry.task == origin && entry.resolvedStack.getStackSize() <= 0);
         this.remainingToProcess += amount;
         this.untransformedByteCost -= amount;
         this.byteCost = CraftingCalculations.adjustByteCost(this, untransformedByteCost);
+    }
+
+    /**
+     * Takes {@code amount} off the entries recorded for {@code task}, latest entries first, matching the order in which
+     * tasks give their items back.
+     *
+     * @param stack If not null, only entries of this stack are reduced
+     * @return How much of {@code amount} the entries could not cover
+     */
+    private long reduceEntriesOf(CraftingTask task, @Nullable IAEStack<?> stack, final long amount) {
+        long remaining = amount;
+        for (int i = usedResolvers.size() - 1; i >= 0 && remaining > 0; i--) {
+            final UsedResolverEntry entry = usedResolvers.get(i);
+            if (entry.task != task || (stack != null && !entry.resolvedStack.equals(stack))) {
+                continue;
+            }
+            final long taken = Math.min(remaining, entry.resolvedStack.getStackSize());
+            entry.resolvedStack.setStackSize(entry.resolvedStack.getStackSize() - taken);
+            remaining -= taken;
+        }
+        return remaining;
     }
 
     /**
@@ -337,7 +359,12 @@ public class CraftingRequest implements ITreeSerializable {
             final long taskRefunded = resolver.task
                     .partialRefund(context, Math.min(remainingTaskAmount, resolver.resolvedStack.getStackSize()));
             remainingTaskAmount -= taskRefunded;
-            resolver.resolvedStack.setStackSize(resolver.resolvedStack.getStackSize() - taskRefunded);
+            // A task with several entries (an extract task that used fuzzy substitutes) gives back its latest items
+            // first, so reduce its entries in that order as well instead of only this one.
+            if (reduceEntriesOf(resolver.task, null, taskRefunded) != 0) {
+                throw new IllegalStateException(
+                        "Task " + resolver.task + " refunded more than it resolved for request " + this);
+            }
         }
         if (remainingTaskAmount < 0) {
             throw new IllegalStateException("Refunds resulted in a negative amount of an item for request " + this);
