@@ -25,9 +25,8 @@ public final class GuiButtonColorizer implements IClassTransformer {
     @Reflected
     public GuiButtonColorizer() {}
 
-    @Nullable
     @Override
-    public byte[] transform(final String name, final String transformedName, final byte[] basicClass) {
+    public byte @Nullable [] transform(final String name, final String transformedName, final byte[] basicClass) {
         if (basicClass == null || !transformedName.equals(GUI_BUTTON)) {
             return basicClass;
         }

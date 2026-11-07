@@ -27,9 +27,8 @@ public class FeatureCellMicroscope extends ThEThaumcraftResearchFeature {
         return true;
     }
 
-    @Nullable
     @Override
-    protected Object[] getItemReqs(CommonDependantItems cdi) {
+    protected Object @Nullable [] getItemReqs(CommonDependantItems cdi) {
         return new Object[] {};
     }
 
