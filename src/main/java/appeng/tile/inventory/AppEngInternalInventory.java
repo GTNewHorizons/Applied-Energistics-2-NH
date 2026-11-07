@@ -18,8 +18,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.util.Constants.NBT;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.storage.IMEInventory;
 import appeng.core.AELog;
@@ -187,7 +187,7 @@ public class AppEngInternalInventory implements IInventory, Iterable<ItemStack> 
         }
     }
 
-    public void writeToNBT(@NotNull ItemStack stack, String name) {
+    public void writeToNBT(@NonNull ItemStack stack, String name) {
         if (!stack.hasTagCompound()) {
             stack.setTagCompound(new NBTTagCompound());
         }

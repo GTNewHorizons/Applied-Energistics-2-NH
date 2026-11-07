@@ -25,9 +25,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import javax.annotation.Nonnull;
-
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.storage.IMENetworkInventory;
@@ -212,8 +211,8 @@ public class PrioritizedNetworkItemList<T extends IAEStack> extends NetworkItemL
 
         private final IntList priorityPath;
 
-        public PrioritizedNetworkItemStack(@Nonnull final IMENetworkInventory<U> networkInventory,
-                @Nonnull final U itemStack, final int priority) {
+        public PrioritizedNetworkItemStack(@NonNull final IMENetworkInventory<U> networkInventory,
+                @NonNull final U itemStack, final int priority) {
             super(networkInventory, itemStack);
             this.priorityPath = new IntArrayList();
             this.priorityPath.add(priority);

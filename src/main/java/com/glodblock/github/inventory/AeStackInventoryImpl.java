@@ -4,11 +4,11 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.stream.Stream;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.common.util.Constants;
+
+import org.jspecify.annotations.Nullable;
 
 import com.glodblock.github.util.ObjectArrayIterator;
 import com.glodblock.github.util.Util;

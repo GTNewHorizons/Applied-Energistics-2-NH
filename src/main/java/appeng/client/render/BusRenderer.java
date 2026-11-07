@@ -13,8 +13,6 @@ package appeng.client.render;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.item.Item;
@@ -22,6 +20,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraftforge.client.IItemRenderer;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 
 import appeng.api.parts.IAlphaPassItem;

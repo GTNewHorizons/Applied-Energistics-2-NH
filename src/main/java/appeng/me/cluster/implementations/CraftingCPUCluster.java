@@ -62,7 +62,7 @@ import net.minecraftforge.common.util.Constants.NBT;
 
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.logging.log4j.Level;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -2064,8 +2064,8 @@ public class CraftingCPUCluster implements IAECluster, ICraftingCPU {
         }
     }
 
-    @NotNull
-    public ScheduledReason getScheduledReason(@NotNull IAEStack<?> is) {
+    @NonNull
+    public ScheduledReason getScheduledReason(@NonNull IAEStack<?> is) {
         for (final Entry<ICraftingPatternDetails, TaskProgress> t : this.tasks.entrySet()) {
             for (final IAEStack<?> ais : t.getKey().getCondensedAEOutputs()) {
                 if (Objects.equals(ais, is)) {

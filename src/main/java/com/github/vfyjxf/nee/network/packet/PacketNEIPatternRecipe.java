@@ -7,13 +7,13 @@ import static com.github.vfyjxf.nee.processor.RecipeProcessor.TCNEIPlugin_isLoad
 import static com.github.vfyjxf.nee.processor.RecipeProcessor.ThaumicEnergistics_isLoaded;
 import static thaumicenergistics.common.storage.AEEssentiaStackType.ESSENTIA_STACK_ID;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fluids.FluidStack;
+
+import org.jspecify.annotations.NonNull;
 
 import com.djgiannuzz.thaumcraftneiplugin.items.ItemAspect;
 import com.github.vfyjxf.nee.utils.GuiUtils;
@@ -45,7 +45,7 @@ public class PacketNEIPatternRecipe implements IMessage {
 
     public PacketNEIPatternRecipe() {}
 
-    public PacketNEIPatternRecipe(@Nonnull NBTTagCompound input, NBTTagCompound output) {
+    public PacketNEIPatternRecipe(@NonNull NBTTagCompound input, NBTTagCompound output) {
         this.input = input;
         this.output = output;
     }

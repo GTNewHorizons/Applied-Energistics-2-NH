@@ -10,7 +10,7 @@
 
 package appeng.core.worlddata;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Preconditions;
 
@@ -29,7 +29,7 @@ public class MeteorDataNameEncoder {
 
     private final char dataSeparator;
 
-    @Nonnull
+    @NonNull
     private final String fileExtension;
 
     private final char baseExtSeparator;
@@ -43,7 +43,7 @@ public class MeteorDataNameEncoder {
     }
 
     private MeteorDataNameEncoder(final char dataSeparator, final char baseExtSeparator,
-            @Nonnull final String fileExtension, final int bitScale) {
+            @NonNull final String fileExtension, final int bitScale) {
         Preconditions.checkNotNull(fileExtension);
         Preconditions.checkArgument(!fileExtension.isEmpty());
         Preconditions.checkArgument(bitScale >= 0);

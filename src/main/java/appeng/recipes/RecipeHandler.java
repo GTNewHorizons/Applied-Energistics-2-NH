@@ -22,10 +22,10 @@ import java.util.Map.Entry;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -85,7 +85,7 @@ public class RecipeHandler implements IRecipeHandler {
         this.data.handlers.add(ch);
     }
 
-    public String getName(@Nonnull final IIngredient i) {
+    public String getName(@NonNull final IIngredient i) {
         try {
             for (final ItemStack is : i.getItemStackSet()) {
                 return this.getName(is);

@@ -15,8 +15,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.ForgeEventFactory;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
@@ -306,7 +306,7 @@ public class PartVisInterface extends PartBasicState implements IGridTickable, I
      * Drains vis from either the vis relay network, or from the p2p source.
      */
     @Override
-    public int consumeVis(final @NotNull Aspect digiVisAspect, final int amount) {
+    public int consumeVis(final @NonNull Aspect digiVisAspect, final int amount) {
         // Ensure the interface is active
         if (!this.getProxy().isActive()) {
             return 0;

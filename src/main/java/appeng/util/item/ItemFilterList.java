@@ -5,7 +5,7 @@ import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 import java.util.Collection;
 import java.util.Iterator;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.storage.data.IAEItemStack;
@@ -103,7 +103,7 @@ public class ItemFilterList implements IItemList<IAEItemStack> {
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public Iterator<IAEItemStack> iterator() {
         return this.records.iterator();
     }

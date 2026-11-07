@@ -19,9 +19,9 @@ import java.util.LinkedList;
 import java.util.NavigableSet;
 import java.util.concurrent.ConcurrentSkipListSet;
 
-import javax.annotation.Nullable;
-
 import net.minecraftforge.oredict.OreDictionary;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.storage.data.IAEItemStack;

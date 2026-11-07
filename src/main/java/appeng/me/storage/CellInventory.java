@@ -16,13 +16,13 @@ import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
+
+import org.jspecify.annotations.NonNull;
 
 import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
 
@@ -422,7 +422,7 @@ public abstract class CellInventory<StackType extends IAEStack<StackType>> imple
     }
 
     @Override
-    public StackType getAvailableItem(@Nonnull StackType request, int iteration) {
+    public StackType getAvailableItem(@NonNull StackType request, int iteration) {
         long count = 0;
         for (final StackType is : this.getCellStacks()) {
             if (is != null && is.getStackSize() > 0 && is.isSameType(request)) {
@@ -629,7 +629,7 @@ public abstract class CellInventory<StackType extends IAEStack<StackType>> imple
     }
 
     @Override
-    @Nonnull
+    @NonNull
     public IAEStackType<?> getStackType() {
         return this.cellType.getStackType();
     }

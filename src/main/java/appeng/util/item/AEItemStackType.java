@@ -9,9 +9,9 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IIcon;
 import net.minecraft.util.ResourceLocation;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.AEApi;
 import appeng.api.storage.data.IAEItemStack;
@@ -82,33 +82,33 @@ public class AEItemStackType implements IAEStackType<IAEItemStack> {
     }
 
     @Override
-    public @Nullable IAEItemStack getStackFromContainerItem(@NotNull ItemStack container) {
+    public @Nullable IAEItemStack getStackFromContainerItem(@NonNull ItemStack container) {
         return null;
     }
 
     @Override
-    public @Nullable IAEItemStack convertStackFromItem(@NotNull ItemStack itemStack) {
+    public @Nullable IAEItemStack convertStackFromItem(@NonNull ItemStack itemStack) {
         return null;
     }
 
     @Override
-    public long getContainerItemCapacity(@NotNull ItemStack container, @NotNull IAEItemStack stack) {
+    public long getContainerItemCapacity(@NonNull ItemStack container, @NonNull IAEItemStack stack) {
         return 0;
     }
 
     @Override
-    public @NotNull ObjectLongPair<ItemStack> drainStackFromContainer(@NotNull ItemStack container,
-            @NotNull IAEItemStack stack) {
+    public @NonNull ObjectLongPair<ItemStack> drainStackFromContainer(@NonNull ItemStack container,
+            @NonNull IAEItemStack stack) {
         return new ObjectLongImmutablePair<>(container, 0);
     }
 
     @Override
-    public @Nullable ItemStack clearFilledContainer(@NotNull ItemStack container) {
+    public @Nullable ItemStack clearFilledContainer(@NonNull ItemStack container) {
         return null;
     }
 
     @Override
-    public @NotNull ObjectLongPair<ItemStack> fillContainer(@NotNull ItemStack container, @NotNull IAEItemStack stack) {
+    public @NonNull ObjectLongPair<ItemStack> fillContainer(@NonNull ItemStack container, @NonNull IAEItemStack stack) {
         return new ObjectLongImmutablePair<>(null, 0);
     }
 
@@ -170,11 +170,11 @@ public class AEItemStackType implements IAEStackType<IAEItemStack> {
         };
     }
 
-    @NotNull
+    @NonNull
     private final IAEItemStack testStack = AEItemStack.create(new ItemStack(Blocks.fire));
 
     @Override
-    @NotNull
+    @NonNull
     public IAEItemStack getTestStack() {
         return this.testStack.copy();
     }

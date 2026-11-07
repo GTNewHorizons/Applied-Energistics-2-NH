@@ -10,7 +10,7 @@
 
 package appeng.client.gui.widgets;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.SortDir;
 import appeng.api.config.ViewItems;

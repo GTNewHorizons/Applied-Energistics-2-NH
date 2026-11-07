@@ -7,8 +7,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemStack;
@@ -17,6 +15,8 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -117,15 +117,15 @@ public class TilePatternInterface extends AENetworkInvTile
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public TickingRequest getTickingRequest(@Nonnull IGridNode node) {
+    public TickingRequest getTickingRequest(@NonNull IGridNode node) {
         return new TickingRequest(TickRates.Interface.getMin(), TickRates.Interface.getMax(), !hasItemToSend(), true);
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public TickRateModulation tickingRequest(@Nonnull IGridNode node, int ticksSinceLastCall) {
+    public TickRateModulation tickingRequest(@NonNull IGridNode node, int ticksSinceLastCall) {
         if (!this.getProxy().isActive()) {
             return TickRateModulation.SLEEP;
         }
@@ -149,7 +149,7 @@ public class TilePatternInterface extends AENetworkInvTile
         return TickRateModulation.SLEEP;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public IInventory getInternalInventory() {
         return this.ejectInv;

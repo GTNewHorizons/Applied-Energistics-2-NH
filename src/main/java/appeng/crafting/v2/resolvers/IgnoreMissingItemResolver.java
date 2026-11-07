@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.CraftingMode;
 import appeng.api.storage.data.IAEStack;
@@ -106,10 +106,10 @@ public class IgnoreMissingItemResolver implements CraftingRequestResolver {
         }
     }
 
-    @Nonnull
+    @NonNull
     @Override
-    public List<CraftingTask> provideCraftingRequestResolvers(@Nonnull CraftingRequest request,
-            @Nonnull CraftingContext context) {
+    public List<CraftingTask> provideCraftingRequestResolvers(@NonNull CraftingRequest request,
+            @NonNull CraftingContext context) {
         if (request.craftingMode == CraftingMode.IGNORE_MISSING && request.allowSimulation) {
             return Collections.singletonList(new IgnoreMissingItemTask(request));
         } else return Collections.emptyList();

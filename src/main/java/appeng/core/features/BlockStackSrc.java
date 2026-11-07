@@ -10,11 +10,11 @@
 
 package appeng.core.features;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.base.Preconditions;
 

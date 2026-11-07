@@ -13,14 +13,13 @@ package appeng.client.render;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.RenderItem;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.item.ItemStack;
 
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.opengl.GL11;
 
 import appeng.api.AEApi;
@@ -139,7 +138,7 @@ public class AppEngRenderItem extends RenderItem {
         return this.aeStack;
     }
 
-    public void setAeStack(@Nonnull final IAEItemStack aeStack) {
+    public void setAeStack(@NonNull final IAEItemStack aeStack) {
         this.aeStack = aeStack;
     }
 }

@@ -3,7 +3,7 @@ package appeng.container.sync;
 import java.io.IOException;
 import java.util.Objects;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import io.netty.buffer.ByteBuf;
 

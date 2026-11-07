@@ -1,9 +1,9 @@
 package thaumicenergistics.api;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.features.INetworkEncodable;
 import appeng.api.implementations.items.IAEItemPowerStorage;
@@ -12,6 +12,6 @@ import appeng.api.implementations.items.IAEItemPowerStorage;
 public interface IThEWirelessEssentiaTerminal extends INetworkEncodable, IAEItemPowerStorage {
 
     @Deprecated
-    @Nonnull
-    NBTTagCompound getWETerminalTag(@Nonnull ItemStack terminalItemstack);
+    @NonNull
+    NBTTagCompound getWETerminalTag(@NonNull ItemStack terminalItemstack);
 }

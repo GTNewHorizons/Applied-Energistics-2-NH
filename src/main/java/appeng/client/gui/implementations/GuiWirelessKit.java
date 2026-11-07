@@ -6,8 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
@@ -15,6 +13,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.common.MinecraftForge;
 
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
@@ -1109,7 +1108,7 @@ public class GuiWirelessKit extends AEBaseGui implements IConfigManagerHost {
         } catch (IOException ignored) {}
     }
 
-    @Nonnull
+    @NonNull
     private SubCommand getSubCommand(BaseUnit butb) {
         final SubCommand subCommand = new SubCommand();
         if (butb instanceof GroupUnit gu) {

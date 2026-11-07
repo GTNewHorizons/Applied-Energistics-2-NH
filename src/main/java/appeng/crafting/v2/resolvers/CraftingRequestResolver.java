@@ -2,7 +2,7 @@ package appeng.crafting.v2.resolvers;
 
 import java.util.List;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.crafting.v2.CraftingContext;
 import appeng.crafting.v2.CraftingRequest;
@@ -26,7 +26,7 @@ public interface CraftingRequestResolver {
      * @param context The ME system, job queue and pattern caches used to calculate potential resolutions
      * @return The list of potential solutions - return an empty list if none are available
      */
-    @Nonnull
-    List<CraftingTask> provideCraftingRequestResolvers(@Nonnull CraftingRequest request,
-            @Nonnull CraftingContext context);
+    @NonNull
+    List<CraftingTask> provideCraftingRequestResolvers(@NonNull CraftingRequest request,
+            @NonNull CraftingContext context);
 }

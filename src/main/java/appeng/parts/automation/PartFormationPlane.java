@@ -15,8 +15,6 @@ import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
@@ -38,7 +36,7 @@ import net.minecraftforge.common.util.BlockSnapshot;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.world.BlockEvent;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.AEApi;
 import appeng.api.config.AccessRestriction;
@@ -115,7 +113,7 @@ public class PartFormationPlane extends PartBaseFormationPlane implements ICellC
     }
 
     @Override
-    @NotNull
+    @NonNull
     public List<IMEInventoryHandler> getCellArray(final IAEStackType<?> type) {
         if (this.getProxy().isActive() && type == ITEM_STACK_TYPE) {
             final List<IMEInventoryHandler> Handler = new ArrayList<>(1);
@@ -359,7 +357,7 @@ public class PartFormationPlane extends PartBaseFormationPlane implements ICellC
     }
 
     @Override
-    public IAEItemStack getAvailableItem(@Nonnull IAEItemStack request, int iteration) {
+    public IAEItemStack getAvailableItem(@NonNull IAEItemStack request, int iteration) {
         return null;
     }
 
@@ -374,7 +372,7 @@ public class PartFormationPlane extends PartBaseFormationPlane implements ICellC
     }
 
     @Override
-    public @NotNull IAEStackType<?> getStackType() {
+    public @NonNull IAEStackType<?> getStackType() {
         return ITEM_STACK_TYPE;
     }
 

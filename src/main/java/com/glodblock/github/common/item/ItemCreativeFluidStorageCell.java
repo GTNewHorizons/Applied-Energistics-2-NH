@@ -6,7 +6,7 @@ import java.util.EnumSet;
 
 import net.minecraft.item.ItemStack;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import com.glodblock.github.FluidCraft;
 import com.glodblock.github.common.tabs.FluidCraftingTabs;
@@ -49,7 +49,7 @@ public class ItemCreativeFluidStorageCell extends AEBaseInfiniteCell
     }
 
     @Override
-    public @NotNull IAEStackType<?> getStackType() {
+    public @NonNull IAEStackType<?> getStackType() {
         return FLUID_STACK_TYPE;
     }
 

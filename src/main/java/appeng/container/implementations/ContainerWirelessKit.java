@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.ICrafting;
@@ -15,6 +13,8 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants.NBT;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.Settings;
 import appeng.api.config.WirelessToolGroupBy;
@@ -118,7 +118,7 @@ public class ContainerWirelessKit extends AEBaseContainer implements IConfigMana
         return this.gui;
     }
 
-    public void setGui(@Nonnull final IConfigManagerHost gui) {
+    public void setGui(@NonNull final IConfigManagerHost gui) {
         this.gui = gui;
     }
 

@@ -14,8 +14,6 @@ import static net.minecraft.init.Blocks.air;
 
 import java.io.File;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -26,6 +24,8 @@ import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.oredict.RecipeSorter;
 import net.minecraftforge.oredict.RecipeSorter.Category;
+
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Preconditions;
 
@@ -505,8 +505,8 @@ public final class Registration {
         target.itemLumenPaintBall = source.coloredLumenPaintBall();
     }
 
-    void initialize(@Nonnull final FMLInitializationEvent event, @Nonnull final File recipeDirectory,
-            @Nonnull final CustomRecipeConfig customRecipeConfig) {
+    void initialize(@NonNull final FMLInitializationEvent event, @NonNull final File recipeDirectory,
+            @NonNull final CustomRecipeConfig customRecipeConfig) {
         Preconditions.checkNotNull(event);
         Preconditions.checkNotNull(recipeDirectory);
         Preconditions.checkArgument(!recipeDirectory.isFile());
@@ -925,7 +925,7 @@ public final class Registration {
      * @param entry Format: modID:blockID or modID:blockID:metadata
      * @return Returns the block with metadata
      */
-    @Nonnull
+    @NonNull
     public static Block getBlockFromString(String entry) {
         if (entry == null) {
             AELog.error("AE2: Error getting block from string | Error: String is null!");

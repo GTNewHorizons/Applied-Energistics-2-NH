@@ -10,11 +10,11 @@
 
 package appeng.core.features;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.IBlockAccess;
+
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
@@ -27,7 +27,7 @@ public final class DamagedItemDefinition implements IItemDefinition {
     private static final ItemTransformer ITEM_TRANSFORMER = new ItemTransformer();
     private final Optional<IStackSrc> source;
 
-    public DamagedItemDefinition(@Nonnull final IStackSrc source) {
+    public DamagedItemDefinition(@NonNull final IStackSrc source) {
         Preconditions.checkNotNull(source);
 
         if (source.isEnabled()) {

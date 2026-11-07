@@ -11,7 +11,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import com.glodblock.github.FluidCraft;
 import com.glodblock.github.api.FluidCraftAPI;
@@ -87,7 +87,7 @@ public class ItemPortableFluidCell extends AEBasePortableCell implements IRegist
     }
 
     @Override
-    public @NotNull IAEStackType<?> getStackType() {
+    public @NonNull IAEStackType<?> getStackType() {
         return FLUID_STACK_TYPE;
     }
 

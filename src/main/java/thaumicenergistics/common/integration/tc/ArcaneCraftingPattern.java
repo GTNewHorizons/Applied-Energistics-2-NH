@@ -2,13 +2,13 @@ package thaumicenergistics.common.integration.tc;
 
 import java.util.ArrayList;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 import net.minecraftforge.oredict.OreDictionary;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.AEApi;
 import appeng.api.networking.crafting.ICraftingPatternDetails;
@@ -32,7 +32,7 @@ public class ArcaneCraftingPattern implements ICraftingPatternDetails {
     /**
      * Aspects required.
      */
-    @Nonnull
+    @NonNull
     protected AspectList aspects;
 
     /**

@@ -15,7 +15,7 @@ package appeng.api.recipes;
 
 import java.io.BufferedReader;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 public interface IRecipeLoader {
 
@@ -24,5 +24,5 @@ public interface IRecipeLoader {
      * @return reader handler of the file
      * @throws Exception if reading goes wrong
      */
-    BufferedReader getFile(@Nonnull String filePath) throws Exception;
+    BufferedReader getFile(@NonNull String filePath) throws Exception;
 }

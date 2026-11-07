@@ -8,8 +8,8 @@ import java.util.Objects;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.Settings;
 import appeng.api.util.IConfigManager;
@@ -293,83 +293,83 @@ public final class SyncManager {
         }
 
         @Override
-        public @NotNull SyncRegistrar child(final @NotNull String key) {
+        public @NonNull SyncRegistrar child(final @NonNull String key) {
             validateKey(key);
             return new ScopedSyncRegistrar(this.qualify(key));
         }
 
         @Override
-        public @NotNull IntSyncHandler intS2C(final @NotNull String key) {
+        public @NonNull IntSyncHandler intS2C(final @NonNull String key) {
             return register(
                     new IntSyncHandler(SyncManager.this, key, this.qualify(key), SyncDirection.SERVER_TO_CLIENT));
         }
 
         @Override
-        public @NotNull IntSyncHandler intC2S(final @NotNull String key) {
+        public @NonNull IntSyncHandler intC2S(final @NonNull String key) {
             return register(
                     new IntSyncHandler(SyncManager.this, key, this.qualify(key), SyncDirection.CLIENT_TO_SERVER));
         }
 
         @Override
-        public @NotNull IntSyncHandler intSync(final @NotNull String key) {
+        public @NonNull IntSyncHandler intSync(final @NonNull String key) {
             return register(new IntSyncHandler(SyncManager.this, key, this.qualify(key), SyncDirection.BIDIRECTIONAL));
         }
 
         @Override
-        public @NotNull LongSyncHandler longS2C(final @NotNull String key) {
+        public @NonNull LongSyncHandler longS2C(final @NonNull String key) {
             return register(
                     new LongSyncHandler(SyncManager.this, key, this.qualify(key), SyncDirection.SERVER_TO_CLIENT));
         }
 
         @Override
-        public @NotNull LongSyncHandler longC2S(final @NotNull String key) {
+        public @NonNull LongSyncHandler longC2S(final @NonNull String key) {
             return register(
                     new LongSyncHandler(SyncManager.this, key, this.qualify(key), SyncDirection.CLIENT_TO_SERVER));
         }
 
         @Override
-        public @NotNull LongSyncHandler longSync(final @NotNull String key) {
+        public @NonNull LongSyncHandler longSync(final @NonNull String key) {
             return register(new LongSyncHandler(SyncManager.this, key, this.qualify(key), SyncDirection.BIDIRECTIONAL));
         }
 
         @Override
-        public @NotNull BooleanSyncHandler booleanS2C(final @NotNull String key) {
+        public @NonNull BooleanSyncHandler booleanS2C(final @NonNull String key) {
             return register(
                     new BooleanSyncHandler(SyncManager.this, key, this.qualify(key), SyncDirection.SERVER_TO_CLIENT));
         }
 
         @Override
-        public @NotNull BooleanSyncHandler booleanC2S(final @NotNull String key) {
+        public @NonNull BooleanSyncHandler booleanC2S(final @NonNull String key) {
             return register(
                     new BooleanSyncHandler(SyncManager.this, key, this.qualify(key), SyncDirection.CLIENT_TO_SERVER));
         }
 
         @Override
-        public @NotNull BooleanSyncHandler booleanSync(final @NotNull String key) {
+        public @NonNull BooleanSyncHandler booleanSync(final @NonNull String key) {
             return register(
                     new BooleanSyncHandler(SyncManager.this, key, this.qualify(key), SyncDirection.BIDIRECTIONAL));
         }
 
         @Override
-        public @NotNull DoubleSyncHandler doubleS2C(final @NotNull String key) {
+        public @NonNull DoubleSyncHandler doubleS2C(final @NonNull String key) {
             return register(
                     new DoubleSyncHandler(SyncManager.this, key, this.qualify(key), SyncDirection.SERVER_TO_CLIENT));
         }
 
         @Override
-        public @NotNull DoubleSyncHandler doubleC2S(final @NotNull String key) {
+        public @NonNull DoubleSyncHandler doubleC2S(final @NonNull String key) {
             return register(
                     new DoubleSyncHandler(SyncManager.this, key, this.qualify(key), SyncDirection.CLIENT_TO_SERVER));
         }
 
         @Override
-        public @NotNull DoubleSyncHandler doubleSync(final @NotNull String key) {
+        public @NonNull DoubleSyncHandler doubleSync(final @NonNull String key) {
             return register(
                     new DoubleSyncHandler(SyncManager.this, key, this.qualify(key), SyncDirection.BIDIRECTIONAL));
         }
 
         @Override
-        public <T> @NotNull ObjectSyncHandler<T> objectS2C(final @NotNull String key, final @NotNull SyncCodec<T> codec,
+        public <T> @NonNull ObjectSyncHandler<T> objectS2C(final @NonNull String key, final @NonNull SyncCodec<T> codec,
                 final @Nullable T initialValue) {
             return register(
                     new ObjectSyncHandler<>(
@@ -382,8 +382,8 @@ public final class SyncManager {
         }
 
         @Override
-        public <T, D> @NotNull DeltaObjectSyncHandler<T, D> objectS2C(final @NotNull String key,
-                final @NotNull DeltaSyncCodec<T, D> codec, final @Nullable T initialValue) {
+        public <T, D> @NonNull DeltaObjectSyncHandler<T, D> objectS2C(final @NonNull String key,
+                final @NonNull DeltaSyncCodec<T, D> codec, final @Nullable T initialValue) {
             return register(
                     new DeltaObjectSyncHandler<>(
                             SyncManager.this,
@@ -395,7 +395,7 @@ public final class SyncManager {
         }
 
         @Override
-        public <T> @NotNull ObjectSyncHandler<T> objectC2S(final @NotNull String key, final @NotNull SyncCodec<T> codec,
+        public <T> @NonNull ObjectSyncHandler<T> objectC2S(final @NonNull String key, final @NonNull SyncCodec<T> codec,
                 final @Nullable T initialValue) {
             return register(
                     new ObjectSyncHandler<>(
@@ -408,8 +408,8 @@ public final class SyncManager {
         }
 
         @Override
-        public <T, D> @NotNull DeltaObjectSyncHandler<T, D> objectC2S(final @NotNull String key,
-                final @NotNull DeltaSyncCodec<T, D> codec, final @Nullable T initialValue) {
+        public <T, D> @NonNull DeltaObjectSyncHandler<T, D> objectC2S(final @NonNull String key,
+                final @NonNull DeltaSyncCodec<T, D> codec, final @Nullable T initialValue) {
             return register(
                     new DeltaObjectSyncHandler<>(
                             SyncManager.this,
@@ -421,7 +421,7 @@ public final class SyncManager {
         }
 
         @Override
-        public <T> @NotNull ObjectSyncHandler<T> object(final @NotNull String key, final @NotNull SyncCodec<T> codec,
+        public <T> @NonNull ObjectSyncHandler<T> object(final @NonNull String key, final @NonNull SyncCodec<T> codec,
                 final @Nullable T initialValue) {
             return register(
                     new ObjectSyncHandler<>(
@@ -434,8 +434,8 @@ public final class SyncManager {
         }
 
         @Override
-        public <T, D> @NotNull DeltaObjectSyncHandler<T, D> object(final @NotNull String key,
-                final @NotNull DeltaSyncCodec<T, D> codec, final @Nullable T initialValue) {
+        public <T, D> @NonNull DeltaObjectSyncHandler<T, D> object(final @NonNull String key,
+                final @NonNull DeltaSyncCodec<T, D> codec, final @Nullable T initialValue) {
             return register(
                     new DeltaObjectSyncHandler<>(
                             SyncManager.this,
@@ -447,7 +447,7 @@ public final class SyncManager {
         }
 
         @Override
-        public <T> @NotNull ActionHandler<T> actionS2C(final @NotNull String key, final @NotNull StreamCodec<T> codec) {
+        public <T> @NonNull ActionHandler<T> actionS2C(final @NonNull String key, final @NonNull StreamCodec<T> codec) {
             return register(
                     new ActionHandler<>(
                             SyncManager.this,
@@ -458,12 +458,12 @@ public final class SyncManager {
         }
 
         @Override
-        public @NotNull ActionHandler<Void> actionS2C(final @NotNull String key) {
+        public @NonNull ActionHandler<Void> actionS2C(final @NonNull String key) {
             return this.actionS2C(key, StreamCodecs.empty());
         }
 
         @Override
-        public <T> @NotNull ActionHandler<T> actionC2S(final @NotNull String key, final @NotNull StreamCodec<T> codec) {
+        public <T> @NonNull ActionHandler<T> actionC2S(final @NonNull String key, final @NonNull StreamCodec<T> codec) {
             return register(
                     new ActionHandler<>(
                             SyncManager.this,
@@ -474,25 +474,25 @@ public final class SyncManager {
         }
 
         @Override
-        public @NotNull ActionHandler<Void> actionC2S(final @NotNull String key) {
+        public @NonNull ActionHandler<Void> actionC2S(final @NonNull String key) {
             return this.actionC2S(key, StreamCodecs.empty());
         }
 
         @Override
-        public <T> @NotNull ActionHandler<T> action(final @NotNull String key, final @NotNull StreamCodec<T> codec) {
+        public <T> @NonNull ActionHandler<T> action(final @NonNull String key, final @NonNull StreamCodec<T> codec) {
             return register(
                     new ActionHandler<>(SyncManager.this, key, this.qualify(key), SyncDirection.BIDIRECTIONAL, codec));
         }
 
         @Override
-        public @NotNull ActionHandler<Void> action(final @NotNull String key) {
+        public @NonNull ActionHandler<Void> action(final @NonNull String key) {
             return this.action(key, StreamCodecs.empty());
         }
 
         @Override
-        public <E extends Enum<E>> @NotNull ConfigEnumSyncHandler<E> configEnum(final @NotNull String key,
-                final @NotNull Settings setting, final @NotNull Class<E> enumClass,
-                final @NotNull IConfigManager configManager) {
+        public <E extends Enum<E>> @NonNull ConfigEnumSyncHandler<E> configEnum(final @NonNull String key,
+                final @NonNull Settings setting, final @NonNull Class<E> enumClass,
+                final @NonNull IConfigManager configManager) {
             return register(
                     new ConfigEnumSyncHandler<>(
                             SyncManager.this,
@@ -506,8 +506,8 @@ public final class SyncManager {
         }
 
         @Override
-        public @NotNull AEStackInventorySyncHandler aeStackInventoryS2C(final @NotNull String key,
-                final @NotNull IAEStackInventory inventory) {
+        public @NonNull AEStackInventorySyncHandler aeStackInventoryS2C(final @NonNull String key,
+                final @NonNull IAEStackInventory inventory) {
             return register(
                     new AEStackInventorySyncHandler(
                             SyncManager.this,
@@ -518,8 +518,8 @@ public final class SyncManager {
         }
 
         @Override
-        public @NotNull AEStackInventorySyncHandler aeStackInventoryC2S(final @NotNull String key,
-                final @NotNull IAEStackInventory inventory) {
+        public @NonNull AEStackInventorySyncHandler aeStackInventoryC2S(final @NonNull String key,
+                final @NonNull IAEStackInventory inventory) {
             return register(
                     new AEStackInventorySyncHandler(
                             SyncManager.this,
@@ -530,8 +530,8 @@ public final class SyncManager {
         }
 
         @Override
-        public @NotNull AEStackInventorySyncHandler aeStackInventory(final @NotNull String key,
-                final @NotNull IAEStackInventory inventory) {
+        public @NonNull AEStackInventorySyncHandler aeStackInventory(final @NonNull String key,
+                final @NonNull IAEStackInventory inventory) {
             return register(
                     new AEStackInventorySyncHandler(
                             SyncManager.this,
