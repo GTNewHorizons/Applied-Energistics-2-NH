@@ -1,12 +1,10 @@
 package appeng.crafting.v2;
 
 import java.io.IOException;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -15,7 +13,6 @@ import java.util.concurrent.TimeoutException;
 
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ChatComponentTranslation;
-import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IChatComponent;
 import net.minecraft.world.World;
 
@@ -43,6 +40,7 @@ import appeng.crafting.v2.resolvers.CraftingTask;
 import appeng.crafting.v2.resolvers.ExtractItemResolver.ExtractItemTask;
 import appeng.hooks.TickHandler;
 import appeng.me.cluster.implementations.CraftingCPUCluster;
+import appeng.util.Platform;
 import cpw.mods.fml.common.network.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -384,7 +382,6 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
         }
         try {
             final IChatComponent missingList = new ChatComponentText("");
-            final NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.getDefault());
             for (int i = 0; i < wentMissing.size(); i++) {
                 if (i >= MAX_REPORTED_MISSING_STACKS) {
                     missingList.appendText(", ...");
@@ -394,13 +391,8 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
                     missingList.appendText(", ");
                 }
                 final IAEStack<?> stack = wentMissing.get(i);
-                final IChatComponent name = stack.getChatComponent();
-                name.getChatStyle().setColor(EnumChatFormatting.GOLD);
-                missingList.appendText(
-                        EnumChatFormatting.RED + numberFormat.format(stack.getStackSize())
-                                + EnumChatFormatting.RESET
-                                + " * ");
-                missingList.appendSibling(name);
+                missingList.appendText(Platform.formatChatCount(stack.getStackSize()) + " * ");
+                missingList.appendSibling(Platform.formatChatStackName(stack));
             }
             playerSource.player.addChatMessage(
                     new ChatComponentTranslation(
