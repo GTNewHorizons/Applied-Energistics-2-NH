@@ -10,7 +10,7 @@
 
 package appeng.core.worlddata;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * @author thatsIch
@@ -23,18 +23,18 @@ public interface IWorldData {
 
     void onServerStoppped();
 
-    @Nonnull
+    @NonNull
     IWorldGridStorageData storageData();
 
-    @Nonnull
+    @NonNull
     IWorldPlayerData playerData();
 
-    @Nonnull
+    @NonNull
     IWorldDimensionData dimensionData();
 
-    @Nonnull
+    @NonNull
     IWorldCompassData compassData();
 
-    @Nonnull
+    @NonNull
     IWorldSpawnData spawnData();
 }

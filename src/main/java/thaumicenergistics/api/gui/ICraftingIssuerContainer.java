@@ -1,6 +1,6 @@
 package thaumicenergistics.api.gui;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import thaumicenergistics.api.grid.ICraftingIssuerHost;
 
@@ -17,6 +17,6 @@ public interface ICraftingIssuerContainer {
      *
      * @return
      */
-    @Nonnull
+    @NonNull
     ICraftingIssuerHost getCraftingHost();
 }

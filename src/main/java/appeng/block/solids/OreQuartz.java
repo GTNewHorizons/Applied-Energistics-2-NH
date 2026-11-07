@@ -13,14 +13,14 @@ package appeng.block.solids;
 import java.util.EnumSet;
 import java.util.Random;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.block.material.Material;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.MathHelper;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.AEApi;
 import appeng.api.exceptions.MissingDefinition;

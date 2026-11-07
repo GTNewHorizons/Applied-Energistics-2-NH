@@ -1,11 +1,11 @@
 package net.p455w0rd.wirelesscraftingterminal.api.gui;
 
-import javax.annotation.Nonnull;
-
 import net.p455w0rd.wirelesscraftingterminal.api.grid.ICraftingIssuerHost;
+
+import org.jspecify.annotations.NonNull;
 
 public interface ICraftingIssuerContainer {
 
-    @Nonnull
+    @NonNull
     ICraftingIssuerHost getCraftingHost();
 }

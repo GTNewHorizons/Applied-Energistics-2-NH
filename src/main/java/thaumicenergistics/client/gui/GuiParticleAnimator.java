@@ -1,8 +1,8 @@
 package thaumicenergistics.client.gui;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.client.gui.Gui;
+
+import org.jspecify.annotations.NonNull;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -92,7 +92,7 @@ public class GuiParticleAnimator {
     public final EnumGuiParticles theParticle;
 
     public GuiParticleAnimator(final int startX, final int startY, final int destX, final int destY, final float time,
-            @Nonnull final EnumGuiParticles particle) {
+            @NonNull final EnumGuiParticles particle) {
         // Set starting position
         this.startingX = startX;
         this.startingY = startY;

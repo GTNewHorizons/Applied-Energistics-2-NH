@@ -5,9 +5,8 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import javax.annotation.Nonnull;
-
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.storage.data.AEStackTypeRegistry;
@@ -109,7 +108,7 @@ public final class IAEStackList implements IItemList<IAEStack<?>> {
     }
 
     @Override
-    @Nonnull
+    @NonNull
     @SuppressWarnings({ "rawtypes" })
     public Iterator<IAEStack<?>> iterator() {
         return new MeaningfulAEStackIterator<>(new Iterator<>() {

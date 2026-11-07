@@ -21,7 +21,7 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
@@ -78,7 +78,7 @@ public class GuiPatternTerm extends GuiMEMonitorable {
     protected VirtualMEPatternSlot[] craftingSlots;
     protected VirtualMEPatternSlot[] outputSlots;
     private boolean craftingMode;
-    @NotNull
+    @NonNull
     private IAEItemStack blankPatternView = IPatternTerminal.createBlankPattern().setStackSize(0);
 
     public GuiPatternTerm(final InventoryPlayer inventoryPlayer, final ITerminalHost te,

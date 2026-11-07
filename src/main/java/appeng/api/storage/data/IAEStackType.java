@@ -8,9 +8,9 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IIcon;
 import net.minecraft.util.ResourceLocation;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -49,7 +49,7 @@ public interface IAEStackType<T extends IAEStack> {
      * @return AEStack with correct stack size
      */
     @Nullable
-    T getStackFromContainerItem(@NotNull ItemStack container);
+    T getStackFromContainerItem(@NonNull ItemStack container);
 
     /**
      * mainly used for GT Fluid Display and TC4 aspect item
@@ -58,34 +58,34 @@ public interface IAEStackType<T extends IAEStack> {
      * @return AEStack
      */
     @Nullable
-    T convertStackFromItem(@NotNull ItemStack itemStack);
+    T convertStackFromItem(@NonNull ItemStack itemStack);
 
     /**
      * @param container container item for this type
      * @param stack     type for capacity. For containers that only accept certain types.
      * @return capacity for stack in param
      */
-    long getContainerItemCapacity(@NotNull ItemStack container, @NotNull T stack);
+    long getContainerItemCapacity(@NonNull ItemStack container, @NonNull T stack);
 
     /**
      * @param stack to drain with amount
      * @return drained container and drained amount, or null if not drained
      */
-    @NotNull
-    ObjectLongPair<ItemStack> drainStackFromContainer(@NotNull ItemStack container, @NotNull T stack);
+    @NonNull
+    ObjectLongPair<ItemStack> drainStackFromContainer(@NonNull ItemStack container, @NonNull T stack);
 
     /**
      * @param container filled container
      * @return empty container
      */
     @Nullable
-    ItemStack clearFilledContainer(@NotNull ItemStack container);
+    ItemStack clearFilledContainer(@NonNull ItemStack container);
 
     /**
      * @return filled container and amount
      */
-    @NotNull
-    ObjectLongPair<ItemStack> fillContainer(@NotNull ItemStack container, @NotNull T stack);
+    @NonNull
+    ObjectLongPair<ItemStack> fillContainer(@NonNull ItemStack container, @NonNull T stack);
 
     /**
      * Gets the texture resource location for the button representing this stack type. Primarily used for terminal

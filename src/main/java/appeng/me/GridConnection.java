@@ -13,11 +13,10 @@ package appeng.me;
 import java.util.EnumSet;
 import java.util.Objects;
 
-import javax.annotation.Nullable;
-
 import net.minecraftforge.common.util.ForgeDirection;
 
 import org.apache.logging.log4j.Level;
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.base.Preconditions;
 

@@ -18,13 +18,13 @@ import java.util.IdentityHashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IChatComponent;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.AEApi;
 import appeng.api.config.Actionable;
@@ -210,7 +210,7 @@ public class MECraftingInventory implements IMEInventory<IAEStack> {
     }
 
     @SuppressWarnings({ "rawtypes" })
-    public IAEStack getAvailableItem(@Nonnull IAEStack request) {
+    public IAEStack getAvailableItem(@NonNull IAEStack request) {
         IAEStack<?> stack = this.inventoryMap.get(request.getStackType()).findPrecise(request);
         return stack != null ? stack.copy() : null;
     }

@@ -14,7 +14,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Preconditions;
 
@@ -24,7 +24,7 @@ public final class CompassReader {
     private final int dimensionId;
     private final File worldCompassFolder;
 
-    public CompassReader(final int dimensionId, @Nonnull final File worldCompassFolder) {
+    public CompassReader(final int dimensionId, @NonNull final File worldCompassFolder) {
         Preconditions.checkNotNull(worldCompassFolder);
         Preconditions.checkArgument(worldCompassFolder.isDirectory());
 

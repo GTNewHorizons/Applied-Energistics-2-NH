@@ -34,7 +34,7 @@ import net.minecraftforge.common.util.Constants.NBT;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.ForgeEventFactory;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Preconditions;
 
@@ -332,7 +332,7 @@ public abstract class AEBasePart implements IPart, IGridProxyable, IActionHost, 
      * @param from     source of settings
      * @param compound compound of source
      */
-    public void uploadSettings(@NotNull final SettingsFrom from, @NotNull final NBTTagCompound compound) {
+    public void uploadSettings(@NonNull final SettingsFrom from, @NonNull final NBTTagCompound compound) {
         if (compound.hasKey("display", NBT.TAG_COMPOUND)) {
             NBTTagCompound display = compound.getCompoundTag("display");
             if (display.hasKey("Name", NBT.TAG_STRING)) {
@@ -376,8 +376,8 @@ public abstract class AEBasePart implements IPart, IGridProxyable, IActionHost, 
      * @param from source of settings
      * @return compound of source
      */
-    @NotNull
-    public NBTTagCompound downloadSettings(@NotNull final SettingsFrom from) {
+    @NonNull
+    public NBTTagCompound downloadSettings(@NonNull final SettingsFrom from) {
         final NBTTagCompound output = new NBTTagCompound();
 
         if (this.hasCustomName()) {
@@ -456,7 +456,7 @@ public abstract class AEBasePart implements IPart, IGridProxyable, IActionHost, 
                         ToolMemoryCard.setUpgradesInfo(data, ui);
 
                     if (this instanceof IInterfaceHost iHost) {
-                        ToolMemoryCard.savePatterns(data, iHost);
+                        ToolMemoryCard.savePatterns(data, player, iHost);
                     }
 
                     memoryCard.notifyUser(player, MemoryCardMessages.SETTINGS_SAVED);

@@ -9,7 +9,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import com.glodblock.github.common.storage.CellType;
 import com.glodblock.github.loader.ItemAndBlockHolder;
@@ -41,7 +41,7 @@ public abstract class FCBaseItemCell extends AEBaseCell {
     }
 
     @Override
-    public @NotNull IAEStackType<?> getStackType() {
+    public @NonNull IAEStackType<?> getStackType() {
         return FLUID_STACK_TYPE;
     }
 

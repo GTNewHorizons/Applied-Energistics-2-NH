@@ -3,7 +3,7 @@ package net.p455w0rd.wirelesscraftingterminal.integration;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import cpw.mods.fml.relauncher.FMLLaunchHandler;
 import cpw.mods.fml.relauncher.Side;
@@ -73,7 +73,7 @@ public enum IntegrationRegistry {
         return false;
     }
 
-    @Nonnull
+    @NonNull
     public Object getInstance(final IntegrationType name) {
         for (final IntegrationNode node : this.modules) {
             if (node.getShortName() == name && node.isActive()) {

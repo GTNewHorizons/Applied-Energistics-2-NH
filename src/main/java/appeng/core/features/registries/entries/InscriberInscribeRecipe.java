@@ -2,10 +2,10 @@ package appeng.core.features.registries.entries;
 
 import java.util.Collection;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.features.InscriberProcessType;
 
@@ -18,7 +18,7 @@ import appeng.api.features.InscriberProcessType;
  */
 public class InscriberInscribeRecipe extends InscriberRecipe {
 
-    public InscriberInscribeRecipe(@Nonnull final Collection<ItemStack> inputs, @Nonnull final ItemStack output,
+    public InscriberInscribeRecipe(@NonNull final Collection<ItemStack> inputs, @NonNull final ItemStack output,
             @Nullable final ItemStack top, @Nullable final ItemStack bot) {
         super(inputs, output, top, bot, InscriberProcessType.Inscribe);
     }

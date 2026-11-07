@@ -1,8 +1,5 @@
 package thaumicenergistics.common.utils;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.entity.player.EntityPlayer;
@@ -11,6 +8,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.oredict.OreDictionary;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -90,8 +90,8 @@ public final class ThEUtils {
      * @param tile
      * @return
      */
-    public static final boolean canPlayerInteractWith(@Nonnull final EntityPlayer player,
-            @Nonnull final TileEntity tile) {
+    public static final boolean canPlayerInteractWith(@NonNull final EntityPlayer player,
+            @NonNull final TileEntity tile) {
         TileEntity tileAtCoords = tile.getWorldObj().getTileEntity(tile.xCoord, tile.yCoord, tile.zCoord);
 
         // Null check

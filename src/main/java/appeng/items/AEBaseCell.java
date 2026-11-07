@@ -18,7 +18,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.ForgeEventFactory;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Optional;
 import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
@@ -445,12 +445,22 @@ public abstract class AEBaseCell extends AEBaseItem implements IStorageCell, IIt
             ItemStackNBT.removeTag(is, "cellRestrictionTypes");
             ItemStackNBT.removeTag(is, "cellRestrictionAmount");
         } else {
-            ItemStackNBT.setByte(is, "cellRestrictionTypes", newRestriction.restrictionTypes);
-            ItemStackNBT.setLong(is, "cellRestrictionAmount", newRestriction.restrictionAmount);
+            long effectiveTypes = newRestriction.restrictionTypes == 0 ? this.totalTypes
+                    : Math.min(newRestriction.restrictionTypes, this.totalTypes);
+
+            long maxAmount = (this.totalBytes - (long) this.perType * effectiveTypes)
+                    * this.getStackType().getAmountPerByte();
+
+            long amount = Math.min(newRestriction.restrictionAmount, maxAmount);
+            ItemStackNBT.setByte(
+                    is,
+                    "cellRestrictionTypes",
+                    (byte) Math.min(newRestriction.restrictionTypes, this.totalTypes));
+            ItemStackNBT.setLong(is, "cellRestrictionAmount", amount);
         }
     }
 
     @Override
-    @NotNull
+    @NonNull
     public abstract IAEStackType<?> getStackType();
 }

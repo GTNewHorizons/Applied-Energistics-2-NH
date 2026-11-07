@@ -10,7 +10,7 @@
 
 package appeng.services.export;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * @author thatsIch
@@ -60,7 +60,7 @@ public interface ExportConfig {
      *
      * @param digest new digest for the cache
      */
-    void setCache(@Nonnull String digest);
+    void setCache(@NonNull String digest);
 
     /**
      * Will delegate the saving

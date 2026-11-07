@@ -14,7 +14,7 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.AEApi;
 import appeng.api.config.CraftingAllow;
@@ -174,7 +174,7 @@ public class ContainerCraftingCPU extends AEBaseContainer
         return result;
     }
 
-    private static List<CraftingCpuEntry> buildVisualEntryUpdates(@NotNull final CraftingCPUCluster monitor,
+    private static List<CraftingCpuEntry> buildVisualEntryUpdates(@NonNull final CraftingCPUCluster monitor,
             final Iterable<IAEStack<?>> changedStacks) {
         final List<CraftingCpuEntry> updates = new ArrayList<>();
         for (final IAEStack<?> stack : changedStacks) {

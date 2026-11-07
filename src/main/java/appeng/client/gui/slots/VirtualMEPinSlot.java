@@ -2,12 +2,11 @@ package appeng.client.gui.slots;
 
 import static net.minecraft.client.gui.Gui.drawRect;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.util.ResourceLocation;
 
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 
 import appeng.api.storage.data.IAEStack;

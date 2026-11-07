@@ -6,26 +6,26 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import codechicken.nei.PositionedStack;
 import codechicken.nei.recipe.IRecipeHandler;
 
 public class AvaritiaRecipeProcessor implements IRecipeProcessor {
 
-    @Nonnull
+    @NonNull
     @Override
     public Set<String> getAllOverlayIdentifier() {
         return new HashSet<>(Arrays.asList("extreme", "extreme_compression"));
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public String getRecipeProcessorId() {
         return "Avaritia";
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public List<PositionedStack> getRecipeInput(IRecipeHandler recipe, int recipeIndex, String identifier) {
         List<PositionedStack> recipeInputs = new ArrayList<>();
@@ -36,7 +36,7 @@ public class AvaritiaRecipeProcessor implements IRecipeProcessor {
         return recipeInputs;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public List<PositionedStack> getRecipeOutput(IRecipeHandler recipe, int recipeIndex, String identifier) {
         List<PositionedStack> recipeOutput = new ArrayList<>();

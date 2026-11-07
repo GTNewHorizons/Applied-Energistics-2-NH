@@ -20,8 +20,6 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -30,7 +28,8 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
 
@@ -564,7 +563,7 @@ public class ContainerMEMonitorable extends AEBaseContainer
         return this.gui;
     }
 
-    public void setGui(@Nonnull final IConfigManagerHost gui) {
+    public void setGui(@NonNull final IConfigManagerHost gui) {
         this.gui = gui;
     }
 
@@ -1342,7 +1341,7 @@ public class ContainerMEMonitorable extends AEBaseContainer
         return null;
     }
 
-    protected ItemStack shiftStoreItem(@Nonnull final ItemStack input) {
+    protected ItemStack shiftStoreItem(@NonNull final ItemStack input) {
         if (this.getPowerSource() == null) return input;
 
         if (input.getItem() instanceof ItemMEStackPacket) {

@@ -2,7 +2,7 @@ package thaumicenergistics.common.inventory;
 
 import static thaumicenergistics.common.storage.AEEssentiaStackType.ESSENTIA_STACK_TYPE;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.storage.IMEInventory;
@@ -25,7 +25,7 @@ public class EssentiaCellInventoryHandler extends CellInventoryHandler<AEEssenti
         return TYPE.ESSENTIA;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public IAEStackType<?> getStackType() {
         return ESSENTIA_STACK_TYPE;
