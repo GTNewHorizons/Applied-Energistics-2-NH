@@ -233,8 +233,9 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
             do {
                 taskState = context.doWork();
                 totalByteCost = -1;
-                // The plan was made against a snapshot of the AE system from when the job started, check it still holds
-                if (taskState == CraftingTask.State.SUCCESS && reconcile()) {
+                // The plan was made against a snapshot of the AE system from when the job started, check it still
+                // holds. A plan with missing items can't be started anyway, so there is nothing to keep up to date.
+                if (taskState == CraftingTask.State.SUCCESS && !context.wasSimulated && reconcile()) {
                     taskState = CraftingTask.State.NEEDS_MORE_WORK;
                 }
             } while (taskState.needsMoreWork && System.currentTimeMillis() < finishTime && (state == State.RUNNING));
@@ -271,7 +272,7 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
      * @return If the job went back to running, in which case it has to be scheduled again before it can be started
      */
     public boolean reconcileWithLiveStorage() {
-        if (this.state != State.FINISHED) {
+        if (this.state != State.FINISHED || context.wasSimulated) {
             return false;
         }
         try {

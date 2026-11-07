@@ -954,6 +954,53 @@ public class CraftingV2Tests {
     }
 
     @Test
+    void plansWithMissingItemsAreNotReplanned() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        aeSystem.newProcessingPattern().addInput(new ItemStack(Items.diamond, 1))
+                .addOutput(new ItemStack(Items.stick, 1)).buildAndAdd();
+        final CraftingJobV2 job = aeSystem
+                .makeCraftingJob(new ItemStack(Items.stick, 20), new PlayerSource(null, null));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertTrue(job.isSimulation());
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(20),
+                AEItemStack.create(new ItemStack(Items.diamond, 20)));
+
+        // The plan can't be started anyway, re-planning it would only spend attempts and spam the player
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 5));
+        assertFalse(job.reconcileWithLiveStorage(), "Plans that are already simulations should not be re-planned");
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(20),
+                AEItemStack.create(new ItemStack(Items.diamond, 20)));
+    }
+
+    @Test
+    void plansThatBecomeSimulationsDuringCalculationAreNotReplanned() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        aeSystem.newProcessingPattern().addInput(new ItemStack(Items.diamond, 1))
+                .addOutput(new ItemStack(Items.stick, 1)).buildAndAdd();
+        final CraftingJobV2 job = aeSystem
+                .makeCraftingJob(new ItemStack(Items.stick, 20), new PlayerSource(null, null));
+        // The job already took its snapshot of the storage
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 5));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertTrue(job.isSimulation());
+        // Without the re-plan the 13 diamonds of the snapshot stay planned as extracted
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(20),
+                AEItemStack.create(new ItemStack(Items.diamond, 20)));
+        assertEquals(
+                13,
+                job.getStorageAtBeginning().getAvailableItem(AEItemStack.create(new ItemStack(Items.diamond, 1)))
+                        .getStackSize());
+    }
+
+    @Test
     void machineRequestsRetryOnlyOnce() {
         MockAESystem aeSystem = new MockAESystem(dummyWorld);
         aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
