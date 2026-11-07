@@ -900,6 +900,55 @@ public class CraftingV2Tests {
     }
 
     @Test
+    void replanUsesLiveStorageForNewIngredients() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        aeSystem.addStoredItem(new ItemStack(Items.gold_ingot, 64));
+        addExpensiveStickPatterns(aeSystem);
+        final CraftingJobV2 job = aeSystem.makeCraftingJob(new ItemStack(Items.stick, 13));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+
+        // The gold wasn't part of the plan, but the re-plan needs it and must not use the old snapshot
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 5));
+        aeSystem.removeStoredItem(new ItemStack(Items.gold_ingot, 64));
+        assertTrue(job.reconcileWithLiveStorage());
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertTrue(job.isSimulation(), "Gold that is gone must not be planned as extracted");
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 8)).setCountRequestable(5),
+                AEItemStack.create(new ItemStack(Items.gold_ingot, 5)));
+        assertEquals(
+                0,
+                job.getStorageAtBeginning().getAvailableItem(AEItemStack.create(new ItemStack(Items.gold_ingot, 1)))
+                        .getStackSize());
+    }
+
+    @Test
+    void replanSeesItemsAddedAfterCalculation() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        addExpensiveStickPatterns(aeSystem);
+        final CraftingJobV2 job = aeSystem.makeCraftingJob(new ItemStack(Items.stick, 13));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+
+        // Gold inserted after the calculation can be used to craft the missing diamonds
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 5));
+        aeSystem.addStoredItem(new ItemStack(Items.gold_ingot, 64));
+        assertTrue(job.reconcileWithLiveStorage());
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 8)).setCountRequestable(5),
+                AEItemStack.create(new ItemStack(Items.gold_ingot, 5)));
+    }
+
+    @Test
     void fuzzyExtractionReplansAfterPartialRefund() {
         MockAESystem aeSystem = new MockAESystem(dummyWorld);
         aeSystem.addStoredItem(new ItemStack(Blocks.planks, 8, 0));

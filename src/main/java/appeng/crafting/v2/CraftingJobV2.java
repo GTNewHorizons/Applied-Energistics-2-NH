@@ -18,8 +18,6 @@ import net.minecraft.world.World;
 
 import org.apache.logging.log4j.Level;
 
-import com.github.bsideup.jabel.Desugar;
-
 import appeng.api.AEApi;
 import appeng.api.config.Actionable;
 import appeng.api.config.CraftingMode;
@@ -31,7 +29,9 @@ import appeng.api.networking.security.BaseActionSource;
 import appeng.api.networking.security.PlayerSource;
 import appeng.api.networking.storage.IStorageGrid;
 import appeng.api.storage.IMEMonitor;
+import appeng.api.storage.data.AEStackTypeRegistry;
 import appeng.api.storage.data.IAEStack;
+import appeng.api.storage.data.IAEStackType;
 import appeng.api.storage.data.IItemList;
 import appeng.core.AELog;
 import appeng.core.localization.PlayerMessages;
@@ -318,7 +318,6 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
         }
 
         final Set<CraftingRequest> toReopen = Collections.newSetFromMap(new IdentityHashMap<>());
-        final List<PlannedStack> plannedStacks = new ArrayList<>();
         /** How much of each stack the plan gave up on extracting */
         final IItemList<IAEStack<?>> shrunkByStack = AEApi.instance().storage().createAEStackList();
         for (IAEStack<?> plannedStack : planned) {
@@ -337,20 +336,14 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
                     toReopen.add(task.request);
                 }
             }
-            plannedStacks.add(new PlannedStack(plannedStack, live));
         }
         if (toReopen.isEmpty()) {
             return false;
         }
 
-        // Bring the snapshot up to date for everything the plan uses, so re-resolving doesn't plan with items that are
-        // gone, and the plan shown to the player compares against the right amounts
-        for (PlannedStack plannedStack : plannedStacks) {
-            final IAEStack<?> shrunk = shrunkByStack.findPrecise(plannedStack.stack);
-            final long stillPlanned = plannedStack.stack.getStackSize() - (shrunk == null ? 0 : shrunk.getStackSize());
-            setAvailableAmount(context.itemModel, plannedStack.stack, Math.max(0, plannedStack.live - stillPlanned));
-            setAvailableAmount(context.availableCache, plannedStack.stack, plannedStack.live);
-        }
+        // Bring the whole snapshot up to date, not just the stacks the plan already used: re-resolving may need other
+        // ingredients that have changed as well, and the plan shown to the player compares against the right amounts
+        resyncSnapshot(sg, shrunkByStack);
 
         reconcileRounds++;
         notifyPlayerOfRetry(shrunkByStack);
@@ -374,10 +367,49 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
     }
 
     /**
-     * A stack the plan extracts from the AE system, with how much of it the system currently holds.
+     * Applies every change of the AE system since the snapshot was taken to the item model and the snapshot itself.
+     * Only the differences are applied, so items the plan already extracted, returned or produced as leftovers stay
+     * accounted for.
+     *
+     * @param shrunkByStack What the plan gave up on extracting because it is gone. The item model never held those, so
+     *                      they must not be subtracted from it a second time.
      */
-    @Desugar
-    private record PlannedStack(IAEStack<?> stack, long live) {}
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private void resyncSnapshot(IStorageGrid sg, IItemList<IAEStack<?>> shrunkByStack) {
+        for (IAEStackType<?> type : AEStackTypeRegistry.getAllTypes()) {
+            final IMEMonitor monitor = sg.getMEMonitor(type);
+            if (monitor == null) {
+                continue;
+            }
+            final IItemList<IAEStack<?>> live = monitor.getStorageList();
+            for (IAEStack<?> liveStack : live) {
+                applyLiveAmount(liveStack, Math.max(0, liveStack.getStackSize()), shrunkByStack);
+            }
+            // Stacks of the snapshot that the system doesn't hold at all anymore
+            for (IAEStack<?> cached : (Iterable<IAEStack<?>>) context.availableCache
+                    .getAvailableItems(type.createList())) {
+                if (live.findPrecise((IAEStack) cached) == null) {
+                    applyLiveAmount(cached, 0, shrunkByStack);
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private void applyLiveAmount(IAEStack<?> stack, long liveAmount, IItemList<IAEStack<?>> shrunkByStack) {
+        final IAEStack<?> cached = context.availableCache.findPrecise((IAEStack) stack);
+        final long cachedAmount = cached == null ? 0 : cached.getStackSize();
+        final IAEStack<?> shrunk = shrunkByStack.findPrecise((IAEStack) stack);
+        final long delta = liveAmount - cachedAmount + (shrunk == null ? 0 : shrunk.getStackSize());
+        if (delta != 0) {
+            final IAEStack<?> modelled = context.itemModel.findPrecise((IAEStack) stack);
+            final long modelledAmount = modelled == null ? 0 : modelled.getStackSize();
+            setAvailableAmount(context.itemModel, stack, Math.max(0, modelledAmount + delta));
+        }
+        if (liveAmount != cachedAmount) {
+            setAvailableAmount(context.availableCache, stack, liveAmount);
+        }
+    }
 
     /**
      * Players get several attempts to keep up with a changing network, machines (e.g. level maintainers) only one, they
