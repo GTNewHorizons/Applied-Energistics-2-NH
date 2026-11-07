@@ -205,6 +205,14 @@ public class MECraftingInventory implements IMEInventory<IAEStack> {
         return out;
     }
 
+    /**
+     * The stacks of one type held by this inventory, for iteration only. Unlike {@link #getAvailableItems(IItemList)}
+     * nothing is copied, so the returned list must not be modified by the caller.
+     */
+    public IItemList<IAEStack> getStoredStacks(final IAEStackType<?> type) {
+        return this.inventoryMap.get(type);
+    }
+
     @SuppressWarnings({ "rawtypes" })
     public IAEStack getAvailableItem(@NonNull IAEStack request) {
         IAEStack<?> stack = this.inventoryMap.get(request.getStackType()).findPrecise(request);

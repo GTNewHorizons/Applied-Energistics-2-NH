@@ -414,9 +414,9 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
             for (IAEStack<?> liveStack : live) {
                 applyLiveAmount(liveStack, Math.max(0, liveStack.getStackSize()), shrunkByStack);
             }
-            // Stacks of the snapshot that the system doesn't hold at all anymore
-            for (IAEStack<?> cached : (Iterable<IAEStack<?>>) context.availableCache
-                    .getAvailableItems(type.createList())) {
+            // Stacks of the snapshot that the system doesn't hold at all anymore. Only amounts change while iterating,
+            // so the snapshot's own list can be walked without copying it first.
+            for (IAEStack<?> cached : context.availableCache.getStoredStacks(type)) {
                 if (live.findPrecise((IAEStack) cached) == null) {
                     applyLiveAmount(cached, 0, shrunkByStack);
                 }
