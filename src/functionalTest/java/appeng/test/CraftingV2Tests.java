@@ -980,6 +980,35 @@ public class CraftingV2Tests {
     }
 
     @Test
+    void partialRefundSpansAllEntriesOfAFuzzyExtraction() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Blocks.planks, 16, 0));
+        aeSystem.addStoredItem(new ItemStack(Blocks.planks, 8, 1));
+        addFuzzyProcessingChestPattern(aeSystem);
+        final CraftingJobV2 job = aeSystem.makeCraftingJob(new ItemStack(Blocks.chest, 3));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Blocks.planks, 16, 0)),
+                AEItemStack.create(new ItemStack(Blocks.planks, 8, 1)),
+                AEItemStack.create(new ItemStack(Blocks.chest, 0)).setCountRequestable(3));
+
+        // The extract task recorded the exact match before the substitute, but hands the substitute back first. A
+        // refund larger than the first entry has to be covered by the task's total, not by that entry alone.
+        final CraftingRequest planks = job.getContext().getLiveRequests().stream().map(r -> r.request)
+                .filter(r -> r.stack.equals(AEItemStack.create(new ItemStack(Blocks.planks, 1, 0)))).findFirst()
+                .orElseThrow(AssertionError::new);
+        planks.partialRefund(job.getContext(), 17);
+        assertEquals(7, planks.stack.getStackSize());
+        assertEquals(0, planks.remainingToProcess);
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Blocks.planks, 7, 0)),
+                AEItemStack.create(new ItemStack(Blocks.chest, 0)).setCountRequestable(3));
+    }
+
+    @Test
     void craftableItemsWithMissingInputsShowTheInputAsMissing() {
         MockAESystem aeSystem = new MockAESystem(dummyWorld);
         aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));

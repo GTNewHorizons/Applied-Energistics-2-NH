@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -349,18 +350,28 @@ public class CraftingRequest implements ITreeSerializable {
      */
     public void partialRefund(CraftingContext context, final long refundedAmount) {
         long remainingTaskAmount = refundedAmount;
+        // Refund task by task, not entry by entry: a task with several entries (an extract task that used fuzzy
+        // substitutes) gives back its latest items first, which can empty a later entry while asking for an earlier
+        // one. Asking for the task's total across all its entries keeps the amounts in step.
+        final Set<CraftingTask> refundedTasks = Collections.newSetFromMap(new IdentityHashMap<>());
         for (UsedResolverEntry resolver : usedResolvers) {
             if (remainingTaskAmount <= 0) {
                 break;
             }
-            if (resolver.resolvedStack.getStackSize() <= 0) {
+            if (!refundedTasks.add(resolver.task)) {
                 continue;
             }
-            final long taskRefunded = resolver.task
-                    .partialRefund(context, Math.min(remainingTaskAmount, resolver.resolvedStack.getStackSize()));
+            long taskTotal = 0;
+            for (UsedResolverEntry entry : usedResolvers) {
+                if (entry.task == resolver.task) {
+                    taskTotal += entry.resolvedStack.getStackSize();
+                }
+            }
+            if (taskTotal <= 0) {
+                continue;
+            }
+            final long taskRefunded = resolver.task.partialRefund(context, Math.min(remainingTaskAmount, taskTotal));
             remainingTaskAmount -= taskRefunded;
-            // A task with several entries (an extract task that used fuzzy substitutes) gives back its latest items
-            // first, so reduce its entries in that order as well instead of only this one.
             if (reduceEntriesOf(resolver.task, null, taskRefunded) != 0) {
                 throw new IllegalStateException(
                         "Task " + resolver.task + " refunded more than it resolved for request " + this);
