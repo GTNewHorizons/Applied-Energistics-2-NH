@@ -133,9 +133,9 @@ public class GuiCraftConfirm extends GuiSub implements ICraftingCPUTableHolder, 
 
     private int rows = 5;
 
-    private final IItemList<IAEStack<?>> storage = new IAEStackList();
-    private final IItemList<IAEStack<?>> pending = new IAEStackList();
-    private final IItemList<IAEStack<?>> missing = new IAEStackList();
+    private IItemList<IAEStack<?>> storage = new IAEStackList();
+    private IItemList<IAEStack<?>> pending = new IAEStackList();
+    private IItemList<IAEStack<?>> missing = new IAEStackList();
     private CraftingJobV2 jobTree = null;
 
     private final List<IAEStack<?>> visual = new ArrayList<>();
@@ -802,9 +802,11 @@ public class GuiCraftConfirm extends GuiSub implements ICraftingCPUTableHolder, 
             // The server sends a plan as one storage packet, followed by the pending and (for simulations) missing
             // packets, and never splits a plan across packets. A storage packet therefore always begins a fresh plan
             // that replaces what is shown, e.g. after the job was re-planned because ingredients went missing.
-            this.storage.resetStatus();
-            this.pending.resetStatus();
-            this.missing.resetStatus();
+            // Start from empty lists: resetting would only zero the old entries, and the drawing and sorting code
+            // treats any entry that is present as part of the plan.
+            this.storage = new IAEStackList();
+            this.pending = new IAEStackList();
+            this.missing = new IAEStackList();
             this.visual.clear();
         }
         for (final IAEStack<?> stack : list) {

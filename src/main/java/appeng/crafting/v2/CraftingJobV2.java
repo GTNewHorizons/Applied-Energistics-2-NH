@@ -247,7 +247,7 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
                 }
             } while (taskState.needsMoreWork && System.currentTimeMillis() < finishTime && (state == State.RUNNING));
         } catch (Exception e) {
-            AELog.error(e, "Error while simulating crafting for " + originalRequest);
+            logCalculationFailure(e, "simulating");
             errorMessage = e.toString();
             this.state = State.CANCELLED;
             if (callback != null) {
@@ -288,13 +288,28 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
             }
         } catch (Exception e) {
             // Called from the confirm screen's start button, surface the problem there instead of throwing out of it
-            AELog.error(e, "Error while re-planning crafting for " + originalRequest);
+            logCalculationFailure(e, "re-planning");
             errorMessage = e.toString();
             this.state = State.CANCELLED;
             return true;
         }
         this.state = State.RUNNING;
         return true;
+    }
+
+    /**
+     * Logs an exception that ended the calculation. Ingredients that kept going missing are an expected outcome the
+     * player is told about in chat, like a job that could not start because items were missing, so they are only logged
+     * with the crafting debug log enabled.
+     */
+    private void logCalculationFailure(Exception e, String activity) {
+        if (e instanceof CraftingIngredientsKeptChanging) {
+            if (AELog.isCraftingDebugLogEnabled()) {
+                AELog.warn("Crafting job for %s gave up while %s: %s", originalRequest, activity, e.getMessage());
+            }
+        } else {
+            AELog.error(e, "Error while " + activity + " crafting for " + originalRequest);
+        }
     }
 
     /**
@@ -343,12 +358,11 @@ public class CraftingJobV2<StackType extends IAEStack<StackType>>
             return false;
         }
         if (reconcileRounds >= getMaxReconcileRounds()) {
+            // The exception's toString() is a translation key for the confirm screen, the detail (including which
+            // items are missing) is its message, which the catch sites log when the crafting debug log is enabled
             final String detail = "Ingredients are still missing after re-planning " + reconcileRounds
                     + " time(s), the network keeps changing. Missing: "
                     + formatMissingForLog(shortfalls);
-            // The exception's toString() is a translation key for the confirm screen, so the catch sites' error log
-            // would not show which items are missing. Log the detail here.
-            AELog.warn("Crafting job for %s gave up: %s", originalRequest.toString(), detail);
             notifyPlayer(PlayerMessages.CraftingIngredientsChangedGaveUp, shortfalls, reconcileRounds);
             throw new CraftingIngredientsKeptChanging(detail);
         }
