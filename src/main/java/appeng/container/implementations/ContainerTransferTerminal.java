@@ -108,7 +108,7 @@ public class ContainerTransferTerminal extends AEBaseContainer {
         this.hasScanned = true;
     }
 
-    private IAEStack<?> getQuery() {
+    public IAEStack<?> getQuery() {
         return this.query.getAEStackInSlot(0);
     }
 
