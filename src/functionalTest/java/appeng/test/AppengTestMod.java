@@ -20,6 +20,7 @@ import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import org.junit.platform.reporting.legacy.xml.LegacyXmlReportGeneratingListener;
 
+import appeng.test.stacks.FuzzyTestItems;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
@@ -40,6 +41,8 @@ public class AppengTestMod {
         // Disable GT5u messing with vanilla recipes for unit tests
         GTMod.gregtechproxy.mNerfedWoodPlank = false;
         GTMod.gregtechproxy.mChangeWoodenVanillaTools = false;
+
+        FuzzyTestItems.register();
     }
 
     @EventHandler
