@@ -16,6 +16,10 @@ package appeng.api.storage.data;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
+import org.jspecify.annotations.NonNull;
+
+import appeng.api.stacks.AEItemKey;
+
 /**
  * An alternate version of ItemStack for AE to keep tabs on things easier, and to support larger storage. stackSizes of
  * getItemStack will be capped.
@@ -90,4 +94,8 @@ public interface IAEItemStack extends IAEStack<IAEItemStack> {
      * @return true if it is the same type (same item, damage, nbt)
      */
     boolean isSameType(ItemStack stored);
+
+    @NonNull
+    @Override
+    AEItemKey getKey();
 }

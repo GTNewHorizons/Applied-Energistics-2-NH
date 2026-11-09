@@ -105,6 +105,8 @@ import appeng.api.networking.storage.IStorageGrid;
 import appeng.api.parts.IPart;
 import appeng.api.parts.IPartHost;
 import appeng.api.parts.SelectedPart;
+import appeng.api.stacks.AEKey;
+import appeng.api.stacks.GenericStack;
 import appeng.api.storage.IMEInventory;
 import appeng.api.storage.IMEMonitor;
 import appeng.api.storage.IMEMonitorHandlerReceiver;
@@ -190,6 +192,7 @@ public class Platform {
     public static final boolean isGTLoaded = IntegrationRegistry.INSTANCE.isEnabled(IntegrationType.GT);
     public static final boolean isThaumicEnergisticsLoaded = Loader.isModLoaded("thaumicenergistics");
     public static final boolean isEndlessIdsLoaded = Loader.isModLoaded("endlessids");
+    public static final boolean isNEILoaded = Loader.isModLoaded("NotEnoughItems");
 
     static {
         BYTE_LIMIT = new double[10];
@@ -1938,7 +1941,8 @@ public class Platform {
      * @return (a divided by b) rounded up
      */
     public static long ceilDiv(long a, long b) {
-        return Math.addExact(Math.addExact(a, b), -1) / b;
+        final long quotient = a / b;
+        return a % b != 0 && (a ^ b) >= 0 ? quotient + 1 : quotient;
     }
 
     /**
@@ -2221,6 +2225,16 @@ public class Platform {
     public static void handleLeftover(final EntityPlayer p, final IAEStack<?> aes) {
         final ItemStack container = AEApi.instance().definitions().items().itemMEStackPacket().maybeStack(1).get();
         Platform.writeStackNBT(aes, ItemStackNBT.get(container));
+        addToPlayerInvOrDrop(p, container);
+    }
+
+    /**
+     * Gives {@code amount} of {@code what} to the player wrapped in an ME stack packet, dropping it if the inventory is
+     * full.
+     */
+    public static void handleLeftover(final EntityPlayer p, final AEKey what, final long amount) {
+        final ItemStack container = AEApi.instance().definitions().items().itemMEStackPacket().maybeStack(1).get();
+        container.setTagCompound(new GenericStack(what, amount).toNBT());
         addToPlayerInvOrDrop(p, container);
     }
 

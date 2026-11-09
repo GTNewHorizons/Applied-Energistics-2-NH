@@ -4,12 +4,16 @@ import net.minecraftforge.client.MinecraftForgeClient;
 import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.common.MinecraftForge;
 
+import appeng.client.api.AEKeyRendering;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import thaumicenergistics.client.render.EssentiaKeyRenderer;
 import thaumicenergistics.client.render.item.ItemCellMicroscopeRenderer;
 import thaumicenergistics.client.textures.BlockTextureManager;
 import thaumicenergistics.common.CommonProxy;
 import thaumicenergistics.common.items.ItemEnum;
 import thaumicenergistics.common.registries.Renderers;
+import thaumicenergistics.common.storage.AEEssentiaKey;
+import thaumicenergistics.common.storage.EssentiaKeyType;
 
 /**
  * Client side proxy.
@@ -25,6 +29,8 @@ public class ClientProxy extends CommonProxy {
 
     @Override
     public void registerRenderers() {
+        AEKeyRendering.register(EssentiaKeyType.INSTANCE, AEEssentiaKey.class, new EssentiaKeyRenderer());
+
         // Register the custom block renderers
         Renderers.registerRenderers();
 

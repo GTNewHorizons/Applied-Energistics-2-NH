@@ -22,6 +22,7 @@ import com.google.common.base.Stopwatch;
 
 import appeng.api.events.LocatableEventAnnounce;
 import appeng.api.events.LocatableEventAnnounce.LocatableEvent;
+import appeng.api.stacks.AEKeyTypeRegistry;
 import appeng.api.storage.data.AEStackTypeRegistry;
 import appeng.core.crash.CrashInfo;
 import appeng.core.crash.IntegrationCrashEnhancement;
@@ -184,6 +185,7 @@ public final class AppEng {
         AELog.info("Initialization ( started )");
 
         AEStackTypeRegistry.initNetworkIds();
+        AEKeyTypeRegistry.finalizeRegistration();
 
         if (this.exportConfig.isExportingItemNamesEnabled()) {
             final ExportProcess process = new ExportProcess(this.recipeDirectory, this.exportConfig);
