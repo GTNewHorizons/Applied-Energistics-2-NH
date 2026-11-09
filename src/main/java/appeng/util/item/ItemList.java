@@ -79,7 +79,7 @@ public final class ItemList implements IItemList<IAEItemStack> {
         final AEItemStack ais = (AEItemStack) filter;
 
         if (ais.isOre()) {
-            final OreReference or = ais.getDefinition().getIsOre();
+            final OreReference or = ais.getOreReference();
 
             if (or.getAEEquivalents().size() == 1) {
                 final IAEItemStack is = or.getAEEquivalents().get(0);

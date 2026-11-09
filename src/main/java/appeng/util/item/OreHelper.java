@@ -11,20 +11,23 @@
 package appeng.util.item;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.oredict.OreDictionary;
+
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Sets;
 
+import appeng.api.stacks.AEItemKey;
 import appeng.api.storage.data.IAEItemStack;
 
 public class OreHelper {
@@ -43,7 +46,13 @@ public class OreHelper {
                 }
             });
 
-    private final Map<ItemRef, OreReference> references = new HashMap<>();
+    /** Cached in {@link #references} for items without ore entries, since the map does not accept null. */
+    private static final OreReference NO_ORES = new OreReference();
+
+    /**
+     * Shared by the client and server threads, and read by crafting calculations.
+     */
+    private final Map<ItemRef, OreReference> references = new ConcurrentHashMap<>();
 
     /**
      * Test if the passed {@link ItemStack} is an ore.
@@ -51,32 +60,54 @@ public class OreHelper {
      * @param itemStack the itemstack to test
      * @return true if an ore entry exists, false otherwise
      */
-    public OreReference isOre(final ItemStack itemStack) {
-        final ItemRef ir = new ItemRef(itemStack);
+    public @Nullable OreReference isOre(final ItemStack itemStack) {
+        final ItemRef ir = new ItemRef(itemStack.getItem(), itemStack.getItemDamage());
+        final OreReference cached = this.references.get(ir);
+        return unwrap(cached != null ? cached : this.createReference(ir, itemStack));
+    }
 
-        if (!this.references.containsKey(ir)) {
-            final OreReference ref = new OreReference();
-            final Collection<Integer> ores = ref.getOres();
-            final Collection<String> set = ref.getEquivalents();
-
-            for (final int id : OreDictionary.getOreIDs(itemStack)) {
-                ores.add(id);
-                set.add(OreDictionary.getOreName(id));
-            }
-
-            if (!set.isEmpty()) {
-                this.references.put(ir, ref);
-            } else {
-                this.references.put(ir, null);
-            }
+    /**
+     * @return the ore dictionary entries of the key, or null if it has none.
+     */
+    public @Nullable OreReference getReference(final @Nullable AEItemKey key) {
+        if (key == null) {
+            return null;
         }
 
-        return this.references.get(ir);
+        final ItemRef ir = new ItemRef(key.getItem(), key.getItemDamage());
+        final OreReference cached = this.references.get(ir);
+        if (cached != null) {
+            return unwrap(cached);
+        }
+        // The probe stack is only needed to query the ore dictionary once per item and damage.
+        return unwrap(this.createReference(ir, new ItemStack(key.getItem(), 1, key.getItemDamage())));
+    }
+
+    /**
+     * @return the cached reference, which is {@link #NO_ORES} if the probe has no ore entries
+     */
+    private OreReference createReference(final ItemRef ir, final ItemStack probe) {
+        final OreReference ref = new OreReference();
+        final Collection<Integer> ores = ref.getOres();
+        final Collection<String> set = ref.getEquivalents();
+
+        for (final int id : OreDictionary.getOreIDs(probe)) {
+            ores.add(id);
+            set.add(OreDictionary.getOreName(id));
+        }
+
+        final OreReference result = set.isEmpty() ? NO_ORES : ref;
+        final OreReference existing = this.references.putIfAbsent(ir, result);
+        return existing != null ? existing : result;
+    }
+
+    private static @Nullable OreReference unwrap(final OreReference ref) {
+        return ref == NO_ORES ? null : ref;
     }
 
     boolean sameOre(final AEItemStack aeItemStack, final IAEItemStack is) {
         if (is instanceof AEItemStack) {
-            return this.sameOre(aeItemStack.getDefinition().getIsOre(), ((AEItemStack) is).getDefinition().getIsOre());
+            return this.sameOre(aeItemStack.getOreReference(), ((AEItemStack) is).getOreReference());
         }
 
         return this.sameOre(aeItemStack, is.getItemStack());
@@ -95,7 +126,7 @@ public class OreHelper {
     }
 
     boolean sameOre(final AEItemStack aeItemStack, final ItemStack o) {
-        final OreReference a = aeItemStack.getDefinition().getIsOre();
+        final OreReference a = aeItemStack.getOreReference();
 
         HashSet<Integer> set = new HashSet<>();
         for (final int id : OreDictionary.getOreIDs(o)) {
@@ -115,13 +146,13 @@ public class OreHelper {
         private final int damage;
         private final int hash;
 
-        ItemRef(final ItemStack stack) {
-            this.ref = stack.getItem();
+        ItemRef(final Item item, final int damage) {
+            this.ref = item;
 
-            if (stack.getItem().isDamageable()) {
+            if (item.isDamageable()) {
                 this.damage = 0; // IGNORED
             } else {
-                this.damage = stack.getItemDamage(); // might be important...
+                this.damage = damage; // might be important...
             }
 
             this.hash = this.ref.hashCode() ^ this.damage;

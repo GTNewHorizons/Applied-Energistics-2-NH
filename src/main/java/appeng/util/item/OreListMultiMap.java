@@ -29,7 +29,7 @@ public class OreListMultiMap<T> {
         } else {
             s = (AEItemStack) stack;
         }
-        OreReference ore = s.getDefinition().getIsOre();
+        OreReference ore = s.getOreReference();
         if (ore == null) return Collections.emptyList();
         Set<Integer> ids = ore.getOres();
         if (ids == null) return Collections.emptyList();
@@ -41,16 +41,13 @@ public class OreListMultiMap<T> {
     }
 
     public void put(IAEItemStack key, ICraftingPatternDetails val) {
-        if (((AEItemStack) key).getDefinition() != null) {
-            Collection<ICraftingPatternDetails> tmp = patternHashMap
-                    .getOrDefault(((AEItemStack) key).getDefinition().getMyHash(), null);
-            if (tmp == null) {
-                ArrayList<ICraftingPatternDetails> list = new ArrayList<>();
-                list.add(val);
-                patternHashMap.put(((AEItemStack) key).getDefinition().getMyHash(), list);
-            } else {
-                tmp.add(val);
-            }
+        Collection<ICraftingPatternDetails> tmp = patternHashMap.getOrDefault(key.hashCode(), null);
+        if (tmp == null) {
+            ArrayList<ICraftingPatternDetails> list = new ArrayList<>();
+            list.add(val);
+            patternHashMap.put(key.hashCode(), list);
+        } else {
+            tmp.add(val);
         }
 
         for (Integer realKey : getAEEquivalents(key)) {
@@ -84,9 +81,7 @@ public class OreListMultiMap<T> {
     }
 
     public ImmutableList<ICraftingPatternDetails> getBeSubstitutePattern(IAEItemStack ias) {
-        if (((AEItemStack) ias).getDefinition() == null) return ImmutableList.of();
-        return (ImmutableList<ICraftingPatternDetails>) this.patternMap
-                .get(((AEItemStack) ias).getDefinition().getMyHash());
+        return (ImmutableList<ICraftingPatternDetails>) this.patternMap.get(ias.hashCode());
     }
 
     public void clear() {
