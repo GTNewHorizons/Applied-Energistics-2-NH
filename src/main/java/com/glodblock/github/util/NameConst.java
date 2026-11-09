@@ -95,6 +95,9 @@ public class NameConst {
     public static final String TT_ULTRA_TERMINAL = TT_KEY + "ultra_terminal";
     public static final String TT_ULTRA_TERMINAL_TIPS = TT_ULTRA_TERMINAL + ".tips";
     public static final String TT_ULTRA_TERMINAL_TIPS_DESC = TT_ULTRA_TERMINAL_TIPS + ".desc";
+    public static final String TT_ULTRA_TERMINAL_INSTALLED = TT_ULTRA_TERMINAL + ".installed";
+    public static final String TT_ULTRA_TERMINAL_SWITCH_HINT = TT_ULTRA_TERMINAL + ".switch_hint";
+    public static final String TT_ULTRA_TERMINAL_NEXT_HINT = TT_ULTRA_TERMINAL + ".next_hint";
     public static final String TT_ENERGY_CARD = TT_KEY + "energy_card";
     public static final String TT_ENERGY_CARD_DESC = TT_ENERGY_CARD + ".desc";
     public static final String TT_QUANTUM_BRIDGE_CARD = TT_KEY + "quantum_bridge_card";

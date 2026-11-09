@@ -1236,7 +1236,7 @@ public abstract class AEBaseContainer extends Container {
         }
     }
 
-    // need for universal terminal, because getMode(ItemStack terminal) always have outdated mode
+    // terminal index of the next gui of the ultra terminal, its item mode is written after the container exists
     private int switchAbleGuiItemNext = Integer.MIN_VALUE;
 
     public int getSwitchAbleGuiNext() {

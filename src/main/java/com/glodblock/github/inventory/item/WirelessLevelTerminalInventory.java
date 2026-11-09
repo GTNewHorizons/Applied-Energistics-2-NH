@@ -16,6 +16,7 @@ import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
 import appeng.api.config.Settings;
 import appeng.api.config.TerminalStyle;
+import appeng.api.implementations.guiobjects.IGuiItemObject;
 import appeng.api.implementations.items.IAEItemPowerStorage;
 import appeng.api.networking.IGridNode;
 import appeng.api.storage.IMEMonitor;
@@ -34,7 +35,8 @@ import appeng.util.Platform;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-public class WirelessLevelTerminalInventory implements IClickableInTerminal, IWirelessTerminal, ICustomButtonProvider {
+public class WirelessLevelTerminalInventory
+        implements IClickableInTerminal, IWirelessTerminal, ICustomButtonProvider, IGuiItemObject {
 
     private final ItemStack target;
     private final IAEItemPowerStorage ips;
@@ -160,12 +162,16 @@ public class WirelessLevelTerminalInventory implements IClickableInTerminal, IWi
 
     @Override
     public void writeCustomButtonData() {
-        this.customButtonDataObject.writeData(this.getItemStack().getTagCompound());
+        if (this.customButtonDataObject != null) {
+            this.customButtonDataObject.writeData(this.getItemStack().getTagCompound());
+        }
     }
 
     @Override
     public void readCustomButtonData() {
-        this.customButtonDataObject.readData(this.getItemStack().getTagCompound());
+        if (this.customButtonDataObject != null) {
+            this.customButtonDataObject.readData(this.getItemStack().getTagCompound());
+        }
     }
 
     @Override

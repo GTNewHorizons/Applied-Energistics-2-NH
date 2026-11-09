@@ -13,6 +13,11 @@ import net.p455w0rd.wirelesscraftingterminal.common.utils.RandomUtils;
 import net.p455w0rd.wirelesscraftingterminal.helpers.WTCGuiObject;
 import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+
+import com.glodblock.github.client.UltraTerminalButtons;
+import com.glodblock.github.util.Util;
+
 import appeng.api.AEApi;
 import appeng.container.AEBaseContainer;
 import appeng.container.ContainerOpenContext;
@@ -66,6 +71,7 @@ public class WCTGuiHandler implements IGuiHandler {
                     y,
                     z,
                     termItem.firstInt());
+            attachUltraTerminalButtons(player, obj);
             return new GuiWirelessCraftingTerminal(player.inventory, obj);
         }
         if (guiId == Reference.GUI_MAGNET) {
@@ -73,6 +79,17 @@ public class WCTGuiHandler implements IGuiHandler {
         }
 
         return null;
+    }
+
+    /**
+     * Adds the ultra terminal switch button to the gui of another terminal. The magnet and restock buttons are left
+     * out, they belong to the ultra terminal itself.
+     */
+    private static void attachUltraTerminalButtons(final EntityPlayer player, final WTCGuiObject term) {
+        final ImmutablePair<Integer, ItemStack> ultraTerminal = Util.getUltraWirelessTerm(player);
+        if (ultraTerminal != null) {
+            term.setDataObject(new UltraTerminalButtons(ultraTerminal.getRight(), false));
+        }
     }
 
     public static void launchGui(final int ID, final EntityPlayer player, final World world, final int x, final int y,

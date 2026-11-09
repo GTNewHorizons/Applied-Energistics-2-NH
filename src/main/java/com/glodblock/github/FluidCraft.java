@@ -9,11 +9,14 @@ import com.glodblock.github.inventory.InventoryHandler;
 import com.glodblock.github.loader.ChannelLoader;
 import com.glodblock.github.loader.ItemAndBlockHolder;
 import com.glodblock.github.loader.RecipeLoader;
+import com.glodblock.github.loader.UltraTerminalLoader;
 import com.glodblock.github.proxy.CommonProxy;
 import com.glodblock.github.util.FluidCellHandler;
 import com.glodblock.github.util.ModAndClassUtil;
 
 import appeng.api.AEApi;
+import appeng.api.features.IUltraTerminalRegistry;
+import appeng.core.AELog;
 import appeng.core.BuildTags;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.SidedProxy;
@@ -47,6 +50,7 @@ public class FluidCraft {
         Config.run();
         ChannelLoader.INSTANCE.run();
         proxy.preInit(event);
+        UltraTerminalLoader.INSTANCE.run();
     }
 
     @Mod.EventHandler
@@ -73,6 +77,10 @@ public class FluidCraft {
             RecipeLoader.addTerminalCards();
             RecipeLoader.addInfiniteWaterCell();
         }
+        // the registration order is the index used by the gui opening channel, log it to diagnose mismatches
+        final IUltraTerminalRegistry terminalRegistry = AEApi.instance().registries().ultraTerminal();
+        terminalRegistry.closeRegistration();
+        AELog.info("[UltraTerminal] Terminal order: %s", terminalRegistry.getTypes());
         RecipeLoader.runTerminalRecipe();
         RecipeLoader.addDisassembleRecipe();
 

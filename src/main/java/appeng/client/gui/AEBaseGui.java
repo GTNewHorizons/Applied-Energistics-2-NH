@@ -413,6 +413,11 @@ public abstract class AEBaseGui extends GuiContainer implements IGuiTooltipHandl
             return;
         }
 
+        if (this.inventorySlots instanceof AEBaseContainer abc && abc.getTarget() instanceof ICustomButtonProvider icbp
+                && icbp.mouseClickedCustomButtons(xCoord, yCoord, btn)) {
+            return;
+        }
+
         if (btn == 1) {
             for (final GuiButton guibutton : this.buttonList) {
                 if (guibutton.mousePressed(this.mc, xCoord, yCoord)) {
@@ -427,6 +432,12 @@ public abstract class AEBaseGui extends GuiContainer implements IGuiTooltipHandl
         }
 
         super.mouseClicked(xCoord, yCoord, btn);
+
+        // custom buttons close their popups after the gui handled the click
+        if (btn == 0 && this.inventorySlots instanceof AEBaseContainer abc
+                && abc.getTarget() instanceof ICustomButtonProvider icbp) {
+            icbp.mouseClickedCustomButtons(xCoord, yCoord, btn);
+        }
     }
 
     @Override

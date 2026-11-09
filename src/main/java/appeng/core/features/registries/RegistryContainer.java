@@ -21,6 +21,7 @@ import appeng.api.features.IPlayerRegistry;
 import appeng.api.features.IRecipeHandlerRegistry;
 import appeng.api.features.IRegistryContainer;
 import appeng.api.features.ISpecialComparisonRegistry;
+import appeng.api.features.IUltraTerminalRegistry;
 import appeng.api.features.IWirelessTermRegistry;
 import appeng.api.features.IWorldGen;
 import appeng.api.movable.IMovableRegistry;
@@ -48,6 +49,7 @@ public class RegistryContainer implements IRegistryContainer {
     private final ILocatableRegistry locatable = new LocatableRegistry();
     private final ISpecialComparisonRegistry comparison = new SpecialComparisonRegistry();
     private final IWirelessTermRegistry wireless = new WirelessRegistry();
+    private final IUltraTerminalRegistry ultraTerminal = new UltraTerminalRegistry();
     private final IGridCacheRegistry gridCache = new GridCacheRegistry();
     private final IP2PTunnelRegistry p2pTunnel = new P2PTunnelRegistry();
     private final IBlockingModeIgnoreItemRegistry blockingModeIgnoreItem = new BlockingModeIgnoreItemRegistry();
@@ -79,6 +81,11 @@ public class RegistryContainer implements IRegistryContainer {
     @Override
     public IWirelessTermRegistry wireless() {
         return this.wireless;
+    }
+
+    @Override
+    public IUltraTerminalRegistry ultraTerminal() {
+        return this.ultraTerminal;
     }
 
     @Override

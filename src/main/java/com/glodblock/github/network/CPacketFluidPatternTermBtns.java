@@ -5,8 +5,8 @@ import net.minecraft.inventory.Container;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import com.glodblock.github.FluidCraft;
-import com.glodblock.github.client.UltraTerminalButtons;
 import com.glodblock.github.client.gui.container.ContainerMagnetFilter;
+import com.glodblock.github.common.terminal.IUltraTerminalButtonState;
 import com.glodblock.github.inventory.InventoryHandler;
 import com.glodblock.github.inventory.gui.GuiType;
 import com.glodblock.github.inventory.item.IWirelessMagnetFilter;
@@ -105,12 +105,12 @@ public class CPacketFluidPatternTermBtns implements IMessage {
 
                 switch (command) {
                     case RESTOCK -> {
-                        if (icbp.getDataObject() instanceof UltraTerminalButtons utb) {
+                        if (icbp.getDataObject() instanceof IUltraTerminalButtonState utb) {
                             utb.toggleRestock();
                         }
                     }
                     case MAGNET_MODE -> {
-                        if (icbp.getDataObject() instanceof UltraTerminalButtons utb) {
+                        if (icbp.getDataObject() instanceof IUltraTerminalButtonState utb) {
                             utb.toggleMagnetMode();
                         }
                     }
