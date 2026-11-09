@@ -7,6 +7,8 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
 import appeng.api.AEApi;
+import appeng.api.behaviors.ContainerItemStrategies;
+import appeng.api.behaviors.DisplayItemConverters;
 import appeng.api.stacks.AEKeyTypeRegistry;
 import appeng.api.storage.data.AEStackTypeRegistry;
 import appeng.core.BuildTags;
@@ -28,6 +30,9 @@ import thaumicenergistics.common.integration.tc.EssentiaTileContainerHelper;
 import thaumicenergistics.common.items.ItemCraftingAspect;
 import thaumicenergistics.common.network.NetworkHandler;
 import thaumicenergistics.common.registries.AEAspectRegister;
+import thaumicenergistics.common.storage.AEEssentiaKey;
+import thaumicenergistics.common.storage.EssentiaContainerItemStrategy;
+import thaumicenergistics.common.storage.EssentiaDisplayItemConverter;
 import thaumicenergistics.common.storage.EssentiaExternalStorageHandler;
 import thaumicenergistics.common.storage.EssentiaKeyType;
 import thaumicenergistics.common.utils.ThELog;
@@ -192,6 +197,9 @@ public class ThaumicEnergistics {
 
         AEStackTypeRegistry.register(ESSENTIA_STACK_TYPE);
         AEKeyTypeRegistry.register(EssentiaKeyType.INSTANCE);
+        ContainerItemStrategies
+                .register(EssentiaKeyType.INSTANCE, AEEssentiaKey.class, new EssentiaContainerItemStrategy());
+        DisplayItemConverters.register(new EssentiaDisplayItemConverter());
 
         AEApi.instance().registries().externalStorage()
                 .addExternalStorageInterface(new EssentiaExternalStorageHandler());
