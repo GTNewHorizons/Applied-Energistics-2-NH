@@ -42,6 +42,7 @@ import appeng.core.localization.PlayerMessages;
 import appeng.helpers.transfer.ConfigStripWindow;
 import appeng.helpers.transfer.TransferNameFilter;
 import appeng.helpers.transfer.TransferRowWindow;
+import appeng.util.Platform;
 
 public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextField {
 
@@ -71,10 +72,10 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     private static final int ELLIPSIS_WIDTH = 9;
     private static final int QUERY_SLOT_X = 9;
     private static final int QUERY_SLOT_Y = 19;
-    private static final int MODE_BUTTON_X = 30;
-    private static final int MODE_BUTTON_STEP = 18;
+    private static final int FILTER_BUTTON_X = 30;
+    private static final int FILTER_BUTTON_STEP = 18;
     private static final int CRAFTING_BUTTON_X = 92;
-    private static final int BUTTON_ROW_Y = 19;
+    private static final int FILTER_BUTTON_Y = 19;
     private static final int TITLE_WIDTH = 90;
     private static final int QUERY_MATCH_COLOR = 0x6600FF00;
     private static final int FUZZY_MARK_COLOR = 0xFF4040FF;
@@ -96,9 +97,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
 
     private MEGuiTextField searchField;
     private GuiImgButton terminalStyleBox;
-    private GuiImgButton importButton;
-    private GuiImgButton exportButton;
-    private GuiImgButton bothButton;
+    private GuiImgButton directionButton;
     private GuiImgButton craftingButton;
     private boolean tallMode;
     private int visibleRows = SMALL_VISIBLE_ROWS;
@@ -140,12 +139,10 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                 this.tallMode ? TerminalStyle.TALL : TerminalStyle.SMALL);
         this.buttonList.add(this.terminalStyleBox);
 
-        this.importButton = this.addModeButton(0, TransferDirection.IMPORT);
-        this.exportButton = this.addModeButton(1, TransferDirection.EXPORT);
-        this.bothButton = this.addModeButton(2, TransferDirection.BOTH);
+        this.directionButton = this.addFilterButton(0, Settings.TRANSFER_DIRECTION, this.getMode());
         this.craftingButton = new GuiImgButton(
                 this.guiLeft + CRAFTING_BUTTON_X,
-                this.guiTop + BUTTON_ROW_Y,
+                this.guiTop + FILTER_BUTTON_Y,
                 Settings.TRANSFER_CRAFTING_CARD_ONLY,
                 this.container.craftingOnlySync.get() ? YesNo.YES : YesNo.NO);
         this.buttonList.add(this.craftingButton);
@@ -166,12 +163,12 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         this.refreshRows();
     }
 
-    private GuiImgButton addModeButton(final int index, final TransferDirection direction) {
+    private GuiImgButton addFilterButton(final int index, final Settings setting, final Enum<?> value) {
         final GuiImgButton button = new GuiImgButton(
-                this.guiLeft + MODE_BUTTON_X + index * MODE_BUTTON_STEP,
-                this.guiTop + BUTTON_ROW_Y,
-                Settings.TRANSFER_DIRECTION,
-                direction);
+                this.guiLeft + FILTER_BUTTON_X + index * FILTER_BUTTON_STEP,
+                this.guiTop + FILTER_BUTTON_Y,
+                setting,
+                value);
         this.buttonList.add(button);
         return button;
     }
@@ -295,12 +292,11 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     protected void actionPerformed(final GuiButton button) {
         super.actionPerformed(button);
 
-        if (button == this.importButton) {
-            this.setMode(TransferDirection.IMPORT);
-        } else if (button == this.exportButton) {
-            this.setMode(TransferDirection.EXPORT);
-        } else if (button == this.bothButton) {
-            this.setMode(TransferDirection.BOTH);
+        if (button == this.directionButton) {
+            final TransferDirection next = Platform
+                    .rotateEnum(this.getMode(), Mouse.isButtonDown(1), Settings.TRANSFER_DIRECTION.getPossibleValues());
+            this.directionButton.set(next);
+            this.container.modeSync.set(next.ordinal());
         } else if (button == this.craftingButton) {
             this.toggle(this.craftingButton, this.container.craftingOnlySync);
         } else if (button == this.terminalStyleBox) {
@@ -309,10 +305,6 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
             AEConfig.instance.getConfigManager().putSetting(Settings.TERMINAL_STYLE, style);
             this.setWorldAndResolution(this.mc, this.width, this.height);
         }
-    }
-
-    private void setMode(final TransferDirection direction) {
-        this.container.modeSync.set(direction.ordinal());
     }
 
     private void toggle(final GuiImgButton button, final BooleanSyncHandler sync) {
@@ -442,10 +434,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                 offsetY + QUERY_SLOT_Y + 16,
                 SLOT_FILL_COLOR);
 
-        this.drawSelection(this.buttonFor(this.getMode()));
-        if (this.container.craftingOnlySync.get()) {
-            this.drawSelection(this.craftingButton);
-        }
+        this.drawSelectionIf(this.container.craftingOnlySync.get(), this.craftingButton);
 
         final int lineColor = ColorUtils.craftingDiagnosticTerminalLine.getColor();
         for (int line = 0; line <= this.visibleRows; line++) {
@@ -457,15 +446,11 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         this.searchField.drawTextBox();
     }
 
-    private GuiImgButton buttonFor(final TransferDirection direction) {
-        return switch (direction) {
-            case IMPORT -> this.importButton;
-            case EXPORT -> this.exportButton;
-            case BOTH -> this.bothButton;
-        };
-    }
+    private void drawSelectionIf(final boolean active, final GuiImgButton button) {
+        if (!active) {
+            return;
+        }
 
-    private void drawSelection(final GuiImgButton button) {
         drawRect(
                 button.xPosition - 1,
                 button.yPosition - 1,
