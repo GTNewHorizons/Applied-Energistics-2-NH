@@ -62,6 +62,13 @@ public final class TransferDescription {
         return new Builder();
     }
 
+    /**
+     * @return a builder starting from this description, for wrapping another inspector's result
+     */
+    public Builder toBuilder() {
+        return new Builder(this);
+    }
+
     public void write(final ByteBuf out) {
         out.writeShort(this.settings.size());
         for (final SettingEntry entry : this.settings) {
