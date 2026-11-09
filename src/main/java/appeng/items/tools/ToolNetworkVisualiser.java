@@ -358,7 +358,7 @@ public class ToolNetworkVisualiser extends AEBaseItem {
                 VNode n1 = nodesByPos.get(posKey(a.x, a.y, a.z));
                 VNode n2 = nodesByPos.get(posKey(b.x, b.y, b.z));
                 if (n1 != null && n2 != null && !n1.isAtSameLocation(n2)) {
-                    vLinks.add(new VLink(n1, n2, 0, flags));
+                    vLinks.add(new VLink(n1, n2, 0, -1, flags));
                 }
             });
         }
