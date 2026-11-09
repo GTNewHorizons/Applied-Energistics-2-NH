@@ -16,11 +16,16 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Vec3;
 
+import appeng.api.behaviors.ContainerItemStrategies;
+import appeng.api.behaviors.ContainerTransfer;
+import appeng.api.behaviors.ItemSlotAccess;
 import appeng.api.config.Actionable;
 import appeng.api.networking.energy.IEnergySource;
 import appeng.api.networking.security.PlayerSource;
+import appeng.api.networking.storage.IStorageGrid;
+import appeng.api.stacks.AEKey;
 import appeng.api.storage.IMEMonitor;
-import appeng.api.storage.data.AEStackTypeRegistry;
+import appeng.api.storage.MEStorage;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
@@ -28,9 +33,9 @@ import appeng.client.texture.CableBusTextures;
 import appeng.core.AELog;
 import appeng.helpers.Reflected;
 import appeng.me.GridAccessException;
+import appeng.me.storage.LegacyInventoryStorage;
 import appeng.util.Platform;
 import appeng.util.item.AEItemStack;
-import it.unimi.dsi.fastutil.objects.ObjectLongPair;
 
 public class PartConversionMonitor extends AbstractPartMonitor {
 
@@ -68,9 +73,10 @@ public class PartConversionMonitor extends AbstractPartMonitor {
         } else {
             if (displayed instanceof IAEItemStack) {
                 this.injectItemToMonitor(player);
-            } else if (displayed.getStackType().isContainerItemForType(player.getCurrentEquippedItem())) {
-                this.injectExtraToMonitor(player);
-            }
+            } else if (ContainerItemStrategies
+                    .isContainer(player.getCurrentEquippedItem(), displayed.getKey().getType())) {
+                        this.injectExtraToMonitor(player);
+                    }
         }
 
         return true;
@@ -163,117 +169,46 @@ public class PartConversionMonitor extends AbstractPartMonitor {
     }
 
     private void injectExtraToMonitor(final EntityPlayer player) {
-        ItemStack hand = player.getCurrentEquippedItem();
-        if (hand == null) return;
+        final IAEStack<?> displayed = this.getDisplayed();
+        final AEKey displayedKey = displayed == null ? null : displayed.getKey();
 
-        for (IAEStackType type : AEStackTypeRegistry.getAllTypes()) {
-            if (!type.isContainerItemForType(hand)) continue;
-
-            final int stackSize = hand.stackSize;
-            hand = hand.copy();
-            hand.stackSize = 1;
-
-            IAEStack<?> stack = type.getStackFromContainerItem(hand);
-            if (stack == null || stack.getStackSize() <= 0
-                    || (this.getDisplayed() != null && !this.getDisplayed().isSameType(stack)))
-                return;
-
-            try {
-                final IEnergySource energy = this.getProxy().getEnergy();
-                final IMEMonitor monitor = this.getProxy().getStorage().getMEMonitor(type);
-                if (monitor == null) return;
-
-                final PlayerSource source = new PlayerSource(player, this);
-                IAEStack<?> leftover = Platform.poweredInsert(energy, monitor, stack, source, Actionable.SIMULATE);
-                if (leftover != null && leftover.getStackSize() == stack.getStackSize()) return;
-
-                long amountToInject = leftover == null ? stack.getStackSize()
-                        : stack.getStackSize() - leftover.getStackSize();
-
-                ObjectLongPair<ItemStack> drained = type
-                        .drainStackFromContainer(hand, stack.setStackSize(amountToInject));
-                if (drained.rightLong() == 0 || drained.left() == null) return;
-                ItemStack result = drained.left();
-
-                final IAEStack<?> modulateLeftover = Platform
-                        .poweredInsert(energy, monitor, stack.setStackSize(drained.rightLong()), source);
-
-                if (modulateLeftover != null) {
-                    if (modulateLeftover.getStackSize() == drained.rightLong()) return;
-
-                    ObjectLongPair<ItemStack> filled = type.fillContainer(result, modulateLeftover);
-                    if (filled.left() != null) result = filled.left();
-
-                    final long leftoverAmount = modulateLeftover.getStackSize() - filled.rightLong();
-                    if (leftoverAmount != 0)
-                        Platform.handleLeftover(player, modulateLeftover.copy().setStackSize(leftoverAmount));
-                }
-
-                if (stackSize == 1) {
-                    player.inventory.setInventorySlotContents(player.inventory.currentItem, result);
-                } else {
-                    player.getCurrentEquippedItem().stackSize -= 1;
-                    Platform.addToPlayerInvOrDrop(player, result);
-                }
-            } catch (GridAccessException e) {
-                AELog.error(e);
-            }
-
-            return;
+        try {
+            ContainerTransfer.drainInto(
+                    ItemSlotAccess.equipped(player),
+                    this.createStorage(),
+                    this.getProxy().getEnergy(),
+                    new PlayerSource(player, this),
+                    key -> displayedKey == null || displayedKey.equals(key),
+                    1,
+                    false,
+                    Actionable.MODULATE);
+        } catch (final GridAccessException e) {
+            AELog.debug(e);
         }
     }
 
     private void extractExtraFromMonitor(final EntityPlayer player) {
-        IAEStack<?> displayed = getDisplayed();
+        final IAEStack<?> displayed = this.getDisplayed();
         if (displayed == null) return;
 
-        final ItemStack hand = player.getCurrentEquippedItem();
-        if (hand == null) return;
-
-        for (IAEStackType type : AEStackTypeRegistry.getAllTypes()) {
-            if (!type.isContainerItemForType(hand)) continue;
-
-            try {
-                final IEnergySource energy = this.getProxy().getEnergy();
-                final IMEMonitor monitor = this.getProxy().getStorage().getMEMonitor(type);
-                if (monitor == null) return;
-                final PlayerSource src = new PlayerSource(player, this);
-
-                IAEStack<?> stored = monitor.extractItems(displayed, Actionable.SIMULATE, src);
-                if (stored == null || stored.getStackSize() <= 0) return;
-
-                long amountToFill = type.fillContainer(Platform.copyStackWithSizeOne(hand), stored).rightLong();
-
-                IAEStack<?> extracted = Platform
-                        .poweredExtraction(energy, monitor, stored.copy().setStackSize(amountToFill), src);
-
-                if (extracted == null) return;
-
-                ObjectLongPair<ItemStack> filled = type.fillContainer(Platform.copyStackWithSizeOne(hand), extracted);
-
-                ItemStack result = filled.left();
-
-                final long leftoverAmount = extracted.getStackSize() - filled.rightLong();
-                if (leftoverAmount != 0) {
-                    final IAEStack<?> aes = monitor
-                            .injectItems(extracted.setStackSize(leftoverAmount), Actionable.MODULATE, src);
-                    if (aes != null) Platform.handleLeftover(player, aes);
-                }
-
-                if (result == null || filled.rightLong() == 0) return;
-
-                if (hand.stackSize == 1) {
-                    player.inventory.setInventorySlotContents(player.inventory.currentItem, result);
-                } else {
-                    hand.stackSize--;
-                    Platform.addToPlayerInvOrDrop(player, result);
-                }
-            } catch (final GridAccessException e) {
-                AELog.error(e);
-            }
-
-            return;
+        try {
+            ContainerTransfer.fillFrom(
+                    ItemSlotAccess.equipped(player),
+                    this.createStorage(),
+                    this.getProxy().getEnergy(),
+                    new PlayerSource(player, this),
+                    displayed.getKey(),
+                    1,
+                    Actionable.MODULATE);
+        } catch (final GridAccessException e) {
+            AELog.debug(e);
         }
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private MEStorage createStorage() throws GridAccessException {
+        final IStorageGrid storage = this.getProxy().getStorage();
+        return new LegacyInventoryStorage(type -> storage.getMEMonitor((IAEStackType) type));
     }
 
     @Override
