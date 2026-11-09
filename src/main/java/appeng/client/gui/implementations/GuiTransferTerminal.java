@@ -53,10 +53,11 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     private static final int EXTRA_BOTTOM_MARGIN = 32;
     private static final int LIST_LEFT = 8;
     private static final int LIST_RIGHT = 168;
-    private static final int LIST_TOP = 40;
+    private static final int LIST_TOP = 55;
     private static final int LIST_BOTTOM_MARGIN = 3;
     private static final int ROW_HEIGHT = 29;
     private static final int SMALL_VISIBLE_ROWS = 3;
+    private static final int MIN_VISIBLE_ROWS = 2;
     private static final int SCROLLBAR_LEFT = 175;
     private static final int SCROLLBAR_TOP = 18;
     private static final int HIGHLIGHT_X = LIST_LEFT;
@@ -75,7 +76,20 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     private static final int FILTER_BUTTON_X = 30;
     private static final int FILTER_BUTTON_STEP = 18;
     private static final int FILTER_BUTTON_Y = 21;
-    private static final int TITLE_WIDTH = 90;
+    private static final int SEARCH_X = 10;
+    private static final int SEARCH_Y = 40;
+    private static final int SEARCH_WIDTH = 156;
+    private static final int SEARCH_HEIGHT = 12;
+    private static final int TITLE_WIDTH = 160;
+
+    // interfaceterminal.png has a search bar in the title row, it is shared with the Interface Terminal.
+    private static final int TEXTURE_BAR_X = 104;
+    private static final int TEXTURE_BAR_Y = 4;
+    private static final int TEXTURE_BAR_WIDTH = 65;
+    private static final int TEXTURE_BLANK_X = 8;
+    private static final int SEARCH_PIECE_WIDTH = 52;
+    private static final int TEXTURE_BAR_MIDDLE_OFFSET = 6;
+
     private static final int QUERY_MATCH_COLOR = 0x6600FF00;
     private static final int FUZZY_MARK_COLOR = 0xFF4040FF;
     private static final int SELECTED_COLOR = 0xFF00A000;
@@ -142,7 +156,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         this.craftingButton = this
                 .addToggleButton(1, Settings.TRANSFER_CRAFTING_CARD_ONLY, this.container.craftingOnlySync);
 
-        this.searchField = new MEGuiTextField(65, 12, this.searchTooltip()) {
+        this.searchField = new MEGuiTextField(SEARCH_WIDTH, SEARCH_HEIGHT, this.searchTooltip()) {
 
             @Override
             public void onTextChange(final String oldText) {
@@ -150,8 +164,8 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                 GuiTransferTerminal.this.refreshRows();
             }
         };
-        this.searchField.x = this.guiLeft + 104;
-        this.searchField.y = this.guiTop + 4;
+        this.searchField.x = this.guiLeft + SEARCH_X;
+        this.searchField.y = this.guiTop + SEARCH_Y;
         this.searchField.setText(previousSearch);
 
         this.repositionSlots();
@@ -397,6 +411,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         this.bindTexture("guis/interfaceterminal.png");
         final int middleHeight = this.getMiddleHeight();
         this.drawTexturedModalRect(offsetX, offsetY, 0, 0, this.xSize, STRETCH_TOP);
+        this.drawSearchBar(offsetX, offsetY);
 
         final Tessellator tessellator = Tessellator.instance;
         tessellator.startDrawingQuads();
@@ -443,6 +458,32 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
 
         GL11.glColor4f(1, 1, 1, 1);
         this.searchField.drawTextBox();
+    }
+
+    /**
+     * Moves the texture's search bar out of the title row and stretches it, copying the texture rather than drawing
+     * colours so that resource packs still apply.
+     */
+    private void drawSearchBar(final int offsetX, final int offsetY) {
+        this.drawTexturedModalRect(
+                offsetX + TEXTURE_BAR_X,
+                offsetY + TEXTURE_BAR_Y,
+                TEXTURE_BLANK_X,
+                TEXTURE_BAR_Y,
+                TEXTURE_BAR_WIDTH,
+                SEARCH_HEIGHT);
+
+        final int[] sources = { TEXTURE_BAR_X, TEXTURE_BAR_X + TEXTURE_BAR_MIDDLE_OFFSET,
+                TEXTURE_BAR_X + TEXTURE_BAR_WIDTH - SEARCH_PIECE_WIDTH };
+        for (int piece = 0; piece < sources.length; piece++) {
+            this.drawTexturedModalRect(
+                    offsetX + SEARCH_X + piece * SEARCH_PIECE_WIDTH,
+                    offsetY + SEARCH_Y,
+                    sources[piece],
+                    TEXTURE_BAR_Y,
+                    SEARCH_PIECE_WIDTH,
+                    SEARCH_HEIGHT);
+        }
     }
 
     private void drawSelectionIf(final boolean active, final GuiImgButton button) {
@@ -686,15 +727,21 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     }
 
     private void recalculateScreenSize() {
-        int extraRows = 0;
-        if (this.tallMode && this.height > 0) {
-            this.visibleRows = SMALL_VISIBLE_ROWS;
-            final int baseHeight = STRETCH_TOP + this.getMiddleHeight() + FIXED_BOTTOM_HEIGHT;
-            extraRows = Math.max(0, this.height - baseHeight - EXTRA_BOTTOM_MARGIN) / ROW_HEIGHT;
+        this.visibleRows = SMALL_VISIBLE_ROWS;
+        if (this.height > 0) {
+            final int baseHeight = this.getWindowHeight();
+            if (baseHeight > this.height) {
+                this.visibleRows = MIN_VISIBLE_ROWS;
+            } else if (this.tallMode) {
+                this.visibleRows += Math.max(0, this.height - baseHeight - EXTRA_BOTTOM_MARGIN) / ROW_HEIGHT;
+            }
         }
 
-        this.visibleRows = SMALL_VISIBLE_ROWS + extraRows;
-        this.ySize = STRETCH_TOP + this.getMiddleHeight() + FIXED_BOTTOM_HEIGHT;
+        this.ySize = this.getWindowHeight();
+    }
+
+    private int getWindowHeight() {
+        return STRETCH_TOP + this.getMiddleHeight() + FIXED_BOTTOM_HEIGHT;
     }
 
     private void repositionSlots() {
