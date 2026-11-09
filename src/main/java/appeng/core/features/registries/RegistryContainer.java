@@ -29,6 +29,7 @@ import appeng.api.networking.IGridCacheRegistry;
 import appeng.api.storage.ICellRegistry;
 import appeng.api.storage.IExternalStorageRegistry;
 import appeng.api.storage.IItemDisplayRegistry;
+import appeng.helpers.transfer.CoreTransferInspectors;
 
 /**
  * represents all registries
@@ -46,7 +47,7 @@ public class RegistryContainer implements IRegistryContainer {
     private final ICellRegistry cell = new CellRegistry();
     private final IItemDisplayRegistry itemDisplay = new ItemDisplayRegistry();
     private final IInterfaceTerminalRegistry interfaceTerminalRegistry = new InterfaceTerminalRegistry();
-    private final ITransferInspectorRegistry transferInspectors = new TransferInspectorRegistry();
+    private final ITransferInspectorRegistry transferInspectors = CoreTransferInspectors.createRegistry();
     private final ILocatableRegistry locatable = new LocatableRegistry();
     private final ISpecialComparisonRegistry comparison = new SpecialComparisonRegistry();
     private final IWirelessTermRegistry wireless = new WirelessRegistry();
