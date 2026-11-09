@@ -21,12 +21,21 @@ import appeng.parts.p2p.PartP2PInterface;
 import appeng.tile.inventory.AppEngInternalAEInventory;
 
 /**
- * An interface stocks its configured slots from the network and sends everything else it receives back into it.
+ * An interface is only listed for the stacks it stocks from the network. Everything else it does works through encoded
+ * patterns, which this terminal does not cover.
  */
 public final class InterfaceInspector implements ITransferInspector<IInterfaceHost> {
 
     @Override
     public TransferDescription inspect(final IInterfaceHost host) {
+        final TransferDescription description = this.describe(host);
+        return description == null || description.config.isEmpty() ? null : description;
+    }
+
+    /**
+     * @return the description of an interface even when nothing is stocked, or null for the output side of a tunnel
+     */
+    public TransferDescription describe(final IInterfaceHost host) {
         if (host instanceof PartP2PInterface tunnel && tunnel.isOutput()) {
             return null;
         }
@@ -37,7 +46,7 @@ public final class InterfaceInspector implements ITransferInspector<IInterfaceHo
         final FuzzyMode fuzzyMode = (FuzzyMode) settings.getSetting(Settings.FUZZY_MODE);
 
         final TransferDescription.Builder builder = InspectorSupport.withUpgrades(
-                TransferDescription.builder().canImport(true).priority(host.getPriority()),
+                TransferDescription.builder().priority(host.getPriority()),
                 duality.getInventoryByName("upgrades"),
                 duality.getInstalledUpgrades(Upgrades.CRAFTING) > 0);
 
@@ -94,12 +103,9 @@ public final class InterfaceInspector implements ITransferInspector<IInterfaceHo
 
         @Override
         public boolean canTransfer(final IAEStack<?> stack, final TransferDirection direction) {
-            if (stack == null || stack.getStackType() != ITEM_STACK_TYPE) {
-                return false;
-            }
-
-            final boolean configured = this.isConfigured(stack);
-            return direction == TransferDirection.EXPORT ? configured : !configured;
+            return direction == TransferDirection.EXPORT && stack != null
+                    && stack.getStackType() == ITEM_STACK_TYPE
+                    && this.isConfigured(stack);
         }
 
         private boolean isConfigured(final IAEStack<?> stack) {

@@ -51,18 +51,13 @@ public class InterfaceInspectorTests {
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 20)
-    public static void emptyInterfaceImportsButDoesNotExport(GameTestHelper helper) {
-        TransferDescription description = INSPECTOR.inspect(blockInterface(helper));
-
-        helper.assertTrue(imports(description, iron()), "Anything inserted goes to the network");
-        helper.assertFalse(exports(description, iron()), "Nothing is stocked");
-        helper.assertFalse(description.canExport, "No config means no exporting");
-        helper.assertFalse(imports(description, water()), "Item interfaces ignore fluids");
+    public static void emptyInterfaceIsNotListed(GameTestHelper helper) {
+        helper.assertNull(INSPECTOR.inspect(blockInterface(helper)), "Without stocking it only works through patterns");
         helper.succeed();
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 20)
-    public static void configuredStacksExportAndOthersImport(GameTestHelper helper) {
+    public static void onlyStockedStacksMoveAndOnlyOutOfTheNetwork(GameTestHelper helper) {
         TileInterface tile = blockInterface(helper);
         configure(tile.getInterfaceDuality(), 0, new ItemStack(Items.iron_ingot));
 
@@ -71,8 +66,10 @@ public class InterfaceInspectorTests {
         helper.assertTrue(exports(description, iron()), "Stocked stack leaves the network");
         helper.assertFalse(imports(description, iron()), "Stocked stack stays in the interface");
         helper.assertFalse(exports(description, gold()), "Other stacks are not stocked");
-        helper.assertTrue(imports(description, gold()), "Other stacks go back to the network");
+        helper.assertFalse(imports(description, gold()), "Interfaces are listed as export only");
+        helper.assertFalse(exports(description, water()), "Item interfaces ignore fluids");
         helper.assertTrue(description.canExport, "Config enables exporting");
+        helper.assertFalse(description.canImport, "Interfaces are listed as export only");
         helper.succeed();
     }
 
@@ -103,6 +100,7 @@ public class InterfaceInspectorTests {
     public static void reportsCraftingCardPriorityAndIgnoresStorageRouting(GameTestHelper helper) {
         TileInterface tile = blockInterface(helper);
         DualityInterface duality = tile.getInterfaceDuality();
+        configure(duality, 0, new ItemStack(Items.iron_ingot));
         duality.setPriority(7);
         helper.assertFalse(INSPECTOR.inspect(tile).hasCraftingCard, "No crafting card yet");
 
@@ -119,7 +117,9 @@ public class InterfaceInspectorTests {
     public static void partInterfaceIsInspected(GameTestHelper helper) {
         PartInterface part = placeOnInterfaceCable(helper, AEApi.instance().definitions().parts().iface());
 
-        helper.assertTrue(imports(INSPECTOR.inspect(part), iron()), "Part interfaces work like blocks");
+        configure(part.getInterfaceDuality(), 0, new ItemStack(Items.iron_ingot));
+
+        helper.assertTrue(exports(INSPECTOR.inspect(part), iron()), "Part interfaces work like blocks");
         helper.succeed();
     }
 
@@ -129,6 +129,7 @@ public class InterfaceInspectorTests {
                 helper,
                 AEApi.instance().definitions().parts().p2PTunnelMEInterface(),
                 ForgeDirection.UP);
+        configure(tunnel.getInterfaceDuality(), 0, new ItemStack(Items.iron_ingot));
 
         helper.assertNotNull(INSPECTOR.inspect(tunnel), "The input side should be listed");
 

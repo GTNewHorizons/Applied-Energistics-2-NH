@@ -102,8 +102,17 @@ public class TempAddonTransferInspectorTests {
 
         helper.assertTrue(moves(description, water(), TransferDirection.EXPORT), "Stocked fluid leaves the network");
         helper.assertFalse(moves(description, water(), TransferDirection.IMPORT), "Stocked fluid stays");
-        helper.assertTrue(moves(description, lava(), TransferDirection.IMPORT), "Other fluids return to the network");
+        helper.assertFalse(moves(description, lava(), TransferDirection.IMPORT), "Interfaces are export only");
         helper.assertTrue(description.canExport, "Fluid config enables exporting");
+        helper.succeed();
+    }
+
+    @GameTest(template = "interface_network", timeoutTicks = 20)
+    public static void emptyFluidInterfaceIsNotListed(GameTestHelper helper) {
+        helper.setBlock("adjacent_chest", ItemAndBlockHolder.INTERFACE);
+        final TileFluidInterface tile = helper.assertTileEntityPresent(TileFluidInterface.class, "adjacent_chest");
+
+        helper.assertNull(inspect(tile), "Nothing is stocked");
         helper.succeed();
     }
 

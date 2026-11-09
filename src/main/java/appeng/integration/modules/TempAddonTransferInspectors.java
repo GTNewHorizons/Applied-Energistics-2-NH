@@ -55,18 +55,24 @@ public final class TempAddonTransferInspectors {
 
         @Override
         public TransferDescription inspect(final IInterfaceHost host) {
-            final TransferDescription base = this.items.inspect(host);
-            if (base == null || !(host instanceof IDualHost dual)) {
-                return base;
+            final TransferDescription base = this.items.describe(host);
+            if (base == null) {
+                return null;
             }
 
             final List<IAEFluidStack> fluids = new ArrayList<>();
-            final AppEngInternalAEInventory config = dual.getConfig();
-            for (int slot = 0; slot < config.getSizeInventory(); slot++) {
-                final IAEFluidStack fluid = Util.getAEFluidFromItem(config.getStackInSlot(slot));
-                if (fluid != null) {
-                    fluids.add(fluid);
+            if (host instanceof IDualHost dual) {
+                final AppEngInternalAEInventory config = dual.getConfig();
+                for (int slot = 0; slot < config.getSizeInventory(); slot++) {
+                    final IAEFluidStack fluid = Util.getAEFluidFromItem(config.getStackInSlot(slot));
+                    if (fluid != null) {
+                        fluids.add(fluid);
+                    }
                 }
+            }
+
+            if (base.config.isEmpty() && fluids.isEmpty()) {
+                return null;
             }
 
             final TransferDescription.Builder builder = base.toBuilder().canExport(base.canExport || !fluids.isEmpty());
@@ -79,8 +85,7 @@ public final class TempAddonTransferInspectors {
                     return base.matcher.canTransfer(stack, direction);
                 }
 
-                final boolean configured = isConfigured(fluids, stack);
-                return direction == TransferDirection.EXPORT ? configured : !configured;
+                return direction == TransferDirection.EXPORT && isConfigured(fluids, stack);
             }).build();
         }
     }
