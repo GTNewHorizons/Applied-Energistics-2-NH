@@ -101,4 +101,21 @@ public interface IGrid {
      * @return List of connected Grids, recursively found on the entire network
      */
     public NetworkList getAllRecursiveGridConnections(Class<? extends IGridHost> accessType);
+
+    /**
+     * Same as {@link #getAllRecursiveGridConnections(Class)}, optionally following storage bus links in both
+     * directions.
+     *
+     * @param accessType                   Type of access extending the grid, ie. PartStorageBus/PartFluidStorageBus
+     * @param followReverseStorageBusLinks true to also find links through interfaces that have stocking slots
+     *                                     configured, and storage buses on other grids that point at an interface on
+     *                                     this grid. False behaves exactly like
+     *                                     {@link #getAllRecursiveGridConnections(Class)}.
+     * @return List of connected Grids, starting with this grid and with nearer grids before farther ones when
+     *         followReverseStorageBusLinks is true
+     */
+    default NetworkList getAllRecursiveGridConnections(Class<? extends IGridHost> accessType,
+            boolean followReverseStorageBusLinks) {
+        return getAllRecursiveGridConnections(accessType);
+    }
 }

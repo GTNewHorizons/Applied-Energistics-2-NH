@@ -323,6 +323,21 @@ public class Grid implements IGrid {
         return getAllRecursiveGridConnections(accessType, new HashSet<>(), 0);
     }
 
+    @Override
+    public NetworkList getAllRecursiveGridConnections(Class<? extends IGridHost> accessType,
+            boolean followReverseStorageBusLinks) {
+        if (!followReverseStorageBusLinks) return getAllRecursiveGridConnections(accessType);
+        if (accessType == null) return null;
+
+        NetworkList result = new NetworkList();
+        result.addAll(
+                TransferGridLinks.collect(
+                        this,
+                        grid -> TransferGridLinks.linkedGrids(grid, accessType),
+                        AEConfig.instance.maxRecursiveDepth));
+        return result;
+    }
+
     private HashMap<IGridHost, IGrid> getSubnetGridMap(Class<? extends IGridHost> accessType) {
         IMachineSet storageBuses = this.getMachines(accessType);
         HashMap<IGridHost, IGrid> gridConnections = new HashMap<>();
