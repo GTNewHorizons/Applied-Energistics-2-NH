@@ -604,6 +604,11 @@ public final class Registration {
         // default settings..
         ((P2PTunnelRegistry) registries.p2pTunnel()).configure();
 
+        // TEMPORARY - remove before the pull request, see TempAddonTransferInspectors
+        if (appeng.util.Platform.isAE2FCLoaded) {
+            appeng.integration.modules.TempAddonTransferInspectors.register();
+        }
+
         // add to localization..
         PlayerMessages.values();
         GuiText.values();
