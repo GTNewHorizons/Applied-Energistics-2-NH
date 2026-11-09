@@ -48,8 +48,12 @@ import org.lwjgl.opengl.GL11;
 import com.gtnewhorizon.gtnhlib.event.PickBlockEvent;
 
 import appeng.api.parts.CableRenderMode;
+import appeng.api.stacks.AEFluidKey;
+import appeng.api.stacks.AEItemKey;
+import appeng.api.stacks.AEKeyType;
 import appeng.api.util.AEColor;
 import appeng.block.AEBaseBlock;
+import appeng.client.api.AEKeyRendering;
 import appeng.client.render.BaseBlockRender;
 import appeng.client.render.BlockPosHighlighter;
 import appeng.client.render.NetworkVisualiserRender;
@@ -62,6 +66,8 @@ import appeng.client.render.effects.LightningArcFX;
 import appeng.client.render.effects.LightningFX;
 import appeng.client.render.effects.VibrantFX;
 import appeng.client.render.highlighter.HighlighterManager;
+import appeng.client.render.keytypes.FluidKeyRenderer;
+import appeng.client.render.keytypes.ItemKeyRenderer;
 import appeng.client.render.notification.NotificationManager;
 import appeng.client.render.previewBlocks.BlockRendererPreviewEvent;
 import appeng.client.texture.CableBusTextures;
@@ -116,6 +122,9 @@ public class ClientHelper extends ServerHelper {
 
     @Override
     public void init() {
+        AEKeyRendering.register(AEKeyType.items(), AEItemKey.class, new ItemKeyRenderer());
+        AEKeyRendering.register(AEKeyType.fluids(), AEFluidKey.class, new FluidKeyRenderer());
+
         loadControllerAnimation();
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(new BlockPosHighlighter());
