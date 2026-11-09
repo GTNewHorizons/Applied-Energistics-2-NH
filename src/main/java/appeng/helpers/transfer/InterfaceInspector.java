@@ -46,7 +46,7 @@ public final class InterfaceInspector implements ITransferInspector<IInterfaceHo
         final FuzzyMode fuzzyMode = (FuzzyMode) settings.getSetting(Settings.FUZZY_MODE);
 
         final TransferDescription.Builder builder = InspectorSupport.withUpgrades(
-                TransferDescription.builder().priority(host.getPriority()),
+                TransferDescription.builder(),
                 duality.getInventoryByName("upgrades"),
                 duality.getInstalledUpgrades(Upgrades.CRAFTING) > 0);
 
@@ -62,9 +62,6 @@ public final class InterfaceInspector implements ITransferInspector<IInterfaceHo
         }
         builder.canExport(!slots.isEmpty());
 
-        InspectorSupport.addSetting(builder, settings, Settings.BLOCK);
-        InspectorSupport.addSetting(builder, settings, Settings.SMART_BLOCK);
-        InspectorSupport.addSetting(builder, settings, Settings.INSERTION_MODE);
         if (fuzzyCards > 0) {
             InspectorSupport.addSetting(builder, settings, Settings.FUZZY_MODE);
             builder.fuzzyMode(fuzzyMode);

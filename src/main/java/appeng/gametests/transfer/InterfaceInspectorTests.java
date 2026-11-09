@@ -74,6 +74,20 @@ public class InterfaceInspectorTests {
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 20)
+    public static void patternOnlySettingsAreNotReported(GameTestHelper helper) {
+        TileInterface tile = blockInterface(helper);
+        configure(tile.getInterfaceDuality(), 0, new ItemStack(Items.iron_ingot));
+
+        for (TransferDescription.SettingEntry entry : INSPECTOR.inspect(tile).settings) {
+            helper.assertFalse(
+                    entry.setting == Settings.BLOCK || entry.setting == Settings.SMART_BLOCK
+                            || entry.setting == Settings.INSERTION_MODE,
+                    "Blocking and insertion mode only affect patterns");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 20)
     public static void fuzzyCardsFillFromTheLastSlot(GameTestHelper helper) {
         helper.assertFalse(InterfaceInspector.isFuzzySlot(1, 5), "One card stops before slot 5");
         helper.assertTrue(InterfaceInspector.isFuzzySlot(1, 6), "One card covers slots 6 to 8");
@@ -97,7 +111,7 @@ public class InterfaceInspectorTests {
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 20)
-    public static void reportsCraftingCardPriorityAndIgnoresStorageRouting(GameTestHelper helper) {
+    public static void reportsCraftingCardButNotPriority(GameTestHelper helper) {
         TileInterface tile = blockInterface(helper);
         DualityInterface duality = tile.getInterfaceDuality();
         configure(duality, 0, new ItemStack(Items.iron_ingot));
@@ -108,7 +122,7 @@ public class InterfaceInspectorTests {
         TransferDescription description = INSPECTOR.inspect(tile);
 
         helper.assertTrue(description.hasCraftingCard, "Crafting card should be reported");
-        helper.assertEquals(7, description.priority, "Pattern priority should be reported");
+        helper.assertFalse(description.hasPriority, "Interface priority only orders patterns");
         helper.assertFalse(description.storageHandler, "Interface priority does not route storage");
         helper.succeed();
     }
