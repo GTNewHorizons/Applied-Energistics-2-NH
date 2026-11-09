@@ -18,6 +18,16 @@ public interface ICustomButtonDataObject {
     @SideOnly(Side.CLIENT)
     boolean actionPerformedCustomButtons(final GuiButton btn);
 
+    /**
+     * Called before the gui handles a mouse click, left clicks are reported again after the gui handled them.
+     *
+     * @return true if the click is consumed
+     */
+    @SideOnly(Side.CLIENT)
+    default boolean mouseClickedCustomButtons(final int mouseX, final int mouseY, final int mouseButton) {
+        return false;
+    }
+
     void readData(NBTTagCompound tag);
 
     void writeData(NBTTagCompound tag);

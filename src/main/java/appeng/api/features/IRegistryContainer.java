@@ -54,6 +54,12 @@ public interface IRegistryContainer {
     IWirelessTermRegistry wireless();
 
     /**
+     * Lets you register the terminals an ultra terminal can absorb. Registered terminals are also used to generate the
+     * ultra terminal crafting recipes.
+     */
+    IUltraTerminalRegistry ultraTerminal();
+
+    /**
      * Allows you to register new cell types, these will function in drives
      */
     ICellRegistry cell();

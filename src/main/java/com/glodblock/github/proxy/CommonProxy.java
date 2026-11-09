@@ -209,6 +209,11 @@ public class CommonProxy {
 
     public void registerRenderers() {}
 
+    /**
+     * Shows the name of the given stack above the hotbar, client only.
+     */
+    public void showItemName(ItemStack stack) {}
+
     public void registerMovables() {
         IAppEngApi api = AEApi.instance();
         api.registries().movable().whiteListTileEntity(TileWalrus.class);

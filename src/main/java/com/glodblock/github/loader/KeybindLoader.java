@@ -1,5 +1,11 @@
 package com.glodblock.github.loader;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityClientPlayerMP;
 import net.minecraft.client.settings.KeyBinding;
@@ -10,11 +16,13 @@ import org.lwjgl.input.Keyboard;
 
 import com.glodblock.github.FluidCraft;
 import com.glodblock.github.common.item.ItemWirelessUltraTerminal;
+import com.glodblock.github.common.terminal.TerminalIds;
 import com.glodblock.github.network.CPacketSwitchGuis;
 import com.glodblock.github.network.CPacketValueConfig;
-import com.glodblock.github.util.UltraTerminalModes;
 import com.glodblock.github.util.Util;
 
+import appeng.api.AEApi;
+import appeng.api.features.IUltraTerminalType;
 import cpw.mods.fml.client.registry.ClientRegistry;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -32,6 +40,22 @@ public class KeybindLoader implements Runnable {
     public static KeyBinding openPatternTerminal;
     public static KeyBinding openPatternExTerminal;
     public static KeyBinding restock;
+
+    /**
+     * Terminal types that have their own keybinding, kept for compatibility with existing player options.
+     */
+    private static final Set<String> FIXED_TERMINALS = new HashSet<>(
+            Arrays.asList(
+                    TerminalIds.AE2FC_CRAFTING,
+                    TerminalIds.AE2FC_LEVEL,
+                    TerminalIds.AE2FC_INTERFACE,
+                    TerminalIds.AE2FC_PATTERN,
+                    TerminalIds.AE2FC_PATTERN_EX));
+
+    /**
+     * Keybinding per registered terminal type that has no fixed keybinding.
+     */
+    private static final Map<String, KeyBinding> DYNAMIC_KEYS = new LinkedHashMap<>();
 
     @Override
     public void run() {
@@ -64,7 +88,29 @@ public class KeybindLoader implements Runnable {
         ClientRegistry.registerKeyBinding(openPatternTerminal);
         ClientRegistry.registerKeyBinding(openPatternExTerminal);
         ClientRegistry.registerKeyBinding(restock);
+        this.registerDynamicKeybinds();
         FMLCommonHandler.instance().bus().register(this);
+    }
+
+    /**
+     * Registers one unbound keybinding for every terminal type that has no fixed keybinding, so terminals from addons
+     * are bindable without extra work. The description only depends on the terminal id, so the binding survives
+     * language changes. Terminals registered after initialization get no keybinding.
+     */
+    private void registerDynamicKeybinds() {
+        DYNAMIC_KEYS.clear();
+        for (final IUltraTerminalType type : AEApi.instance().registries().ultraTerminal().getTypes()) {
+            final String id = type.getId();
+            if (FIXED_TERMINALS.contains(id) || DYNAMIC_KEYS.containsKey(id)) {
+                continue;
+            }
+            final KeyBinding binding = new KeyBinding(
+                    FluidCraft.MODID + ".key.Open." + id.replace(':', '.'),
+                    Keyboard.CHAR_NONE,
+                    "itemGroup.ae2fc");
+            ClientRegistry.registerKeyBinding(binding);
+            DYNAMIC_KEYS.put(id, binding);
+        }
     }
 
     @SideOnly(Side.CLIENT)
@@ -83,27 +129,38 @@ public class KeybindLoader implements Runnable {
         if (openTerminal.isPressed()) {
             handleOpenTerminalKey(null);
         } else if (openCraftingTerminal.isPressed()) {
-            handleOpenTerminalKey(UltraTerminalModes.CRAFTING);
+            handleOpenTerminalKey(TerminalIds.AE2FC_CRAFTING);
         } else if (openLevelTerminal.isPressed()) {
-            handleOpenTerminalKey(UltraTerminalModes.LEVEL);
+            handleOpenTerminalKey(TerminalIds.AE2FC_LEVEL);
         } else if (openInterfaceTerminal.isPressed()) {
-            handleOpenTerminalKey(UltraTerminalModes.INTERFACE);
+            handleOpenTerminalKey(TerminalIds.AE2FC_INTERFACE);
         } else if (openPatternTerminal.isPressed()) {
-            handleOpenTerminalKey(UltraTerminalModes.PATTERN);
+            handleOpenTerminalKey(TerminalIds.AE2FC_PATTERN);
         } else if (openPatternExTerminal.isPressed()) {
-            handleOpenTerminalKey(UltraTerminalModes.PATTERN_EX);
+            handleOpenTerminalKey(TerminalIds.AE2FC_PATTERN_EX);
         } else if (restock.isPressed()) {
             handleRestockKey();
+        } else {
+            for (final Map.Entry<String, KeyBinding> entry : DYNAMIC_KEYS.entrySet()) {
+                if (entry.getValue().isPressed()) {
+                    handleOpenTerminalKey(entry.getKey());
+                    return;
+                }
+            }
         }
     }
 
-    private void handleOpenTerminalKey(UltraTerminalModes mode) {
+    private void handleOpenTerminalKey(String modeId) {
         if (Minecraft.getMinecraft().currentScreen != null) return;
-        EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
-        ImmutablePair<Integer, ItemStack> temp = Util.getUltraWirelessTerm(player);
+        final EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
+        final ImmutablePair<Integer, ItemStack> temp = Util.getUltraWirelessTerm(player);
         if (temp == null) return;
-        if (mode != null) ItemWirelessUltraTerminal.setMode(temp.getRight(), mode);
-        FluidCraft.proxy.netHandler.sendToServer(new CPacketSwitchGuis(mode, true));
+        if (modeId != null) {
+            // only the absorbed terminals of the item can be opened
+            if (!ItemWirelessUltraTerminal.isAbsorbed(temp.getRight(), modeId)) return;
+            ItemWirelessUltraTerminal.setModeId(temp.getRight(), modeId);
+        }
+        FluidCraft.proxy.netHandler.sendToServer(new CPacketSwitchGuis(modeId, true));
     }
 
     private void handleRestockKey() {

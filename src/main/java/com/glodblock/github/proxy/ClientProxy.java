@@ -43,6 +43,16 @@ public class ClientProxy extends CommonProxy {
         super.postInit(event);
     }
 
+    @Override
+    public void showItemName(final ItemStack stack) {
+        if (stack == null || mc.ingameGUI == null) {
+            return;
+        }
+        // reuse the vanilla item highlight, its name is refreshed instead of adding a second message on top of it
+        mc.ingameGUI.highlightingItemStack = stack;
+        mc.ingameGUI.remainingHighlightTicks = 40;
+    }
+
     @SubscribeEvent
     public void tickEvent(TickEvent.PlayerTickEvent e) {
         if (refreshTick + reStockTime < System.currentTimeMillis()) {
