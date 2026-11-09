@@ -53,7 +53,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     private static final int EXTRA_BOTTOM_MARGIN = 32;
     private static final int LIST_LEFT = 8;
     private static final int LIST_RIGHT = 168;
-    private static final int LIST_TOP = 38;
+    private static final int LIST_TOP = 40;
     private static final int LIST_BOTTOM_MARGIN = 3;
     private static final int ROW_HEIGHT = 29;
     private static final int SMALL_VISIBLE_ROWS = 3;
@@ -70,12 +70,12 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     private static final int STRIP_VISIBLE = 6;
     private static final int STRIP_CELL = 16;
     private static final int ELLIPSIS_WIDTH = 9;
-    private static final int QUERY_SLOT_X = 9;
-    private static final int QUERY_SLOT_Y = 19;
+    private static final int QUERY_SLOT_X = 11;
+    private static final int QUERY_SLOT_Y = 21;
     private static final int FILTER_BUTTON_X = 30;
     private static final int FILTER_BUTTON_STEP = 18;
     private static final int CRAFTING_BUTTON_X = 92;
-    private static final int FILTER_BUTTON_Y = 19;
+    private static final int FILTER_BUTTON_Y = 21;
     private static final int TITLE_WIDTH = 90;
     private static final int QUERY_MATCH_COLOR = 0x6600FF00;
     private static final int FUZZY_MARK_COLOR = 0xFF4040FF;
