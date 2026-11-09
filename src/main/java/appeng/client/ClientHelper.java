@@ -433,6 +433,11 @@ public class ClientHelper extends ServerHelper {
     }
 
     @Override
+    public String getServerLanguage() {
+        return Minecraft.getMinecraft().getLanguageManager().getCurrentLanguage().getLanguageCode();
+    }
+
+    @Override
     public CableRenderMode getRenderMode() {
         if (Platform.isServer()) {
             return super.getRenderMode();

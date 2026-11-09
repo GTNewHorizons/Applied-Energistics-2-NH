@@ -151,6 +151,11 @@ gui.appliedenergistics2.CraftingDiagnosticTerminal=Crafting Diagnostic Terminal
 gui.appliedenergistics2.TransferTerminal=Transfer Terminal
 gui.appliedenergistics2.TransferTerminalQueryTooltip=Drop an item, fluid or essentia here to list the components that could move it.
 gui.appliedenergistics2.TransferTerminalSearchTooltip=Filter by the name of a configured item. Only names are compared, cards are not taken into account.
+Only names are compared, cards such as fuzzy cards
+or oredict cards are not taken into account.
+gui.appliedenergistics2.TransferTerminalSearchLanguageWarning=The server uses a different language (%s) than you (%s).
+Searching syncs the full list instead of only the visible rows,
+which may use more network traffic on large networks.
 gui.appliedenergistics2.TransferTerminalTieTooltip=AE picks between equal priorities and filters in no fixed order.
 gui.appliedenergistics2.TransferTermIn=IN
 gui.appliedenergistics2.TransferTermOut=OUT

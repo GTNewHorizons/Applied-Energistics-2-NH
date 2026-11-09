@@ -2,11 +2,13 @@ package appeng.helpers.transfer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 import org.jetbrains.annotations.Nullable;
 
 import appeng.api.config.TransferDirection;
 import appeng.api.features.transfer.TransferComponentInfo;
+import appeng.api.features.transfer.TransferDescription;
 import appeng.api.features.transfer.TransferMatcher;
 import appeng.api.storage.data.IAEStack;
 
@@ -21,12 +23,18 @@ public final class TransferResultFilter {
      * @param rows      every component found by the scan
      * @param query     stack to search for, null keeps every row
      * @param direction direction to search in
+     * @param keep      additional test a row has to pass
      * @return the matching rows in display order
      */
     public static List<TransferComponentInfo> apply(final List<TransferComponentInfo> rows,
-            @Nullable final IAEStack<?> query, final TransferDirection direction) {
+            @Nullable final IAEStack<?> query, final TransferDirection direction,
+            final Predicate<TransferComponentInfo> keep) {
         final List<TransferComponentInfo> result = new ArrayList<>(rows.size());
         for (final TransferComponentInfo row : rows) {
+            if (!keep.test(row)) {
+                continue;
+            }
+
             if (query == null) {
                 result.add(row);
             } else if (matches(row.description.matcher, query, direction)) {
@@ -36,6 +44,13 @@ public final class TransferResultFilter {
 
         result.sort(TransferRowOrder.comparator(query != null, direction));
         return result;
+    }
+
+    /**
+     * @param craftingOnly whether to keep only components with a crafting card
+     */
+    public static boolean passesToggles(final TransferDescription description, final boolean craftingOnly) {
+        return !craftingOnly || description.hasCraftingCard;
     }
 
     private static boolean matches(final TransferMatcher matcher, final IAEStack<?> query,

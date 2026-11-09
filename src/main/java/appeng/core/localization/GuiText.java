@@ -218,6 +218,8 @@ public enum GuiText implements Localization {
 
     TransferTerminalSearchTooltip,
 
+    TransferTerminalSearchLanguageWarning,
+
     TransferTerminalTieTooltip,
 
     TransferTermIn,

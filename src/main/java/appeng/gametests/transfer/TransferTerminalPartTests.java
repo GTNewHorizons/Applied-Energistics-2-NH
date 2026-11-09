@@ -15,6 +15,7 @@ import appeng.api.AEApi;
 import appeng.api.networking.events.MENetworkCellArrayUpdate;
 import appeng.container.implementations.ContainerTransferTerminal;
 import appeng.core.AppEng;
+import appeng.helpers.transfer.TransferRowWindow;
 import appeng.parts.reporting.PartTransferTerminal;
 
 @GameTestHolder(AppEng.MOD_ID)
@@ -47,6 +48,30 @@ public class TransferTerminalPartTests {
                     container.detectAndSendChanges();
 
                     helper.assertNull(container.getQuery(), "A new terminal has nothing searched");
+                }).thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void filtersAndWindowChangesApplyWithoutError(GameTestHelper helper) {
+        PartTransferTerminal terminal = terminal(helper);
+
+        helper.startSequence()
+                .thenWaitUntil(
+                        "wait for the terminal to join the network",
+                        60,
+                        () -> assertActive(helper, terminal, "Terminal should become active"))
+                .thenExecute("change every filter and the window", () -> {
+                    FakePlayer player = helper.spawnFakePlayer("transfer_terminal");
+                    ContainerTransferTerminal container = new ContainerTransferTerminal(player.inventory, terminal);
+                    container.detectAndSendChanges();
+
+                    container.craftingOnlySync.setLocalValue(true);
+                    container.searchTextSync.set("iron");
+                    container.windowStartSync.setLocalValue(1000);
+                    container.windowSizeSync.setLocalValue(TransferRowWindow.ALL);
+                    container.detectAndSendChanges();
+
+                    helper.assertNull(container.getQuery(), "The filters do not touch the query");
                 }).thenSucceed();
     }
 

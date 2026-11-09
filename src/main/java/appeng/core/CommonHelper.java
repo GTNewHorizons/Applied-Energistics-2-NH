@@ -57,6 +57,11 @@ public abstract class CommonHelper {
 
     public abstract CableRenderMode getRenderMode();
 
+    /**
+     * @return the code of the language the logical server translates names in
+     */
+    public abstract String getServerLanguage();
+
     public abstract void triggerUpdates();
 
     public abstract void updateRenderMode(EntityPlayer player);

@@ -44,7 +44,7 @@ public class TransferResultFilterFunctionalTest {
         final TransferComponentInfo row = row("a", TransferMatcher.NONE);
 
         final List<TransferComponentInfo> result = TransferResultFilter
-                .apply(Arrays.asList(row), null, TransferDirection.BOTH);
+                .apply(Arrays.asList(row), null, TransferDirection.BOTH, ignored -> true);
 
         assertEquals(1, result.size());
         assertSame(row, result.get(0));
@@ -57,10 +57,14 @@ public class TransferResultFilterFunctionalTest {
                 row("exporter", only(TransferDirection.EXPORT)),
                 row("nothing", TransferMatcher.NONE));
 
-        assertEquals("importer", TransferResultFilter.apply(rows, IRON, TransferDirection.IMPORT).get(0).customName);
-        assertEquals(1, TransferResultFilter.apply(rows, IRON, TransferDirection.IMPORT).size());
-        assertEquals("exporter", TransferResultFilter.apply(rows, IRON, TransferDirection.EXPORT).get(0).customName);
-        assertEquals(2, TransferResultFilter.apply(rows, IRON, TransferDirection.BOTH).size());
+        assertEquals(
+                "importer",
+                TransferResultFilter.apply(rows, IRON, TransferDirection.IMPORT, ignored -> true).get(0).customName);
+        assertEquals(1, TransferResultFilter.apply(rows, IRON, TransferDirection.IMPORT, ignored -> true).size());
+        assertEquals(
+                "exporter",
+                TransferResultFilter.apply(rows, IRON, TransferDirection.EXPORT, ignored -> true).get(0).customName);
+        assertEquals(2, TransferResultFilter.apply(rows, IRON, TransferDirection.BOTH, ignored -> true).size());
     }
 
     @Test
@@ -80,7 +84,8 @@ public class TransferResultFilterFunctionalTest {
         final List<TransferComponentInfo> rows = Arrays
                 .asList(storageRow("a open", (stack, direction) -> true), storageRow("z listed", listed));
 
-        final List<TransferComponentInfo> result = TransferResultFilter.apply(rows, IRON, TransferDirection.EXPORT);
+        final List<TransferComponentInfo> result = TransferResultFilter
+                .apply(rows, IRON, TransferDirection.EXPORT, ignored -> true);
 
         assertEquals("z listed", result.get(0).customName);
         assertEquals("a open", result.get(1).customName);
@@ -97,9 +102,31 @@ public class TransferResultFilterFunctionalTest {
         final TransferComponentInfo row = row("a", only(TransferDirection.EXPORT), GOLD, IRON);
 
         final TransferDescription result = TransferResultFilter
-                .apply(Arrays.asList(row), IRON, TransferDirection.EXPORT).get(0).description;
+                .apply(Arrays.asList(row), IRON, TransferDirection.EXPORT, ignored -> true).get(0).description;
 
         assertFalse(result.config.get(0).matchesQuery);
         assertTrue(result.config.get(1).matchesQuery);
+    }
+
+    @Test
+    public void rowsFailingTheExtraTestAreDropped() {
+        final List<TransferComponentInfo> rows = Arrays
+                .asList(row("keep", TransferMatcher.NONE), row("drop", TransferMatcher.NONE));
+
+        final List<TransferComponentInfo> result = TransferResultFilter
+                .apply(rows, null, TransferDirection.BOTH, candidate -> candidate.customName.equals("keep"));
+
+        assertEquals(1, result.size());
+        assertEquals("keep", result.get(0).customName);
+    }
+
+    @Test
+    public void craftingOnlyNeedsACraftingCard() {
+        final TransferDescription withCard = TransferDescription.builder().hasCraftingCard(true).build();
+        final TransferDescription withoutCard = TransferDescription.builder().build();
+
+        assertTrue(TransferResultFilter.passesToggles(withCard, true));
+        assertFalse(TransferResultFilter.passesToggles(withoutCard, true));
+        assertTrue(TransferResultFilter.passesToggles(withoutCard, false));
     }
 }

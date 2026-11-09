@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -33,12 +34,14 @@ import appeng.client.gui.widgets.MEGuiTextField;
 import appeng.client.render.highlighter.BlockPosHighlighter;
 import appeng.container.implementations.ContainerTransferTerminal;
 import appeng.container.slot.AppEngSlot;
+import appeng.container.sync.handlers.BooleanSyncHandler;
 import appeng.core.AEConfig;
 import appeng.core.localization.ColorUtils;
 import appeng.core.localization.GuiText;
 import appeng.core.localization.PlayerMessages;
 import appeng.helpers.transfer.ConfigStripWindow;
-import appeng.helpers.transfer.TransferClientFilter;
+import appeng.helpers.transfer.TransferNameFilter;
+import appeng.helpers.transfer.TransferRowWindow;
 
 public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextField {
 
@@ -81,8 +84,9 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
 
     private final ContainerTransferTerminal container;
     private final List<TransferComponentInfo> pending = new ArrayList<>();
-    private final List<Row> allRows = new ArrayList<>();
-    private final List<Row> rows = new ArrayList<>();
+    private final List<Row> cachedRows = new ArrayList<>();
+    private final List<Row> locallyFilteredRows = new ArrayList<>();
+    private final String clientLanguage;
     private final Map<Integer, GuiImgButton> settingButtons = new HashMap<>();
     private final GuiImgButton highlightButton = new GuiImgButton(
             HIGHLIGHT_X,
@@ -96,15 +100,18 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     private GuiImgButton exportButton;
     private GuiImgButton bothButton;
     private GuiImgButton craftingButton;
-    private boolean craftingOnly;
     private boolean tallMode;
     private int visibleRows = SMALL_VISIBLE_ROWS;
+    private int cacheStart;
+    private int serverTotal;
     private int lastMouseX;
     private int lastMouseY;
 
     public GuiTransferTerminal(final InventoryPlayer inventoryPlayer, final ITransferTerminal host) {
         super(new ContainerTransferTerminal(inventoryPlayer, host));
         this.container = (ContainerTransferTerminal) this.inventorySlots;
+        this.clientLanguage = Minecraft.getMinecraft().getLanguageManager().getCurrentLanguage().getLanguageCode();
+        this.container.serverLanguageSync.onClientChange((oldValue, newValue) -> this.updateSearchTooltip());
         this.tallMode = AEConfig.instance.getConfigManager().getSetting(Settings.TERMINAL_STYLE) == TerminalStyle.TALL;
         this.xSize = GUI_WIDTH;
         this.highlightButton.setHalfSize(true);
@@ -140,15 +147,15 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                 this.guiLeft + CRAFTING_BUTTON_X,
                 this.guiTop + BUTTON_ROW_Y,
                 Settings.TRANSFER_CRAFTING_CARD_ONLY,
-                this.craftingOnly ? YesNo.YES : YesNo.NO);
+                this.container.craftingOnlySync.get() ? YesNo.YES : YesNo.NO);
         this.buttonList.add(this.craftingButton);
 
-        this.searchField = new MEGuiTextField(65, 12, GuiText.TransferTerminalSearchTooltip.getLocal()) {
+        this.searchField = new MEGuiTextField(65, 12, this.searchTooltip()) {
 
             @Override
             public void onTextChange(final String oldText) {
                 super.onTextChange(oldText);
-                GuiTransferTerminal.this.applyClientFilter();
+                GuiTransferTerminal.this.refreshRows();
             }
         };
         this.searchField.x = this.guiLeft + 104;
@@ -156,7 +163,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         this.searchField.setText(previousSearch);
 
         this.repositionSlots();
-        this.applyClientFilter();
+        this.refreshRows();
     }
 
     private GuiImgButton addModeButton(final int index, final TransferDirection direction) {
@@ -169,41 +176,119 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         return button;
     }
 
+    private String searchTooltip() {
+        String tooltip = GuiText.TransferTerminalSearchTooltip.getLocal();
+        final String serverLanguage = this.container.serverLanguageSync.get();
+        if (!serverLanguage.isEmpty() && !serverLanguage.equals(this.clientLanguage)) {
+            tooltip += "\n" + String.format(
+                    GuiText.TransferTerminalSearchLanguageWarning.getLocal(),
+                    serverLanguage,
+                    this.clientLanguage);
+        }
+        return tooltip.replace("\\n", "\n");
+    }
+
+    private void updateSearchTooltip() {
+        if (this.searchField != null) {
+            this.searchField.setMessage(this.searchTooltip());
+        }
+    }
+
     private void updateScrollBar() {
         this.getScrollBar().setTop(SCROLLBAR_TOP).setLeft(SCROLLBAR_LEFT)
                 .setHeight(LIST_TOP - SCROLLBAR_TOP + this.visibleRows * ROW_HEIGHT);
-        this.getScrollBar().setRange(0, Math.max(0, this.rows.size() - this.visibleRows), 1);
+        this.getScrollBar().setRange(0, Math.max(0, this.rowCount() - this.visibleRows), 1);
     }
 
-    private void applyClientFilter() {
-        this.rows.clear();
-        final String text = this.searchField == null ? "" : this.searchField.getText();
-        for (final Row row : this.allRows) {
-            if (TransferClientFilter
-                    .matches(row.configNames, row.description.hasCraftingCard, text, this.craftingOnly)) {
-                this.rows.add(row);
+    private String searchText() {
+        return this.searchField == null ? "" : this.searchField.getText().trim();
+    }
+
+    private boolean languagesMatch() {
+        return this.clientLanguage.equals(this.container.serverLanguageSync.get());
+    }
+
+    /**
+     * Names on the server are in its language, so a client in another language gets the whole list and searches it.
+     */
+    private boolean isFilteringLocally() {
+        return !this.searchText().isEmpty() && !this.languagesMatch();
+    }
+
+    private void refreshRows() {
+        this.locallyFilteredRows.clear();
+        if (this.isFilteringLocally()) {
+            final String text = this.searchText();
+            for (final Row row : this.cachedRows) {
+                if (TransferNameFilter.matches(row.configNames, text)) {
+                    this.locallyFilteredRows.add(row);
+                }
             }
         }
         this.updateScrollBar();
     }
 
+    private int rowCount() {
+        return this.isFilteringLocally() ? this.locallyFilteredRows.size() : this.serverTotal;
+    }
+
     /**
-     * Rows arrive in display order, a large list spans several packets and replaces the current one once complete.
+     * @return the row at a position in the list, or null if the server has not sent it yet
      */
-    public void receiveRows(final List<TransferComponentInfo> received, final boolean first, final boolean last) {
+    private Row rowAt(final int index) {
+        if (this.isFilteringLocally()) {
+            return index >= 0 && index < this.locallyFilteredRows.size() ? this.locallyFilteredRows.get(index) : null;
+        }
+
+        final int offset = index - this.cacheStart;
+        return offset >= 0 && offset < this.cachedRows.size() ? this.cachedRows.get(offset) : null;
+    }
+
+    /**
+     * Rows arrive in display order, a large window spans several packets and replaces the current one once complete.
+     */
+    public void receiveRows(final List<TransferComponentInfo> received, final int total, final int start,
+            final boolean first, final boolean last) {
         if (first) {
             this.pending.clear();
         }
         this.pending.addAll(received);
 
         if (last) {
-            this.allRows.clear();
+            this.cachedRows.clear();
             for (final TransferComponentInfo info : this.pending) {
-                this.allRows.add(new Row(info));
+                this.cachedRows.add(new Row(info));
             }
             this.pending.clear();
-            this.applyClientFilter();
+            this.serverTotal = total;
+            this.cacheStart = start;
+            this.refreshRows();
         }
+    }
+
+    @Override
+    public void updateScreen() {
+        this.requestSearchAndWindow();
+        super.updateScreen();
+    }
+
+    private void requestSearchAndWindow() {
+        final String serverText = this.languagesMatch() ? this.searchText() : "";
+        if (!serverText.equals(this.container.searchTextSync.get())) {
+            this.container.searchTextSync.set(serverText);
+        }
+
+        final boolean wholeList = this.isFilteringLocally();
+        final int size = wholeList ? TransferRowWindow.ALL : TransferRowWindow.requestSize(this.visibleRows);
+        final int first = this.getScrollBar().getCurrentScroll();
+        final boolean sameSize = size == this.container.windowSizeSync.get();
+        if (sameSize && (wholeList || TransferRowWindow
+                .covers(this.cacheStart, this.cachedRows.size(), first, this.visibleRows, this.serverTotal))) {
+            return;
+        }
+
+        this.container.windowStartSync.set(wholeList ? 0 : TransferRowWindow.requestStart(first, this.visibleRows));
+        this.container.windowSizeSync.set(size);
     }
 
     @Override
@@ -217,9 +302,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         } else if (button == this.bothButton) {
             this.setMode(TransferDirection.BOTH);
         } else if (button == this.craftingButton) {
-            this.craftingOnly = !this.craftingOnly;
-            this.craftingButton.set(this.craftingOnly ? YesNo.YES : YesNo.NO);
-            this.applyClientFilter();
+            this.toggle(this.craftingButton, this.container.craftingOnlySync);
         } else if (button == this.terminalStyleBox) {
             this.tallMode = !this.tallMode;
             final TerminalStyle style = this.tallMode ? TerminalStyle.TALL : TerminalStyle.SMALL;
@@ -230,6 +313,12 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
 
     private void setMode(final TransferDirection direction) {
         this.container.modeSync.set(direction.ordinal());
+    }
+
+    private void toggle(final GuiImgButton button, final BooleanSyncHandler sync) {
+        final boolean enabled = !sync.get();
+        sync.set(enabled);
+        button.set(enabled ? YesNo.YES : YesNo.NO);
     }
 
     private TransferDirection getMode() {
@@ -273,7 +362,11 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
             return;
         }
 
-        final Row row = this.rows.get(index);
+        final Row row = this.rowAt(index);
+        if (row == null) {
+            return;
+        }
+
         final String customName = row.info.customName;
         this.highlightButton.func_146113_a(this.mc.getSoundHandler());
         BlockPosHighlighter.highlightNamedBlocks(
@@ -350,7 +443,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                 SLOT_FILL_COLOR);
 
         this.drawSelection(this.buttonFor(this.getMode()));
-        if (this.craftingOnly) {
+        if (this.container.craftingOnlySync.get()) {
             this.drawSelection(this.craftingButton);
         }
 
@@ -395,9 +488,12 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
 
         final List<String> tooltip = new ArrayList<>();
         final int first = this.getScrollBar().getCurrentScroll();
-        final int end = Math.min(this.rows.size(), first + this.visibleRows);
+        final int end = Math.min(this.rowCount(), first + this.visibleRows);
         for (int index = first; index < end; index++) {
-            this.drawRow(this.rows.get(index), this.rowTop(index), relX, relY, tooltip);
+            final Row row = this.rowAt(index);
+            if (row != null) {
+                this.drawRow(row, this.rowTop(index), relX, relY, tooltip);
+            }
         }
 
         if (relX >= 8 && relX < 8 + TITLE_WIDTH && relY >= 5 && relY < 16) {
@@ -598,7 +694,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         }
 
         final int index = this.getScrollBar().getCurrentScroll() + (relY - LIST_TOP) / ROW_HEIGHT;
-        return index < this.rows.size() ? index : -1;
+        return index < this.rowCount() ? index : -1;
     }
 
     private int getMiddleHeight() {

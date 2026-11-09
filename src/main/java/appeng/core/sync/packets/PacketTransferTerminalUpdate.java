@@ -17,17 +17,21 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 /**
- * Sends the Transfer Terminal's rows to the client, split over several packets on large networks.
+ * Sends a window of the Transfer Terminal's rows to the client, split over several packets if it is large.
  */
 public class PacketTransferTerminalUpdate extends AppEngPacket {
 
     private final boolean first;
     private final boolean last;
+    private final int total;
+    private final int start;
     private final List<TransferComponentInfo> rows;
 
     public PacketTransferTerminalUpdate(final ByteBuf stream) {
         this.first = stream.readBoolean();
         this.last = stream.readBoolean();
+        this.total = stream.readInt();
+        this.start = stream.readInt();
         final int count = stream.readInt();
         this.rows = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
@@ -36,19 +40,26 @@ public class PacketTransferTerminalUpdate extends AppEngPacket {
     }
 
     /**
-     * @param first whether this packet starts a new list
-     * @param last  whether this packet completes the list
+     * @param first whether this packet starts a new window
+     * @param last  whether this packet completes the window
+     * @param total how many rows the whole result has
+     * @param start position of the window's first row in the whole result
      * @param rows  rows already written with {@link TransferComponentInfo#write}
      */
-    public PacketTransferTerminalUpdate(final boolean first, final boolean last, final List<byte[]> rows) {
+    public PacketTransferTerminalUpdate(final boolean first, final boolean last, final int total, final int start,
+            final List<byte[]> rows) {
         this.first = first;
         this.last = last;
+        this.total = total;
+        this.start = start;
         this.rows = new ArrayList<>();
 
         final ByteBuf data = Unpooled.buffer();
         data.writeInt(this.getPacketID());
         data.writeBoolean(first);
         data.writeBoolean(last);
+        data.writeInt(total);
+        data.writeInt(start);
         data.writeInt(rows.size());
         for (final byte[] row : rows) {
             data.writeBytes(row);
@@ -61,7 +72,7 @@ public class PacketTransferTerminalUpdate extends AppEngPacket {
     public void clientPacketData(final INetworkInfo network, final AppEngPacket packet, final EntityPlayer player) {
         final GuiScreen screen = Minecraft.getMinecraft().currentScreen;
         if (screen instanceof GuiTransferTerminal gui) {
-            gui.receiveRows(this.rows, this.first, this.last);
+            gui.receiveRows(this.rows, this.total, this.start, this.first, this.last);
         }
     }
 }

@@ -127,6 +127,11 @@ public class ServerHelper extends CommonHelper {
     public void postInit() {}
 
     @Override
+    public String getServerLanguage() {
+        return "en_US";
+    }
+
+    @Override
     public CableRenderMode getRenderMode() {
         if (this.renderModeBased == null) {
             return CableRenderMode.Standard;
