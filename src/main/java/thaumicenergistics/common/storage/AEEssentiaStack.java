@@ -71,6 +71,12 @@ public class AEEssentiaStack extends AEStack<AEEssentiaStack> {
         return ESSENTIA_STACK_TYPE;
     }
 
+    @NonNull
+    @Override
+    public AEEssentiaKey getKey() {
+        return AEEssentiaKey.of(this.aspect);
+    }
+
     @Override
     public void add(AEEssentiaStack is) {
         if (is == null) {

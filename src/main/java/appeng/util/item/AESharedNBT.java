@@ -17,6 +17,8 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 
+import org.jspecify.annotations.Nullable;
+
 import appeng.api.AEApi;
 import appeng.api.features.IItemComparison;
 import appeng.api.storage.data.IAETagCompound;
@@ -58,7 +60,8 @@ public class AESharedNBT extends NBTTagCompound implements IAETagCompound {
     /*
      * Returns an NBT Compound that is used for accelerating comparisons.
      */
-    static synchronized NBTTagCompound getSharedTagCompound(final NBTTagCompound tagCompound, final ItemStack s) {
+    public static synchronized @Nullable NBTTagCompound getSharedTagCompound(final NBTTagCompound tagCompound,
+            final ItemStack s) {
         if (tagCompound.hasNoTags()) {
             return null;
         }
@@ -69,7 +72,8 @@ public class AESharedNBT extends NBTTagCompound implements IAETagCompound {
             meta = s.getItemDamage();
         }
 
-        if (isShared(tagCompound)) {
+        // A tag shared for another item or meta is shared again, so that equal tags of this item stay identical.
+        if (tagCompound instanceof AESharedNBT shared && shared.item == item && shared.meta == meta) {
             return tagCompound;
         }
 
@@ -95,6 +99,16 @@ public class AESharedNBT extends NBTTagCompound implements IAETagCompound {
 
         SHARED_TAG_COMPOUND.put(sso, new WeakReference<>(sso));
         return clone;
+    }
+
+    /**
+     * Like {@link #getSharedTagCompound(NBTTagCompound, ItemStack)}, for a tag that no stack holds.
+     */
+    public static @Nullable AESharedNBT getSharedTagCompound(final NBTTagCompound tagCompound, final Item item,
+            final int damage) {
+        final ItemStack probe = new ItemStack(item, 1, damage);
+        probe.setTagCompound((NBTTagCompound) tagCompound.copy());
+        return (AESharedNBT) getSharedTagCompound(tagCompound, probe);
     }
 
     /*

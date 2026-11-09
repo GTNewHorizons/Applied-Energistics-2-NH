@@ -190,6 +190,7 @@ public class Platform {
     public static final boolean isGTLoaded = IntegrationRegistry.INSTANCE.isEnabled(IntegrationType.GT);
     public static final boolean isThaumicEnergisticsLoaded = Loader.isModLoaded("thaumicenergistics");
     public static final boolean isEndlessIdsLoaded = Loader.isModLoaded("endlessids");
+    public static final boolean isNEILoaded = Loader.isModLoaded("NotEnoughItems");
 
     static {
         BYTE_LIMIT = new double[10];
