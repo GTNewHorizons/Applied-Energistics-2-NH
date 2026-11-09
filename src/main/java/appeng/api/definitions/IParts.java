@@ -102,6 +102,8 @@ public interface IParts {
 
     IItemDefinition craftingDiagnosticTerminal();
 
+    IItemDefinition transferTerminal();
+
     IItemDefinition terminal();
 
     IItemDefinition storageMonitor();

@@ -63,6 +63,7 @@ import appeng.parts.reporting.PartSemiDarkPanel;
 import appeng.parts.reporting.PartStorageMonitor;
 import appeng.parts.reporting.PartTerminal;
 import appeng.parts.reporting.PartThroughputMonitor;
+import appeng.parts.reporting.PartTransferTerminal;
 
 public enum PartType {
 
@@ -202,6 +203,9 @@ public enum PartType {
 
     P2PTunnelSound(472, EnumSet.of(AEFeature.P2PTunnel, AEFeature.P2PTunnelSound),
             EnumSet.noneOf(IntegrationType.class), PartP2PSound.class, GuiText.SoundTunnel),
+
+    TransferTerminal(490, EnumSet.of(AEFeature.InterfaceTerminal), EnumSet.noneOf(IntegrationType.class),
+            PartTransferTerminal.class),
 
     InterfaceTerminal(480, EnumSet.of(AEFeature.InterfaceTerminal), EnumSet.noneOf(IntegrationType.class),
             PartInterfaceTerminal.class),

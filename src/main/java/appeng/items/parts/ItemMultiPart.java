@@ -248,6 +248,12 @@ public final class ItemMultiPart extends AEBaseItem implements IPartItem, IItemG
             lines.add(EnumChatFormatting.RED + GuiText.Deprecated.getLocal());
         }
 
+        if (part != null && part.part == PartType.TransferTerminal) {
+            lines.add(GuiText.TransferTerminalOrderTooltip.getLocal());
+            lines.add(GuiText.TransferTerminalNetworkTooltip.getLocal());
+            lines.add(GuiText.TransferTerminalMoveTooltip.getLocal());
+        }
+
         if (stack.hasTagCompound()) {
             NBTTagCompound nbt = stack.getTagCompound();
 

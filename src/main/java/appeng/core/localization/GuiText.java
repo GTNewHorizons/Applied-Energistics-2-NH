@@ -211,6 +211,12 @@ public enum GuiText implements Localization {
     SimulationIncomplete,
 
     InterfaceTerminal,
+
+    TransferTerminalOrderTooltip,
+
+    TransferTerminalNetworkTooltip,
+
+    TransferTerminalMoveTooltip,
     NoCraftingCPUs,
     Clean,
     InvalidPattern,

@@ -148,6 +148,9 @@ itemGroup.appliedenergistics2.facades=Applied Energistics 2 - Facades
 # GUI
 gui.appliedenergistics2.CraftingTerminal=Crafting Terminal
 gui.appliedenergistics2.CraftingDiagnosticTerminal=Crafting Diagnostic Terminal
+gui.appliedenergistics2.TransferTerminalOrderTooltip=Lists the components most likely to have moved a stack first.
+gui.appliedenergistics2.TransferTerminalNetworkTooltip=This network comes first, then the networks connected to it.
+gui.appliedenergistics2.TransferTerminalMoveTooltip=Priorities only compare within a network: move the terminal to inspect another one.
 gui.appliedenergistics2.METunnel=ME
 gui.appliedenergistics2.ItemTunnel=Item
 gui.appliedenergistics2.FluidTunnel=Fluid
@@ -856,6 +859,7 @@ item.appliedenergistics2.ItemPart.Terminal.name=ME Terminal
 item.appliedenergistics2.ItemPart.CraftingTerminal.name=ME Crafting Terminal
 item.appliedenergistics2.ItemPart.CraftingDiagnosticTerminal.name=ME Crafting Diagnostic Terminal
 item.appliedenergistics2.ItemPart.InterfaceTerminal.name=ME Interface Terminal
+item.appliedenergistics2.ItemPart.TransferTerminal.name=ME Transfer Terminal
 item.appliedenergistics2.ItemPart.InvertedToggleBus.name=ME Inverted Toggle Bus
 item.appliedenergistics2.ItemPart.ToggleBus.name=ME Toggle Bus
 item.appliedenergistics2.ItemPart.CraftingMonitor.name=ME Crafting Monitor
