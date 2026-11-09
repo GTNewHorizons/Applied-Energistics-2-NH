@@ -115,7 +115,9 @@ public enum Settings {
 
     ADVANCED_LEVEL_EMITTER_LOGIC(EnumSet.allOf(BooleanOperation.class)),
     ADVANCED_LEVEL_EMITTER_SLOT_ENABLED(EnumSet.of(YesNo.YES, YesNo.NO)),
-    ADVANCED_LEVEL_EMITTER_SLOT_INVERT(EnumSet.of(RedstoneMode.LOW_SIGNAL, RedstoneMode.HIGH_SIGNAL));
+    ADVANCED_LEVEL_EMITTER_SLOT_INVERT(EnumSet.of(RedstoneMode.LOW_SIGNAL, RedstoneMode.HIGH_SIGNAL)),
+    TRANSFER_DIRECTION(EnumSet.allOf(TransferDirection.class)),
+    TRANSFER_CRAFTING_CARD_ONLY(EnumSet.of(YesNo.YES, YesNo.NO));
 
     private final EnumSet<? extends Enum<?>> values;
 

@@ -212,6 +212,36 @@ public enum GuiText implements Localization {
 
     InterfaceTerminal,
 
+    TransferTerminal,
+
+    TransferTerminalQueryTooltip,
+
+    TransferTerminalSearchTooltip,
+
+    TransferTerminalTieTooltip,
+
+    TransferTermIn,
+
+    TransferTermOut,
+
+    TransferTermBoth,
+
+    TransferTermNone,
+
+    TransferTermPriority,
+
+    TransferTermOreFilter,
+
+    TransferTermFuzzySlot,
+
+    TransferTermShowingSlots,
+
+    TransferTermSubNetwork,
+
+    TransferTermSubNetworkTooltip,
+
+    TransferTermLocation,
+
     TransferTerminalOrderTooltip,
 
     TransferTerminalNetworkTooltip,

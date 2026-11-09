@@ -58,6 +58,7 @@ import appeng.api.config.SortOrder;
 import appeng.api.config.StorageFilter;
 import appeng.api.config.StringOrder;
 import appeng.api.config.TerminalStyle;
+import appeng.api.config.TransferDirection;
 import appeng.api.config.ViewItems;
 import appeng.api.config.WirelessToolGroupBy;
 import appeng.api.config.YesNo;
@@ -592,6 +593,36 @@ public class GuiImgButton extends GuiButton implements ITooltip {
 
             this.registerApp(16 + 3, Settings.CRAFT_ONLY, YesNo.YES, ButtonToolTips.Craft, ButtonToolTips.CraftOnly);
             this.registerApp(16 + 2, Settings.CRAFT_ONLY, YesNo.NO, ButtonToolTips.Craft, ButtonToolTips.CraftEither);
+            this.registerApp(
+                    16 * 9 + 1,
+                    Settings.TRANSFER_DIRECTION,
+                    TransferDirection.IMPORT,
+                    ButtonToolTips.TransferTermDirection,
+                    ButtonToolTips.TransferTermImport);
+            this.registerApp(
+                    16 * 9,
+                    Settings.TRANSFER_DIRECTION,
+                    TransferDirection.EXPORT,
+                    ButtonToolTips.TransferTermDirection,
+                    ButtonToolTips.TransferTermExport);
+            this.registerApp(
+                    16 * 9 + 2,
+                    Settings.TRANSFER_DIRECTION,
+                    TransferDirection.BOTH,
+                    ButtonToolTips.TransferTermDirection,
+                    ButtonToolTips.TransferTermBoth);
+            this.registerApp(
+                    16 + 3,
+                    Settings.TRANSFER_CRAFTING_CARD_ONLY,
+                    YesNo.YES,
+                    ButtonToolTips.TransferTermCraftingOnly,
+                    ButtonToolTips.TransferTermCraftingOnlyYes);
+            this.registerApp(
+                    16 + 2,
+                    Settings.TRANSFER_CRAFTING_CARD_ONLY,
+                    YesNo.NO,
+                    ButtonToolTips.TransferTermCraftingOnly,
+                    ButtonToolTips.TransferTermCraftingOnlyNo);
 
             this.registerApp(
                     16 * 11 + 2,

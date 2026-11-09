@@ -1,6 +1,8 @@
 package appeng.parts.reporting;
 
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.Vec3;
 
 import appeng.api.AEApi;
 import appeng.api.networking.events.MENetworkBootingStatusChange;
@@ -8,7 +10,9 @@ import appeng.api.networking.events.MENetworkCellArrayUpdate;
 import appeng.api.networking.events.MENetworkEventSubscribe;
 import appeng.api.parts.ITransferTerminal;
 import appeng.client.texture.CableBusTextures;
+import appeng.core.sync.GuiBridge;
 import appeng.helpers.IPrimaryGuiIconProvider;
+import appeng.util.Platform;
 
 public class PartTransferTerminal extends AbstractPartDisplay implements ITransferTerminal, IPrimaryGuiIconProvider {
 
@@ -19,6 +23,17 @@ public class PartTransferTerminal extends AbstractPartDisplay implements ITransf
 
     public PartTransferTerminal(final ItemStack is) {
         super(is);
+    }
+
+    @Override
+    public boolean onPartActivate(final EntityPlayer player, final Vec3 pos) {
+        if (super.onPartActivate(player, pos) || player.isSneaking()) {
+            return false;
+        }
+        if (Platform.isServer()) {
+            Platform.openGUI(player, this.getHost().getTile(), this.getSide(), GuiBridge.GUI_TRANSFER_TERMINAL);
+        }
+        return true;
     }
 
     @Override

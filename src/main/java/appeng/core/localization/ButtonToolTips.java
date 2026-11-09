@@ -302,6 +302,13 @@ public enum ButtonToolTips implements Localization {
 
     ReshuffleTabReshuffleHint,
 
+    TransferTermDirection,
+    TransferTermImport,
+    TransferTermExport,
+    TransferTermBoth,
+    TransferTermCraftingOnly,
+    TransferTermCraftingOnlyYes,
+    TransferTermCraftingOnlyNo,
     InterfaceTerminalVisibility,
     InterfaceTerminalVisibilityVisible,
     InterfaceTerminalVisibilityHidden,
