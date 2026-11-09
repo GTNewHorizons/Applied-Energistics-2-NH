@@ -74,7 +74,6 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     private static final int QUERY_SLOT_Y = 21;
     private static final int FILTER_BUTTON_X = 30;
     private static final int FILTER_BUTTON_STEP = 18;
-    private static final int CRAFTING_BUTTON_X = 92;
     private static final int FILTER_BUTTON_Y = 21;
     private static final int TITLE_WIDTH = 90;
     private static final int QUERY_MATCH_COLOR = 0x6600FF00;
@@ -140,12 +139,8 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         this.buttonList.add(this.terminalStyleBox);
 
         this.directionButton = this.addFilterButton(0, Settings.TRANSFER_DIRECTION, this.getMode());
-        this.craftingButton = new GuiImgButton(
-                this.guiLeft + CRAFTING_BUTTON_X,
-                this.guiTop + FILTER_BUTTON_Y,
-                Settings.TRANSFER_CRAFTING_CARD_ONLY,
-                this.container.craftingOnlySync.get() ? YesNo.YES : YesNo.NO);
-        this.buttonList.add(this.craftingButton);
+        this.craftingButton = this
+                .addToggleButton(1, Settings.TRANSFER_CRAFTING_CARD_ONLY, this.container.craftingOnlySync);
 
         this.searchField = new MEGuiTextField(65, 12, this.searchTooltip()) {
 
@@ -171,6 +166,10 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                 value);
         this.buttonList.add(button);
         return button;
+    }
+
+    private GuiImgButton addToggleButton(final int index, final Settings setting, final BooleanSyncHandler sync) {
+        return this.addFilterButton(index, setting, sync.get() ? YesNo.YES : YesNo.NO);
     }
 
     private String searchTooltip() {
