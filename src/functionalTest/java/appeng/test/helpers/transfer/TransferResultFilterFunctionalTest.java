@@ -125,8 +125,22 @@ public class TransferResultFilterFunctionalTest {
         final TransferDescription withCard = TransferDescription.builder().hasCraftingCard(true).build();
         final TransferDescription withoutCard = TransferDescription.builder().build();
 
-        assertTrue(TransferResultFilter.passesToggles(withCard, true));
-        assertFalse(TransferResultFilter.passesToggles(withoutCard, true));
-        assertTrue(TransferResultFilter.passesToggles(withoutCard, false));
+        assertTrue(TransferResultFilter.passesToggles(withCard, true, false));
+        assertFalse(TransferResultFilter.passesToggles(withoutCard, true, false));
+        assertTrue(TransferResultFilter.passesToggles(withoutCard, false, false));
+    }
+
+    @Test
+    public void hideUnfilteredKeepsOnlyComponentsWithAFilter() {
+        final TransferDescription none = TransferDescription.builder().build();
+        final TransferDescription configured = TransferDescription.builder().config(IRON, false).build();
+        final TransferDescription oreFiltered = TransferDescription.builder().oreFilter("ingot*").build();
+        final TransferDescription emptyOreFilter = TransferDescription.builder().oreFilter("").build();
+
+        assertFalse(TransferResultFilter.passesToggles(none, false, true));
+        assertFalse(TransferResultFilter.passesToggles(emptyOreFilter, false, true));
+        assertTrue(TransferResultFilter.passesToggles(configured, false, true));
+        assertTrue(TransferResultFilter.passesToggles(oreFiltered, false, true));
+        assertTrue(TransferResultFilter.passesToggles(none, false, false));
     }
 }

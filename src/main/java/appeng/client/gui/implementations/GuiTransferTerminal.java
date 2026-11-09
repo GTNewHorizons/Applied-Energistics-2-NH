@@ -112,6 +112,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     private GuiImgButton terminalStyleBox;
     private GuiImgButton directionButton;
     private GuiImgButton craftingButton;
+    private GuiImgButton hideUnfilteredButton;
     private boolean tallMode;
     private int visibleRows = SMALL_VISIBLE_ROWS;
     private int cacheStart;
@@ -155,6 +156,8 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         this.directionButton = this.addFilterButton(0, Settings.TRANSFER_DIRECTION, this.getMode());
         this.craftingButton = this
                 .addToggleButton(1, Settings.TRANSFER_CRAFTING_CARD_ONLY, this.container.craftingOnlySync);
+        this.hideUnfilteredButton = this
+                .addToggleButton(2, Settings.TRANSFER_HIDE_UNFILTERED, this.container.hideUnfilteredSync);
 
         this.searchField = new MEGuiTextField(SEARCH_WIDTH, SEARCH_HEIGHT, this.searchTooltip()) {
 
@@ -312,6 +315,8 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
             this.container.modeSync.set(next.ordinal());
         } else if (button == this.craftingButton) {
             this.toggle(this.craftingButton, this.container.craftingOnlySync);
+        } else if (button == this.hideUnfilteredButton) {
+            this.toggle(this.hideUnfilteredButton, this.container.hideUnfilteredSync);
         } else if (button == this.terminalStyleBox) {
             this.tallMode = !this.tallMode;
             final TerminalStyle style = this.tallMode ? TerminalStyle.TALL : TerminalStyle.SMALL;
@@ -449,6 +454,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                 SLOT_FILL_COLOR);
 
         this.drawSelectionIf(this.container.craftingOnlySync.get(), this.craftingButton);
+        this.drawSelectionIf(this.container.hideUnfilteredSync.get(), this.hideUnfilteredButton);
 
         final int lineColor = ColorUtils.craftingDiagnosticTerminalLine.getColor();
         for (int line = 0; line <= this.visibleRows; line++) {

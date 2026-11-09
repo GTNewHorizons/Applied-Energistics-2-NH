@@ -60,6 +60,7 @@ public class ContainerTransferTerminal extends AEBaseContainer {
     public final AEStackInventorySyncHandler querySync;
     public final IntSyncHandler modeSync;
     public final BooleanSyncHandler craftingOnlySync;
+    public final BooleanSyncHandler hideUnfilteredSync;
     public final ObjectSyncHandler<String> searchTextSync;
     public final IntSyncHandler windowStartSync;
     public final IntSyncHandler windowSizeSync;
@@ -88,6 +89,8 @@ public class ContainerTransferTerminal extends AEBaseContainer {
         this.modeSync = sync.intC2S("mode").onServerChange((oldValue, newValue) -> this.queryChanged = true);
         this.modeSync.setLocalValue(TransferDirection.BOTH.ordinal());
         this.craftingOnlySync = sync.booleanC2S("craftingOnly")
+                .onServerChange((oldValue, newValue) -> this.queryChanged = true);
+        this.hideUnfilteredSync = sync.booleanC2S("hideUnfiltered")
                 .onServerChange((oldValue, newValue) -> this.queryChanged = true);
         this.searchTextSync = sync.objectC2S("searchText", STRING_CODEC, "")
                 .onServerChange((oldValue, newValue) -> this.queryChanged = true);
@@ -170,7 +173,8 @@ public class ContainerTransferTerminal extends AEBaseContainer {
     }
 
     private boolean keep(final TransferComponentInfo row) {
-        if (!TransferResultFilter.passesToggles(row.description, this.craftingOnlySync.get())) {
+        if (!TransferResultFilter
+                .passesToggles(row.description, this.craftingOnlySync.get(), this.hideUnfilteredSync.get())) {
             return false;
         }
 

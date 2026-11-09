@@ -47,10 +47,16 @@ public final class TransferResultFilter {
     }
 
     /**
-     * @param craftingOnly whether to keep only components with a crafting card
+     * @param craftingOnly   whether to keep only components with a crafting card
+     * @param hideUnfiltered whether to drop components with no filter set
      */
-    public static boolean passesToggles(final TransferDescription description, final boolean craftingOnly) {
-        return !craftingOnly || description.hasCraftingCard;
+    public static boolean passesToggles(final TransferDescription description, final boolean craftingOnly,
+            final boolean hideUnfiltered) {
+        return (!craftingOnly || description.hasCraftingCard) && (!hideUnfiltered || hasFilter(description));
+    }
+
+    private static boolean hasFilter(final TransferDescription description) {
+        return !description.config.isEmpty() || (description.oreFilter != null && !description.oreFilter.isEmpty());
     }
 
     private static boolean matches(final TransferMatcher matcher, final IAEStack<?> query,
