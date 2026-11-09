@@ -19,6 +19,7 @@ import java.util.Set;
 
 import net.minecraft.item.ItemStack;
 
+import appeng.api.stacks.AEItemKey;
 import appeng.api.storage.data.IAEItemStack;
 
 public class OreReference {
@@ -26,6 +27,7 @@ public class OreReference {
     private final List<String> otherOptions = new LinkedList<>();
     private final Set<Integer> ores = new HashSet<>();
     private List<IAEItemStack> aeOtherOptions = null;
+    private volatile List<AEItemKey> aeOtherOptionKeys = null;
 
     public Collection<String> getEquivalents() {
         return this.otherOptions;
@@ -46,6 +48,23 @@ public class OreReference {
         }
 
         return this.aeOtherOptions;
+    }
+
+    public List<AEItemKey> getAEEquivalentKeys() {
+        if (this.aeOtherOptionKeys == null) {
+            List<AEItemKey> keys = new ArrayList<>(this.otherOptions.size());
+            for (final String oreName : this.otherOptions) {
+                for (final ItemStack is : OreHelper.INSTANCE.getCachedOres(oreName)) {
+                    AEItemKey key = AEItemKey.of(is);
+                    if (key != null) {
+                        keys.add(key);
+                    }
+                }
+            }
+            this.aeOtherOptionKeys = keys;
+        }
+
+        return this.aeOtherOptionKeys;
     }
 
     Set<Integer> getOres() {

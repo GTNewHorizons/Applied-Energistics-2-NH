@@ -3,6 +3,7 @@ package thaumicenergistics.common;
 import static thaumicenergistics.common.storage.AEEssentiaStackType.ESSENTIA_STACK_TYPE;
 
 import appeng.api.AEApi;
+import appeng.api.stacks.AEKeyTypeRegistry;
 import appeng.api.storage.data.AEStackTypeRegistry;
 import appeng.core.BuildTags;
 import cpw.mods.fml.common.LoaderState;
@@ -24,6 +25,7 @@ import thaumicenergistics.common.items.ItemCraftingAspect;
 import thaumicenergistics.common.network.NetworkHandler;
 import thaumicenergistics.common.registries.AEAspectRegister;
 import thaumicenergistics.common.storage.EssentiaExternalStorageHandler;
+import thaumicenergistics.common.storage.EssentiaKeyType;
 import thaumicenergistics.common.utils.ThELog;
 
 /**
@@ -170,6 +172,7 @@ public class ThaumicEnergistics {
         ThaumicEnergistics.config = ConfigurationHandler.loadAndSyncConfigFile(event.getSuggestedConfigurationFile());
 
         AEStackTypeRegistry.register(ESSENTIA_STACK_TYPE);
+        AEKeyTypeRegistry.register(EssentiaKeyType.INSTANCE);
 
         AEApi.instance().registries().externalStorage()
                 .addExternalStorageInterface(new EssentiaExternalStorageHandler());
