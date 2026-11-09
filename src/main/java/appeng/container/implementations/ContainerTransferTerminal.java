@@ -61,6 +61,7 @@ public class ContainerTransferTerminal extends AEBaseContainer {
     public final IntSyncHandler modeSync;
     public final BooleanSyncHandler craftingOnlySync;
     public final BooleanSyncHandler hideUnfilteredSync;
+    public final BooleanSyncHandler networkOnlySync;
     public final ObjectSyncHandler<String> searchTextSync;
     public final IntSyncHandler windowStartSync;
     public final IntSyncHandler windowSizeSync;
@@ -92,6 +93,8 @@ public class ContainerTransferTerminal extends AEBaseContainer {
                 .onServerChange((oldValue, newValue) -> this.queryChanged = true);
         this.hideUnfilteredSync = sync.booleanC2S("hideUnfiltered")
                 .onServerChange((oldValue, newValue) -> this.queryChanged = true);
+        this.networkOnlySync = sync.booleanC2S("networkOnly")
+                .onServerChange((oldValue, newValue) -> this.hasScanned = false);
         this.searchTextSync = sync.objectC2S("searchText", STRING_CODEC, "")
                 .onServerChange((oldValue, newValue) -> this.queryChanged = true);
         this.windowStartSync = sync.intC2S("windowStart")
@@ -154,7 +157,8 @@ public class ContainerTransferTerminal extends AEBaseContainer {
 
     private void scan(final IGridNode node) {
         final IGrid grid = node.getGrid();
-        this.grids = new ArrayList<>(grid.getAllRecursiveGridConnections(PartStorageBus.class, true));
+        this.grids = this.networkOnlySync.get() ? Collections.singletonList(grid)
+                : new ArrayList<>(grid.getAllRecursiveGridConnections(PartStorageBus.class, true));
         this.scanned = TransferScanner.scan(this.grids, AEApi.instance().registries().transferInspectors());
         this.configNames.clear();
         this.fingerprint = TransferScanner.fingerprint(this.grids);

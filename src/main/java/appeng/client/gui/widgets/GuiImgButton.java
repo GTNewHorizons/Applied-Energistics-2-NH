@@ -635,6 +635,18 @@ public class GuiImgButton extends GuiButton implements ITooltip {
                     YesNo.NO,
                     ButtonToolTips.TransferTermHideUnfiltered,
                     ButtonToolTips.TransferTermHideUnfilteredNo);
+            this.registerApp(
+                    8 * 16 + 13,
+                    Settings.TRANSFER_NETWORK_ONLY,
+                    YesNo.YES,
+                    ButtonToolTips.TransferTermNetworkOnly,
+                    ButtonToolTips.TransferTermNetworkOnlyYes);
+            this.registerApp(
+                    8 * 16 + 12,
+                    Settings.TRANSFER_NETWORK_ONLY,
+                    YesNo.NO,
+                    ButtonToolTips.TransferTermNetworkOnly,
+                    ButtonToolTips.TransferTermNetworkOnlyNo);
 
             this.registerApp(
                     16 * 11 + 2,

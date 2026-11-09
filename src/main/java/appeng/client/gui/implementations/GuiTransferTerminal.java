@@ -113,6 +113,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     private GuiImgButton directionButton;
     private GuiImgButton craftingButton;
     private GuiImgButton hideUnfilteredButton;
+    private GuiImgButton networkOnlyButton;
     private boolean tallMode;
     private int visibleRows = SMALL_VISIBLE_ROWS;
     private int cacheStart;
@@ -158,6 +159,8 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                 .addToggleButton(1, Settings.TRANSFER_CRAFTING_CARD_ONLY, this.container.craftingOnlySync);
         this.hideUnfilteredButton = this
                 .addToggleButton(2, Settings.TRANSFER_HIDE_UNFILTERED, this.container.hideUnfilteredSync);
+        this.networkOnlyButton = this
+                .addToggleButton(3, Settings.TRANSFER_NETWORK_ONLY, this.container.networkOnlySync);
 
         this.searchField = new MEGuiTextField(SEARCH_WIDTH, SEARCH_HEIGHT, this.searchTooltip()) {
 
@@ -317,6 +320,8 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
             this.toggle(this.craftingButton, this.container.craftingOnlySync);
         } else if (button == this.hideUnfilteredButton) {
             this.toggle(this.hideUnfilteredButton, this.container.hideUnfilteredSync);
+        } else if (button == this.networkOnlyButton) {
+            this.toggle(this.networkOnlyButton, this.container.networkOnlySync);
         } else if (button == this.terminalStyleBox) {
             this.tallMode = !this.tallMode;
             final TerminalStyle style = this.tallMode ? TerminalStyle.TALL : TerminalStyle.SMALL;
@@ -455,6 +460,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
 
         this.drawSelectionIf(this.container.craftingOnlySync.get(), this.craftingButton);
         this.drawSelectionIf(this.container.hideUnfilteredSync.get(), this.hideUnfilteredButton);
+        this.drawSelectionIf(this.container.networkOnlySync.get(), this.networkOnlyButton);
 
         final int lineColor = ColorUtils.craftingDiagnosticTerminalLine.getColor();
         for (int line = 0; line <= this.visibleRows; line++) {

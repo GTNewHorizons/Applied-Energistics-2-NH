@@ -67,6 +67,7 @@ public class TransferTerminalPartTests {
 
                     container.craftingOnlySync.setLocalValue(true);
                     container.hideUnfilteredSync.setLocalValue(true);
+                    container.networkOnlySync.setLocalValue(true);
                     container.searchTextSync.set("iron");
                     container.windowStartSync.setLocalValue(1000);
                     container.windowSizeSync.setLocalValue(TransferRowWindow.ALL);
