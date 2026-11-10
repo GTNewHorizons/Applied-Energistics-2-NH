@@ -264,7 +264,11 @@ public enum GuiText implements Localization {
 
     TransferTermLeftover,
 
+    TransferTermLeftoverShort,
+
     TransferTermDenied,
+
+    TransferTermDeniedShort,
 
     TransferTermCraftingCpu,
 

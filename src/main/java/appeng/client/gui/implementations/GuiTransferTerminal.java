@@ -11,6 +11,7 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IChatComponent;
 
 import org.lwjgl.input.Mouse;
@@ -24,9 +25,13 @@ import appeng.api.config.YesNo;
 import appeng.api.features.transfer.TransferComponentInfo;
 import appeng.api.features.transfer.TransferDescription;
 import appeng.api.parts.ITransferTerminal;
+import appeng.api.storage.data.IAEFluidStack;
+import appeng.api.storage.data.IAEItemStack;
+import appeng.api.storage.data.IAEStack;
 import appeng.api.util.NamedDimensionalCoord;
 import appeng.client.gui.AEBaseGui;
-import appeng.client.gui.slots.VirtualMEPhantomSlot;
+import appeng.client.gui.slots.VirtualMEPhantomSlotPrecise;
+import appeng.client.gui.slots.VirtualMESlot;
 import appeng.client.gui.widgets.GuiImgButton;
 import appeng.client.gui.widgets.GuiScrollbar;
 import appeng.client.gui.widgets.IDropToFillTextField;
@@ -37,6 +42,7 @@ import appeng.container.slot.AppEngSlot;
 import appeng.container.sync.deltas.AEStackInventoryDelta;
 import appeng.container.sync.handlers.ConfigEnumSyncHandler;
 import appeng.core.AEConfig;
+import appeng.core.localization.ButtonToolTips;
 import appeng.core.localization.ColorUtils;
 import appeng.core.localization.GuiText;
 import appeng.core.localization.PlayerMessages;
@@ -44,6 +50,7 @@ import appeng.helpers.transfer.ConfigStripWindow;
 import appeng.helpers.transfer.TransferNameFilter;
 import appeng.helpers.transfer.TransferRowWindow;
 import appeng.util.Platform;
+import appeng.util.ReadableNumberConverter;
 
 public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextField {
 
@@ -99,6 +106,12 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     private static final int STICKY_LINE_COLOR = 0xFFD07000;
     private static final int SLOT_BORDER_COLOR = 0xFF373737;
     private static final int SLOT_FILL_COLOR = 0xFF8B8B8B;
+    private static final int RECEIVE_COLOR = 0xFF007F00;
+    private static final int LEFTOVER_COLOR = 0xFFB00000;
+    private static final int DIMMED_ROW_COLOR = 0x99C6C6C6;
+    private static final int STICKY_CLAIM_WIDTH = 2;
+    private static final int FLUID_STACK_STEP = 1000;
+    private static final int OTHER_STACK_STEP = 64;
 
     private final ContainerTransferTerminal container;
     private final List<TransferComponentInfo> pending = new ArrayList<>();
@@ -118,8 +131,11 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     private GuiImgButton craftingButton;
     private GuiImgButton hideUnfilteredButton;
     private GuiImgButton networkOnlyButton;
+    private GuiImgButton simulateButton;
     private GuiImgButton resetButton;
+    private VirtualMEPhantomSlotPrecise querySlot;
     private boolean tallMode;
+    private boolean queryScrolled;
     private int visibleRows = SMALL_VISIBLE_ROWS;
     private int cacheStart;
     private int serverTotal;
@@ -136,6 +152,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         this.container.craftingOnlySync.onClientChange((oldValue, newValue) -> this.updateFilterButtons());
         this.container.hideUnfilteredSync.onClientChange((oldValue, newValue) -> this.updateFilterButtons());
         this.container.networkOnlySync.onClientChange((oldValue, newValue) -> this.updateFilterButtons());
+        this.container.simulateSync.onClientChange((oldValue, newValue) -> this.updateFilterButtons());
         this.container.savedSearchSync.onClientChange((oldValue, newValue) -> {
             if (this.searchField != null && this.searchField.getText().equals(oldValue)) {
                 this.searchField.setText(newValue);
@@ -155,13 +172,14 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         this.recalculateScreenSize();
         super.initGui();
 
-        this.registerVirtualSlots(
-                new VirtualMEPhantomSlot(
-                        QUERY_SLOT_X,
-                        QUERY_SLOT_Y,
-                        this.container.querySync,
-                        0,
-                        (slot, type, button) -> true));
+        // The precise slot keeps the amount and opens the amount dialog on middle click.
+        this.querySlot = new VirtualMEPhantomSlotPrecise(
+                QUERY_SLOT_X,
+                QUERY_SLOT_Y,
+                this.container.querySync,
+                0,
+                (slot, type, button) -> true);
+        this.registerVirtualSlots(this.querySlot);
 
         this.terminalStyleBox = new GuiImgButton(
                 this.guiLeft - 18,
@@ -170,13 +188,27 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                 this.tallMode ? TerminalStyle.TALL : TerminalStyle.SMALL);
         this.buttonList.add(this.terminalStyleBox);
 
-        this.directionButton = this.addFilterButton(0, Settings.TRANSFER_DIRECTION, this.container.getMode());
+        this.directionButton = new GuiImgButton(
+                this.guiLeft + FILTER_BUTTON_X,
+                this.guiTop + FILTER_BUTTON_Y,
+                Settings.TRANSFER_DIRECTION,
+                this.container.getMode()) {
+
+            @Override
+            public String getMessage() {
+                final String message = super.getMessage();
+                return this.enabled ? message : message + "\n" + ButtonToolTips.TransferTermDirectionLocked.getLocal();
+            }
+        };
+        this.buttonList.add(this.directionButton);
         this.craftingButton = this
                 .addToggleButton(1, Settings.TRANSFER_CRAFTING_CARD_ONLY, this.container.craftingOnlySync);
         this.hideUnfilteredButton = this
                 .addToggleButton(2, Settings.TRANSFER_HIDE_UNFILTERED, this.container.hideUnfilteredSync);
         this.networkOnlyButton = this
                 .addToggleButton(3, Settings.TRANSFER_NETWORK_ONLY, this.container.networkOnlySync);
+        this.simulateButton = this.addToggleButton(4, Settings.TRANSFER_SIMULATE, this.container.simulateSync);
+        this.updateFilterButtons();
         this.resetButton = new GuiImgButton(
                 this.guiLeft + RESET_BUTTON_X,
                 this.guiTop + FILTER_BUTTON_Y,
@@ -224,10 +256,13 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         if (this.directionButton == null) {
             return;
         }
+        // Simulating forces export, the saved direction shows again once it is turned off.
         this.directionButton.set(this.container.getMode());
+        this.directionButton.setEnabled(!ContainerTransferTerminal.isYes(this.container.simulateSync));
         this.craftingButton.set(valueOf(this.container.craftingOnlySync));
         this.hideUnfilteredButton.set(valueOf(this.container.hideUnfilteredSync));
         this.networkOnlyButton.set(valueOf(this.container.networkOnlySync));
+        this.simulateButton.set(valueOf(this.container.simulateSync));
     }
 
     private void saveSearch() {
@@ -238,6 +273,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     }
 
     private void resetFilters() {
+        this.container.simulateSync.set(YesNo.NO);
         this.container.directionSync.set(TransferDirection.BOTH);
         this.container.craftingOnlySync.set(YesNo.NO);
         this.container.hideUnfilteredSync.set(YesNo.NO);
@@ -369,6 +405,9 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         super.actionPerformed(button);
 
         if (button == this.directionButton) {
+            if (!this.directionButton.enabled) {
+                return;
+            }
             final TransferDirection next = Platform.rotateEnum(
                     this.container.getMode(),
                     Mouse.isButtonDown(1),
@@ -383,6 +422,9 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
             this.toggle(this.hideUnfilteredButton, this.container.hideUnfilteredSync);
         } else if (button == this.networkOnlyButton) {
             this.toggle(this.networkOnlyButton, this.container.networkOnlySync);
+        } else if (button == this.simulateButton) {
+            this.toggle(this.simulateButton, this.container.simulateSync);
+            this.updateFilterButtons();
         } else if (button == this.terminalStyleBox) {
             this.tallMode = !this.tallMode;
             final TerminalStyle style = this.tallMode ? TerminalStyle.TALL : TerminalStyle.SMALL;
@@ -454,11 +496,60 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
 
     @Override
     public void handleMouseInput() {
+        this.queryScrolled = false;
         super.handleMouseInput();
         final int wheel = Mouse.getEventDWheel();
-        if (wheel != 0) {
+        if (wheel != 0 && !this.queryScrolled) {
             this.getScrollBar().wheel(wheel);
         }
+    }
+
+    /**
+     * Scrolling over the query slot changes the searched amount by one, or by a whole stack with Shift held.
+     */
+    @Override
+    protected boolean mouseWheelEvent(final int x, final int y, final int wheel) {
+        final IAEStack<?> query = this.container.getQuery();
+        if (query == null || !this.isOverQuerySlot(x - this.guiLeft, y - this.guiTop)) {
+            return super.mouseWheelEvent(x, y, wheel);
+        }
+
+        this.queryScrolled = true;
+        final long step = isShiftKeyDown() ? stackStep(query) : 1;
+        final long current = query.getStackSize();
+        final long change = wheel * step;
+        final long amount = change > 0 && current > Long.MAX_VALUE - change ? Long.MAX_VALUE
+                : Math.max(1, current + change);
+        if (amount != current) {
+            final IAEStack<?> resized = query.copy();
+            resized.setStackSize(amount);
+            this.container.querySync.applyAndQueueDelta(new AEStackInventoryDelta(0, resized));
+        }
+        return true;
+    }
+
+    private static long stackStep(final IAEStack<?> stack) {
+        if (stack instanceof IAEItemStack item) {
+            return Math.max(1, item.getItemStack().getMaxStackSize());
+        }
+        return stack instanceof IAEFluidStack ? FLUID_STACK_STEP : OTHER_STACK_STEP;
+    }
+
+    private boolean isOverQuerySlot(final int relX, final int relY) {
+        return relX >= QUERY_SLOT_X && relX < QUERY_SLOT_X + 16 && relY >= QUERY_SLOT_Y && relY < QUERY_SLOT_Y + 16;
+    }
+
+    @Override
+    public List<String> handleItemTooltip(final ItemStack stack, final int mouseX, final int mouseY,
+            final List<String> currentToolTip) {
+        final List<String> lines = super.handleItemTooltip(stack, mouseX, mouseY, currentToolTip);
+        final VirtualMESlot hovered = this.getVirtualMESlotUnderMouse();
+        if (hovered != null && hovered == this.querySlot && hovered.getAEStack() != null) {
+            for (final String line : GuiText.TransferTermQueryAmountHint.getLocal().split("\\\\n|\n")) {
+                lines.add(EnumChatFormatting.GRAY + line);
+            }
+        }
+        return lines;
     }
 
     @Override
@@ -555,8 +646,16 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         final int relY = this.lastMouseY - offsetY;
         final String title = GuiText.TransferTerminal.getLocal();
 
+        // What a simulated insert could not put anywhere is shown at the end of the title row.
+        final String leftover = this.leftoverLabel();
+        final int leftoverX = leftover == null ? 8 + TITLE_WIDTH
+                : 8 + TITLE_WIDTH - this.fontRendererObj.getStringWidth(leftover);
+        if (leftover != null) {
+            this.fontRendererObj.drawString(leftover, leftoverX, 7, LEFTOVER_COLOR);
+        }
+
         this.fontRendererObj.drawString(
-                this.fontRendererObj.trimStringToWidth(title, TITLE_WIDTH),
+                this.fontRendererObj.trimStringToWidth(title, Math.max(0, leftoverX - 8 - 4)),
                 8,
                 7,
                 ColorUtils.guiTextColorGray.getColor());
@@ -572,7 +671,15 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         }
         this.drawStickySeparator(relX, relY, tooltip);
 
-        if (relX >= 8 && relX < 8 + TITLE_WIDTH && relY >= 5 && relY < 16) {
+        if (leftover != null && relX >= leftoverX && relX < 8 + TITLE_WIDTH && relY >= 5 && relY < 16) {
+            tooltip.clear();
+            if (this.container.leftoverSync.get() > 0) {
+                tooltip.add(GuiText.TransferTermLeftover.getLocal(this.container.leftoverSync.get()));
+            }
+            if (this.container.deniedSync.get()) {
+                tooltip.add(GuiText.TransferTermDenied.getLocal());
+            }
+        } else if (relX >= 8 && relX < 8 + TITLE_WIDTH && relY >= 5 && relY < 16) {
             tooltip.clear();
             tooltip.add(title);
             tooltip.add(GuiText.TransferTerminalOrderTooltip.getLocal());
@@ -590,6 +697,21 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         if (!tooltip.isEmpty()) {
             this.drawTooltip(relX + 12, relY, tooltip.toArray(new String[0]));
         }
+    }
+
+    /**
+     * @return a short note on what a simulated insert could not store, or null if everything fits
+     */
+    private String leftoverLabel() {
+        if (!this.container.simulatingSync.get()) {
+            return null;
+        }
+        final long leftover = this.container.leftoverSync.get();
+        if (leftover > 0) {
+            return GuiText.TransferTermLeftoverShort
+                    .getLocal(ReadableNumberConverter.INSTANCE.toWideReadableForm(leftover));
+        }
+        return this.container.deniedSync.get() ? GuiText.TransferTermDeniedShort.getLocal() : null;
     }
 
     /**
@@ -658,6 +780,10 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         }
 
         int rightEdge = LIST_RIGHT;
+        if (row.info.stickyClaimed) {
+            drawRect(LIST_RIGHT - STICKY_CLAIM_WIDTH, rowTop, LIST_RIGHT, rowTop + ROW_HEIGHT - 1, STICKY_LINE_COLOR);
+            rightEdge -= STICKY_CLAIM_WIDTH + 1;
+        }
         rightEdge = this.drawUpgrades(row, rowTop, rightEdge, relX, relY, tooltip);
         rightEdge = this.drawSettings(row, rowTop, rightEdge, relX, relY, tooltip);
 
@@ -667,6 +793,12 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
             this.fontRendererObj.drawString(priority, rightEdge, rowTop + 2, ColorUtils.guiTextColorGray.getColor());
         }
 
+        if (this.container.simulatingSync.get() && row.info.simulatedAmount > 0) {
+            final String amount = "+" + ReadableNumberConverter.INSTANCE.toWideReadableForm(row.info.simulatedAmount);
+            rightEdge -= this.fontRendererObj.getStringWidth(amount) + 2;
+            this.fontRendererObj.drawString(amount, rightEdge, rowTop + 2, RECEIVE_COLOR);
+        }
+
         final String name = this.fontRendererObj
                 .trimStringToWidth(row.getDisplayLine(), Math.max(NAME_MIN_WIDTH, rightEdge - TEXT_X - 2));
         this.fontRendererObj.drawString(name, TEXT_X, rowTop + 2, ColorUtils.guiTextColorBlack.getColor());
@@ -674,6 +806,14 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         this.fontRendererObj
                 .drawString(row.directionLabel(), TEXT_X, rowTop + STRIP_Y + 4, ColorUtils.guiTextColorGray.getColor());
         this.drawFilter(row, rowTop, relX, relY, tooltip);
+
+        if (this.container.simulatingSync.get() && row.info.simulatedAmount == 0) {
+            // Storage the simulated insert passed over stays listed, faded above its items.
+            GL11.glPushMatrix();
+            GL11.glTranslatef(0, 0, 300);
+            drawRect(LIST_LEFT, rowTop, LIST_RIGHT, rowTop + ROW_HEIGHT - 1, DIMMED_ROW_COLOR);
+            GL11.glPopMatrix();
+        }
     }
 
     private int drawUpgrades(final Row row, final int rowTop, int rightEdge, final int relX, final int relY,
@@ -909,7 +1049,28 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
             if (this.info.networkTier > 0) {
                 lines.add(GuiText.TransferTermSubNetworkTooltip.getLocal());
             }
+            this.addSimulationLines(lines);
             return lines;
+        }
+
+        private void addSimulationLines(final List<String> lines) {
+            if (this.info.simulatedAmount == TransferComponentInfo.NOT_SIMULATED) {
+                return;
+            }
+            if (!this.description.storageHandler) {
+                lines.add(GuiText.TransferTermCraftingCpu.getLocal());
+            }
+            lines.add(
+                    this.info.simulatedAmount > 0
+                            ? EnumChatFormatting.DARK_GREEN
+                                    + GuiText.TransferTermWouldReceive.getLocal(this.info.simulatedAmount)
+                            : GuiText.TransferTermWouldReceiveNothing.getLocal());
+            for (final TransferComponentInfo.SlotAmount slot : this.info.simulatedSlots) {
+                lines.add(GuiText.TransferTermSlotAmount.getLocal(slot.slot + 1, slot.amount));
+            }
+            if (this.info.stickyClaimed) {
+                lines.add(EnumChatFormatting.GOLD + GuiText.TransferTermStickyClaimed.getLocal());
+            }
         }
     }
 }
