@@ -12,7 +12,6 @@ package appeng.core.features;
 
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.world.IBlockAccess;
 
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
@@ -54,11 +53,6 @@ public class ItemDefinition implements IItemDefinition {
     @Override
     public final boolean isSameAs(final ItemStack comparableStack) {
         return this.isEnabled() && Platform.isSameItemType(comparableStack, this.maybeStack(1).get());
-    }
-
-    @Override
-    public boolean isSameAs(final IBlockAccess world, final int x, final int y, final int z) {
-        return false;
     }
 
     private static class ItemStackTransformer implements Function<Item, ItemStack> {

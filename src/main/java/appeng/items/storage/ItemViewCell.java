@@ -10,8 +10,6 @@
 
 package appeng.items.storage;
 
-import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
-
 import java.util.EnumSet;
 import java.util.List;
 
@@ -39,7 +37,6 @@ import appeng.core.localization.ButtonToolTips;
 import appeng.core.localization.GuiText;
 import appeng.items.AEBaseItem;
 import appeng.items.contents.CellConfig;
-import appeng.items.contents.CellConfigLegacy;
 import appeng.items.contents.CellUpgrades;
 import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.Platform;
@@ -137,11 +134,6 @@ public class ItemViewCell extends AEBaseItem implements ICellWorkbenchItem {
     @Override
     public IInventory getUpgradesInventory(final ItemStack is) {
         return new CellUpgrades(is, 2);
-    }
-
-    @Override
-    public IInventory getConfigInventory(final ItemStack is) {
-        return new CellConfigLegacy(new CellConfig(is), ITEM_STACK_TYPE);
     }
 
     @Override

@@ -55,7 +55,6 @@ import appeng.api.util.AEColor;
 import appeng.block.AEBaseBlock;
 import appeng.client.api.AEKeyRendering;
 import appeng.client.render.BaseBlockRender;
-import appeng.client.render.BlockPosHighlighter;
 import appeng.client.render.NetworkVisualiserRender;
 import appeng.client.render.TESRWrapper;
 import appeng.client.render.WorldRender;
@@ -127,7 +126,6 @@ public class ClientHelper extends ServerHelper {
 
         loadControllerAnimation();
         MinecraftForge.EVENT_BUS.register(this);
-        MinecraftForge.EVENT_BUS.register(new BlockPosHighlighter());
         MinecraftForge.EVENT_BUS.register(new NetworkVisualiserRender());
         MinecraftForge.EVENT_BUS.register(new HighlighterManager());
         MinecraftForge.EVENT_BUS.register(BlockRendererPreviewEvent.getInstance());
