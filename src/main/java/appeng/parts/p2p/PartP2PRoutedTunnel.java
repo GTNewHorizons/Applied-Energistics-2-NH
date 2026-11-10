@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntity;
 
 import appeng.me.GridAccessException;
 
@@ -47,6 +48,13 @@ public abstract class PartP2PRoutedTunnel<T extends PartP2PRoutedTunnel<T>> exte
     }
 
     protected void onRouteTargetsChanged() {}
+
+    protected final TileEntity getFacingTileEntity() {
+        return this.getTile().getWorldObj().getTileEntity(
+                this.getTile().xCoord + this.getSide().offsetX,
+                this.getTile().yCoord + this.getSide().offsetY,
+                this.getTile().zCoord + this.getSide().offsetZ);
+    }
 
     @Override
     public void onTunnelNetworkChange() {

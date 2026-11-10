@@ -115,10 +115,7 @@ public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
         IInventory output = null;
 
         if (this.getProxy().isActive()) {
-            final TileEntity te = this.getTile().getWorldObj().getTileEntity(
-                    this.getTile().xCoord + this.getSide().offsetX,
-                    this.getTile().yCoord + this.getSide().offsetY,
-                    this.getTile().zCoord + this.getSide().offsetZ);
+            final TileEntity te = this.getFacingTileEntity();
 
             if (this.which.contains(this)) {
                 return null;
@@ -296,7 +293,7 @@ public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
     public void closeInventory() {}
 
     @Override
-    public boolean isItemValidForSlot(final int i, final net.minecraft.item.ItemStack itemstack) {
+    public boolean isItemValidForSlot(final int i, final ItemStack itemstack) {
         return this.getDestination().isItemValidForSlot(i, itemstack);
     }
 

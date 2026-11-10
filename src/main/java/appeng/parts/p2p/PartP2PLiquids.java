@@ -178,10 +178,7 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
             return this.cachedTank;
         }
 
-        final TileEntity te = this.getTile().getWorldObj().getTileEntity(
-                this.getTile().xCoord + this.getSide().offsetX,
-                this.getTile().yCoord + this.getSide().offsetY,
-                this.getTile().zCoord + this.getSide().offsetZ);
+        final TileEntity te = this.getFacingTileEntity();
         if (te instanceof IFluidHandler) {
             return this.cachedTank = (IFluidHandler) te;
         }

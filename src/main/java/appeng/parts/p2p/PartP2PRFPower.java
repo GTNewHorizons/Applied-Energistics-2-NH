@@ -165,11 +165,7 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower>
 
     private IEnergyReceiver getReceiver() {
         if (!this.cachedReceiver) {
-            final TileEntity self = this.getTile();
-            final TileEntity te = self.getWorldObj().getTileEntity(
-                    self.xCoord + this.getSide().offsetX,
-                    self.yCoord + this.getSide().offsetY,
-                    self.zCoord + this.getSide().offsetZ);
+            final TileEntity te = this.getFacingTileEntity();
             this.receiverTarget = te instanceof IEnergyReceiver ? (IEnergyReceiver) te : null;
             this.cachedReceiver = true;
         }
@@ -183,11 +179,7 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower>
 
     private IEnergyProvider getProvider() {
         if (!this.cachedProvider) {
-            final TileEntity self = this.getTile();
-            final TileEntity te = self.getWorldObj().getTileEntity(
-                    self.xCoord + this.getSide().offsetX,
-                    self.yCoord + this.getSide().offsetY,
-                    self.zCoord + this.getSide().offsetZ);
+            final TileEntity te = this.getFacingTileEntity();
             this.providerTarget = te instanceof IEnergyProvider ? (IEnergyProvider) te : null;
             this.cachedProvider = true;
         }
