@@ -17,10 +17,13 @@ import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridBlock;
 import appeng.api.networking.IGridHost;
 import appeng.api.networking.IGridNode;
+import appeng.api.storage.ICellProvider;
+import appeng.api.storage.IMEInventoryHandler;
 import appeng.api.util.DimensionalCoord;
 import appeng.api.util.IInterfaceViewable;
 import appeng.helpers.ICustomNameObject;
 import appeng.parts.AEBasePart;
+import appeng.tile.storage.TileDrive;
 
 /**
  * Finds every component the Transfer Terminal can show on a set of networks.
@@ -73,17 +76,18 @@ public final class TransferScanner {
     private static void addRow(final List<TransferComponentInfo> rows, final Set<String> seen,
             final ITransferInspector<?> inspector, final IGridNode node, final int tier) {
         final IGridHost machine = node.getMachine();
-        final TransferDescription description;
+        final TransferDescription inspected;
         try {
-            description = ((ITransferInspector<IGridHost>) inspector).inspect(machine);
+            inspected = ((ITransferInspector<IGridHost>) inspector).inspect(machine);
         } catch (final RuntimeException e) {
             // A broken inspector from another mod must not take the whole terminal down.
             return;
         }
 
-        if (description == null) {
+        if (inspected == null) {
             return;
         }
+        final TransferDescription description = withLiveHandlers(inspected, machine);
 
         final IGridBlock block = node.getGridBlock();
         final DimensionalCoord location = block.getLocation();
@@ -105,6 +109,31 @@ public final class TransferScanner {
                         side,
                         tier,
                         description));
+    }
+
+    /**
+     * Storage handlers of any cell provider are the instances its network routes stacks into, so they are attached here
+     * for every inspector. An inspector that set its own is left alone.
+     */
+    static TransferDescription withLiveHandlers(final TransferDescription description, final IGridHost machine) {
+        if (description.liveHandlers != null || !(machine instanceof ICellProvider provider)) {
+            return description;
+        }
+
+        final TransferDescription.Builder builder = description.toBuilder().liveHandlers(provider::getCellArray);
+        if (description.slotOf == null && machine instanceof TileDrive drive) {
+            builder.slotOf(handler -> driveSlotOf(drive, handler));
+        }
+        return builder.build();
+    }
+
+    private static int driveSlotOf(final TileDrive drive, final IMEInventoryHandler<?> handler) {
+        for (int slot = 0; slot < drive.getSizeInventory(); slot++) {
+            if (drive.getCellInvBySlot(slot) == handler) {
+                return slot;
+            }
+        }
+        return -1;
     }
 
     private static String customName(final IGridHost machine) {

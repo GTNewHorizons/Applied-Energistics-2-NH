@@ -3,6 +3,7 @@ package appeng.gametests.transfer;
 import static appeng.gametests.AEGameTestHelpers.assertActive;
 import static appeng.gametests.transfer.TransferTestHelpers.TEMPLATE;
 import static appeng.gametests.transfer.TransferTestHelpers.place;
+import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,6 +27,7 @@ import appeng.me.GridAccessException;
 import appeng.parts.automation.PartExportBus;
 import appeng.parts.automation.PartImportBus;
 import appeng.parts.misc.PartStorageBus;
+import appeng.tile.networking.TileCableBus;
 import appeng.tile.networking.TileController;
 
 @GameTestHolder(AppEng.MOD_ID)
@@ -159,5 +161,37 @@ public class TransferScannerTests {
         List<TransferComponentInfo> rows = scan(helper, registry);
         helper.assertEquals(1, rows.size(), "Only the import bus has an inspector");
         return rows.get(0);
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void storageRowsKnowTheHandlersTheirNetworkRoutesInto(GameTestHelper helper) {
+        IPart importBus = placeImportBus(helper);
+
+        helper.startSequence()
+                .thenWaitUntil(
+                        "wait for the bus to join the network",
+                        60,
+                        () -> assertActive(helper, importBus, "Import bus should become active"))
+                .thenExecute("scan the network", () -> {
+                    TransferInspectorRegistry registry = new TransferInspectorRegistry();
+                    registry.register(PartImportBus.class, host -> TransferDescription.builder().build());
+                    registry.register(PartStorageBus.class, host -> TransferDescription.builder().build());
+
+                    for (TransferComponentInfo row : scan(helper, registry)) {
+                        if (row.side == (byte) ForgeDirection.UP.ordinal()) {
+                            helper.assertNull(row.description.liveHandlers, "An import bus is not storage");
+                            continue;
+                        }
+                        PartStorageBus bus = (PartStorageBus) helper
+                                .assertTileEntityPresent(TileCableBus.class, "storage_bus")
+                                .getPart(ForgeDirection.getOrientation(row.side));
+                        helper.assertNotNull(row.description.liveHandlers, "A storage bus is storage");
+                        List<?> handlers = row.description.liveHandlers.apply(ITEM_STACK_TYPE);
+                        helper.assertEquals(1, handlers.size(), "The bus has one handler");
+                        helper.assertTrue(
+                                handlers.get(0) == bus.getInternalHandler(),
+                                "It is the handler the network routes into");
+                    }
+                }).thenSucceed();
     }
 }
