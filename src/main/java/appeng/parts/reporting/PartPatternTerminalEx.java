@@ -5,11 +5,10 @@ import net.minecraft.nbt.NBTTagCompound;
 
 import appeng.api.AEApi;
 import appeng.api.parts.IPatternTerminalEx;
-import appeng.api.storage.StorageName;
+import appeng.api.storage.StackConfigInventory;
 import appeng.api.storage.data.IAEStack;
 import appeng.core.sync.GuiBridge;
 import appeng.helpers.Reflected;
-import appeng.tile.inventory.IAEStackInventory;
 
 public class PartPatternTerminalEx extends PartPatternTerminal implements IPatternTerminalEx {
 
@@ -78,14 +77,14 @@ public class PartPatternTerminalEx extends PartPatternTerminal implements IPatte
         this.inverted = inverted;
 
         if (inverted) {
-            IAEStackInventory crafting = this.getAEInventoryByName(StorageName.CRAFTING_INPUT);
+            StackConfigInventory crafting = this.getCraftingInputs();
             for (int i = 0; i < crafting.getSizeInventory(); i++) {
-                if (i >= getPatternInputsHeigh() * getPatternInputPages()) crafting.putAEStackInSlot(i, null);
+                if (i >= getPatternInputsHeigh() * getPatternInputPages()) crafting.setStack(i, null);
             }
         } else {
-            IAEStackInventory output = this.getAEInventoryByName(StorageName.CRAFTING_OUTPUT);
+            StackConfigInventory output = this.getCraftingOutputs();
             for (int i = 0; i < output.getSizeInventory(); i++) {
-                if (i >= getPatternOutputsHeigh() * getPatternOutputPages()) output.putAEStackInSlot(i, null);
+                if (i >= getPatternOutputsHeigh() * getPatternOutputPages()) output.setStack(i, null);
             }
         }
     }

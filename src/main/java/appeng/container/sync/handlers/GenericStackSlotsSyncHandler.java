@@ -8,39 +8,39 @@ import java.util.Objects;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import appeng.api.storage.data.IAEStack;
+import appeng.api.stacks.GenericStack;
+import appeng.api.storage.GenericStackSlots;
 import appeng.container.sync.AbstractSyncHandler;
 import appeng.container.sync.SyncDirection;
 import appeng.container.sync.SyncEndpoint;
 import appeng.container.sync.SyncManager;
 import appeng.container.sync.SyncMode;
-import appeng.container.sync.deltas.AEStackInventoryDelta;
-import appeng.tile.inventory.IAEStackInventory;
+import appeng.container.sync.deltas.GenericStackSlotDelta;
 import appeng.util.Platform;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-public class AEStackInventorySyncHandler extends AbstractSyncHandler {
+public class GenericStackSlotsSyncHandler<T extends GenericStackSlots> extends AbstractSyncHandler {
 
     private static final int DEFAULT_SERVER_DIFF_CHECK_INTERVAL = 1;
     private static final int DEFAULT_CLIENT_DIFF_CHECK_INTERVAL = 0;
 
     @FunctionalInterface
-    public interface InventoryChangeListener {
+    public interface InventoryChangeListener<T extends GenericStackSlots> {
 
-        void onChange(@NonNull IAEStackInventory inventory);
+        void onChange(@NonNull T inventory);
     }
 
-    private final @NonNull IAEStackInventory inventory;
-    private final List<AEStackInventoryDelta> pendingDeltas = new ArrayList<>();
-    private IAEStack<?>[] lastSentSnapshot;
+    private final @NonNull T inventory;
+    private final List<GenericStackSlotDelta> pendingDeltas = new ArrayList<>();
+    private @Nullable GenericStack[] lastSentSnapshot;
     private int diffCheckInterval;
     private int diffCheckTicks;
-    private @Nullable InventoryChangeListener clientChangeListener;
-    private @Nullable InventoryChangeListener serverChangeListener;
+    private @Nullable InventoryChangeListener<T> clientChangeListener;
+    private @Nullable InventoryChangeListener<T> serverChangeListener;
 
-    public AEStackInventorySyncHandler(final SyncManager manager, final String key, final String fullKey,
-            final SyncDirection direction, final @NonNull IAEStackInventory inventory) {
+    public GenericStackSlotsSyncHandler(final SyncManager manager, final String key, final String fullKey,
+            final SyncDirection direction, final @NonNull T inventory) {
         super(manager, key, fullKey, direction);
         this.inventory = Objects.requireNonNull(inventory, "inventory");
         this.lastSentSnapshot = this.copyInventory();
@@ -49,7 +49,7 @@ public class AEStackInventorySyncHandler extends AbstractSyncHandler {
         this.dirty = false;
     }
 
-    public @NonNull IAEStackInventory get() {
+    public @NonNull T get() {
         return this.inventory;
     }
 
@@ -58,7 +58,7 @@ public class AEStackInventorySyncHandler extends AbstractSyncHandler {
         this.markDirtyInternal();
     }
 
-    public void applyAndQueueDelta(final AEStackInventoryDelta delta) {
+    public void applyAndQueueDelta(final GenericStackSlotDelta delta) {
         this.applyDelta(delta);
         this.pendingDeltas.add(delta);
         this.markDirtyInternal();
@@ -68,7 +68,7 @@ public class AEStackInventorySyncHandler extends AbstractSyncHandler {
      * Sets how often the handler performs a periodic full inventory diff without a dirty mark. Dirty marks, queued
      * deltas, and forced full resyncs are still sent immediately. Use 0 to disable periodic checks.
      */
-    public @NonNull AEStackInventorySyncHandler setDiffCheckInterval(final int ticks,
+    public @NonNull GenericStackSlotsSyncHandler<T> setDiffCheckInterval(final int ticks,
             final @NonNull SyncDirection applicableDirection) {
         if (!applicableDirection.canSendFrom(this.getLocalEndpoint())) {
             return this;
@@ -80,12 +80,12 @@ public class AEStackInventorySyncHandler extends AbstractSyncHandler {
         return this;
     }
 
-    public @NonNull AEStackInventorySyncHandler onClientChange(final InventoryChangeListener listener) {
+    public @NonNull GenericStackSlotsSyncHandler<T> onClientChange(final InventoryChangeListener<T> listener) {
         this.clientChangeListener = listener;
         return this;
     }
 
-    public @NonNull AEStackInventorySyncHandler onServerChange(final InventoryChangeListener listener) {
+    public @NonNull GenericStackSlotsSyncHandler<T> onServerChange(final InventoryChangeListener<T> listener) {
         this.serverChangeListener = listener;
         return this;
     }
@@ -107,7 +107,7 @@ public class AEStackInventorySyncHandler extends AbstractSyncHandler {
             }
         }
 
-        List<AEStackInventoryDelta> detectedDeltas = null;
+        List<GenericStackSlotDelta> detectedDeltas = null;
         if (!initialSync && !forceFullResync && this.pendingDeltas.isEmpty()) {
             detectedDeltas = this.diff();
             if (detectedDeltas == null || detectedDeltas.isEmpty()) {
@@ -164,7 +164,7 @@ public class AEStackInventorySyncHandler extends AbstractSyncHandler {
             }
         } else {
             throw new IOException(
-                    "AEStackInventorySyncHandler for " + this.fullKey + " does not support " + mode + ".");
+                    "GenericStackSlotsSyncHandler for " + this.fullKey + " does not support " + mode + ".");
         }
 
         this.lastSentSnapshot = this.copyInventory();
@@ -182,47 +182,47 @@ public class AEStackInventorySyncHandler extends AbstractSyncHandler {
 
     @Override
     protected String getTypeKey() {
-        return IAEStackInventory.class.getName();
+        return GenericStackSlots.class.getName();
     }
 
     private void writeFull(final ByteBuf buf) throws IOException {
         for (int slot = 0; slot < this.inventory.getSizeInventory(); slot++) {
-            IAEStack.writeToPacketGeneric(buf, this.inventory.getAEStackInSlot(slot));
+            GenericStack.writeBuffer(buf, this.inventory.getStack(slot));
         }
     }
 
     private void readFull(final ByteBuf buf) throws IOException {
         for (int slot = 0; slot < this.inventory.getSizeInventory(); slot++) {
-            this.inventory.putAEStackInSlot(slot, IAEStack.fromPacketGeneric(buf));
+            this.inventory.setStack(slot, GenericStack.readBuffer(buf));
         }
     }
 
-    private @Nullable ByteBuf writeDeltaPayload(final @Nullable List<AEStackInventoryDelta> detectedDeltas)
+    private @Nullable ByteBuf writeDeltaPayload(final @Nullable List<GenericStackSlotDelta> detectedDeltas)
             throws IOException {
-        final List<AEStackInventoryDelta> deltas = this.pendingDeltas.isEmpty() ? detectedDeltas : this.pendingDeltas;
+        final List<GenericStackSlotDelta> deltas = this.pendingDeltas.isEmpty() ? detectedDeltas : this.pendingDeltas;
         if (deltas == null || deltas.isEmpty()) {
             return null;
         }
 
         final ByteBuf deltaPayload = Unpooled.buffer();
         deltaPayload.writeInt(deltas.size());
-        for (final AEStackInventoryDelta delta : deltas) {
+        for (final GenericStackSlotDelta delta : deltas) {
             deltaPayload.writeInt(delta.getSlotIndex());
-            IAEStack.writeToPacketGeneric(deltaPayload, delta.getStack());
+            GenericStack.writeBuffer(deltaPayload, delta.getStack());
         }
         return deltaPayload;
     }
 
-    private @Nullable List<AEStackInventoryDelta> diff() {
-        List<AEStackInventoryDelta> deltas = null;
+    private @Nullable List<GenericStackSlotDelta> diff() {
+        List<GenericStackSlotDelta> deltas = null;
         for (int slot = 0; slot < this.inventory.getSizeInventory(); slot++) {
-            final IAEStack<?> previousStack = this.lastSentSnapshot[slot];
-            final IAEStack<?> currentStack = this.inventory.getAEStackInSlot(slot);
-            if (!Platform.isStacksIdentical(previousStack, currentStack)) {
+            final GenericStack previousStack = this.lastSentSnapshot[slot];
+            final GenericStack currentStack = this.inventory.getStack(slot);
+            if (!Objects.equals(previousStack, currentStack)) {
                 if (deltas == null) {
                     deltas = new ArrayList<>();
                 }
-                deltas.add(new AEStackInventoryDelta(slot, currentStack));
+                deltas.add(new GenericStackSlotDelta(slot, currentStack));
             }
         }
 
@@ -273,26 +273,25 @@ public class AEStackInventorySyncHandler extends AbstractSyncHandler {
         for (int i = 0; i < deltaCount; i++) {
             final int slotIndex = buf.readInt();
             if (slotIndex < 0 || slotIndex >= this.inventory.getSizeInventory()) {
-                throw new IOException("Invalid AE stack inventory slot index: " + slotIndex);
+                throw new IOException("Invalid slot index: " + slotIndex);
             }
-            this.inventory.putAEStackInSlot(slotIndex, IAEStack.fromPacketGeneric(buf));
+            this.inventory.setStack(slotIndex, GenericStack.readBuffer(buf));
         }
     }
 
-    private void applyDelta(final AEStackInventoryDelta delta) {
+    private void applyDelta(final GenericStackSlotDelta delta) {
         final int slotIndex = delta.getSlotIndex();
         if (slotIndex < 0 || slotIndex >= this.inventory.getSizeInventory()) {
-            throw new IllegalArgumentException("Invalid AE stack inventory slot index: " + slotIndex);
+            throw new IllegalArgumentException("Invalid slot index: " + slotIndex);
         }
 
-        this.inventory.putAEStackInSlot(slotIndex, delta.getStack());
+        this.inventory.setStack(slotIndex, delta.getStack());
     }
 
-    private IAEStack<?>[] copyInventory() {
-        final IAEStack<?>[] copy = new IAEStack[this.inventory.getSizeInventory()];
+    private @Nullable GenericStack[] copyInventory() {
+        final @Nullable GenericStack[] copy = new GenericStack[this.inventory.getSizeInventory()];
         for (int slot = 0; slot < copy.length; slot++) {
-            final IAEStack<?> stack = this.inventory.getAEStackInSlot(slot);
-            copy[slot] = stack == null ? null : stack.copy();
+            copy[slot] = this.inventory.getStack(slot);
         }
 
         return copy;

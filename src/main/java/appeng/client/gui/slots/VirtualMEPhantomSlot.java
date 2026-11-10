@@ -12,12 +12,14 @@ import net.minecraft.item.ItemStack;
 
 import org.jspecify.annotations.Nullable;
 
+import appeng.api.stacks.GenericStack;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.AEStackTypeRegistry;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
-import appeng.container.sync.deltas.AEStackInventoryDelta;
-import appeng.container.sync.handlers.AEStackInventorySyncHandler;
+import appeng.container.sync.deltas.GenericStackSlotDelta;
+import appeng.container.sync.handlers.GenericStackSlotsSyncHandler;
 import appeng.core.AEConfig;
 import appeng.core.localization.ButtonToolTips;
 import appeng.core.sync.network.NetworkHandler;
@@ -25,7 +27,6 @@ import appeng.core.sync.packets.PacketVirtualSlot;
 import appeng.integration.IntegrationRegistry;
 import appeng.integration.IntegrationType;
 import appeng.integration.modules.NEI;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.item.AEItemStack;
 
 public class VirtualMEPhantomSlot extends VirtualMESlot {
@@ -37,23 +38,24 @@ public class VirtualMEPhantomSlot extends VirtualMESlot {
     }
 
     @Nullable
-    private final IAEStackInventory inventory;
+    private final ConfigInventory inventory;
     private final TypeAcceptPredicate acceptType;
     @Nullable
-    private final AEStackInventorySyncHandler syncHandler;
+    private final GenericStackSlotsSyncHandler<? extends ConfigInventory> syncHandler;
 
-    public VirtualMEPhantomSlot(int x, int y, IAEStackInventory inventory, int slotIndex,
+    public VirtualMEPhantomSlot(int x, int y, ConfigInventory inventory, int slotIndex,
             TypeAcceptPredicate acceptType) {
         this(x, y, inventory, slotIndex, acceptType, null);
     }
 
-    public VirtualMEPhantomSlot(int x, int y, AEStackInventorySyncHandler syncHandler, int slotIndex,
-            TypeAcceptPredicate acceptType) {
+    public VirtualMEPhantomSlot(int x, int y, GenericStackSlotsSyncHandler<? extends ConfigInventory> syncHandler,
+            int slotIndex, TypeAcceptPredicate acceptType) {
         this(x, y, syncHandler.get(), slotIndex, acceptType, syncHandler);
     }
 
-    private VirtualMEPhantomSlot(int x, int y, @Nullable IAEStackInventory inventory, int slotIndex,
-            TypeAcceptPredicate acceptType, @Nullable AEStackInventorySyncHandler syncHandler) {
+    private VirtualMEPhantomSlot(int x, int y, @Nullable ConfigInventory inventory, int slotIndex,
+            TypeAcceptPredicate acceptType,
+            @Nullable GenericStackSlotsSyncHandler<? extends ConfigInventory> syncHandler) {
         super(x, y, slotIndex);
         this.inventory = inventory;
         this.showAmount = false;
@@ -64,16 +66,17 @@ public class VirtualMEPhantomSlot extends VirtualMESlot {
     @Nullable
     @Override
     public IAEStack<?> getAEStack() {
-        return this.getInventory().getAEStackInSlot(this.getSlotIndex());
+        return GenericStack.toAEStackOrNull(this.getInventory().getStack(this.getSlotIndex()));
     }
 
     protected void setAEStack(@Nullable final IAEStack<?> stack) {
+        final GenericStack genericStack = GenericStack.fromAEStack(stack);
         if (this.syncHandler != null) {
-            this.syncHandler.applyAndQueueDelta(new AEStackInventoryDelta(this.getSlotIndex(), stack));
+            this.syncHandler.applyAndQueueDelta(new GenericStackSlotDelta(this.getSlotIndex(), genericStack));
             return;
         }
 
-        this.getInventory().putAEStackInSlot(this.getSlotIndex(), stack);
+        this.getInventory().setStack(this.getSlotIndex(), genericStack);
 
         NetworkHandler.instance.sendToServer(new PacketVirtualSlot(this.getStorageName(), this.getSlotIndex(), stack));
     }
@@ -82,7 +85,7 @@ public class VirtualMEPhantomSlot extends VirtualMESlot {
         return this.getInventory().getStorageName();
     }
 
-    private IAEStackInventory getInventory() {
+    private ConfigInventory getInventory() {
         if (this.inventory == null) {
             throw new IllegalStateException("Inventory is not available for synced virtual slots");
         }

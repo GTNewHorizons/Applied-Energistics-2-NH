@@ -26,6 +26,7 @@ import appeng.api.config.Settings;
 import appeng.api.config.StorageFilter;
 import appeng.api.config.Upgrades;
 import appeng.api.parts.IStorageBus;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.data.IAEStackType;
 import appeng.client.gui.slots.VirtualMEPhantomSlot;
 import appeng.client.gui.widgets.GuiImgButton;
@@ -39,7 +40,6 @@ import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketConfigButton;
 import appeng.core.sync.packets.PacketSwitchGuis;
 import appeng.core.sync.packets.PacketValueConfig;
-import appeng.tile.inventory.IAEStackInventory;
 
 public class GuiStorageBus extends GuiUpgradeable {
 
@@ -228,7 +228,7 @@ public class GuiStorageBus extends GuiUpgradeable {
 
     private void initVirtualSlots() {
         this.configSlots = new VirtualMEPhantomSlot[63];
-        final IAEStackInventory inputInv = this.containerStorageBus.getConfig();
+        final ConfigInventory inputInv = this.containerStorageBus.getConfig();
         final int xo = 8;
         final int yo = -133;
 

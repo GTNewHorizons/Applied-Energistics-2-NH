@@ -25,15 +25,17 @@ import appeng.api.config.Actionable;
 import appeng.api.config.FuzzyMode;
 import appeng.api.implementations.items.IStorageCell;
 import appeng.api.networking.security.BaseActionSource;
+import appeng.api.stacks.AEItemKey;
+import appeng.api.stacks.AEKey;
 import appeng.api.storage.ICellInventory;
 import appeng.api.storage.IMEInventoryHandler;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.StorageChannel;
-import appeng.api.storage.data.IAEItemStack;
+import appeng.api.storage.data.IAEFluidStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.storage.data.IItemList;
 import appeng.items.contents.CellConfig;
-import appeng.tile.inventory.IAEStackInventory;
 
 public class CreativeCellInventory<StackType extends IAEStack<StackType>>
         implements IMEInventoryHandler<StackType>, ICellInventory<StackType> {
@@ -47,17 +49,17 @@ public class CreativeCellInventory<StackType extends IAEStack<StackType>>
         this.cellType = (IStorageCell) o.getItem();
         this.listCache = (IItemList<StackType>) this.getStackType().createPrimitiveList();
 
-        final IAEStackInventory cc = o.getItem() instanceof IStorageCell sc ? sc.getConfigAEInventory(o)
-                : new IAEStackInventory(null, 0);
+        final KeyConfigInventory cc = o.getItem() instanceof IStorageCell sc ? sc.getConfigAEInventory(o)
+                : new KeyConfigInventory(null, 0);
         for (int i = 0; i < cc.getSizeInventory(); i++) {
-            IAEStack<?> aes = cc.getAEStackInSlot(i);
-            if (aes != null) {
-                if (this.getStackType() == FLUID_STACK_TYPE && aes instanceof IAEItemStack ais) {
-                    aes = Util.getAEFluidFromItem(ais.getItemStack());
-                }
+            AEKey key = cc.getKey(i);
+            if (this.getStackType() == FLUID_STACK_TYPE && key instanceof AEItemKey itemKey) {
+                final IAEFluidStack fluid = Util.getAEFluidFromItem(itemKey.toStack());
+                key = fluid == null ? null : fluid.getKey();
+            }
 
-                aes.setStackSize((long) (Math.pow(2, 52) - 1));
-                this.listCache.add((StackType) aes);
+            if (key != null) {
+                this.listCache.add((StackType) key.toAEStack((long) (Math.pow(2, 52) - 1)));
             }
         }
     }
@@ -149,7 +151,7 @@ public class CreativeCellInventory<StackType extends IAEStack<StackType>>
     }
 
     @Override
-    public IAEStackInventory getConfigAEInventory() {
+    public KeyConfigInventory getConfigAEInventory() {
         return new CellConfig(this.cellItem);
     }
 

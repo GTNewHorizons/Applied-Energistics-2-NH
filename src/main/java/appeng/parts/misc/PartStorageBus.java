@@ -61,13 +61,17 @@ import appeng.api.parts.IPartHost;
 import appeng.api.parts.IPartRenderHelper;
 import appeng.api.parts.IStorageBus;
 import appeng.api.parts.PartItemStack;
+import appeng.api.stacks.AEItemKey;
+import appeng.api.stacks.AEKey;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.IExternalStorageHandler;
 import appeng.api.storage.IMEInventory;
 import appeng.api.storage.IMEInventoryHandler;
 import appeng.api.storage.IMEMonitor;
 import appeng.api.storage.IStorageBusMonitor;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.StorageName;
-import appeng.api.storage.data.IAEItemStack;
+import appeng.api.storage.data.IAEFluidStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.storage.data.IItemList;
@@ -86,7 +90,6 @@ import appeng.me.storage.MEMonitorPassThrough;
 import appeng.me.storage.MEPassThrough;
 import appeng.me.storage.StorageBusInventoryHandler;
 import appeng.parts.automation.PartUpgradeable;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.transformer.annotations.Integration.Method;
 import appeng.util.IterationCounter;
 import appeng.util.Platform;
@@ -101,14 +104,14 @@ public class PartStorageBus extends PartUpgradeable implements IStorageBus {
     private static final String NBT_FILTER = "filter";
 
     private final BaseActionSource mySrc;
-    private final IAEStackInventory config = new IAEStackInventory(this, 63) {
+    private final KeyConfigInventory config = new KeyConfigInventory(this, 63) {
 
         @Override
-        public void putAEStackInSlot(int n, IAEStack<?> aes) {
-            super.putAEStackInSlot(n, aes);
+        public void setKey(int n, @Nullable AEKey key) {
+            super.setKey(n, key);
 
             if (n >= 18 && (n < (18 + getInstalledUpgrades(Upgrades.CAPACITY) * 9))) {
-                filterCache[n - 18] = aes;
+                filterCache[n - 18] = key;
             }
 
             resetCache(true);
@@ -117,7 +120,7 @@ public class PartStorageBus extends PartUpgradeable implements IStorageBus {
 
     private boolean needSyncGUI = false;
     // represents the 45 optional slots unlockable with a Storage Card
-    private final IAEStack<?>[] filterCache = new IAEStack<?>[63 - 18];
+    private final @Nullable AEKey[] filterCache = new AEKey[63 - 18];
     private int priority = 0;
     private boolean cached = false;
     private IStorageBusMonitor<?> monitor = null;
@@ -253,8 +256,8 @@ public class PartStorageBus extends PartUpgradeable implements IStorageBus {
         }
 
         for (int x = 0; x < (this.getInstalledUpgrades(Upgrades.CAPACITY) * 9); x++) {
-            final IAEStack<?> aes = filterCache[x];
-            if (aes != null) this.config.putAEStackInSlot(x + 18, aes);
+            final AEKey key = filterCache[x];
+            if (key != null) this.config.setKey(x + 18, key);
         }
         needSyncGUI = true;
 
@@ -276,7 +279,8 @@ public class PartStorageBus extends PartUpgradeable implements IStorageBus {
             final String key = "#" + x;
             if (tagCompound.hasKey(key, NBT.TAG_COMPOUND)) {
                 NBTTagCompound isTag = tagCompound.getCompoundTag(key);
-                filterCache[x] = readStackNBT(isTag, true);
+                final IAEStack<?> stack = readStackNBT(isTag, true);
+                filterCache[x] = stack == null ? null : stack.getKey();
             } else {
                 filterCache[x] = null;
             }
@@ -285,9 +289,10 @@ public class PartStorageBus extends PartUpgradeable implements IStorageBus {
 
     private void writeFilterCache(NBTTagCompound tagCompound) {
         for (int x = 0; x < filterCache.length; x++) {
-            if (filterCache[x] != null) {
+            final AEKey key = filterCache[x];
+            if (key != null) {
                 NBTTagCompound isTag = new NBTTagCompound();
-                writeStackNBT(filterCache[x], isTag, true);
+                writeStackNBT(key.toAEStack(1), isTag, true);
                 tagCompound.setTag("#" + x, isTag);
             }
         }
@@ -693,15 +698,16 @@ public class PartStorageBus extends PartUpgradeable implements IStorageBus {
 
                         final int slotsToUse = 18 + this.getInstalledUpgrades(Upgrades.CAPACITY) * 9;
                         for (int x = 0; x < this.config.getSizeInventory() && x < slotsToUse; x++) {
-                            IAEStack<?> is = this.config.getAEStackInSlot(x);
+                            AEKey key = this.config.getKey(x);
 
                             if (this.getStackType() == FLUID_STACK_TYPE && isAE2FCLoaded
-                                    && is instanceof IAEItemStack ais
-                                    && ais.getItem() instanceof ItemFluidPacket) {
-                                is = ItemFluidPacket.getFluidAEStack(ais);
+                                    && key instanceof AEItemKey itemKey
+                                    && itemKey.getItem() instanceof ItemFluidPacket) {
+                                final IAEFluidStack fluid = ItemFluidPacket.getFluidAEStack(itemKey.getReadonlyStack());
+                                key = fluid == null ? null : fluid.getKey();
                             }
-                            if (is != null) {
-                                builder.add(is.getKey());
+                            if (key != null) {
+                                builder.add(key);
                             }
                         }
 
@@ -826,12 +832,20 @@ public class PartStorageBus extends PartUpgradeable implements IStorageBus {
     }
 
     @Override
-    public void saveAEStackInv() {
+    public void onChangeConfigInventory(ConfigInventory inv, int slot) {
+        if (this.isClientSide()) {
+            return;
+        }
+
         this.saveChanges();
     }
 
+    public KeyConfigInventory getConfig() {
+        return this.config;
+    }
+
     @Override
-    public IAEStackInventory getAEInventoryByName(StorageName name) {
+    public ConfigInventory getAEInventoryByName(StorageName name) {
         if (name == StorageName.CONFIG) {
             return this.config;
         }

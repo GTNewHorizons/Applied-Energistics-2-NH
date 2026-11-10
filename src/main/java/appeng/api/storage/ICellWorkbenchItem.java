@@ -22,7 +22,6 @@ import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.storage.data.IAEStackType;
-import appeng.tile.inventory.IAEStackInventory;
 
 public interface ICellWorkbenchItem {
 
@@ -49,7 +48,7 @@ public interface ICellWorkbenchItem {
      * <p>
      * onInventoryChange will be called when saving is needed.
      */
-    IAEStackInventory getConfigAEInventory(ItemStack is);
+    KeyConfigInventory getConfigAEInventory(ItemStack is);
 
     /**
      * @return the current fuzzy status.
