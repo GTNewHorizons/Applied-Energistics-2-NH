@@ -33,16 +33,21 @@ public final class TransferComponentInfo {
     /** Whether the component's whitelist names the current query. Server only, used for sorting. */
     public final boolean explicitlyListed;
 
+    /**
+     * Whether sticky storage on this component claims the current query, see {@link TransferMatcher#capturesAsSticky}.
+     */
+    public final boolean stickyCapture;
+
     public TransferComponentInfo(@Nullable final ItemStack selfRep, final String customName,
             @Nullable final String nameSuffixJson, final int x, final int y, final int z, final int dim,
             final byte side, final int networkTier, final TransferDescription description) {
-        this(selfRep, customName, nameSuffixJson, x, y, z, dim, side, networkTier, description, false);
+        this(selfRep, customName, nameSuffixJson, x, y, z, dim, side, networkTier, description, false, false);
     }
 
     private TransferComponentInfo(@Nullable final ItemStack selfRep, final String customName,
             @Nullable final String nameSuffixJson, final int x, final int y, final int z, final int dim,
             final byte side, final int networkTier, final TransferDescription description,
-            final boolean explicitlyListed) {
+            final boolean explicitlyListed, final boolean stickyCapture) {
         this.selfRep = selfRep;
         this.customName = customName;
         this.nameSuffixJson = nameSuffixJson;
@@ -54,6 +59,7 @@ public final class TransferComponentInfo {
         this.networkTier = networkTier;
         this.description = description;
         this.explicitlyListed = explicitlyListed;
+        this.stickyCapture = stickyCapture;
     }
 
     /**
@@ -71,7 +77,8 @@ public final class TransferComponentInfo {
                 this.side,
                 this.networkTier,
                 this.description.withQuery(query),
-                query != null && this.description.matcher.isExplicitlyListed(query));
+                query != null && this.description.matcher.isExplicitlyListed(query),
+                query != null && this.description.matcher.capturesAsSticky(query));
     }
 
     /**
@@ -100,6 +107,7 @@ public final class TransferComponentInfo {
         out.writeInt(this.dim);
         out.writeByte(this.side);
         out.writeInt(this.networkTier);
+        out.writeBoolean(this.stickyCapture);
         this.description.write(out);
     }
 
@@ -113,6 +121,7 @@ public final class TransferComponentInfo {
         final int dim = in.readInt();
         final byte side = in.readByte();
         final int tier = in.readInt();
+        final boolean stickyCapture = in.readBoolean();
         return new TransferComponentInfo(
                 selfRep,
                 customName,
@@ -123,6 +132,8 @@ public final class TransferComponentInfo {
                 dim,
                 side,
                 tier,
-                TransferDescription.read(in));
+                TransferDescription.read(in),
+                false,
+                stickyCapture);
     }
 }

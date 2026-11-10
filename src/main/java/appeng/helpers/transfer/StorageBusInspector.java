@@ -5,6 +5,7 @@ import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 import java.util.List;
 
 import appeng.api.config.AccessRestriction;
+import appeng.api.config.Actionable;
 import appeng.api.config.ExtractionMode;
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.Settings;
@@ -13,16 +14,19 @@ import appeng.api.config.Upgrades;
 import appeng.api.features.transfer.ITransferInspector;
 import appeng.api.features.transfer.TransferDescription;
 import appeng.api.features.transfer.TransferMatcher;
+import appeng.api.networking.security.MachineSource;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.util.IConfigManager;
 import appeng.helpers.transfer.TransferFilterBuilder.EmptyPolicy;
 import appeng.helpers.transfer.TransferFilterBuilder.Filter;
+import appeng.me.storage.MEInventoryHandler;
 import appeng.parts.misc.PartStorageBus;
 
 /**
- * Follows the partition rules of {@code PartStorageBus.getInternalHandler}, without touching the live handler.
+ * Follows the partition rules of {@code PartStorageBus.getInternalHandler}, without touching the live handler. Only the
+ * sticky check asks the live handler, since whether the bus already holds a stack is only known there.
  */
 public final class StorageBusInspector implements ITransferInspector<PartStorageBus> {
 
@@ -79,7 +83,8 @@ public final class StorageBusInspector implements ITransferInspector<PartStorage
             InspectorSupport.addConfig(builder, config, fuzzy);
         }
 
-        return builder.matcher(new StorageBusMatcher(type, partition, canImport, canExport, extractFilterActive))
+        return builder.matcher(
+                new StorageBusMatcher(type, partition, canImport, canExport, extractFilterActive, sticky ? bus : null))
                 .build();
     }
 
@@ -91,13 +96,17 @@ public final class StorageBusInspector implements ITransferInspector<PartStorage
         private final boolean canExport;
         private final boolean extractFilterActive;
 
+        /** The bus, if it has a sticky card. */
+        private final PartStorageBus stickyBus;
+
         private StorageBusMatcher(final IAEStackType<?> type, final Filter partition, final boolean canImport,
-                final boolean canExport, final boolean extractFilterActive) {
+                final boolean canExport, final boolean extractFilterActive, final PartStorageBus stickyBus) {
             this.type = type;
             this.partition = partition;
             this.canImport = canImport;
             this.canExport = canExport;
             this.extractFilterActive = extractFilterActive;
+            this.stickyBus = stickyBus;
         }
 
         @Override
@@ -114,6 +123,37 @@ public final class StorageBusInspector implements ITransferInspector<PartStorage
         @Override
         public boolean isExplicitlyListed(final IAEStack<?> stack) {
             return this.partition.isListed(stack);
+        }
+
+        /**
+         * Asks the live handler the same question as the sticky pass of {@code NetworkInventoryHandler.injectItems}:
+         * the stack has to be accepted, and either whitelisted or already extractable. A bus without read access can
+         * therefore only claim stacks through its whitelist.
+         */
+        @Override
+        @SuppressWarnings({ "unchecked", "rawtypes" })
+        public boolean capturesAsSticky(final IAEStack<?> stack) {
+            if (this.stickyBus == null || stack == null || stack.getStackType() != this.type) {
+                return false;
+            }
+
+            try {
+                final MEInventoryHandler handler = this.stickyBus.getInternalHandler();
+                if (handler == null || !handler.getSticky()) {
+                    return false;
+                }
+
+                final IAEStack probe = stack.copy();
+                probe.setStackSize(1);
+                if (!handler.canAccept(probe)) {
+                    return false;
+                }
+                return handler.isPrioritized(probe)
+                        || handler.extractItems(probe, Actionable.SIMULATE, new MachineSource(this.stickyBus)) != null;
+            } catch (final RuntimeException e) {
+                // The bus may face an inventory from another mod, which must not take the terminal down.
+                return false;
+            }
         }
     }
 }

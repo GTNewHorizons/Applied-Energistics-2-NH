@@ -32,6 +32,15 @@ public interface TransferMatcher {
     }
 
     /**
+     * @return true if the component is sticky storage that AE would hand this stack to before trying any non-sticky
+     *         storage, which then never receives it. This holds when the stack is whitelisted on the component or
+     *         already stored in it.
+     */
+    default boolean capturesAsSticky(final IAEStack<?> stack) {
+        return false;
+    }
+
+    /**
      * @param config stacks the component exports, other stacks and every import are refused
      * @return a matcher for a component that pulls exactly the configured stacks out of the network
      */

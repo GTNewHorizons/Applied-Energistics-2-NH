@@ -9,6 +9,8 @@ import static appeng.gametests.transfer.TransferTestHelpers.iron;
 import static appeng.gametests.transfer.TransferTestHelpers.place;
 import static appeng.gametests.transfer.TransferTestHelpers.water;
 
+import net.minecraft.init.Items;
+import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import com.gtnewhorizons.horizonqa.api.GameTestHelper;
@@ -33,6 +35,7 @@ import appeng.parts.misc.PartStorageBus;
 public class StorageBusInspectorTests {
 
     private static final StorageBusInspector INSPECTOR = new StorageBusInspector();
+    private static final String EXTERNAL_CHEST_LABEL = "external_chest";
 
     private static IMaterials cards() {
         return AEApi.instance().definitions().materials();
@@ -126,6 +129,65 @@ public class StorageBusInspectorTests {
         helper.assertTrue(description.sticky, "Sticky card should be reported");
         helper.assertTrue(description.matcher.isExplicitlyListed(iron()), "Whitelisted stack is listed");
         helper.assertFalse(description.matcher.isExplicitlyListed(gold()), "Other stacks are not listed");
+        helper.succeed();
+    }
+
+    /**
+     * Sets up a sticky bus facing the template's chest and checks, once the live handler has picked the settings up,
+     * which stacks the bus claims ahead of all other storage.
+     */
+    private static void assertStickyClaims(GameTestHelper helper, AccessRestriction access, boolean whitelistIron,
+            boolean ironStored, boolean expectIron) {
+        PartStorageBus bus = bus(helper);
+        access(bus, access, ExtractionMode.LOOSE);
+        if (whitelistIron) {
+            bus.getAEInventoryByName(StorageName.CONFIG).putAEStackInSlot(0, iron());
+        }
+        if (ironStored) {
+            helper.setSlot(EXTERNAL_CHEST_LABEL, 0, new ItemStack(Items.iron_ingot));
+        }
+        install(bus.getInventoryByName("upgrades"), cards().cardSticky());
+
+        helper.startSequence().thenWaitUntil("wait for the handler to pick up the sticky card", 60, () -> {
+            MEInventoryHandler<?> handler = bus.getInternalHandler();
+            helper.assertNotNull(handler, "Storage bus should have a handler");
+            helper.assertTrue(handler.getSticky(), "Handler should become sticky");
+        }).thenExecute("ask the inspector", () -> {
+            TransferDescription description = INSPECTOR.inspect(bus);
+            helper.assertEquals(expectIron, description.matcher.capturesAsSticky(iron()), "Sticky claim on iron");
+            helper.assertFalse(description.matcher.capturesAsSticky(gold()), "Gold is neither listed nor stored");
+        }).thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void stickyBusClaimsWhitelistedStacks(GameTestHelper helper) {
+        assertStickyClaims(helper, AccessRestriction.WRITE, true, false, true);
+    }
+
+    // AE only checks what a sticky bus holds by extracting from it, which an insert only bus never allows.
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void insertOnlyStickyBusDoesNotClaimStoredStacks(GameTestHelper helper) {
+        assertStickyClaims(helper, AccessRestriction.WRITE, false, true, false);
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void readWriteStickyBusClaimsStoredStacks(GameTestHelper helper) {
+        assertStickyClaims(helper, AccessRestriction.READ_WRITE, false, true, true);
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void unfilteredEmptyStickyBusClaimsNothing(GameTestHelper helper) {
+        assertStickyClaims(helper, AccessRestriction.READ_WRITE, false, false, false);
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 20)
+    public static void busWithoutStickyCardClaimsNothing(GameTestHelper helper) {
+        PartStorageBus bus = bus(helper);
+        bus.getAEInventoryByName(StorageName.CONFIG).putAEStackInSlot(0, iron());
+
+        helper.assertFalse(
+                INSPECTOR.inspect(bus).matcher.capturesAsSticky(iron()),
+                "Only sticky storage claims stacks");
         helper.succeed();
     }
 

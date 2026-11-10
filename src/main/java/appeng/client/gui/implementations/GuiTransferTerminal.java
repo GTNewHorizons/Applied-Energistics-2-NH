@@ -83,6 +83,8 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     private static final int SEARCH_HEIGHT = 12;
     private static final int RESET_BUTTON_X = SEARCH_X + SEARCH_WIDTH - 16;
     private static final int TITLE_WIDTH = 160;
+    private static final int STICKY_LINE_HOVER = 2;
+    private static final int STICKY_TOOLTIP_WIDTH = 200;
 
     // interfaceterminal.png has a search bar in the title row, it is shared with the Interface Terminal.
     private static final int TEXTURE_BAR_X = 104;
@@ -94,6 +96,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
 
     private static final int QUERY_MATCH_COLOR = 0x6600FF00;
     private static final int FUZZY_MARK_COLOR = 0xFF4040FF;
+    private static final int STICKY_LINE_COLOR = 0xFFD07000;
     private static final int SLOT_BORDER_COLOR = 0xFF373737;
     private static final int SLOT_FILL_COLOR = 0xFF8B8B8B;
 
@@ -567,6 +570,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                 this.drawRow(row, this.rowTop(index), relX, relY, tooltip);
             }
         }
+        this.drawStickySeparator(relX, relY, tooltip);
 
         if (relX >= 8 && relX < 8 + TITLE_WIDTH && relY >= 5 && relY < 16) {
             tooltip.clear();
@@ -585,6 +589,37 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
 
         if (!tooltip.isEmpty()) {
             this.drawTooltip(relX + 12, relY, tooltip.toArray(new String[0]));
+        }
+    }
+
+    /**
+     * Marks where the rows whose sticky storage claims the searched stack end, nothing below can receive it. The server
+     * only counts them for a stack search in export mode, a name search filters on the client and is left alone.
+     */
+    private void drawStickySeparator(final int relX, final int relY, final List<String> tooltip) {
+        final int stickyRows = this.container.stickyCountSync.get();
+        if (stickyRows <= 0 || stickyRows >= this.rowCount() || this.isFilteringLocally()) {
+            return;
+        }
+
+        final int first = this.getScrollBar().getCurrentScroll();
+        if (stickyRows < first || stickyRows > first + this.visibleRows) {
+            return;
+        }
+
+        final int y = this.rowTop(stickyRows) - 1;
+        drawRect(LIST_LEFT, y, LIST_RIGHT, y + 2, STICKY_LINE_COLOR);
+
+        if (relX >= LIST_LEFT && relX < LIST_RIGHT
+                && relY >= y - STICKY_LINE_HOVER
+                && relY < y + 2 + STICKY_LINE_HOVER) {
+            tooltip.clear();
+            tooltip.add(GuiText.TransferTermStickySeparator.getLocal());
+            for (final Object line : this.fontRendererObj.listFormattedStringToWidth(
+                    GuiText.TransferTermStickySeparatorDesc.getLocal(),
+                    STICKY_TOOLTIP_WIDTH)) {
+                tooltip.add(String.valueOf(line));
+            }
         }
     }
 

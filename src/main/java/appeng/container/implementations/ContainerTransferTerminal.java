@@ -75,6 +75,9 @@ public class ContainerTransferTerminal extends AEBaseContainer {
     public final IntSyncHandler windowSizeSync;
     public final ObjectSyncHandler<String> serverLanguageSync;
 
+    /** Number of rows at the top that sticky storage on this network claims the searched stack for. */
+    public final IntSyncHandler stickyCountSync;
+
     private final Map<TransferComponentInfo, List<String>> configNames = new IdentityHashMap<>();
     private List<TransferComponentInfo> scanned = Collections.emptyList();
     private List<TransferComponentInfo> filtered = Collections.emptyList();
@@ -121,6 +124,7 @@ public class ContainerTransferTerminal extends AEBaseContainer {
         if (Platform.isServer()) {
             this.serverLanguageSync.set(CommonHelper.proxy.getServerLanguage());
         }
+        this.stickyCountSync = sync.intS2C("stickyCount");
 
         this.bindPlayerInventory(ip, 0, -31);
     }
@@ -153,6 +157,7 @@ public class ContainerTransferTerminal extends AEBaseContainer {
         if (this.queryChanged) {
             this.queryChanged = false;
             this.filtered = TransferResultFilter.apply(this.scanned, this.getQuery(), this.getMode(), this::keep);
+            this.stickyCountSync.set(this.countStickyRows());
             this.windowChanged = true;
         }
 
@@ -192,6 +197,25 @@ public class ContainerTransferTerminal extends AEBaseContainer {
 
     public static boolean isYes(final ObjectSyncHandler<YesNo> sync) {
         return sync.get() == YesNo.YES;
+    }
+
+    /**
+     * Sticky storage that claims a stack shuts out every other storage on its network, so the separator below these
+     * rows is only meaningful when searching for one stack in export mode. Other networks route by themselves.
+     */
+    private int countStickyRows() {
+        if (this.getQuery() == null || this.getMode() != TransferDirection.EXPORT) {
+            return 0;
+        }
+
+        int count = 0;
+        for (final TransferComponentInfo row : this.filtered) {
+            if (row.networkTier != 0 || !row.stickyCapture) {
+                break;
+            }
+            count++;
+        }
+        return count;
     }
 
     private boolean keep(final TransferComponentInfo row) {

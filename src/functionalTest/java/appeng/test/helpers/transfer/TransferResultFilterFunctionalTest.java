@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -92,9 +93,96 @@ public class TransferResultFilterFunctionalTest {
     }
 
     private static TransferComponentInfo storageRow(final String name, final TransferMatcher matcher) {
-        final TransferDescription description = TransferDescription.builder().storageHandler(true).priority(3)
+        return storageRow(name, 3, 0, matcher);
+    }
+
+    private static TransferComponentInfo storageRow(final String name, final int priority, final int tier,
+            final TransferMatcher matcher) {
+        final TransferDescription description = TransferDescription.builder().storageHandler(true).priority(priority)
                 .matcher(matcher).build();
-        return new TransferComponentInfo(null, name, null, 0, 0, 0, 0, (byte) 0, 0, description);
+        return new TransferComponentInfo(null, name, null, 0, 0, 0, 0, (byte) 0, tier, description);
+    }
+
+    /** Sticky storage that claims IRON only, like a sticky bus whose whitelist names it. */
+    private static final TransferMatcher STICKY_FOR_IRON = new TransferMatcher() {
+
+        @Override
+        public boolean canTransfer(final IAEStack<?> stack, final TransferDirection direction) {
+            return true;
+        }
+
+        @Override
+        public boolean capturesAsSticky(final IAEStack<?> stack) {
+            return stack.isSameType((Object) IRON);
+        }
+    };
+
+    private static List<String> names(final List<TransferComponentInfo> rows) {
+        final List<String> names = new ArrayList<>();
+        for (final TransferComponentInfo row : rows) {
+            names.add(row.customName);
+        }
+        return names;
+    }
+
+    @Test
+    public void exportPutsClaimingStickyStorageAheadOfAnyPriority() {
+        final List<TransferComponentInfo> rows = Arrays.asList(
+                storageRow("high", 100, 0, (stack, direction) -> true),
+                storageRow("sticky", 0, 0, STICKY_FOR_IRON));
+
+        final List<TransferComponentInfo> result = TransferResultFilter
+                .apply(rows, IRON, TransferDirection.EXPORT, ignored -> true);
+
+        assertEquals(Arrays.asList("sticky", "high"), names(result));
+        assertTrue(result.get(0).stickyCapture);
+        assertFalse(result.get(1).stickyCapture);
+    }
+
+    @Test
+    public void stickyStorageThatDoesNotClaimTheStackSortsByPriority() {
+        final List<TransferComponentInfo> rows = Arrays.asList(
+                storageRow("high", 100, 0, (stack, direction) -> true),
+                storageRow("sticky", 0, 0, STICKY_FOR_IRON));
+
+        final List<TransferComponentInfo> result = TransferResultFilter
+                .apply(rows, GOLD, TransferDirection.EXPORT, ignored -> true);
+
+        assertEquals(Arrays.asList("high", "sticky"), names(result));
+        assertFalse(result.get(1).stickyCapture);
+    }
+
+    @Test
+    public void claimingStickyStorageOnlyLeadsItsOwnNetwork() {
+        final List<TransferComponentInfo> rows = Arrays.asList(
+                storageRow("sub sticky", 0, 1, STICKY_FOR_IRON),
+                storageRow("own", 0, 0, (stack, direction) -> true));
+
+        final List<TransferComponentInfo> result = TransferResultFilter
+                .apply(rows, IRON, TransferDirection.EXPORT, ignored -> true);
+
+        assertEquals(Arrays.asList("own", "sub sticky"), names(result));
+    }
+
+    @Test
+    public void bothDirectionsIgnoreStickyStorage() {
+        final List<TransferComponentInfo> rows = Arrays.asList(
+                storageRow("high", 100, 0, (stack, direction) -> true),
+                storageRow("sticky", 0, 0, STICKY_FOR_IRON));
+
+        final List<TransferComponentInfo> result = TransferResultFilter
+                .apply(rows, IRON, TransferDirection.BOTH, ignored -> true);
+
+        assertEquals(Arrays.asList("high", "sticky"), names(result));
+    }
+
+    @Test
+    public void exportOfMatchesOnlyConfiguredStacksLeavingTheNetwork() {
+        final TransferMatcher matcher = TransferMatcher.exportOf(Arrays.asList(IRON));
+
+        assertTrue(matcher.canTransfer(IRON, TransferDirection.EXPORT));
+        assertFalse(matcher.canTransfer(IRON, TransferDirection.IMPORT));
+        assertFalse(matcher.canTransfer(GOLD, TransferDirection.EXPORT));
     }
 
     @Test
@@ -142,14 +230,5 @@ public class TransferResultFilterFunctionalTest {
         assertTrue(TransferResultFilter.passesToggles(configured, false, true));
         assertTrue(TransferResultFilter.passesToggles(oreFiltered, false, true));
         assertTrue(TransferResultFilter.passesToggles(none, false, false));
-    }
-
-    @Test
-    public void exportOfMatchesOnlyConfiguredStacksLeavingTheNetwork() {
-        final TransferMatcher matcher = TransferMatcher.exportOf(Arrays.asList(IRON));
-
-        assertTrue(matcher.canTransfer(IRON, TransferDirection.EXPORT));
-        assertFalse(matcher.canTransfer(IRON, TransferDirection.IMPORT));
-        assertFalse(matcher.canTransfer(GOLD, TransferDirection.EXPORT));
     }
 }

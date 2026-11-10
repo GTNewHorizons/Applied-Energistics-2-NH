@@ -8,9 +8,13 @@ import appeng.api.features.transfer.TransferComponentInfo;
 /**
  * Orders Transfer Terminal rows by how likely each component is to have moved a stack.
  * <p>
- * Mirrors {@code NetworkInventoryHandler}: stacks entering storage go to sticky handlers first, then by descending
- * priority with whitelisted handlers ahead of unfiltered ones, and stacks leaving storage are drained from the lowest
- * priority first. Handlers that tie on all of that are chosen in an unspecified order by AE.
+ * Mirrors {@code NetworkInventoryHandler}: stacks entering storage first go to the sticky handlers that claim them,
+ * which then shut every other handler out, then by descending priority with whitelisted handlers ahead of unfiltered
+ * ones. Stacks leaving storage are drained from the lowest priority first. Handlers that tie on all of that are chosen
+ * in an unspecified order by AE.
+ * <p>
+ * Sticky handlers only claim a stack they whitelist or already hold, a sticky card alone changes nothing. Only the
+ * export order takes them into account, the other directions sort by priority alone.
  */
 public final class TransferRowOrder {
 
@@ -34,7 +38,7 @@ public final class TransferRowOrder {
         }
 
         if (hasQuery && direction == TransferDirection.EXPORT) {
-            order = order.thenComparing(row -> !isSticky(row));
+            order = order.thenComparing(row -> !row.stickyCapture);
             order = order.thenComparing(Comparator.comparingInt(TransferRowOrder::storagePriority).reversed());
             order = order.thenComparing(row -> !isListed(row));
         } else if (hasQuery && direction == TransferDirection.IMPORT) {
@@ -51,10 +55,6 @@ public final class TransferRowOrder {
      */
     private static int storagePriority(final TransferComponentInfo row) {
         return row.description.storageHandler ? row.description.priority : 0;
-    }
-
-    private static boolean isSticky(final TransferComponentInfo row) {
-        return row.description.storageHandler && row.description.sticky;
     }
 
     private static boolean isListed(final TransferComponentInfo row) {
