@@ -1,4 +1,4 @@
-package appeng.test.util.prioitylist;
+package appeng.test.util.partitionlist;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -12,27 +12,26 @@ import net.minecraftforge.oredict.OreDictionary;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import appeng.api.storage.data.IAEItemStack;
-import appeng.util.item.AEItemStack;
-import appeng.util.prioitylist.OreFilteredList;
+import appeng.api.stacks.AEItemKey;
+import appeng.util.partitionlist.OreFilterPartitionList;
 
-public class OreFilteredListFunctionalTest {
+public class OreFilterPartitionListFunctionalTest {
 
-    private static IAEItemStack ironIngot;
-    private static IAEItemStack goldIngot;
+    private static AEItemKey ironIngot;
+    private static AEItemKey goldIngot;
 
     @BeforeAll
     public static void registerTestOres() {
         OreDictionary.registerOre("ingotIron", new ItemStack(Items.iron_ingot));
         OreDictionary.registerOre("ingotGold", new ItemStack(Items.gold_ingot));
 
-        ironIngot = AEItemStack.create(new ItemStack(Items.iron_ingot));
-        goldIngot = AEItemStack.create(new ItemStack(Items.gold_ingot));
+        ironIngot = AEItemKey.of(new ItemStack(Items.iron_ingot));
+        goldIngot = AEItemKey.of(new ItemStack(Items.gold_ingot));
     }
 
     @Test
     public void repeatedConjunctiveOperandRejectsAllItems() {
-        Predicate<IAEItemStack> filter = OreFilteredList.makeFilter("!ingotIron&ingotIron");
+        Predicate<AEItemKey> filter = OreFilterPartitionList.makeFilter("!ingotIron&ingotIron");
 
         assertNotNull(filter);
         assertFalse(filter.test(ironIngot));

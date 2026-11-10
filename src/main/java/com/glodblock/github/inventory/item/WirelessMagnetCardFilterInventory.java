@@ -14,11 +14,14 @@ import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 
+import org.jspecify.annotations.Nullable;
+
 import com.glodblock.github.inventory.ItemBiggerAppEngInventory;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
 import appeng.api.networking.IGridNode;
+import appeng.api.stacks.AEItemKey;
 import appeng.api.storage.IMEMonitor;
 import appeng.api.storage.StorageChannel;
 import appeng.api.storage.data.IAEFluidStack;
@@ -27,9 +30,8 @@ import appeng.api.util.IConfigManager;
 import appeng.tile.inventory.AppEngInternalInventory;
 import appeng.tile.inventory.InvOperation;
 import appeng.util.Platform;
-import appeng.util.item.AEItemStack;
 import appeng.util.item.OreHelper;
-import appeng.util.prioitylist.OreFilteredList;
+import appeng.util.partitionlist.OreFilterPartitionList;
 
 public class WirelessMagnetCardFilterInventory extends BaseWirelessInventory implements IWirelessMagnetFilter {
 
@@ -38,7 +40,7 @@ public class WirelessMagnetCardFilterInventory extends BaseWirelessInventory imp
     private boolean useOre;
     private boolean useOreDict;
     private String oreDictFilter = "";
-    protected Predicate<IAEItemStack> filterPredicate = null;
+    protected @Nullable Predicate<AEItemKey> filterPredicate = null;
     private WirelessMagnet.ListMode listMode = WirelessMagnet.ListMode.BlackList;
     private final AppEngInternalInventory filterInventory;
     private final NBTTagCompound settingCache;
@@ -218,8 +220,8 @@ public class WirelessMagnetCardFilterInventory extends BaseWirelessInventory imp
 
     public boolean isItemFiltered(ItemStack inputItemStack) {
         if (useOreDict && !oreDictFilter.isEmpty()) {
-            if (filterPredicate == null) filterPredicate = OreFilteredList.makeFilter(oreDictFilter);
-            if (filterPredicate.test(AEItemStack.create(inputItemStack))) return true;
+            if (filterPredicate == null) filterPredicate = OreFilterPartitionList.makeFilter(oreDictFilter);
+            if (filterPredicate != null && filterPredicate.test(AEItemKey.of(inputItemStack))) return true;
         }
 
         for (int i = 0; i < filterInventory.getSizeInventory(); i++) {

@@ -6,10 +6,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.item.ItemStack;
 
-import appeng.api.AEApi;
-import appeng.api.storage.data.IAEItemStack;
+import org.jspecify.annotations.Nullable;
+
+import appeng.api.stacks.AEItemKey;
 import appeng.client.gui.implementations.GuiOreFilter;
-import appeng.util.prioitylist.OreFilteredList;
+import appeng.util.partitionlist.OreFilterPartitionList;
 import codechicken.nei.api.ItemFilter;
 import codechicken.nei.api.ItemFilter.ItemFilterProvider;
 
@@ -32,15 +33,15 @@ public class NEIOreDictionaryFilter implements ItemFilterProvider {
 
     public static class Filter implements ItemFilter {
 
-        private Predicate<IAEItemStack> list;
+        private final @Nullable Predicate<AEItemKey> list;
 
         public Filter(String pattern) {
-            this.list = OreFilteredList.makeFilter(pattern);
+            this.list = OreFilterPartitionList.makeFilter(pattern);
         }
 
         @Override
         public boolean matches(ItemStack itemStack) {
-            return this.list == null || list.test(AEApi.instance().storage().createItemStack(itemStack));
+            return this.list == null || this.list.test(AEItemKey.of(itemStack));
         }
     }
 }

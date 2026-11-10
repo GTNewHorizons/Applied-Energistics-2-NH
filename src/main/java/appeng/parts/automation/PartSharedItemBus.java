@@ -19,6 +19,8 @@ import net.minecraft.util.IIcon;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
+import org.jspecify.annotations.Nullable;
+
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.RedstoneMode;
 import appeng.api.config.Settings;
@@ -28,9 +30,9 @@ import appeng.api.networking.security.BaseActionSource;
 import appeng.api.networking.security.MachineSource;
 import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.networking.ticking.TickRateModulation;
+import appeng.api.stacks.AEItemKey;
 import appeng.api.storage.IMEMonitor;
 import appeng.api.storage.StorageName;
-import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.util.IConfigManager;
@@ -54,7 +56,7 @@ public abstract class PartSharedItemBus<StackType extends IAEStack<StackType>> e
     private boolean lastRedstone = false;
     private boolean pendingStateUpdate = false;
     protected String oreFilterString = "";
-    protected Predicate<IAEItemStack> filterPredicate = null;
+    protected @Nullable Predicate<AEItemKey> filterPredicate = null;
     protected final BaseActionSource mySrc;
 
     public PartSharedItemBus(final ItemStack is) {

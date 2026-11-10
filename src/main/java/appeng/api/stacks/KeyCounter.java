@@ -70,6 +70,25 @@ public final class KeyCounter implements Iterable<Object2LongMap.Entry<AEKey>> {
         return counter == null ? Collections.emptyList() : counter.findFuzzy(key, fuzzy);
     }
 
+    /**
+     * Like {@code !findFuzzy(key, fuzzy).isEmpty()}, but stops at the first match instead of collecting all of them.
+     */
+    public boolean containsFuzzy(AEKey key, FuzzyMode fuzzy) {
+        if (key instanceof AEItemKey itemKey) {
+            OreReference oreReference = itemKey.getOreReference();
+            if (oreReference != null) {
+                for (AEItemKey equivalentKey : oreReference.getAEEquivalentKeys()) {
+                    boolean ignoreMeta = equivalentKey.getItemDamage() == OreDictionary.WILDCARD_VALUE;
+                    if (!findFuzzyItem(equivalentKey, fuzzy, ignoreMeta).isEmpty()) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+        return !this.findFuzzy(key, fuzzy).isEmpty();
+    }
+
     public void removeZeros() {
         removeEmptySubmaps(true);
     }
