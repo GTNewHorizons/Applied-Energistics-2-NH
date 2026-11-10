@@ -87,8 +87,10 @@ public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
 
         final Set<PartP2PItems> insertTargets = new HashSet<>(getInsertTargets());
         final Set<PartP2PItems> extractTargets = new HashSet<>(getExtractTargets());
+        final Set<PartP2PItems> targets = new HashSet<>(insertTargets);
+        targets.addAll(extractTargets);
 
-        for (final PartP2PItems t : this.getPeerTunnels()) {
+        for (final PartP2PItems t : targets) {
             final boolean canInsert = insertTargets.contains(t);
             final boolean canExtract = extractTargets.contains(t);
             if (!canInsert && !canExtract) {
