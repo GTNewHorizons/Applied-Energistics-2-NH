@@ -8,18 +8,21 @@ import appeng.parts.p2p.PartP2PTunnel
 import com.projecturanus.betterp2p.MODID
 import com.projecturanus.betterp2p.client.ClientCache
 import com.projecturanus.betterp2p.client.gui.widget.GuiScale
+import com.projecturanus.betterp2p.client.render.ConnectionHighlighter
 import com.projecturanus.betterp2p.network.ModNetwork
 import com.projecturanus.betterp2p.network.data.*
 import com.projecturanus.betterp2p.util.getPart
 import com.projecturanus.betterp2p.util.p2p.getTypeIndex
 import cpw.mods.fml.relauncher.Side
 import cpw.mods.fml.relauncher.SideOnly
+import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.texture.IIconRegister
 import net.minecraft.entity.Entity
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.NBTTagCompound
+import net.minecraft.util.MovingObjectPosition
 import net.minecraft.util.StatCollector
 import net.minecraft.world.World
 import net.minecraftforge.common.util.Constants
@@ -45,17 +48,30 @@ object ItemAdvancedMemoryCard : Item() {
 
     @SideOnly(Side.CLIENT)
     private fun clearClientCache() {
+        ConnectionHighlighter.clear()
         ClientCache.clear()
     }
 
-    override fun onItemRightClick(itemstack: ItemStack, worldIn: World, playerIn: EntityPlayer): ItemStack {
-        if (playerIn.isSneaking && worldIn.isRemote) {
+    @SideOnly(Side.CLIENT)
+    private fun clearClientCacheInAir() {
+        val hit = Minecraft.getMinecraft().objectMouseOver
+        // onItemRightClick also runs after an unhandled block click; only an air click dismisses the locator.
+        if (hit == null || hit.typeOfHit == MovingObjectPosition.MovingObjectType.MISS) {
             clearClientCache()
+        }
+    }
+
+    override fun onItemRightClick(itemstack: ItemStack, worldIn: World, playerIn: EntityPlayer): ItemStack {
+        if (worldIn.isRemote) {
+            if (playerIn.isSneaking) clearClientCache() else clearClientCacheInAir()
         }
         return super.onItemRightClick(itemstack, worldIn, playerIn)
     }
 
     override fun onItemUse(itemstack: ItemStack, player: EntityPlayer, w: World, x: Int, y: Int, z: Int, side: Int, hx: Float, hy: Float, hz: Float): Boolean {
+        if (w.isRemote && getPart(w, x, y, z, hx, hy, hz) is PartP2PTunnel<*>) {
+            clearClientCache()
+        }
         if (!w.isRemote) {
             val te = w.getTileEntity(x, y, z)
             if (te is IGridHost && te.getGridNode(ForgeDirection.getOrientation(side)) != null) {
