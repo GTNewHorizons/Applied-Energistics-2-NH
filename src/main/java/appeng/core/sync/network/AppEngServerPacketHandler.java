@@ -14,6 +14,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import net.minecraft.entity.player.EntityPlayer;
 
+import appeng.container.AEBaseContainer;
 import appeng.core.AELog;
 import appeng.core.sync.AppEngPacket;
 import appeng.core.sync.AppEngPacketHandlerBase;
@@ -24,6 +25,9 @@ public final class AppEngServerPacketHandler extends AppEngPacketHandlerBase imp
 
     @Override
     public void onPacketData(final INetworkInfo manager, final FMLProxyPacket packet, final EntityPlayer player) {
+        if (player.openContainer instanceof AEBaseContainer container && container.hasRemoteInterfaceOrigin()
+                && !container.canInteractWith(player))
+            return;
         final ByteBuf stream = packet.payload();
 
         try {

@@ -18,6 +18,7 @@ import appeng.client.gui.AEBaseGui;
 import appeng.container.AEBaseContainer;
 import appeng.container.ContainerOpenContext;
 import appeng.container.PrimaryGui;
+import appeng.container.RemoteInterfaceGui;
 import appeng.container.interfaces.IContainerSubGui;
 import appeng.core.sync.AppEngPacket;
 import appeng.core.sync.GuiBridge;
@@ -75,7 +76,7 @@ public class PacketSwitchGuis extends AppEngPacket {
     @Override
     public void serverPacketData(final INetworkInfo manager, final AppEngPacket packet, final EntityPlayer player) {
         final Container c = player.openContainer;
-        if (c instanceof AEBaseContainer bc) {
+        if (c instanceof AEBaseContainer bc && bc.canInteractWith(player)) {
 
             final ContainerOpenContext context = bc.getOpenContext();
 
@@ -84,16 +85,20 @@ public class PacketSwitchGuis extends AppEngPacket {
 
                 if (this.newGui == null) {
                     final PrimaryGui pGui = bc.getPrimaryGui();
-                    assert pGui != null;
-                    pGui.open(player);
+                    if (pGui != null) pGui.open(player);
+                    return;
                 } else {
                     Platform.openGUI(player, te, context.getSide(), this.newGui, bc.getTargetSlotIndex());
                 }
             }
 
-            if (player.openContainer instanceof IContainerSubGui sg) {
+            if (player.openContainer != c) {
                 final PrimaryGui pGui = bc.createPrimaryGui();
-                sg.setPrimaryGui(pGui);
+                if (pGui instanceof RemoteInterfaceGui && player.openContainer instanceof AEBaseContainer target) {
+                    target.setPrimaryGui(pGui);
+                } else if (player.openContainer instanceof IContainerSubGui sg) {
+                    sg.setPrimaryGui(pGui);
+                }
             }
         }
     }
