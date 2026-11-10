@@ -150,12 +150,8 @@ gui.appliedenergistics2.CraftingTerminal=Crafting Terminal
 gui.appliedenergistics2.CraftingDiagnosticTerminal=Crafting Diagnostic Terminal
 gui.appliedenergistics2.TransferTerminal=Transfer Terminal
 gui.appliedenergistics2.TransferTerminalQueryTooltip=Drop an item, fluid or essentia here to list the components that could move it.
-gui.appliedenergistics2.TransferTerminalSearchTooltip=Filter by the name of a configured item.
-Only names are compared, cards such as fuzzy cards
-or oredict cards are not taken into account.
-gui.appliedenergistics2.TransferTerminalSearchLanguageWarning=The server uses a different language (%s) than you (%s).
-Searching syncs the full list instead of only the visible rows,
-which may use more network traffic on large networks.
+gui.appliedenergistics2.TransferTerminalSearchTooltip=Filter by the name of a configured item.\nOnly names are compared, cards such as fuzzy cards\nor oredict cards are not taken into account.
+gui.appliedenergistics2.TransferTerminalSearchLanguageWarning=The server uses a different language (%s) than you (%s).\nSearching syncs the full list instead of only the visible rows,\nwhich may use more network traffic on large networks.
 gui.appliedenergistics2.TransferTerminalTieTooltip=AE picks between equal priorities and filters in no fixed order.
 gui.appliedenergistics2.TransferTermIn=IN
 gui.appliedenergistics2.TransferTermOut=OUT
@@ -593,6 +589,7 @@ gui.tooltips.appliedenergistics2.TransferTermNetworkOnlyYes=Searching only this 
 gui.tooltips.appliedenergistics2.TransferTermNetworkOnlyNo=Searching this network and its connected networks.
 gui.tooltips.appliedenergistics2.TransferTermReset=Reset Filters
 gui.tooltips.appliedenergistics2.TransferTermResetDesc=Resets every filter, the searched item and the search text to their defaults.
+gui.tooltips.appliedenergistics2.TransferTerminal=If items are vanishing and you can't figure out where,\nuse this terminal to search through every storage bus,\nimport bus, export bus, interface, formation plane,\nannihilation plane, ME replenisher, stock replenisher\nand stocking input bus or hatch in your entire network.\nSorts the search results by the components most likely\nto have moved the item first (usually priority).\nComponents in other networks are sorted below those in\nthe current network, since their priority settings do\nnot interact across network borders.\nYou may need to pick up and move this terminal into\nother networks to properly diagnose issues. You can\nfilter the results to only the current network to help\nnarrow down issues.
 gui.tooltips.appliedenergistics2.SearchFieldInputs=Recipe Inputs
 gui.tooltips.appliedenergistics2.SearchFieldOutputs=Recipe Outputs
 gui.tooltips.appliedenergistics2.SearchFieldNames=Interface Names
