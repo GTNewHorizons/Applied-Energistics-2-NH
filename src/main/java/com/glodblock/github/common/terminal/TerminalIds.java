@@ -20,21 +20,12 @@ public final class TerminalIds {
     public static final String WCT_CRAFTING = "ae2wct:crafting";
 
     /**
-     * Ore dictionary name that contains the wireless terminals which can be combined into the ultra terminal.
-     */
-    public static final String TERMINAL_OREDICT = "ae2fcUltraTerminal";
-
-    /**
      * Ordinal order of the removed {@code UltraTerminalModes} enum, used to migrate old items.
      */
     private static final String[] LEGACY_ORDER = { AE2FC_CRAFTING, AE2FC_PATTERN, AE2FC_PATTERN_EX, AE2FC_INTERFACE,
             AE2FC_LEVEL };
 
-    /**
-     * Terminals the old enum based terminal could open together with a pattern terminal.
-     */
-    private static final List<String> LEGACY_PATTERNS = Collections
-            .unmodifiableList(Arrays.asList(AE2FC_PATTERN, AE2FC_PATTERN_EX));
+    private static final List<String> LEGACY_TYPES = Collections.unmodifiableList(Arrays.asList(LEGACY_ORDER));
 
     /**
      * @return the terminal id stored by the old enum based implementation, or null if the ordinal is unknown.
@@ -45,12 +36,10 @@ public final class TerminalIds {
     }
 
     /**
-     * @return all terminals the old enum based terminal could open while it stored the given terminal, or null if the
-     *         terminal has no legacy group.
+     * @return all five terminals supported by every old enum based ultra terminal, regardless of its selected mode.
      */
-    @Nullable
-    public static List<String> legacyGroup(final @Nullable String id) {
-        return AE2FC_PATTERN.equals(id) || AE2FC_PATTERN_EX.equals(id) ? LEGACY_PATTERNS : null;
+    public static List<String> legacyTypes() {
+        return LEGACY_TYPES;
     }
 
     private TerminalIds() {}

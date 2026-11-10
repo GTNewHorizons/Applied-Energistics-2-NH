@@ -24,6 +24,9 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants;
+import net.p455w0rd.wirelesscraftingterminal.api.IWirelessCraftingTerminalItem;
+import net.p455w0rd.wirelesscraftingterminal.items.ItemInfinityBooster;
+import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.jspecify.annotations.Nullable;
@@ -32,6 +35,7 @@ import com.glodblock.github.FluidCraft;
 import com.glodblock.github.client.UltraTerminalButtons;
 import com.glodblock.github.common.tabs.FluidCraftingTabs;
 import com.glodblock.github.common.terminal.TerminalIds;
+import com.glodblock.github.common.terminal.UltraTerminalData;
 import com.glodblock.github.inventory.item.WirelessMagnet;
 import com.glodblock.github.inventory.item.WirelessMagnetCardFilterInventory;
 import com.glodblock.github.loader.IRegister;
@@ -61,13 +65,11 @@ import cpw.mods.fml.relauncher.SideOnly;
  * terminals it was crafted from, combining it with another terminal adds that terminal.
  */
 public class ItemWirelessUltraTerminal extends ItemBaseWirelessTerminal
-        implements IRegister<ItemWirelessUltraTerminal>, IGuiItem, ICustomButtonSource {
+        implements IRegister<ItemWirelessUltraTerminal>, IGuiItem, ICustomButtonSource, IWirelessCraftingTerminalItem {
 
-    /** id of the terminal that is opened */
-    public final static String MODE = "mode";
+    public final static String MODE = UltraTerminalData.MODE;
 
-    /** ids of the absorbed terminal types */
-    public final static String TYPES = "types";
+    public final static String TYPES = UltraTerminalData.TYPES;
 
     public ItemWirelessUltraTerminal() {
         AEApi.instance().registries().wireless().registerWirelessHandler(this);
@@ -83,9 +85,33 @@ public class ItemWirelessUltraTerminal extends ItemBaseWirelessTerminal
         return this;
     }
 
+    public static boolean isUltraTerminal(final @Nullable ItemStack stack) {
+        return stack != null && stack.getItem() instanceof ItemWirelessUltraTerminal;
+    }
+
+    @Override
+    public boolean isWirelessCraftingEnabled(final ItemStack terminal) {
+        return isAbsorbed(terminal, TerminalIds.WCT_CRAFTING);
+    }
+
+    @Override
+    public boolean checkForBooster(final ItemStack terminal) {
+        if (!Reference.WCT_BOOSTER_ENABLED || !terminal.hasTagCompound()) {
+            return false;
+        }
+        final NBTTagList slots = terminal.getTagCompound().getTagList("BoosterSlot", Constants.NBT.TAG_COMPOUND);
+        final ItemStack booster = ItemStack.loadItemStackFromNBT(slots.getCompoundTagAt(0));
+        return booster != null && booster.getItem() instanceof ItemInfinityBooster;
+    }
+
+    @Override
+    public boolean hasInfinityRange(final ItemStack terminal) {
+        return super.hasInfinityRange(terminal) || checkForBooster(terminal);
+    }
+
     /**
-     * @return the terminal types of this item in registration order. Items from before the type list existed only
-     *         contain the terminal stored in their mode, items without any terminal data contain every registered one.
+     * @return the terminal types of this item in registration order. Legacy items contain all five original modes;
+     *         items without any terminal data contain every registered one.
      */
     public static List<IUltraTerminalType> getTypes(final ItemStack is) {
         final Set<String> ids = absorbedIds(is);
@@ -103,14 +129,14 @@ public class ItemWirelessUltraTerminal extends ItemBaseWirelessTerminal
             return false;
         }
         final IUltraTerminalType type = AEApi.instance().registries().ultraTerminal().getById(id);
-        return type != null && (isAlwaysAbsorbed(type) || absorbedIds(is).contains(id));
+        return type != null && (isAlwaysAbsorbed(type) || absorbedIds(is).contains(type.getId()));
     }
 
     /**
-     * @return true for terminal types that have no ingredient at all and are therefore part of every ultra terminal.
+     * @return true for terminal types without an ingredient, they are part of every ultra terminal.
      */
     private static boolean isAlwaysAbsorbed(final IUltraTerminalType type) {
-        return type.getCraftingIngredient() == null && type.getAbsorbingIngredient() == null;
+        return type.getIngredient() == null;
     }
 
     /**
@@ -154,8 +180,8 @@ public class ItemWirelessUltraTerminal extends ItemBaseWirelessTerminal
         final IUltraTerminalRegistry registry = AEApi.instance().registries().ultraTerminal();
         for (final String id : source) {
             final IUltraTerminalType type = registry.getById(id);
-            if (type != null && !isAlwaysAbsorbed(type)) {
-                ids.add(id);
+            if (type == null || !isAlwaysAbsorbed(type)) {
+                ids.add(type == null ? id : type.getId());
             }
         }
     }
@@ -184,12 +210,12 @@ public class ItemWirelessUltraTerminal extends ItemBaseWirelessTerminal
         }
         final NBTTagCompound tag = Platform.openNbtData(is);
         if (!tag.hasKey(TYPES, Constants.NBT.TAG_LIST)) {
-            // pin the terminals before selecting a mode, an item without data loses them when it gets a mode
+            // pin the type list first, the item may only have data for its current mode
             final Set<String> ids = new LinkedHashSet<>();
             addAbsorbed(ids, absorbedIds(is));
             writeTypeIds(is, ids);
         }
-        tag.setString(MODE, id);
+        tag.setString(MODE, AEApi.instance().registries().ultraTerminal().getById(id).getId());
     }
 
     /**
@@ -232,46 +258,12 @@ public class ItemWirelessUltraTerminal extends ItemBaseWirelessTerminal
     }
 
     /**
-     * @return the terminal types of the item: its type list, the terminal of its legacy mode, or every registered
+     * @return the terminal types of the item: its type list, all original modes for legacy items, or every registered
      *         terminal when it has no terminal data at all.
      */
     private static Set<String> absorbedIds(final ItemStack is) {
-        final Set<String> ids = readTypeIds(is);
-        if (!ids.isEmpty()) {
-            return ids;
-        }
-        final NBTTagCompound tag = is == null ? null : is.getTagCompound();
-        if (tag != null && tag.hasKey(MODE)) {
-            final IUltraTerminalType mode = readStoredMode(is);
-            if (mode != null) {
-                // the old terminal could open every pattern terminal while it stored one of them
-                final List<String> legacyGroup = TerminalIds.legacyGroup(mode.getId());
-                if (legacyGroup != null) {
-                    ids.addAll(legacyGroup);
-                } else {
-                    ids.add(mode.getId());
-                }
-            }
-            return ids;
-        }
-        // an item without any terminal data (creative menu, /give, recipe display) contains every registered terminal
-        for (final IUltraTerminalType type : AEApi.instance().registries().ultraTerminal().getTypes()) {
-            ids.add(type.getId());
-        }
-        return ids;
-    }
-
-    private static Set<String> readTypeIds(final @Nullable ItemStack is) {
-        final Set<String> ids = new LinkedHashSet<>();
-        final NBTTagCompound tag = is == null ? null : is.getTagCompound();
-        if (tag == null || !tag.hasKey(TYPES, Constants.NBT.TAG_LIST)) {
-            return ids;
-        }
-        final NBTTagList list = tag.getTagList(TYPES, Constants.NBT.TAG_STRING);
-        for (int i = 0; i < list.tagCount(); i++) {
-            ids.add(list.getStringTagAt(i));
-        }
-        return ids;
+        return UltraTerminalData
+                .readTypes(is == null ? null : is.getTagCompound(), AEApi.instance().registries().ultraTerminal());
     }
 
     private static void writeTypeIds(final ItemStack is, final Collection<String> ids) {
@@ -376,7 +368,6 @@ public class ItemWirelessUltraTerminal extends ItemBaseWirelessTerminal
     public Object getInventory(ItemStack stack, World world, int x, int y, int z, EntityPlayer player) {
         final IGridNode gridNode = Util.getWirelessGrid(stack);
 
-        // magnet card filter gui
         if (Util.GuiHelper.decodeType(y).getLeft() == Util.GuiHelper.GuiType.ITEM && z == -1) {
             return new WirelessMagnetCardFilterInventory(stack, x, gridNode, player);
         }

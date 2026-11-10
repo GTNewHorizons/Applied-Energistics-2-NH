@@ -14,11 +14,10 @@ import cpw.mods.fml.relauncher.SideOnly;
 /**
  * A terminal type that can be absorbed by the ultra terminal.
  * <p>
- * Types are registered with {@link IUltraTerminalRegistry} and also generate the crafting recipes. Types with a
- * {@link #getCraftingIngredient() wireless terminal} share the recipes of the wireless terminals, types with only an
- * {@link #getAbsorbingIngredient() absorbing ingredient} get their own recipe. A type either hosts its terminal in the
- * ultra terminal item (see {@link AbstractHostedTerminalType}) or opens the terminal of the item that provides it (see
- * {@link AbstractDelegatedTerminalType}).
+ * Types are registered with {@link IUltraTerminalRegistry} and also generate the recipes: the ingredient of a type is
+ * merged into an ultra terminal by its own recipe, and a type whose ingredient is a wireless terminal also takes part
+ * in the recipe that combines any two wireless terminals. Use {@link AbstractUltraTerminalType} for the default
+ * implementation.
  */
 public interface IUltraTerminalType {
 
@@ -28,26 +27,13 @@ public interface IUltraTerminalType {
      */
     String getId();
 
-    /**
-     * The localized name shown in tooltips and as part of the ultra terminal item name.
-     */
     String getDisplayName();
 
     /**
-     * @return the wireless terminal that is combined with another wireless terminal to absorb this type, or null if
-     *         this type is not part of the wireless terminal recipes.
+     * @return the stack that adds this type to an ultra terminal, or null if this type is part of every ultra terminal.
      */
     @Nullable
-    ItemStack getCraftingIngredient();
-
-    /**
-     * @return the stack that has to be merged into an ultra terminal to absorb this type, defaults to the crafting
-     *         ingredient. Types without a wireless terminal (for example the crafting terminal) get their own recipe.
-     */
-    @Nullable
-    default ItemStack getAbsorbingIngredient() {
-        return this.getCraftingIngredient();
-    }
+    ItemStack getIngredient();
 
     /**
      * @return true if this type can be selected and opened right now. Called on both sides, must not load client only
@@ -62,14 +48,15 @@ public interface IUltraTerminalType {
      *         terminal of a standalone wireless terminal item.
      */
     default boolean isBackedBy(final @Nullable ItemStack stack) {
-        final ItemStack ingredient = this.getCraftingIngredient();
+        final ItemStack ingredient = this.getIngredient();
         return ingredient != null && stack != null
                 && ingredient.getItem() == stack.getItem()
                 && ingredient.getItemDamage() == stack.getItemDamage();
     }
 
     /**
-     * Builds the host object of a hosted terminal, called on both sides when the gui is opened.
+     * Builds the host object of a terminal that is opened through an AE gui bridge, called on both sides when the gui
+     * is opened. A terminal needs either this or {@link #createItemInventory}.
      * <p>
      * {@code x} is the inventory slot of the terminal item, {@code y} the index of this type in the registry or
      * {@link Integer#MIN_VALUE} if no terminal was selected, {@code z} is reserved.
@@ -83,7 +70,8 @@ public interface IUltraTerminalType {
     }
 
     /**
-     * Builds the item inventory host of a hosted terminal that uses the item gui handler. Called on both sides.
+     * Builds the item inventory host of a terminal that is opened through the item gui handler, called on both sides. A
+     * terminal needs either this or {@link #createGuiObject}.
      *
      * @return the inventory host, or null if this type does not use an item inventory.
      */
@@ -101,9 +89,11 @@ public interface IUltraTerminalType {
     void openGui(EntityPlayer player, ItemStack terminal, int slotIndex, int previousIndex);
 
     /**
-     * Icon shown on the mode button.
+     * @return the stack shown for this terminal in the guis and the tooltips, the ingredient by default.
      */
     @SideOnly(Side.CLIENT)
     @Nullable
-    ItemStack getIcon();
+    default ItemStack getIcon() {
+        return this.getIngredient();
+    }
 }

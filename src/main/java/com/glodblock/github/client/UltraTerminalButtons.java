@@ -394,6 +394,9 @@ public class UltraTerminalButtons implements ICustomButtonDataObject, IUltraTerm
 
     @Override
     public void readData(NBTTagCompound tag) {
+        if (tag == null) {
+            return;
+        }
         this.reStock = tag.getBoolean(restockItems);
         if (tag.hasKey(modeKey)) {
             final int ordinal = tag.getInteger(modeKey);
