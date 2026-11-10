@@ -14,7 +14,6 @@ import com.glodblock.github.inventory.IDualHost;
 import com.glodblock.github.util.Util;
 
 import appeng.api.AEApi;
-import appeng.api.config.TransferDirection;
 import appeng.api.features.transfer.ITransferInspector;
 import appeng.api.features.transfer.ITransferInspectorRegistry;
 import appeng.api.features.transfer.TransferDescription;
@@ -80,12 +79,13 @@ public final class TempAddonTransferInspectors {
                 builder.config(fluid, false);
             }
 
+            final TransferMatcher fluidMatcher = TransferMatcher.exportOf(fluids);
             return builder.matcher((stack, direction) -> {
                 if (stack == null || stack.getStackType() != FLUID_STACK_TYPE) {
                     return base.matcher.canTransfer(stack, direction);
                 }
 
-                return direction == TransferDirection.EXPORT && isConfigured(fluids, stack);
+                return fluidMatcher.canTransfer(stack, direction);
             }).build();
         }
     }
@@ -103,9 +103,7 @@ public final class TempAddonTransferInspectors {
                 builder.config(stack, false);
             }
 
-            final TransferMatcher matcher = (stack, direction) -> direction == TransferDirection.EXPORT
-                    && isConfigured(config, stack);
-            return builder.matcher(matcher).build();
+            return builder.matcher(TransferMatcher.exportOf(config)).build();
         }
 
         private static void addAll(final List<IAEStack<?>> config, final IAEStackInventory inventory) {
@@ -116,14 +114,5 @@ public final class TempAddonTransferInspectors {
                 }
             }
         }
-    }
-
-    private static boolean isConfigured(final List<? extends IAEStack<?>> config, final IAEStack<?> stack) {
-        for (final IAEStack<?> configured : config) {
-            if (configured.getStackType() == stack.getStackType() && configured.isSameType((Object) stack)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

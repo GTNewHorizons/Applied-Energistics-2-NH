@@ -143,4 +143,13 @@ public class TransferResultFilterFunctionalTest {
         assertTrue(TransferResultFilter.passesToggles(oreFiltered, false, true));
         assertTrue(TransferResultFilter.passesToggles(none, false, false));
     }
+
+    @Test
+    public void exportOfMatchesOnlyConfiguredStacksLeavingTheNetwork() {
+        final TransferMatcher matcher = TransferMatcher.exportOf(Arrays.asList(IRON));
+
+        assertTrue(matcher.canTransfer(IRON, TransferDirection.EXPORT));
+        assertFalse(matcher.canTransfer(IRON, TransferDirection.IMPORT));
+        assertFalse(matcher.canTransfer(GOLD, TransferDirection.EXPORT));
+    }
 }

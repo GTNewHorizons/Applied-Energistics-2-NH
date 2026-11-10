@@ -604,9 +604,12 @@ public final class Registration {
         // default settings..
         ((P2PTunnelRegistry) registries.p2pTunnel()).configure();
 
-        // TEMPORARY - remove before the pull request, see TempAddonTransferInspectors
+        // TEMPORARY - remove before the pull request, see TempAddonTransferInspectors and TempGTTransferInspectors
         if (appeng.util.Platform.isAE2FCLoaded) {
             appeng.integration.modules.TempAddonTransferInspectors.register();
+        }
+        if (appeng.util.Platform.isGTLoaded) {
+            appeng.integration.modules.TempGTTransferInspectors.register();
         }
 
         // add to localization..

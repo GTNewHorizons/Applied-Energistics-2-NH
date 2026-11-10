@@ -1,5 +1,9 @@
 package appeng.api.features.transfer;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 import appeng.api.config.TransferDirection;
 import appeng.api.storage.data.IAEStack;
 
@@ -25,5 +29,24 @@ public interface TransferMatcher {
      */
     default boolean isExplicitlyListed(final IAEStack<?> stack) {
         return false;
+    }
+
+    /**
+     * @param config stacks the component exports, other stacks and every import are refused
+     * @return a matcher for a component that pulls exactly the configured stacks out of the network
+     */
+    static TransferMatcher exportOf(final Collection<? extends IAEStack<?>> config) {
+        final List<IAEStack<?>> copy = new ArrayList<>(config);
+        return (stack, direction) -> {
+            if (direction != TransferDirection.EXPORT || stack == null) {
+                return false;
+            }
+            for (final IAEStack<?> configured : copy) {
+                if (configured.getStackType() == stack.getStackType() && configured.isSameType((Object) stack)) {
+                    return true;
+                }
+            }
+            return false;
+        };
     }
 }
