@@ -51,6 +51,19 @@ public final class TransferRowOrder {
     }
 
     /**
+     * Puts the rows a simulated insert reached first, in the order the network reached them, so crafting CPUs come
+     * first and a storage bus comes before the subnetwork storage it feeds. Every other row keeps the base order.
+     */
+    public static Comparator<TransferComponentInfo> simulated(final Comparator<TransferComponentInfo> base) {
+        return Comparator.comparing((TransferComponentInfo row) -> !receives(row))
+                .thenComparingInt(row -> receives(row) ? row.simulationOrder : 0).thenComparing(base);
+    }
+
+    private static boolean receives(final TransferComponentInfo row) {
+        return row.simulatedAmount > 0;
+    }
+
+    /**
      * Only storage handlers take part in AE's priority routing, the priority of an interface orders crafting patterns.
      */
     private static int storagePriority(final TransferComponentInfo row) {

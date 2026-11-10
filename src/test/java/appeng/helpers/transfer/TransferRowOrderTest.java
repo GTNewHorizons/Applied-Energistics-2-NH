@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -143,4 +144,35 @@ public final class TransferRowOrderTest {
         assertEquals(5, list.get(1).x);
     }
 
+    private static List<String> simulated(final TransferComponentInfo... rows) {
+        final List<TransferComponentInfo> list = new ArrayList<>(Arrays.asList(rows));
+        list.sort(TransferRowOrder.simulated(TransferRowOrder.comparator(true, TransferDirection.EXPORT)));
+        return list.stream().map(row -> row.customName).collect(Collectors.toList());
+    }
+
+    private static TransferComponentInfo receiving(final String name, final long amount, final int order,
+            final TransferDescription description) {
+        return row(name, 0, description).withSimulation(amount, order, false, Collections.emptyList());
+    }
+
+    @Test
+    public void receiversComeFirstInTheOrderTheNetworkReachedThem() {
+        assertEquals(
+                Arrays.asList("reached first", "reached second", "high priority but full"),
+                simulated(
+                        receiving("high priority but full", 0, 0, storage().priority(10).build()),
+                        receiving("reached second", 5, 2, storage().priority(-3).build()),
+                        receiving("reached first", 5, 1, storage().priority(-5).build())));
+    }
+
+    @Test
+    public void rowsThatReceiveNothingKeepTheirUsualOrder() {
+        assertEquals(
+                Arrays.asList("receiver", "high", "low", "bus"),
+                simulated(
+                        row("bus", 0, TransferDescription.builder().build()),
+                        receiving("low", 0, 0, storage().priority(1).build()),
+                        receiving("high", 0, 0, storage().priority(9).build()),
+                        receiving("receiver", 1, 7, storage().priority(-9).build())));
+    }
 }
