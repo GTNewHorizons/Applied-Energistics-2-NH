@@ -22,6 +22,7 @@ import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
 
 import org.lwjgl.input.Keyboard;
 
+import com.glodblock.github.common.item.ItemWirelessUltraTerminal;
 import com.google.common.base.Optional;
 
 import appeng.api.config.AccessRestriction;
@@ -206,7 +207,9 @@ public class ItemWirelessCraftingTerminal extends AERootPoweredItem
 
     @Override
     public boolean canHandle(final ItemStack is) {
-        return is != null && is.getItem() instanceof IWirelessCraftingTerminalItem;
+        // the ultra terminal registers its own handler, including the energy and range upgrades
+        return is != null && is.getItem() instanceof IWirelessCraftingTerminalItem
+                && !(is.getItem() instanceof ItemWirelessUltraTerminal);
     }
 
     @Override

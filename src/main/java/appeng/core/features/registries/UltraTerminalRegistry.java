@@ -73,11 +73,11 @@ public final class UltraTerminalRegistry implements IUltraTerminalRegistry {
     }
 
     @Override
-    public List<ItemStack> getCraftingIngredients() {
+    public List<ItemStack> getIngredients() {
         // keyed by item id + damage so that two types sharing an item do not produce duplicated recipes
         final Map<String, ItemStack> ingredients = new LinkedHashMap<>();
         for (final IUltraTerminalType type : this.types) {
-            final ItemStack ingredient = type.getCraftingIngredient();
+            final ItemStack ingredient = type.getIngredient();
             if (ingredient == null) {
                 continue;
             }

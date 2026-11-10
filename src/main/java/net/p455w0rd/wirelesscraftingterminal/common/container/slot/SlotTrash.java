@@ -10,13 +10,19 @@ import net.p455w0rd.wirelesscraftingterminal.common.utils.RandomUtils;
 public class SlotTrash extends appeng.container.slot.AppEngSlot {
 
     private final EntityPlayer entityPlayer;
+    private final ItemStack terminal;
     private ItemStack itemStack;
     private boolean shouldDeleteMouseStack;
     private String name = "TrashSlot";
 
     public SlotTrash(IInventory inv, int x, int y, EntityPlayer player) {
+        this(inv, x, y, player, RandomUtils.getWirelessTerm(player.inventory));
+    }
+
+    public SlotTrash(IInventory inv, int x, int y, EntityPlayer player, ItemStack terminal) {
         super(null, 0, x, y);
         entityPlayer = player;
+        this.terminal = terminal;
         readNBT();
     }
 
@@ -89,7 +95,10 @@ public class SlotTrash extends appeng.container.slot.AppEngSlot {
     }
 
     public void readNBT() {
-        NBTTagCompound nbtTagCompound = RandomUtils.getWirelessTerm(entityPlayer.inventory).getTagCompound();
+        if (this.terminal == null) {
+            return;
+        }
+        NBTTagCompound nbtTagCompound = RandomUtils.getTag(this.terminal);
         NBTTagList tagList = nbtTagCompound.getTagList(this.name, 10);
         NBTTagCompound tagCompound = tagList.getCompoundTagAt(0);
         if (tagCompound != null) {
@@ -98,7 +107,10 @@ public class SlotTrash extends appeng.container.slot.AppEngSlot {
     }
 
     public void writeNBT() {
-        NBTTagCompound nbtTagCompound = RandomUtils.getWirelessTerm(entityPlayer.inventory).getTagCompound();
+        if (this.terminal == null) {
+            return;
+        }
+        NBTTagCompound nbtTagCompound = RandomUtils.getTag(this.terminal);
         NBTTagList tagList = new NBTTagList();
         if (itemStack != null) {
             NBTTagCompound tagCompound = new NBTTagCompound();
@@ -109,8 +121,7 @@ public class SlotTrash extends appeng.container.slot.AppEngSlot {
     }
 
     public void clearStack() {
-        if (itemStack != null) {
-            itemStack = null;
-        }
+        itemStack = null;
+        writeNBT();
     }
 }

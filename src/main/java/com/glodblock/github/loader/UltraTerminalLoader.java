@@ -5,14 +5,14 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.p455w0rd.wirelesscraftingterminal.common.WCTGuiHandler;
+import net.p455w0rd.wirelesscraftingterminal.helpers.WTCGuiObject;
 import net.p455w0rd.wirelesscraftingterminal.items.ItemEnum;
-import net.p455w0rd.wirelesscraftingterminal.items.ItemWirelessCraftingTerminal;
 import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
 
 import org.jspecify.annotations.Nullable;
 
+import com.glodblock.github.common.item.ItemWirelessUltraTerminal;
 import com.glodblock.github.common.terminal.TerminalIds;
-import com.glodblock.github.common.terminal.UltraTerminals;
 import com.glodblock.github.inventory.InventoryHandler;
 import com.glodblock.github.inventory.gui.GuiType;
 import com.glodblock.github.inventory.item.WirelessLevelTerminalInventory;
@@ -21,8 +21,7 @@ import com.glodblock.github.util.ModAndClassUtil;
 
 import appeng.api.AEApi;
 import appeng.api.definitions.IItemDefinition;
-import appeng.api.features.AbstractDelegatedTerminalType;
-import appeng.api.features.AbstractHostedTerminalType;
+import appeng.api.features.AbstractUltraTerminalType;
 import appeng.api.features.IUltraTerminalGuiOpener;
 import appeng.api.features.IUltraTerminalRegistry;
 import appeng.api.features.IWirelessTermHandler;
@@ -50,56 +49,72 @@ public final class UltraTerminalLoader implements Runnable {
     public void run() {
         final IUltraTerminalRegistry registry = AEApi.instance().registries().ultraTerminal();
 
-        // the crafting terminal and the processing pattern terminal are not wireless terminals, they are absorbed by
-        // their own recipe
+        // the crafting terminal and the processing pattern terminal have no wireless item, their part adds them
         final ItemStack craftingPart = stackOf(AEApi.instance().definitions().parts().craftingTerminal());
-        final ItemStack patternExPart = stackOf(AEApi.instance().definitions().parts().patternTerminalEx());
-        final ItemStack craftingIcon = craftingPart != null ? craftingPart
-                : ItemAndBlockHolder.WIRELESS_ULTRA_TERM.stack();
-        registry.register(
-                new AeTerminalType(
-                        TerminalIds.AE2FC_CRAFTING,
-                        LANG_KEY + "crafting",
-                        craftingIcon,
-                        null,
-                        craftingPart,
-                        GuiBridge.GUI_CRAFTING_TERMINAL) {
+        if (craftingPart != null) {
+            registry.register(
+                    new AbstractUltraTerminalType(
+                            TerminalIds.AE2FC_CRAFTING,
+                            LANG_KEY + "crafting",
+                            craftingPart,
+                            opener(GuiBridge.GUI_CRAFTING_TERMINAL)) {
 
+                        @Nullable
+                        @Override
+                        public IGuiItemObject createGuiObject(final IWirelessTermHandler handler,
+                                final ItemStack terminal, final EntityPlayer player, final World world, final int x,
+                                final int y, final int z) {
+                            return new WirelessCraftingTerminalGuiObject(handler, terminal, player, world, x, y, z);
+                        }
+                    });
+        }
+
+        final ItemStack patternPart = stackOf(AEApi.instance().definitions().parts().patternTerminalEx());
+        final ItemStack wirelessPattern = ItemAndBlockHolder.WIRELESS_PATTERN_TERM.stack();
+        // standalone pattern terminal items keep using their nbt mode, the ultra terminal passes the mode of this type
+        registry.register(
+                new AbstractUltraTerminalType(
+                        TerminalIds.AE2FC_PATTERN,
+                        LANG_KEY + "pattern",
+                        wirelessPattern,
+                        opener(GuiBridge.GUI_PATTERN_TERMINAL)) {
+
+                    @Nullable
                     @Override
                     public IGuiItemObject createGuiObject(final IWirelessTermHandler handler, final ItemStack terminal,
                             final EntityPlayer player, final World world, final int x, final int y, final int z) {
-                        return new WirelessCraftingTerminalGuiObject(handler, terminal, player, world, x, y, z);
+                        final int mode = ItemWirelessUltraTerminal.isUltraTerminal(terminal) ? 1 : y;
+                        return new WirelessPatternTerminalGuiObject(handler, terminal, player, world, x, mode, z);
                     }
                 });
+        if (patternPart != null) {
+            registry.register(
+                    new AbstractUltraTerminalType(
+                            TerminalIds.AE2FC_PATTERN_EX,
+                            LANG_KEY + "pattern_ex",
+                            patternPart,
+                            opener(GuiBridge.GUI_PATTERN_TERMINAL_EX)) {
 
-        final ItemStack patternStack = ItemAndBlockHolder.WIRELESS_PATTERN_TERM.stack();
-        registry.register(
-                new PatternTerminalType(
-                        TerminalIds.AE2FC_PATTERN,
-                        LANG_KEY + "pattern",
-                        patternStack,
-                        patternStack,
-                        GuiBridge.GUI_PATTERN_TERMINAL,
-                        1));
-        registry.register(
-                new PatternTerminalType(
-                        TerminalIds.AE2FC_PATTERN_EX,
-                        LANG_KEY + "pattern_ex",
-                        patternStack,
-                        null,
-                        patternExPart,
-                        GuiBridge.GUI_PATTERN_TERMINAL_EX,
-                        2));
+                        @Nullable
+                        @Override
+                        public IGuiItemObject createGuiObject(final IWirelessTermHandler handler,
+                                final ItemStack terminal, final EntityPlayer player, final World world, final int x,
+                                final int y, final int z) {
+                            final int mode = ItemWirelessUltraTerminal.isUltraTerminal(terminal) ? 2 : y;
+                            return new WirelessPatternTerminalGuiObject(handler, terminal, player, world, x, mode, z);
+                        }
+                    });
+        }
 
         final ItemStack interfaceStack = ItemAndBlockHolder.WIRELESS_INTERFACE_TERM.stack();
         registry.register(
-                new AeTerminalType(
+                new AbstractUltraTerminalType(
                         TerminalIds.AE2FC_INTERFACE,
                         LANG_KEY + "interface",
                         interfaceStack,
-                        interfaceStack,
-                        GuiBridge.GUI_INTERFACE_TERMINAL) {
+                        opener(GuiBridge.GUI_INTERFACE_TERMINAL)) {
 
+                    @Nullable
                     @Override
                     public IGuiItemObject createGuiObject(final IWirelessTermHandler handler, final ItemStack terminal,
                             final EntityPlayer player, final World world, final int x, final int y, final int z) {
@@ -109,22 +124,11 @@ public final class UltraTerminalLoader implements Runnable {
 
         final ItemStack levelStack = ItemAndBlockHolder.WIRELESS_LEVEL_TERM.stack();
         registry.register(
-                new AbstractHostedTerminalType(
+                new AbstractUltraTerminalType(
                         TerminalIds.AE2FC_LEVEL,
                         LANG_KEY + "level",
                         levelStack,
-                        levelStack,
-                        (player, terminal, slotIndex) -> {
-                            final int next = player.openContainer instanceof AEBaseContainer container
-                                    ? container.getSwitchAbleGuiNext()
-                                    : 0;
-                            InventoryHandler.openGui(
-                                    player,
-                                    player.worldObj,
-                                    new BlockPos(slotIndex, 0, next),
-                                    ForgeDirection.UNKNOWN,
-                                    GuiType.WIRELESS_LEVEL_TERMINAL);
-                        }) {
+                        itemGuiOpener(GuiType.WIRELESS_LEVEL_TERMINAL)) {
 
                     @Nullable
                     @Override
@@ -137,13 +141,13 @@ public final class UltraTerminalLoader implements Runnable {
         final ItemStack ae2Wireless = stackOf(AEApi.instance().definitions().items().wirelessTerminal());
         if (ae2Wireless != null) {
             registry.register(
-                    new AeTerminalType(
+                    new AbstractUltraTerminalType(
                             TerminalIds.AE2_WIRELESS,
                             LANG_KEY + "wireless",
                             ae2Wireless,
-                            ae2Wireless,
-                            GuiBridge.GUI_ME) {
+                            opener(GuiBridge.GUI_ME)) {
 
+                        @Nullable
                         @Override
                         public IGuiItemObject createGuiObject(final IWirelessTermHandler handler,
                                 final ItemStack terminal, final EntityPlayer player, final World world, final int x,
@@ -156,19 +160,23 @@ public final class UltraTerminalLoader implements Runnable {
         if (ModAndClassUtil.WCT) {
             final ItemStack wctStack = ItemEnum.WIRELESS_CRAFTING_TERMINAL.getStack();
             registry.register(
-                    new AbstractDelegatedTerminalType(
+                    new AbstractUltraTerminalType(
                             TerminalIds.WCT_CRAFTING,
                             LANG_KEY + "wct",
                             wctStack,
-                            wctStack,
-                            (player, terminal, slotIndex) -> WCTGuiHandler.launchGui(
-                                    Reference.GUI_WCT,
-                                    player,
-                                    player.worldObj,
-                                    (int) player.posX,
-                                    (int) player.posY,
-                                    (int) player.posZ),
-                            ItemWirelessCraftingTerminal.class) {});
+                            (player, terminal, slotIndex) -> WCTGuiHandler
+                                    .launchGui(Reference.GUI_ULTRA_WCT, player, player.worldObj, slotIndex, 0, 0)) {
+
+                        @Nullable
+                        @Override
+                        public IGuiItemObject createGuiObject(final IWirelessTermHandler handler,
+                                final ItemStack terminal, final EntityPlayer player, final World world, final int x,
+                                final int y, final int z) {
+                            // the gui opening channel adds the item gui offset to the slot
+                            final int slot = x >= Platform.itemGuiSlotOffset ? x - Platform.itemGuiSlotOffset : x;
+                            return new WTCGuiObject(handler, terminal, player, world, x, y, z, slot);
+                        }
+                    });
         }
     }
 
@@ -177,55 +185,22 @@ public final class UltraTerminalLoader implements Runnable {
         return definition == null ? null : definition.maybeStack(1).orNull();
     }
 
-    private static IUltraTerminalGuiOpener openerOf(final GuiBridge bridge) {
+    private static IUltraTerminalGuiOpener opener(final GuiBridge bridge) {
         return (player, terminal, slotIndex) -> Platform.openGUI(player, null, null, bridge, slotIndex);
     }
 
-    /**
-     * Terminal hosted by an AE gui bridge, opened through the ultra terminal item.
-     */
-    private abstract static class AeTerminalType extends AbstractHostedTerminalType {
-
-        AeTerminalType(final String id, final String nameKey, final @Nullable ItemStack icon,
-                final @Nullable ItemStack ingredient, final GuiBridge bridge) {
-            super(id, nameKey, icon, ingredient, openerOf(bridge));
-        }
-
-        AeTerminalType(final String id, final String nameKey, final @Nullable ItemStack icon,
-                final @Nullable ItemStack ingredient, final @Nullable ItemStack absorbingIngredient,
-                final GuiBridge bridge) {
-            super(id, nameKey, icon, ingredient, absorbingIngredient, openerOf(bridge));
-        }
-    }
-
-    /**
-     * Pattern terminals share their gui object but differ in the pattern mode it is built with.
-     */
-    private static final class PatternTerminalType extends AeTerminalType {
-
-        private final int hostedMode;
-
-        PatternTerminalType(final String id, final String nameKey, final @Nullable ItemStack icon,
-                final @Nullable ItemStack ingredient, final GuiBridge bridge, final int hostedMode) {
-            super(id, nameKey, icon, ingredient, bridge);
-            this.hostedMode = hostedMode;
-        }
-
-        PatternTerminalType(final String id, final String nameKey, final @Nullable ItemStack icon,
-                final @Nullable ItemStack ingredient, final @Nullable ItemStack absorbingIngredient,
-                final GuiBridge bridge, final int hostedMode) {
-            super(id, nameKey, icon, ingredient, absorbingIngredient, bridge);
-            this.hostedMode = hostedMode;
-        }
-
-        @Override
-        public IGuiItemObject createGuiObject(final IWirelessTermHandler handler, final ItemStack terminal,
-                final EntityPlayer player, final World world, final int x, final int y, final int z) {
-            // standalone pattern terminal items keep using their legacy nbt mode, the ultra terminal passes the
-            // mode of this type
-            final int mode = UltraTerminals.isUltraTerminal(terminal) ? this.hostedMode : y;
-            return new WirelessPatternTerminalGuiObject(handler, terminal, player, world, x, mode, z);
-        }
+    private static IUltraTerminalGuiOpener itemGuiOpener(final GuiType guiType) {
+        return (player, terminal, slotIndex) -> {
+            final int next = player.openContainer instanceof AEBaseContainer container
+                    ? container.getSwitchAbleGuiNext()
+                    : 0;
+            InventoryHandler.openGui(
+                    player,
+                    player.worldObj,
+                    new BlockPos(slotIndex, 0, next),
+                    ForgeDirection.UNKNOWN,
+                    guiType);
+        };
     }
 
     private UltraTerminalLoader() {}

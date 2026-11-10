@@ -39,9 +39,9 @@ public interface IUltraTerminalRegistry {
     List<IUltraTerminalType> getTypes();
 
     /**
-     * @return the wireless terminals that can be combined into an ultra terminal, in registration order.
+     * @return the ingredients of all registered types in registration order, without duplicates.
      */
-    List<ItemStack> getCraftingIngredients();
+    List<ItemStack> getIngredients();
 
     @Nullable
     IUltraTerminalType getById(String id);

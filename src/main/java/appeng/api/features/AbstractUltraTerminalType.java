@@ -2,6 +2,7 @@ package appeng.api.features;
 
 import java.util.Objects;
 
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.StatCollector;
 
@@ -21,22 +22,21 @@ public abstract class AbstractUltraTerminalType implements IUltraTerminalType {
     @Nullable
     private final ItemStack icon;
     @Nullable
-    private final ItemStack craftingIngredient;
-    @Nullable
-    private final ItemStack absorbingIngredient;
+    private final ItemStack ingredient;
+    private final IUltraTerminalGuiOpener opener;
 
-    protected AbstractUltraTerminalType(final String id, final @Nullable String nameKey, final @Nullable ItemStack icon,
-            final @Nullable ItemStack craftingIngredient) {
-        this(id, nameKey, icon, craftingIngredient, craftingIngredient);
+    protected AbstractUltraTerminalType(final String id, final @Nullable String nameKey,
+            final @Nullable ItemStack ingredient, final IUltraTerminalGuiOpener opener) {
+        this(id, nameKey, null, ingredient, opener);
     }
 
     protected AbstractUltraTerminalType(final String id, final @Nullable String nameKey, final @Nullable ItemStack icon,
-            final @Nullable ItemStack craftingIngredient, final @Nullable ItemStack absorbingIngredient) {
+            final @Nullable ItemStack ingredient, final IUltraTerminalGuiOpener opener) {
         this.id = Objects.requireNonNull(id, "id");
         this.nameKey = nameKey;
         this.icon = icon;
-        this.craftingIngredient = craftingIngredient;
-        this.absorbingIngredient = absorbingIngredient;
+        this.ingredient = ingredient;
+        this.opener = Objects.requireNonNull(opener, "opener");
     }
 
     @Override
@@ -52,42 +52,36 @@ public abstract class AbstractUltraTerminalType implements IUltraTerminalType {
                 return localized;
             }
         }
-        final ItemStack iconStack = this.icon;
-        if (iconStack != null) {
-            return iconStack.getDisplayName();
-        }
-        return this.id;
+        final ItemStack fallback = this.icon != null ? this.icon : this.ingredient;
+        return fallback != null ? fallback.getDisplayName() : this.id;
     }
 
     @Nullable
     @Override
-    public ItemStack getCraftingIngredient() {
-        return this.craftingIngredient == null ? null : this.craftingIngredient.copy();
-    }
-
-    @Nullable
-    @Override
-    public ItemStack getAbsorbingIngredient() {
-        return this.absorbingIngredient == null ? null : this.absorbingIngredient.copy();
+    public ItemStack getIngredient() {
+        return this.ingredient == null ? null : this.ingredient.copy();
     }
 
     @SideOnly(Side.CLIENT)
     @Nullable
     @Override
     public ItemStack getIcon() {
-        return this.icon == null ? null : this.icon.copy();
+        final ItemStack stack = this.icon != null ? this.icon : this.ingredient;
+        return stack == null ? null : stack.copy();
+    }
+
+    @Override
+    public void openGui(final EntityPlayer player, final ItemStack terminal, final int slotIndex,
+            final int previousIndex) {
+        this.opener.open(player, terminal, slotIndex);
     }
 
     @Override
     public boolean isBackedBy(final @Nullable ItemStack stack) {
         // no copy, this is called while resolving the terminal type of an item stack
-        return matches(this.craftingIngredient, stack) || matches(this.absorbingIngredient, stack);
-    }
-
-    private static boolean matches(final @Nullable ItemStack ingredient, final @Nullable ItemStack stack) {
-        return ingredient != null && stack != null
-                && ingredient.getItem() == stack.getItem()
-                && ingredient.getItemDamage() == stack.getItemDamage();
+        return this.ingredient != null && stack != null
+                && this.ingredient.getItem() == stack.getItem()
+                && this.ingredient.getItemDamage() == stack.getItemDamage();
     }
 
     @Override

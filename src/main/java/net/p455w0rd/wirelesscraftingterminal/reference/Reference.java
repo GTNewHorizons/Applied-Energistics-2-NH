@@ -25,5 +25,7 @@ public class Reference {
 
     // Gui IDs
     public static final int GUI_WCT = 0;
+    /** Hosted WCT, x is the inventory or baubles slot of the terminal. */
+    public static final int GUI_ULTRA_WCT = 1;
     public static final int GUI_MAGNET = 4;
 }

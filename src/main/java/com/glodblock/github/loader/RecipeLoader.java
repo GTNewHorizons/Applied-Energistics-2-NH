@@ -64,7 +64,6 @@ import com.glodblock.github.common.Config;
 import com.glodblock.github.common.item.FCBaseItemCell;
 import com.glodblock.github.common.item.ItemWirelessUltraTerminal;
 import com.glodblock.github.common.storage.CellType;
-import com.glodblock.github.common.terminal.TerminalIds;
 import com.glodblock.github.loader.recipe.DisassembleRecipe;
 import com.glodblock.github.loader.recipe.UltraTerminalRecipe;
 import com.glodblock.github.loader.recipe.WirelessTerminalEnergyRecipe;
@@ -73,8 +72,7 @@ import com.glodblock.github.loader.recipe.WirelessTerminalRecipe;
 import com.glodblock.github.util.ModAndClassUtil;
 
 import appeng.api.AEApi;
-import appeng.api.features.IUltraTerminalRegistry;
-import appeng.api.features.IUltraTerminalType;
+import appeng.api.features.IWirelessTermHandler;
 import appeng.core.AELog;
 import cpw.mods.fml.common.registry.GameRegistry;
 import extracells.registries.ItemEnum;
@@ -719,28 +717,37 @@ public class RecipeLoader implements Runnable {
     }
 
     /**
-     * Registers the ultra terminal recipes: any two different wireless terminals are combined into an ultra terminal,
-     * an ultra terminal absorbs any wireless terminal, and every terminal without a wireless terminal is absorbed by
-     * its own recipe. Everything comes from the ultra terminal registry, so addons need no extra recipe.
+     * Registers the ultra terminal recipes: every terminal ingredient is merged into an ultra terminal by its own
+     * recipe, and any two wireless terminals make an ultra terminal that contains both of them. Everything comes from
+     * the ultra terminal registry, so addons need no extra recipe.
      */
     public static void addUltraTerminalRecipes() {
         if (Config.removeRecipe) {
             return;
         }
-        final IUltraTerminalRegistry registry = AEApi.instance().registries().ultraTerminal();
         final ItemStack ultraTerminal = WIRELESS_ULTRA_TERM.stack();
-        final List<ItemStack> ingredients = registry.getCraftingIngredients();
-        if (ingredients.isEmpty()) {
-            AELog.warn("[UltraTerminal] No wireless terminal is registered, no wireless terminal recipe");
-        } else {
-            for (final ItemStack ingredient : ingredients) {
-                OreDictionary.registerOre(TerminalIds.TERMINAL_OREDICT, ingredient.copy());
+        final List<ItemStack> wirelessTerminals = new ArrayList<>();
+        for (final ItemStack ingredient : AEApi.instance().registries().ultraTerminal().getIngredients()) {
+            // the result shows the terminal the recipe adds, the input keeps the generic tooltip
+            final ItemStack output = ultraTerminal.copy();
+            ItemWirelessUltraTerminal.absorb(output, false, ingredient);
+            GameRegistry.addRecipe(UltraTerminalRecipe.merge(output, ultraTerminal, ingredient));
+            if (ingredient.getItem() instanceof IWirelessTermHandler) {
+                wirelessTerminals.add(ingredient);
             }
-            GameRegistry.addRecipe(UltraTerminalRecipe.combine(ultraTerminal, TerminalIds.TERMINAL_OREDICT));
-            GameRegistry.addRecipe(
-                    UltraTerminalRecipe.merge(ultraTerminal.copy(), ultraTerminal, TerminalIds.TERMINAL_OREDICT));
         }
-        addUltraTerminalAbsorbRecipes(registry, ultraTerminal);
+        if (wirelessTerminals.isEmpty()) {
+            AELog.warn("[UltraTerminal] No wireless terminal is registered, no wireless terminal recipe");
+        }
+        for (int i = 0; i < wirelessTerminals.size(); i++) {
+            for (int j = i + 1; j < wirelessTerminals.size(); j++) {
+                final ItemStack first = wirelessTerminals.get(i);
+                final ItemStack second = wirelessTerminals.get(j);
+                final ItemStack output = ultraTerminal.copy();
+                ItemWirelessUltraTerminal.absorb(output, false, first, second);
+                GameRegistry.addRecipe(UltraTerminalRecipe.combine(output, first, second));
+            }
+        }
         addLegacyUltraTerminalRecipe();
     }
 
@@ -766,29 +773,6 @@ public class RecipeLoader implements Runnable {
         final ItemStack output = WIRELESS_ULTRA_TERM.stack();
         ItemWirelessUltraTerminal.absorb(output, false, terminals.toArray(new ItemStack[0]));
         GameRegistry.addShapelessRecipe(output, terminals.toArray());
-    }
-
-    /**
-     * Registers one recipe for every terminal that is not part of the wireless terminal recipes, for example the
-     * crafting terminal. The recipe output contains the terminal it adds, so the recipe shows what it is good for.
-     */
-    private static void addUltraTerminalAbsorbRecipes(final IUltraTerminalRegistry registry,
-            final ItemStack ultraTerminal) {
-        for (final IUltraTerminalType type : registry.getTypes()) {
-            final ItemStack absorbing = type.getAbsorbingIngredient();
-            if (absorbing == null || isWirelessIngredient(type, absorbing)) {
-                continue;
-            }
-            final ItemStack output = ultraTerminal.copy();
-            ItemWirelessUltraTerminal.absorb(output, false, absorbing);
-            GameRegistry.addRecipe(UltraTerminalRecipe.absorb(output, ultraTerminal.copy(), absorbing));
-        }
-    }
-
-    private static boolean isWirelessIngredient(final IUltraTerminalType type, final ItemStack absorbing) {
-        final ItemStack wireless = type.getCraftingIngredient();
-        return wireless != null && wireless.getItem() == absorbing.getItem()
-                && wireless.getItemDamage() == absorbing.getItemDamage();
     }
 
     public static void addDisassembleRecipe() {

@@ -53,6 +53,6 @@ public final class ModAndClassUtil {
         if (Loader.isModLoaded("wailaplugins")) WAILA_PLUGINS = true;
         if (Loader.isModLoaded("Avaritia")) AVARITIA = true;
         if (Loader.isModLoaded("dreamcraft")) NEW_HORIZONS_CORE_MOD = true;
-        if (Loader.isModLoaded("Baubles")) BAUBLES = true;
+        if (Loader.isModLoaded("Baubles|Expanded")) BAUBLES = true;
     }
 }
