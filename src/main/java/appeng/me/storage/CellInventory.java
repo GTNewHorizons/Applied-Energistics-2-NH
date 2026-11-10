@@ -33,15 +33,16 @@ import appeng.api.exceptions.AppEngException;
 import appeng.api.implementations.items.IStorageCell;
 import appeng.api.implementations.items.IUpgradeModule;
 import appeng.api.networking.security.BaseActionSource;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.ICellInventory;
 import appeng.api.storage.IMEInventoryHandler;
 import appeng.api.storage.ISaveProvider;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.StorageChannel;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.storage.data.IItemList;
-import appeng.tile.inventory.IAEStackInventory;
 
 public abstract class CellInventory<StackType extends IAEStack<StackType>> implements ICellInventory<StackType> {
 
@@ -123,9 +124,9 @@ public abstract class CellInventory<StackType extends IAEStack<StackType>> imple
         if (this.restrictionTypes > 0) this.distTypesCount = this.restrictionTypes;
         else {
             int types = 0;
-            final IAEStackInventory config = this.getConfigAEInventory();
+            final ConfigInventory config = this.getConfigAEInventory();
             for (int i = 0; i < config.getSizeInventory(); i++) {
-                if (config.getAEStackInSlot(i) != null) types++;
+                if (config.getKey(i) != null) types++;
             }
 
             this.distTypesCount = types == 0 ? this.maxTypes : Math.min(types, this.maxTypes);
@@ -476,7 +477,7 @@ public abstract class CellInventory<StackType extends IAEStack<StackType>> imple
     }
 
     @Override
-    public IAEStackInventory getConfigAEInventory() {
+    public KeyConfigInventory getConfigAEInventory() {
         return this.cellType.getConfigAEInventory(this.cellItem);
     }
 

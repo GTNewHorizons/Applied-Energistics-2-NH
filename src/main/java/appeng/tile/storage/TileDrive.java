@@ -467,11 +467,8 @@ public class TileDrive extends AENetworkInvTile implements IChestOrDrive, IPrior
                 for (Object partitionStack : handler.getAvailableItems(
                         cellInventory.getStackType().createPrimitiveList(),
                         IterationCounter.fetchNewId())) {
-                    final IAEStack<?> aes = ((IAEStack<?>) partitionStack).copy();
-                    aes.setStackSize(1);
-                    cellInventory.getConfigAEInventory().putAEStackInSlot(idx++, aes);
+                    cellInventory.getConfigAEInventory().setKey(idx++, ((IAEStack<?>) partitionStack).getKey());
                 }
-                cellInventory.getConfigAEInventory().markDirty();
             }
         }
     }
@@ -480,9 +477,8 @@ public class TileDrive extends AENetworkInvTile implements IChestOrDrive, IPrior
         ICellInventory cellInventory = handler.getCellInv();
         if (cellInventory != null) {
             for (int i = 0; i < cellInventory.getConfigAEInventory().getSizeInventory(); i++) {
-                cellInventory.getConfigAEInventory().putAEStackInSlot(i, null);
+                cellInventory.getConfigAEInventory().setKey(i, null);
             }
-            cellInventory.getConfigAEInventory().markDirty();
         }
     }
 

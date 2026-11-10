@@ -20,6 +20,7 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.IInventory;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.AccessRestriction;
 import appeng.api.config.ActionItems;
@@ -31,6 +32,8 @@ import appeng.api.config.StorageFilter;
 import appeng.api.config.Upgrades;
 import appeng.api.config.YesNo;
 import appeng.api.parts.IStorageBus;
+import appeng.api.stacks.GenericStack;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
@@ -39,7 +42,6 @@ import appeng.container.guisync.GuiSync;
 import appeng.container.interfaces.IVirtualSlotHolder;
 import appeng.container.slot.SlotRestrictedInput;
 import appeng.me.storage.MEInventoryHandler;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.IterationCounter;
 import appeng.util.Platform;
 import appeng.util.partitionlist.EmptyPartitionList;
@@ -69,7 +71,7 @@ public class ContainerStorageBus extends ContainerUpgradeable implements IVirtua
     @GuiSync(10)
     public AccessRestriction reshuffleAccess = AccessRestriction.READ_WRITE;
 
-    private final IAEStack<?>[] configClientSlot = new IAEStack[63];
+    private final @Nullable GenericStack[] configClientSlot = new GenericStack[63];
 
     public ContainerStorageBus(final InventoryPlayer ip, final IStorageBus te) {
         super(ip, te);
@@ -156,7 +158,7 @@ public class ContainerStorageBus extends ContainerUpgradeable implements IVirtua
             this.reshuffleAccess = (AccessRestriction) this.getUpgradeable().getConfigManager()
                     .getSetting(Settings.RESHUFFLE_ACCESS);
 
-            final IAEStackInventory config = this.storageBus.getAEInventoryByName(StorageName.CONFIG);
+            final KeyConfigInventory config = this.storageBus.getConfig();
             this.updateVirtualSlots(StorageName.CONFIG, config, this.configClientSlot);
         }
 
@@ -173,9 +175,9 @@ public class ContainerStorageBus extends ContainerUpgradeable implements IVirtua
     }
 
     public void clear() {
-        final IAEStackInventory inv = this.storageBus.getAEInventoryByName(StorageName.CONFIG);
+        final KeyConfigInventory inv = this.storageBus.getConfig();
         for (int x = 0; x < inv.getSizeInventory(); x++) {
-            inv.putAEStackInSlot(x, null);
+            inv.setKey(x, null);
         }
         this.detectAndSendChanges();
     }
@@ -191,7 +193,7 @@ public class ContainerStorageBus extends ContainerUpgradeable implements IVirtua
             clearPartitionIterator(player);
             return;
         }
-        final IAEStackInventory inv = this.storageBus.getAEInventoryByName(StorageName.CONFIG);
+        final KeyConfigInventory inv = this.storageBus.getConfig();
 
         final MEInventoryHandler cellInv = this.storageBus.getInternalHandler();
 
@@ -215,23 +217,21 @@ public class ContainerStorageBus extends ContainerUpgradeable implements IVirtua
         boolean skip = false;
         for (int x = 0; x < inv.getSizeInventory(); x++) {
             if (skip) {
-                inv.putAEStackInSlot(x, null);
+                inv.setKey(x, null);
                 continue;
             }
             if (this.isSlotEnabled(x / 9)) {
                 IAEStack<?> AEis = it.next();
                 if (AEis != null) {
-                    final IAEStack<?> tempAes = AEis.copy();
-                    tempAes.setStackSize(1);
-                    inv.putAEStackInSlot(x, tempAes);
+                    inv.setKey(x, AEis.getKey());
                 } else {
                     clearPartitionIterator(player);
                     skip = true;
-                    inv.putAEStackInSlot(x, null);
+                    inv.setKey(x, null);
                 }
             } else {
                 skip = true;
-                inv.putAEStackInSlot(x, null);
+                inv.setKey(x, null);
             }
 
         }
@@ -301,9 +301,10 @@ public class ContainerStorageBus extends ContainerUpgradeable implements IVirtua
 
     @Override
     public void receiveSlotStacks(StorageName invName, Int2ObjectMap<IAEStack<?>> slotStacks) {
-        final IAEStackInventory config = this.storageBus.getAEInventoryByName(StorageName.CONFIG);
+        final KeyConfigInventory config = this.storageBus.getConfig();
         for (var entry : slotStacks.int2ObjectEntrySet()) {
-            config.putAEStackInSlot(entry.getIntKey(), entry.getValue());
+            final IAEStack<?> stack = entry.getValue();
+            config.setKey(entry.getIntKey(), stack == null ? null : stack.getKey());
         }
 
         if (isServer()) {
@@ -319,7 +320,7 @@ public class ContainerStorageBus extends ContainerUpgradeable implements IVirtua
         return this.reshuffleAccess;
     }
 
-    public IAEStackInventory getConfig() {
-        return this.storageBus.getAEInventoryByName(StorageName.CONFIG);
+    public KeyConfigInventory getConfig() {
+        return this.storageBus.getConfig();
     }
 }

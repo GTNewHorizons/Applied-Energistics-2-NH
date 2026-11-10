@@ -11,6 +11,7 @@ import com.glodblock.github.inventory.slot.SlotFluidConvertingFake;
 import com.glodblock.github.network.SPacketLevelMaintainerGuiUpdate;
 
 import appeng.api.config.SecurityPermissions;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
 import appeng.container.ContainerSubGui;
@@ -18,7 +19,6 @@ import appeng.container.interfaces.IVirtualSlotHolder;
 import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketVirtualSlot;
 import appeng.helpers.InventoryAction;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.Platform;
 import appeng.util.item.AEItemStack;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -70,10 +70,9 @@ public class ContainerLevelMaintainer extends ContainerSubGui implements IVirtua
 
         ItemStack clickedStack = this.inventorySlots.get(idx).getStack();
         if (clickedStack != null) {
-            IAEStackInventory inventory = this.getTile().getAEStackInventory();
+            ConfigInventory inventory = this.getTile().getAEStackInventory();
             for (int i = 0; i < inventory.getSizeInventory(); i++) {
-                IAEStack<?> stack = inventory.getAEStackInSlot(i);
-                if (stack == null) {
+                if (inventory.getStack(i) == null) {
                     tile.updateStack(i, AEItemStack.create(clickedStack));
                     break;
                 }

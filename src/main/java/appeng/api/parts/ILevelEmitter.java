@@ -8,14 +8,14 @@ import appeng.api.networking.crafting.ICraftingWatcherHost;
 import appeng.api.networking.energy.IEnergyWatcherHost;
 import appeng.api.networking.storage.IStackWatcherHost;
 import appeng.api.networking.ticking.IGridTickable;
+import appeng.api.storage.IConfigInventoryHost;
 import appeng.api.storage.IMEMonitorHandlerReceiver;
 import appeng.api.storage.data.IAEStack;
-import appeng.tile.inventory.IIAEStackInventory;
 import appeng.util.AEStackTypeFilter;
 
 public interface ILevelEmitter
         extends IEnergyWatcherHost, IStackWatcherHost, ICraftingWatcherHost, IMEMonitorHandlerReceiver<IAEStack<?>>,
-        ICraftingProvider, IGridTickable, IUpgradeableHost, IIAEStackInventory, ILevelViewable, ITypeFilterProvider {
+        ICraftingProvider, IGridTickable, IUpgradeableHost, IConfigInventoryHost, ILevelViewable, ITypeFilterProvider {
 
     void setReportingValue(final long v);
 

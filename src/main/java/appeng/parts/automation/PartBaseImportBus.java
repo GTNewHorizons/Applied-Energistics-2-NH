@@ -15,9 +15,9 @@ import appeng.api.networking.ticking.TickRateModulation;
 import appeng.api.networking.ticking.TickingRequest;
 import appeng.api.parts.IPartCollisionHelper;
 import appeng.api.parts.IPartRenderHelper;
+import appeng.api.stacks.AEKey;
 import appeng.api.storage.IMEInventory;
 import appeng.api.storage.IMEMonitor;
-import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
 import appeng.client.texture.CableBusTextures;
 import appeng.core.settings.TickRates;
@@ -131,8 +131,8 @@ public abstract class PartBaseImportBus<StackType extends IAEStack<StackType>> e
                 boolean configured = false;
                 if (this.getInstalledUpgrades(Upgrades.ORE_FILTER) == 0) {
                     for (int x = 0; x < this.availableSlots(); x++) {
-                        final StackType ais = (StackType) this.getAEInventoryByName(StorageName.CONFIG)
-                                .getAEStackInSlot(x);
+                        final AEKey configKey = this.getConfig().getKey(x);
+                        final StackType ais = configKey == null ? null : (StackType) configKey.toAEStack();
                         if (ais != null && this.itemToSend > 0) {
                             configured = true;
                             while (this.itemToSend > 0) {
