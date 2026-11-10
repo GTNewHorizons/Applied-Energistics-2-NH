@@ -18,8 +18,6 @@ import net.minecraft.item.ItemStack;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.storage.data.IAEStack;
-import appeng.items.contents.CellConfigLegacy;
-import appeng.items.contents.CellConfigLegacyWrapper;
 import appeng.tile.inventory.IAEStackInventory;
 
 public interface ICellInventory<StackType extends IAEStack<StackType>> extends IMEInventory<StackType> {
@@ -55,19 +53,8 @@ public interface ICellInventory<StackType extends IAEStack<StackType>> extends I
 
     /**
      * @return access configured list
-     * @deprecated Use {@link ICellInventory#getConfigAEInventory()}
      */
-    @Deprecated
-    default IInventory getConfigInventory() {
-        return new CellConfigLegacy(this.getConfigAEInventory(), this.getStackType());
-    }
-
-    /**
-     * @return access configured list
-     */
-    default IAEStackInventory getConfigAEInventory() {
-        return new CellConfigLegacyWrapper(this.getConfigInventory());
-    }
+    IAEStackInventory getConfigAEInventory();
 
     /**
      * @return access installed upgrades.

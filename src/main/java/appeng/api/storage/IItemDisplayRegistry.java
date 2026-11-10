@@ -1,15 +1,10 @@
 package appeng.api.storage;
 
-import java.util.List;
-import java.util.function.BiPredicate;
-
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
-import appeng.api.config.TypeFilter;
-import appeng.api.storage.data.IAEItemStack;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -32,15 +27,6 @@ public interface IItemDisplayRegistry {
     boolean isBlacklisted(Item item);
 
     boolean isBlacklisted(Class<? extends Item> item);
-
-    /**
-     * Adds a filter option. This is primarily for ae2fc's item drops, but can be expanded.
-     */
-    @Deprecated
-    void addItemFilter(BiPredicate<TypeFilter, IAEItemStack> filter);
-
-    @Deprecated
-    List<BiPredicate<TypeFilter, IAEItemStack>> getItemFilters();
 
     /**
      * Adds a render hook to be called after the item itself has been rendered for overlays.

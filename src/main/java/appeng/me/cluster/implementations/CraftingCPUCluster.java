@@ -1443,45 +1443,6 @@ public class CraftingCPUCluster implements IAECluster, ICraftingCPU {
         }
     }
 
-    @Deprecated
-    public void getListOfItem(final IItemList<IAEItemStack> list, final CraftingItemList whichList) {
-        switch (whichList) {
-            case ACTIVE -> {
-                for (final IAEStack<?> ais : this.waitingFor) {
-                    list.add(stackConvert(ais));
-                }
-            }
-            case PENDING -> {
-                for (final Entry<ICraftingPatternDetails, TaskProgress> t : this.tasks.entrySet()) {
-                    for (IAEItemStack ais : t.getKey().getCondensedOutputs()) {
-                        ais = ais.copy();
-                        ais.setStackSize(ais.getStackSize() * t.getValue().value);
-                        list.add(ais);
-                    }
-                }
-            }
-            case STORAGE -> {
-                inventory.getAvailableItems(list);
-            }
-
-            default -> {
-                inventory.getAvailableItems(list);
-
-                for (final IAEStack<?> ais : this.waitingFor) {
-                    list.add(stackConvert(ais));
-                }
-
-                for (final Entry<ICraftingPatternDetails, TaskProgress> t : this.tasks.entrySet()) {
-                    for (IAEItemStack ais : t.getKey().getCondensedOutputs()) {
-                        ais = ais.copy();
-                        ais.setStackSize(ais.getStackSize() * t.getValue().value);
-                        list.add(ais);
-                    }
-                }
-            }
-        }
-    }
-
     public void getModernListOfItem(final IItemList<IAEStack<?>> list, final CraftingItemList whichList) {
         switch (whichList) {
             case ACTIVE -> {

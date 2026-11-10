@@ -20,15 +20,9 @@ public interface IDisplayRepo extends IPinsHandler {
      */
     default void setVisiblePinRows(int craftingRows, int playerRows) {}
 
-    @Deprecated
-    void postUpdate(final IAEItemStack stack);
-
     void postUpdate(final IAEStack<?> stack);
 
     void setViewCell(final ItemStack[] filters);
-
-    @Deprecated
-    IAEItemStack getReferenceItem(int idx);
 
     IAEStack<?> getReferenceStack(int idx);
 

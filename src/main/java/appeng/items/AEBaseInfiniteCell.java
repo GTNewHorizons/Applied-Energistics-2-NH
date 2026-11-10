@@ -66,17 +66,7 @@ public abstract class AEBaseInfiniteCell extends AEBaseItem implements IStorageC
     }
 
     @Override
-    public int getBytes(ItemStack cellItem) {
-        return 0;
-    }
-
-    @Override
     public long getBytesLong(ItemStack cellItem) {
-        return 0;
-    }
-
-    @Override
-    public int BytePerType(ItemStack cellItem) {
         return 0;
     }
 
