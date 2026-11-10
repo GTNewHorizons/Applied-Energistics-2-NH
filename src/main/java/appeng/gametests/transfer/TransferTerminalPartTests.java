@@ -2,8 +2,10 @@ package appeng.gametests.transfer;
 
 import static appeng.gametests.AEGameTestHelpers.assertActive;
 import static appeng.gametests.transfer.TransferTestHelpers.TEMPLATE;
+import static appeng.gametests.transfer.TransferTestHelpers.iron;
 import static appeng.gametests.transfer.TransferTestHelpers.place;
 
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -12,6 +14,9 @@ import com.gtnewhorizons.horizonqa.api.annotation.GameTest;
 import com.gtnewhorizons.horizonqa.api.annotation.GameTestHolder;
 
 import appeng.api.AEApi;
+import appeng.api.config.Settings;
+import appeng.api.config.TransferDirection;
+import appeng.api.config.YesNo;
 import appeng.api.networking.events.MENetworkCellArrayUpdate;
 import appeng.container.implementations.ContainerTransferTerminal;
 import appeng.core.AppEng;
@@ -65,15 +70,82 @@ public class TransferTerminalPartTests {
                     ContainerTransferTerminal container = new ContainerTransferTerminal(player.inventory, terminal);
                     container.detectAndSendChanges();
 
-                    container.craftingOnlySync.setLocalValue(true);
-                    container.hideUnfilteredSync.setLocalValue(true);
-                    container.networkOnlySync.setLocalValue(true);
+                    container.directionSync.set(TransferDirection.EXPORT);
+                    container.craftingOnlySync.set(YesNo.YES);
+                    container.hideUnfilteredSync.set(YesNo.YES);
+                    container.networkOnlySync.set(YesNo.YES);
                     container.searchTextSync.set("iron");
                     container.windowStartSync.setLocalValue(1000);
                     container.windowSizeSync.setLocalValue(TransferRowWindow.ALL);
                     container.detectAndSendChanges();
 
                     helper.assertNull(container.getQuery(), "The filters do not touch the query");
+                }).thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 20)
+    public static void filtersSurviveSavingAndLoading(GameTestHelper helper) {
+        PartTransferTerminal terminal = terminal(helper);
+        terminal.getConfigManager().putSetting(Settings.TRANSFER_DIRECTION, TransferDirection.EXPORT);
+        terminal.getConfigManager().putSetting(Settings.TRANSFER_CRAFTING_CARD_ONLY, YesNo.YES);
+        terminal.getConfigManager().putSetting(Settings.TRANSFER_HIDE_UNFILTERED, YesNo.YES);
+        terminal.getConfigManager().putSetting(Settings.TRANSFER_NETWORK_ONLY, YesNo.YES);
+        terminal.getQueryInventory().putAEStackInSlot(0, iron());
+        terminal.setSearchText("ingot");
+
+        NBTTagCompound data = new NBTTagCompound();
+        terminal.writeToNBT(data);
+        PartTransferTerminal loaded = new PartTransferTerminal(
+                AEApi.instance().definitions().parts().transferTerminal().maybeStack(1).get());
+        loaded.readFromNBT(data);
+
+        helper.assertEquals(
+                TransferDirection.EXPORT,
+                loaded.getConfigManager().getSetting(Settings.TRANSFER_DIRECTION),
+                "Direction should be kept");
+        helper.assertEquals(
+                YesNo.YES,
+                loaded.getConfigManager().getSetting(Settings.TRANSFER_CRAFTING_CARD_ONLY),
+                "Crafting card filter should be kept");
+        helper.assertEquals(
+                YesNo.YES,
+                loaded.getConfigManager().getSetting(Settings.TRANSFER_HIDE_UNFILTERED),
+                "Hide unfiltered should be kept");
+        helper.assertEquals(
+                YesNo.YES,
+                loaded.getConfigManager().getSetting(Settings.TRANSFER_NETWORK_ONLY),
+                "Network only should be kept");
+        helper.assertTrue(
+                iron().isSameType((Object) loaded.getQueryInventory().getAEStackInSlot(0)),
+                "Searched stack should be kept");
+        helper.assertEquals("ingot", loaded.getSearchText(), "Search text should be kept");
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void containerStartsFromTheSavedFilters(GameTestHelper helper) {
+        PartTransferTerminal terminal = terminal(helper);
+        terminal.getConfigManager().putSetting(Settings.TRANSFER_DIRECTION, TransferDirection.IMPORT);
+        terminal.getConfigManager().putSetting(Settings.TRANSFER_NETWORK_ONLY, YesNo.YES);
+        terminal.getQueryInventory().putAEStackInSlot(0, iron());
+        terminal.setSearchText("ingot");
+
+        helper.startSequence()
+                .thenWaitUntil(
+                        "wait for the terminal to join the network",
+                        60,
+                        () -> assertActive(helper, terminal, "Terminal should become active"))
+                .thenExecute("open the container", () -> {
+                    FakePlayer player = helper.spawnFakePlayer("transfer_terminal");
+                    ContainerTransferTerminal container = new ContainerTransferTerminal(player.inventory, terminal);
+                    container.detectAndSendChanges();
+
+                    helper.assertEquals(TransferDirection.IMPORT, container.getMode(), "Direction is restored");
+                    helper.assertTrue(
+                            ContainerTransferTerminal.isYes(container.networkOnlySync),
+                            "Network only is restored");
+                    helper.assertNotNull(container.getQuery(), "Searched stack is restored");
+                    helper.assertEquals("ingot", container.savedSearchSync.get(), "Search text is restored");
                 }).thenSucceed();
     }
 

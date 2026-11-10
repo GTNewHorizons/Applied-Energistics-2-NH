@@ -13,19 +13,22 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 
 import appeng.api.AEApi;
+import appeng.api.config.Settings;
 import appeng.api.config.TransferDirection;
+import appeng.api.config.YesNo;
 import appeng.api.features.transfer.TransferComponentInfo;
 import appeng.api.features.transfer.TransferDescription;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.api.parts.ITransferTerminal;
 import appeng.api.storage.data.IAEStack;
+import appeng.api.util.IConfigManager;
 import appeng.container.AEBaseContainer;
 import appeng.container.sync.SyncCodec;
 import appeng.container.sync.SyncCodecs;
 import appeng.container.sync.SyncRegistrar;
 import appeng.container.sync.handlers.AEStackInventorySyncHandler;
-import appeng.container.sync.handlers.BooleanSyncHandler;
+import appeng.container.sync.handlers.ConfigEnumSyncHandler;
 import appeng.container.sync.handlers.IntSyncHandler;
 import appeng.container.sync.handlers.ObjectSyncHandler;
 import appeng.core.CommonHelper;
@@ -56,13 +59,18 @@ public class ContainerTransferTerminal extends AEBaseContainer {
             Objects::equals);
 
     private final ITransferTerminal anchor;
-    private final IAEStackInventory query = new IAEStackInventory(null, 1);
+    private final IAEStackInventory query;
     public final AEStackInventorySyncHandler querySync;
-    public final IntSyncHandler modeSync;
-    public final BooleanSyncHandler craftingOnlySync;
-    public final BooleanSyncHandler hideUnfilteredSync;
-    public final BooleanSyncHandler networkOnlySync;
+    public final ConfigEnumSyncHandler<TransferDirection> directionSync;
+    public final ConfigEnumSyncHandler<YesNo> craftingOnlySync;
+    public final ConfigEnumSyncHandler<YesNo> hideUnfilteredSync;
+    public final ConfigEnumSyncHandler<YesNo> networkOnlySync;
+
+    /** Text the server filters by, empty while the client filters by itself. */
     public final ObjectSyncHandler<String> searchTextSync;
+
+    /** Text in the search box, kept by the terminal for the next time it is opened. */
+    public final ObjectSyncHandler<String> savedSearchSync;
     public final IntSyncHandler windowStartSync;
     public final IntSyncHandler windowSizeSync;
     public final ObjectSyncHandler<String> serverLanguageSync;
@@ -86,17 +94,24 @@ public class ContainerTransferTerminal extends AEBaseContainer {
         this.anchor = anchor;
 
         final SyncRegistrar sync = this.syncRegistrar();
+        final IConfigManager settings = anchor.getConfigManager();
+        this.query = anchor.getQueryInventory();
         this.querySync = sync.aeStackInventory("query", this.query).onServerChange(i -> this.queryChanged = true);
-        this.modeSync = sync.intC2S("mode").onServerChange((oldValue, newValue) -> this.queryChanged = true);
-        this.modeSync.setLocalValue(TransferDirection.BOTH.ordinal());
-        this.craftingOnlySync = sync.booleanC2S("craftingOnly")
-                .onServerChange((oldValue, newValue) -> this.queryChanged = true);
-        this.hideUnfilteredSync = sync.booleanC2S("hideUnfiltered")
-                .onServerChange((oldValue, newValue) -> this.queryChanged = true);
-        this.networkOnlySync = sync.booleanC2S("networkOnly")
-                .onServerChange((oldValue, newValue) -> this.hasScanned = false);
+        this.directionSync = sync
+                .configEnum("direction", Settings.TRANSFER_DIRECTION, TransferDirection.class, settings);
+        this.directionSync.onServerChange((oldValue, newValue) -> this.queryChanged = true);
+        this.craftingOnlySync = sync
+                .configEnum("craftingOnly", Settings.TRANSFER_CRAFTING_CARD_ONLY, YesNo.class, settings);
+        this.craftingOnlySync.onServerChange((oldValue, newValue) -> this.queryChanged = true);
+        this.hideUnfilteredSync = sync
+                .configEnum("hideUnfiltered", Settings.TRANSFER_HIDE_UNFILTERED, YesNo.class, settings);
+        this.hideUnfilteredSync.onServerChange((oldValue, newValue) -> this.queryChanged = true);
+        this.networkOnlySync = sync.configEnum("networkOnly", Settings.TRANSFER_NETWORK_ONLY, YesNo.class, settings);
+        this.networkOnlySync.onServerChange((oldValue, newValue) -> this.hasScanned = false);
         this.searchTextSync = sync.objectC2S("searchText", STRING_CODEC, "")
                 .onServerChange((oldValue, newValue) -> this.queryChanged = true);
+        this.savedSearchSync = sync.object("savedSearch", STRING_CODEC, anchor.getSearchText())
+                .onServerChange((oldValue, newValue) -> anchor.setSearchText(newValue));
         this.windowStartSync = sync.intC2S("windowStart")
                 .onServerChange((oldValue, newValue) -> this.windowChanged = true);
         this.windowSizeSync = sync.intC2S("windowSize")
@@ -157,7 +172,7 @@ public class ContainerTransferTerminal extends AEBaseContainer {
 
     private void scan(final IGridNode node) {
         final IGrid grid = node.getGrid();
-        this.grids = this.networkOnlySync.get() ? Collections.singletonList(grid)
+        this.grids = isYes(this.networkOnlySync) ? Collections.singletonList(grid)
                 : new ArrayList<>(grid.getAllRecursiveGridConnections(PartStorageBus.class, true));
         this.scanned = TransferScanner.scan(this.grids, AEApi.instance().registries().transferInspectors());
         this.configNames.clear();
@@ -170,15 +185,18 @@ public class ContainerTransferTerminal extends AEBaseContainer {
         return this.query.getAEStackInSlot(0);
     }
 
-    private TransferDirection getMode() {
-        final TransferDirection[] directions = TransferDirection.values();
-        final int mode = this.modeSync.get();
-        return mode >= 0 && mode < directions.length ? directions[mode] : TransferDirection.BOTH;
+    public TransferDirection getMode() {
+        final TransferDirection mode = this.directionSync.get();
+        return mode == null ? TransferDirection.BOTH : mode;
+    }
+
+    public static boolean isYes(final ObjectSyncHandler<YesNo> sync) {
+        return sync.get() == YesNo.YES;
     }
 
     private boolean keep(final TransferComponentInfo row) {
         if (!TransferResultFilter
-                .passesToggles(row.description, this.craftingOnlySync.get(), this.hideUnfilteredSync.get())) {
+                .passesToggles(row.description, isYes(this.craftingOnlySync), isYes(this.hideUnfilteredSync))) {
             return false;
         }
 

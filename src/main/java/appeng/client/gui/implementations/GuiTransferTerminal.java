@@ -34,7 +34,8 @@ import appeng.client.gui.widgets.MEGuiTextField;
 import appeng.client.render.highlighter.BlockPosHighlighter;
 import appeng.container.implementations.ContainerTransferTerminal;
 import appeng.container.slot.AppEngSlot;
-import appeng.container.sync.handlers.BooleanSyncHandler;
+import appeng.container.sync.deltas.AEStackInventoryDelta;
+import appeng.container.sync.handlers.ConfigEnumSyncHandler;
 import appeng.core.AEConfig;
 import appeng.core.localization.ColorUtils;
 import appeng.core.localization.GuiText;
@@ -80,6 +81,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     private static final int SEARCH_Y = 40;
     private static final int SEARCH_WIDTH = 156;
     private static final int SEARCH_HEIGHT = 12;
+    private static final int RESET_BUTTON_X = SEARCH_X + SEARCH_WIDTH - 16;
     private static final int TITLE_WIDTH = 160;
 
     // interfaceterminal.png has a search bar in the title row, it is shared with the Interface Terminal.
@@ -113,6 +115,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     private GuiImgButton craftingButton;
     private GuiImgButton hideUnfilteredButton;
     private GuiImgButton networkOnlyButton;
+    private GuiImgButton resetButton;
     private boolean tallMode;
     private int visibleRows = SMALL_VISIBLE_ROWS;
     private int cacheStart;
@@ -125,6 +128,16 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         this.container = (ContainerTransferTerminal) this.inventorySlots;
         this.clientLanguage = Minecraft.getMinecraft().getLanguageManager().getCurrentLanguage().getLanguageCode();
         this.container.serverLanguageSync.onClientChange((oldValue, newValue) -> this.updateSearchTooltip());
+        // The terminal remembers its filters, the server sends them once the screen is open.
+        this.container.directionSync.onClientChange((oldValue, newValue) -> this.updateFilterButtons());
+        this.container.craftingOnlySync.onClientChange((oldValue, newValue) -> this.updateFilterButtons());
+        this.container.hideUnfilteredSync.onClientChange((oldValue, newValue) -> this.updateFilterButtons());
+        this.container.networkOnlySync.onClientChange((oldValue, newValue) -> this.updateFilterButtons());
+        this.container.savedSearchSync.onClientChange((oldValue, newValue) -> {
+            if (this.searchField != null && this.searchField.getText().equals(oldValue)) {
+                this.searchField.setText(newValue);
+            }
+        });
         this.tallMode = AEConfig.instance.getConfigManager().getSetting(Settings.TERMINAL_STYLE) == TerminalStyle.TALL;
         this.xSize = GUI_WIDTH;
         this.highlightButton.setHalfSize(true);
@@ -134,7 +147,8 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
 
     @Override
     public void initGui() {
-        final String previousSearch = this.searchField == null ? "" : this.searchField.getText();
+        final String previousSearch = this.searchField == null ? this.container.savedSearchSync.get()
+                : this.searchField.getText();
         this.recalculateScreenSize();
         super.initGui();
 
@@ -153,19 +167,26 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                 this.tallMode ? TerminalStyle.TALL : TerminalStyle.SMALL);
         this.buttonList.add(this.terminalStyleBox);
 
-        this.directionButton = this.addFilterButton(0, Settings.TRANSFER_DIRECTION, this.getMode());
+        this.directionButton = this.addFilterButton(0, Settings.TRANSFER_DIRECTION, this.container.getMode());
         this.craftingButton = this
                 .addToggleButton(1, Settings.TRANSFER_CRAFTING_CARD_ONLY, this.container.craftingOnlySync);
         this.hideUnfilteredButton = this
                 .addToggleButton(2, Settings.TRANSFER_HIDE_UNFILTERED, this.container.hideUnfilteredSync);
         this.networkOnlyButton = this
                 .addToggleButton(3, Settings.TRANSFER_NETWORK_ONLY, this.container.networkOnlySync);
+        this.resetButton = new GuiImgButton(
+                this.guiLeft + RESET_BUTTON_X,
+                this.guiTop + FILTER_BUTTON_Y,
+                Settings.ACTIONS,
+                ActionItems.TRANSFER_RESET_FILTERS);
+        this.buttonList.add(this.resetButton);
 
         this.searchField = new MEGuiTextField(SEARCH_WIDTH, SEARCH_HEIGHT, this.searchTooltip()) {
 
             @Override
             public void onTextChange(final String oldText) {
                 super.onTextChange(oldText);
+                GuiTransferTerminal.this.saveSearch();
                 GuiTransferTerminal.this.refreshRows();
             }
         };
@@ -187,8 +208,42 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         return button;
     }
 
-    private GuiImgButton addToggleButton(final int index, final Settings setting, final BooleanSyncHandler sync) {
-        return this.addFilterButton(index, setting, sync.get() ? YesNo.YES : YesNo.NO);
+    private GuiImgButton addToggleButton(final int index, final Settings setting,
+            final ConfigEnumSyncHandler<YesNo> sync) {
+        return this.addFilterButton(index, setting, valueOf(sync));
+    }
+
+    private static YesNo valueOf(final ConfigEnumSyncHandler<YesNo> sync) {
+        return ContainerTransferTerminal.isYes(sync) ? YesNo.YES : YesNo.NO;
+    }
+
+    private void updateFilterButtons() {
+        if (this.directionButton == null) {
+            return;
+        }
+        this.directionButton.set(this.container.getMode());
+        this.craftingButton.set(valueOf(this.container.craftingOnlySync));
+        this.hideUnfilteredButton.set(valueOf(this.container.hideUnfilteredSync));
+        this.networkOnlyButton.set(valueOf(this.container.networkOnlySync));
+    }
+
+    private void saveSearch() {
+        final String text = this.searchField.getText();
+        if (!text.equals(this.container.savedSearchSync.get())) {
+            this.container.savedSearchSync.set(text);
+        }
+    }
+
+    private void resetFilters() {
+        this.container.directionSync.set(TransferDirection.BOTH);
+        this.container.craftingOnlySync.set(YesNo.NO);
+        this.container.hideUnfilteredSync.set(YesNo.NO);
+        this.container.networkOnlySync.set(YesNo.NO);
+        this.updateFilterButtons();
+        if (this.container.getQuery() != null) {
+            this.container.querySync.applyAndQueueDelta(new AEStackInventoryDelta(0, null));
+        }
+        this.searchField.setText("");
     }
 
     private String searchTooltip() {
@@ -311,10 +366,14 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         super.actionPerformed(button);
 
         if (button == this.directionButton) {
-            final TransferDirection next = Platform
-                    .rotateEnum(this.getMode(), Mouse.isButtonDown(1), Settings.TRANSFER_DIRECTION.getPossibleValues());
+            final TransferDirection next = Platform.rotateEnum(
+                    this.container.getMode(),
+                    Mouse.isButtonDown(1),
+                    Settings.TRANSFER_DIRECTION.getPossibleValues());
             this.directionButton.set(next);
-            this.container.modeSync.set(next.ordinal());
+            this.container.directionSync.set(next);
+        } else if (button == this.resetButton) {
+            this.resetFilters();
         } else if (button == this.craftingButton) {
             this.toggle(this.craftingButton, this.container.craftingOnlySync);
         } else if (button == this.hideUnfilteredButton) {
@@ -329,16 +388,10 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         }
     }
 
-    private void toggle(final GuiImgButton button, final BooleanSyncHandler sync) {
-        final boolean enabled = !sync.get();
-        sync.set(enabled);
-        button.set(enabled ? YesNo.YES : YesNo.NO);
-    }
-
-    private TransferDirection getMode() {
-        final int mode = this.container.modeSync.get();
-        final TransferDirection[] directions = TransferDirection.values();
-        return mode >= 0 && mode < directions.length ? directions[mode] : TransferDirection.BOTH;
+    private void toggle(final GuiImgButton button, final ConfigEnumSyncHandler<YesNo> sync) {
+        final YesNo value = ContainerTransferTerminal.isYes(sync) ? YesNo.NO : YesNo.YES;
+        sync.set(value);
+        button.set(value);
     }
 
     @Override
