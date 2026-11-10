@@ -19,6 +19,7 @@ import appeng.api.config.FuzzyMode;
 import appeng.api.config.Settings;
 import appeng.api.config.Upgrades;
 import appeng.api.config.YesNo;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.data.IAEStackType;
 import appeng.client.gui.slots.VirtualMEPhantomSlot;
 import appeng.client.gui.widgets.GuiImgButton;
@@ -31,7 +32,6 @@ import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketConfigButton;
 import appeng.core.sync.packets.PacketSwitchGuis;
 import appeng.parts.automation.PartBaseFormationPlane;
-import appeng.tile.inventory.IAEStackInventory;
 
 public class GuiFormationPlane extends GuiUpgradeable {
 
@@ -138,7 +138,7 @@ public class GuiFormationPlane extends GuiUpgradeable {
 
     private void initVirtualSlots() {
         this.configSlots = new VirtualMEPhantomSlot[63];
-        final IAEStackInventory inputInv = this.cfp.getConfig();
+        final ConfigInventory inputInv = this.cfp.getConfig();
         final int xo = 8;
         final int yo = -133;
 

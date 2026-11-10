@@ -14,7 +14,10 @@ import appeng.api.features.IWirelessTermHandler;
 import appeng.api.networking.energy.IEnergySource;
 import appeng.api.networking.security.BaseActionSource;
 import appeng.api.parts.IPatternTerminalEx;
+import appeng.api.storage.ConfigInventory;
+import appeng.api.storage.IConfigInventoryHost;
 import appeng.api.storage.IMEMonitor;
+import appeng.api.storage.StackConfigInventory;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
@@ -22,17 +25,15 @@ import appeng.api.util.IConfigManager;
 import appeng.helpers.PatternEncodingHelper;
 import appeng.helpers.WirelessTerminalGuiObject;
 import appeng.tile.inventory.AppEngInternalInventory;
-import appeng.tile.inventory.IAEStackInventory;
-import appeng.tile.inventory.IIAEStackInventory;
 import appeng.tile.inventory.InvOperation;
 
 public class WirelessPatternTerminalGuiObject extends WirelessTerminalGuiObject
-        implements IIAEStackInventory, IPatternTerminalEx {
+        implements IConfigInventoryHost, IPatternTerminalEx {
 
     int craftingInvSize;
     int outputInvSize;
-    IAEStackInventory crafting;
-    IAEStackInventory output;
+    StackConfigInventory crafting;
+    StackConfigInventory output;
 
     private final AppEngInternalInventory pattern = new AppEngInternalInventory(this, 2);
     private final Set<PatternEncodeListener> patternEncodeListeners = Collections.newSetFromMap(new WeakHashMap<>());
@@ -61,8 +62,8 @@ public class WirelessPatternTerminalGuiObject extends WirelessTerminalGuiObject
 
     @Override
     public void readInventory() {
-        crafting = new IAEStackInventory(this, craftingInvSize, StorageName.CRAFTING_INPUT);
-        output = new IAEStackInventory(this, outputInvSize, StorageName.CRAFTING_OUTPUT);
+        crafting = new StackConfigInventory(this, craftingInvSize, StorageName.CRAFTING_INPUT);
+        output = new StackConfigInventory(this, outputInvSize, StorageName.CRAFTING_OUTPUT);
 
         final NBTTagCompound tag = getItemStack().getTagCompound().getCompoundTag(this.nbtPrefix);
         if (mode == 1) this.craftingMode = tag.getBoolean("crafting");
@@ -94,7 +95,17 @@ public class WirelessPatternTerminalGuiObject extends WirelessTerminalGuiObject
     }
 
     @Override
-    public IAEStackInventory getAEInventoryByName(StorageName name) {
+    public StackConfigInventory getCraftingInputs() {
+        return this.crafting;
+    }
+
+    @Override
+    public StackConfigInventory getCraftingOutputs() {
+        return this.output;
+    }
+
+    @Override
+    public ConfigInventory getAEInventoryByName(StorageName name) {
         switch (name) {
             case CRAFTING_INPUT -> {
                 return this.crafting;
@@ -169,8 +180,16 @@ public class WirelessPatternTerminalGuiObject extends WirelessTerminalGuiObject
     }
 
     @Override
-    public void saveAEStackInv() {
+    public void onChangeConfigInventory(ConfigInventory inv, int slot) {
+        if (this.isClientSide()) {
+            return;
+        }
+
         writeInventory();
+    }
+
+    private boolean isClientSide() {
+        return this.myPlayer.worldObj.isRemote;
     }
 
     @Override

@@ -23,9 +23,9 @@ import appeng.api.networking.ticking.TickRateModulation;
 import appeng.api.networking.ticking.TickingRequest;
 import appeng.api.parts.IPartCollisionHelper;
 import appeng.api.parts.IPartRenderHelper;
+import appeng.api.stacks.AEKey;
 import appeng.api.storage.IMEInventory;
 import appeng.api.storage.IMEMonitor;
-import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
 import appeng.client.texture.CableBusTextures;
 import appeng.core.AELog;
@@ -98,8 +98,8 @@ public abstract class PartBaseExportBus<StackType extends IAEStack<StackType>> e
                 for (x = 0; x < this.availableSlots() && this.itemToSend > 0; x++) {
                     final int slotToExport = this.getStartingSlot(schedulingMode, x);
 
-                    final StackType aes = (StackType) this.getAEInventoryByName(StorageName.CONFIG)
-                            .getAEStackInSlot(slotToExport);
+                    final AEKey configKey = this.getConfig().getKey(slotToExport);
+                    final StackType aes = configKey == null ? null : (StackType) configKey.toAEStack();
 
                     if (aes == null || this.itemToSend <= 0 || this.craftOnly()) {
                         if (this.isCraftingEnabled() && this.canInjectStackToTarget(aes)) {

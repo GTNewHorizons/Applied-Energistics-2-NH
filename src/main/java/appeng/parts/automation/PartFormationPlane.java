@@ -47,6 +47,7 @@ import appeng.api.config.Upgrades;
 import appeng.api.config.YesNo;
 import appeng.api.networking.events.MENetworkCellArrayUpdate;
 import appeng.api.networking.security.BaseActionSource;
+import appeng.api.stacks.AEItemKey;
 import appeng.api.storage.ICellContainer;
 import appeng.api.storage.IMEInventory;
 import appeng.api.storage.IMEInventoryHandler;
@@ -90,8 +91,8 @@ public class PartFormationPlane extends PartBaseFormationPlane implements ICellC
 
         final int slotsToUse = 18 + this.getInstalledUpgrades(Upgrades.CAPACITY) * 9;
         for (int x = 0; x < this.Config.getSizeInventory() && x < slotsToUse; x++) {
-            if (!(this.Config.getAEStackInSlot(x) instanceof IAEItemStack ais)) continue;
-            builder.add(ais.getKey());
+            if (!(this.Config.getKey(x) instanceof AEItemKey key)) continue;
+            builder.add(key);
         }
 
         if (this.getInstalledUpgrades(Upgrades.FUZZY) > 0) {

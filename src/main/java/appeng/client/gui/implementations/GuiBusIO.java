@@ -8,6 +8,7 @@ import org.lwjgl.input.Mouse;
 import appeng.api.config.SchedulingMode;
 import appeng.api.config.Settings;
 import appeng.api.config.Upgrades;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStackType;
 import appeng.client.gui.slots.VirtualMEPhantomSlot;
@@ -17,7 +18,6 @@ import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketConfigButton;
 import appeng.parts.automation.PartBaseExportBus;
 import appeng.parts.automation.PartSharedItemBus;
-import appeng.tile.inventory.IAEStackInventory;
 
 public class GuiBusIO extends GuiUpgradeable {
 
@@ -54,7 +54,7 @@ public class GuiBusIO extends GuiUpgradeable {
     }
 
     private void initVirtualSlots() {
-        final IAEStackInventory inputInv = this.bus.getAEInventoryByName(StorageName.CONFIG);
+        final ConfigInventory inputInv = this.bus.getAEInventoryByName(StorageName.CONFIG);
         for (int y = 0; y < 3; y++) {
             for (int x = 0; x < 3; x++) {
                 VirtualMEPhantomSlot slot = new VirtualMEPhantomSlot(

@@ -25,6 +25,7 @@ import appeng.api.config.SecurityPermissions;
 import appeng.api.config.Settings;
 import appeng.api.config.YesNo;
 import appeng.api.parts.ILevelEmitter;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStackType;
 import appeng.client.gui.IGuiSub;
@@ -37,9 +38,9 @@ import appeng.container.slot.SlotRestrictedInput;
 import appeng.container.sync.SyncRegistrar;
 import appeng.container.sync.codecs.AEStackTypeFilterSyncCodec;
 import appeng.container.sync.deltas.TypeFilterDelta;
-import appeng.container.sync.handlers.AEStackInventorySyncHandler;
 import appeng.container.sync.handlers.ConfigEnumSyncHandler;
 import appeng.container.sync.handlers.DeltaObjectSyncHandler;
+import appeng.container.sync.handlers.GenericStackSlotsSyncHandler;
 import appeng.container.sync.handlers.LongSyncHandler;
 import appeng.tile.inventory.AppEngInternalInventory;
 import appeng.util.AEStackTypeFilter;
@@ -59,7 +60,7 @@ public class ContainerLevelEmitter extends ContainerUpgradeable implements ICont
     private final DeltaObjectSyncHandler<@NonNull AEStackTypeFilter, TypeFilterDelta> typeFiltersSync;
     private final ConfigEnumSyncHandler<@NonNull LevelType> levelModeSync;
     private final ConfigEnumSyncHandler<@NonNull YesNo> craftingModeSync;
-    public final AEStackInventorySyncHandler configSync;
+    public final GenericStackSlotsSyncHandler<ConfigInventory> configSync;
 
     public ContainerLevelEmitter(final InventoryPlayer ip, final ILevelEmitter te) {
         super(ip, te);
@@ -100,7 +101,7 @@ public class ContainerLevelEmitter extends ContainerUpgradeable implements ICont
                 Settings.CRAFT_VIA_REDSTONE,
                 YesNo.class,
                 this.getUpgradeable().getConfigManager());
-        this.configSync = sync.aeStackInventory("config", this.lvlEmitter.getAEInventoryByName(StorageName.CONFIG));
+        this.configSync = sync.genericStackSlots("config", this.lvlEmitter.getAEInventoryByName(StorageName.CONFIG));
 
         // sub gui copy paste
         this.primaryGuiButtonIcon = new SlotInaccessible(new AppEngInternalInventory(null, 1), 0, 0, -9000);

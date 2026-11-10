@@ -16,26 +16,25 @@ import com.glodblock.github.util.NameConst;
 import com.glodblock.github.util.Util;
 
 import appeng.api.storage.IMEInventoryHandler;
+import appeng.api.storage.KeyConfigInventory;
+import appeng.api.storage.data.IAEFluidStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.core.features.AEFeature;
 import appeng.items.AEBaseInfiniteCell;
 import appeng.me.storage.CreativeCellInventory;
 import appeng.me.storage.FluidCellInventoryHandler;
-import appeng.tile.inventory.IAEStackInventory;
 import cpw.mods.fml.common.registry.GameRegistry;
 
 public class ItemInfinityWaterStorageCell extends AEBaseInfiniteCell
         implements IRegister<ItemInfinityWaterStorageCell> {
 
-    public static class InfinityConfig extends IAEStackInventory {
+    public static class InfinityConfig extends KeyConfigInventory {
 
         public InfinityConfig(final ItemStack is) {
             super(null, 1);
-            this.putAEStackInSlot(0, Util.getAEFluidFromItem(is));
+            final IAEFluidStack fluid = Util.getAEFluidFromItem(is);
+            this.setKey(0, fluid == null ? null : fluid.getKey());
         }
-
-        @Override
-        public void markDirty() {}
     }
 
     public ItemInfinityWaterStorageCell() {
@@ -53,7 +52,7 @@ public class ItemInfinityWaterStorageCell extends AEBaseInfiniteCell
     }
 
     @Override
-    public IAEStackInventory getConfigAEInventory(ItemStack is) {
+    public KeyConfigInventory getConfigAEInventory(ItemStack is) {
         return new InfinityConfig(water_bucket);
     }
 

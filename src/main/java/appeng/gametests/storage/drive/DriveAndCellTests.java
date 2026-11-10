@@ -28,10 +28,10 @@ import appeng.api.storage.ICellInventory;
 import appeng.api.storage.ICellInventoryHandler;
 import appeng.api.storage.ICellWorkbenchItem;
 import appeng.api.storage.IMEInventoryHandler;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.core.AppEng;
 import appeng.me.cache.GridStorageCache;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.tile.networking.TileController;
 import appeng.tile.storage.TileChest;
 import appeng.tile.storage.TileDrive;
@@ -509,8 +509,8 @@ public class DriveAndCellTests {
         ICellInventory<IAEItemStack> cellInventory = cellHandler.getCellInv();
         helper.assertNotNull(cellInventory, "Item cell inventory should expose cell details");
 
-        IAEStackInventory config = cellInventory.getConfigAEInventory();
+        KeyConfigInventory config = cellInventory.getConfigAEInventory();
         helper.assertNotNull(config, "Item cell config inventory should exist");
-        config.putAEStackInSlot(0, itemStack(block, 1));
+        config.setKey(0, itemStack(block, 1).getKey());
     }
 }

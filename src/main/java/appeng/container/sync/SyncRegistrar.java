@@ -3,16 +3,16 @@ package appeng.container.sync;
 import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.Settings;
+import appeng.api.storage.GenericStackSlots;
 import appeng.api.util.IConfigManager;
-import appeng.container.sync.handlers.AEStackInventorySyncHandler;
 import appeng.container.sync.handlers.BooleanSyncHandler;
 import appeng.container.sync.handlers.ConfigEnumSyncHandler;
 import appeng.container.sync.handlers.DeltaObjectSyncHandler;
 import appeng.container.sync.handlers.DoubleSyncHandler;
+import appeng.container.sync.handlers.GenericStackSlotsSyncHandler;
 import appeng.container.sync.handlers.IntSyncHandler;
 import appeng.container.sync.handlers.LongSyncHandler;
 import appeng.container.sync.handlers.ObjectSyncHandler;
-import appeng.tile.inventory.IAEStackInventory;
 
 public interface SyncRegistrar {
 
@@ -103,11 +103,14 @@ public interface SyncRegistrar {
             @NonNull Class<E> enumClass, @NonNull IConfigManager configManager);
 
     @NonNull
-    AEStackInventorySyncHandler aeStackInventoryS2C(@NonNull String key, @NonNull IAEStackInventory inventory);
+    <T extends GenericStackSlots> GenericStackSlotsSyncHandler<T> genericStackSlotsS2C(@NonNull String key,
+            @NonNull T slots);
 
     @NonNull
-    AEStackInventorySyncHandler aeStackInventoryC2S(@NonNull String key, @NonNull IAEStackInventory inventory);
+    <T extends GenericStackSlots> GenericStackSlotsSyncHandler<T> genericStackSlotsC2S(@NonNull String key,
+            @NonNull T slots);
 
     @NonNull
-    AEStackInventorySyncHandler aeStackInventory(@NonNull String key, @NonNull IAEStackInventory inventory);
+    <T extends GenericStackSlots> GenericStackSlotsSyncHandler<T> genericStackSlots(@NonNull String key,
+            @NonNull T slots);
 }

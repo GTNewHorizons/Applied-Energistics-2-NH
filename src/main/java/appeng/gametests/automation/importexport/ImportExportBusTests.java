@@ -26,14 +26,13 @@ import appeng.api.AEApi;
 import appeng.api.config.Actionable;
 import appeng.api.config.RedstoneMode;
 import appeng.api.config.Settings;
-import appeng.api.storage.StorageName;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.data.IAEStack;
 import appeng.core.AppEng;
 import appeng.parts.automation.PartExportBus;
 import appeng.parts.automation.PartImportBus;
 import appeng.parts.automation.PartSharedItemBus;
 import appeng.parts.automation.PartUpgradeable;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.tile.networking.TileController;
 import appeng.tile.storage.TileDrive;
 
@@ -290,9 +289,9 @@ public class ImportExportBusTests {
     }
 
     private static void configureFilter(GameTestHelper helper, PartSharedItemBus<?> bus, Block block) {
-        IAEStackInventory config = bus.getAEInventoryByName(StorageName.CONFIG);
+        KeyConfigInventory config = bus.getConfig();
         helper.assertNotNull(config, "Bus config inventory should exist");
-        config.putAEStackInSlot(0, itemStack(block, 1));
+        config.setKey(0, itemStack(block, 1).getKey());
     }
 
     private static void configureRedstone(PartSharedItemBus<?> bus, RedstoneMode redstoneMode) {

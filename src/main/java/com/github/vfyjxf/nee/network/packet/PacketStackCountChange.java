@@ -3,6 +3,7 @@ package com.github.vfyjxf.nee.network.packet;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.Container;
 
+import appeng.api.stacks.GenericStack;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
 import appeng.container.implementations.ContainerPatternTerm;
@@ -67,11 +68,11 @@ public class PacketStackCountChange implements IMessage {
         }
 
         private void handleMessage(PacketStackCountChange message, ContainerPatternTerm cpt) {
-            final IAEStack<?> aes = cpt.getPatternTerminal().getAEInventoryByName(message.getStorageName())
-                    .getAEStackInSlot(message.getSlotIndex());
-            if (aes != null) {
-                final IAEStack<?> newAes = aes.copy();
-                newAes.setStackSize(Math.max(1, aes.getStackSize() + message.getChangeCount()));
+            final GenericStack stack = cpt.getPatternTerminal().getAEInventoryByName(message.getStorageName())
+                    .getStack(message.getSlotIndex());
+            if (stack != null) {
+                final IAEStack<?> newAes = stack.getKey()
+                        .toAEStack(Math.max(1, stack.getAmount() + message.getChangeCount()));
                 cpt.updateVirtualSlot(message.getStorageName(), message.getSlotIndex(), newAes);
             }
         }

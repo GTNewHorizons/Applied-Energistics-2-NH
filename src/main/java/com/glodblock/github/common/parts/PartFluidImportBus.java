@@ -18,15 +18,14 @@ import appeng.api.config.FuzzyMode;
 import appeng.api.config.Upgrades;
 import appeng.api.networking.energy.IEnergyGrid;
 import appeng.api.networking.energy.IEnergySource;
+import appeng.api.stacks.AEFluidKey;
+import appeng.api.stacks.AEItemKey;
 import appeng.api.storage.IMEMonitor;
-import appeng.api.storage.StorageName;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.data.IAEFluidStack;
-import appeng.api.storage.data.IAEItemStack;
-import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.me.GridAccessException;
 import appeng.parts.automation.PartBaseImportBus;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.InventoryAdaptor;
 import appeng.util.item.AEFluidStack;
 
@@ -139,10 +138,9 @@ public class PartFluidImportBus extends PartBaseImportBus<IAEFluidStack> {
     }
 
     private boolean isInFilter(FluidStack fluid) {
-        final IAEStackInventory inv = this.getAEInventoryByName(StorageName.CONFIG);
+        final KeyConfigInventory inv = this.getConfig();
         for (int i = 0; i < inv.getSizeInventory(); i++) {
-            final IAEFluidStack stack = (IAEFluidStack) inv.getAEStackInSlot(i);
-            if (stack != null && stack.getFluidStack().equals(fluid)) {
+            if (inv.getKey(i) instanceof AEFluidKey key && key.matches(fluid)) {
                 return true;
             }
         }
@@ -150,10 +148,9 @@ public class PartFluidImportBus extends PartBaseImportBus<IAEFluidStack> {
     }
 
     private boolean filterEnabled() {
-        final IAEStackInventory inv = this.getAEInventoryByName(StorageName.CONFIG);
+        final KeyConfigInventory inv = this.getConfig();
         for (int i = 0; i < inv.getSizeInventory(); i++) {
-            final IAEFluidStack stack = (IAEFluidStack) inv.getAEStackInSlot(i);
-            if (stack != null) {
+            if (inv.getKey(i) != null) {
                 return true;
             }
         }
@@ -165,11 +162,11 @@ public class PartFluidImportBus extends PartBaseImportBus<IAEFluidStack> {
     public void readFromNBT(NBTTagCompound extra) {
         super.readFromNBT(extra);
 
-        final IAEStackInventory config = this.getAEInventoryByName(StorageName.CONFIG);
+        final KeyConfigInventory config = this.getConfig();
         for (int i = 0; i < config.getSizeInventory(); i++) {
-            final IAEStack<?> stack = config.getAEStackInSlot(i);
-            if (stack instanceof IAEItemStack ais) {
-                config.putAEStackInSlot(i, Util.getAEFluidFromItem(ais.getItemStack()));
+            if (config.getKey(i) instanceof AEItemKey itemKey) {
+                final IAEFluidStack fluid = Util.getAEFluidFromItem(itemKey.toStack());
+                config.setKey(i, fluid == null ? null : fluid.getKey());
             }
         }
     }

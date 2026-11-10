@@ -32,8 +32,12 @@ import appeng.api.AEApi;
 import appeng.api.config.Actionable;
 import appeng.api.networking.security.MachineSource;
 import appeng.api.parts.IPatternTerminal;
+import appeng.api.stacks.AEItemKey;
+import appeng.api.stacks.GenericStack;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.IMEMonitor;
 import appeng.api.storage.ITerminalHost;
+import appeng.api.storage.StackConfigInventory;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
@@ -49,8 +53,8 @@ import appeng.container.slot.SlotRestrictedInput;
 import appeng.container.sync.ActionHandler;
 import appeng.container.sync.StreamCodecs;
 import appeng.container.sync.SyncRegistrar;
-import appeng.container.sync.handlers.AEStackInventorySyncHandler;
 import appeng.container.sync.handlers.BooleanSyncHandler;
+import appeng.container.sync.handlers.GenericStackSlotsSyncHandler;
 import appeng.core.sync.GuiBridge;
 import appeng.core.sync.packets.PacketPatternSlot;
 import appeng.helpers.IContainerCraftingPacket;
@@ -58,7 +62,6 @@ import appeng.items.contents.WirelessPatternTerminalGuiObject;
 import appeng.items.storage.ItemViewCell;
 import appeng.tile.inventory.AppEngInternalInventory;
 import appeng.tile.inventory.IAEAppEngInventory;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.tile.inventory.InvOperation;
 import appeng.util.InventoryAdaptor;
 import appeng.util.Platform;
@@ -72,8 +75,8 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
     public static final int MULTIPLE_OF_BUTTON_CLICK_ON_SHIFT = 8;
     protected final IPatternTerminal patternTerminal;
     private final AppEngInternalInventory cOut = new AppEngInternalInventory(null, 1);
-    private final IAEStackInventory inputs;
-    private final IAEStackInventory outputs;
+    private final StackConfigInventory inputs;
+    private final StackConfigInventory outputs;
     private final IInventory craftingMatrix;
 
     private final SlotPatternTerm craftSlot;
@@ -83,8 +86,8 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
 
     boolean isFirstUpdate = true;
 
-    public final AEStackInventorySyncHandler inputsSync;
-    public final AEStackInventorySyncHandler outputsSync;
+    public final GenericStackSlotsSyncHandler<StackConfigInventory> inputsSync;
+    public final GenericStackSlotsSyncHandler<StackConfigInventory> outputsSync;
 
     public final BooleanSyncHandler craftingModeSync;
     public final BooleanSyncHandler substituteSync;
@@ -116,8 +119,8 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
         final IInventory patternInv = this.getPatternTerminal()
                 .getInventoryByName(StorageName.CRAFTING_PATTERN.getName());
 
-        this.inputs = this.getPatternTerminal().getAEInventoryByName(StorageName.CRAFTING_INPUT);
-        this.outputs = this.getPatternTerminal().getAEInventoryByName(StorageName.CRAFTING_OUTPUT);
+        this.inputs = this.getPatternTerminal().getCraftingInputs();
+        this.outputs = this.getPatternTerminal().getCraftingOutputs();
 
         if (craftingModeSupport) {
             this.craftingMatrix = new AppEngInternalInventory(null, 9);
@@ -165,24 +168,14 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
         this.bindPlayerInventory(ip, 0, 0);
 
         SyncRegistrar sync = this.syncRegistrar();
-        this.inputsSync = sync.aeStackInventory("inputs", this.inputs).onServerChange((inv) -> {
+        this.inputsSync = sync.genericStackSlots("inputs", this.inputs).onServerChange((inv) -> {
             if (this.isCraftingMode()) {
                 assert this.craftingMatrix != null;
 
-                for (int i = 0; i < inv.getSizeInventory(); i++) {
-                    IAEStack<?> stack = inv.getAEStackInSlot(i);
-                    if (stack instanceof IAEItemStack ais) {
-                        ais.setStackSize(1);
-                        this.craftingMatrix.setInventorySlotContents(i, ais.getItemStack());
-                    } else {
-                        inv.putAEStackInSlot(i, null);
-                        this.craftingMatrix.setInventorySlotContents(i, null);
-                    }
-                }
-                this.getAndUpdateOutput();
+                this.applyInputsToMatrix();
             }
         });
-        this.outputsSync = sync.aeStackInventory("outputs", this.outputs);
+        this.outputsSync = sync.genericStackSlots("outputs", this.outputs);
 
         this.craftingModeSync = sync.booleanSync("craftingMode")
                 .onServerChange((oldValue, newValue) -> setCraftingMode(newValue))
@@ -214,19 +207,26 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
     }
 
     private void copyToMatrix() {
+        this.applyInputsToMatrix();
+        this.inputsSync.markDirty();
+    }
+
+    /**
+     * Copies the inputs into the crafting matrix, reducing items to a single one and dropping anything else.
+     */
+    private void applyInputsToMatrix() {
         for (int i = 0; i < this.craftingMatrix.getSizeInventory(); i++) {
-            IAEStack<?> aes = this.inputs.getAEStackInSlot(i);
-            if (aes instanceof IAEItemStack ais) {
-                ais.setStackSize(1);
-                ItemStack is = ais.getItemStack();
-                this.craftingMatrix.setInventorySlotContents(i, is);
+            if (this.inputs.getKey(i) instanceof AEItemKey itemKey) {
+                if (this.inputs.getAmount(i) != 1) {
+                    this.inputs.setStack(i, new GenericStack(itemKey, 1));
+                }
+                this.craftingMatrix.setInventorySlotContents(i, itemKey.toStack());
             } else {
-                this.inputs.putAEStackInSlot(i, null);
+                this.inputs.setStack(i, null);
                 this.craftingMatrix.setInventorySlotContents(i, null);
             }
         }
         this.getAndUpdateOutput();
-        this.inputsSync.markDirty();
     }
 
     @Override
@@ -439,10 +439,10 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
     // Used from NEE
     public void clear() {
         for (int i = 0; i < this.inputs.getSizeInventory(); ++i) {
-            this.inputs.putAEStackInSlot(i, null);
+            this.inputs.setStack(i, null);
         }
         for (int i = 0; i < this.outputs.getSizeInventory(); ++i) {
-            this.outputs.putAEStackInSlot(i, null);
+            this.outputs.setStack(i, null);
         }
         if (this.craftingMatrix != null) {
             for (int i = 0; i < this.craftingMatrix.getSizeInventory(); ++i) {
@@ -582,12 +582,12 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
                         * ((val & 2) != 0 ? -1 : 1));
     }
 
-    static boolean canMultiplyOrDivide(IAEStackInventory inventory, int mult) {
+    static boolean canMultiplyOrDivide(ConfigInventory inventory, int mult) {
         if (mult > 0) {
             for (int i = 0; i < inventory.getSizeInventory(); i++) {
-                IAEStack<?> aes = inventory.getAEStackInSlot(i);
-                if (aes != null) {
-                    double val = (double) aes.getStackSize() * mult;
+                final GenericStack stack = inventory.getStack(i);
+                if (stack != null) {
+                    double val = (double) stack.getAmount() * mult;
                     if (val > Long.MAX_VALUE) return false;
                 }
             }
@@ -596,11 +596,11 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
         } else if (mult < 0) {
             mult = -mult;
             for (int i = 0; i < inventory.getSizeInventory(); i++) {
-                IAEStack<?> aes = inventory.getAEStackInSlot(i);
-                if (aes != null) { // Although % is a very inefficient algorithm, it is not a performance
+                final GenericStack stack = inventory.getStack(i);
+                if (stack != null) { // Although % is a very inefficient algorithm, it is not a performance
                     // issue
                     // here. :>
-                    if (aes.getStackSize() % mult != 0) return false;
+                    if (stack.getAmount() % mult != 0) return false;
                 }
             }
 
@@ -609,22 +609,20 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
         return false;
     }
 
-    static void multiplyOrDivideStacksInternal(IAEStackInventory inventory, int mult) {
+    static void multiplyOrDivideStacksInternal(ConfigInventory inventory, int mult) {
         if (mult > 0) {
             for (int i = 0; i < inventory.getSizeInventory(); i++) {
-                IAEStack<?> st = inventory.getAEStackInSlot(i);
+                final GenericStack st = inventory.getStack(i);
                 if (st != null) {
-                    st.setStackSize(st.getStackSize() * mult);
-                    inventory.putAEStackInSlot(i, st);
+                    inventory.setStack(i, new GenericStack(st.getKey(), st.getAmount() * mult));
                 }
             }
         } else if (mult < 0) {
             mult = -mult;
             for (int i = 0; i < inventory.getSizeInventory(); i++) {
-                IAEStack<?> st = inventory.getAEStackInSlot(i);
+                final GenericStack st = inventory.getStack(i);
                 if (st != null) {
-                    st.setStackSize(st.getStackSize() / mult);
-                    inventory.putAEStackInSlot(i, st);
+                    inventory.setStack(i, new GenericStack(st.getKey(), st.getAmount() / mult));
                 }
             }
         }
@@ -684,25 +682,24 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
     public void updateVirtualSlot(StorageName invName, int slotId, IAEStack<?> aes) {
         switch (invName) {
             case CRAFTING_INPUT -> {
-                if (isCraftingMode() && aes != null) {
-                    aes.setStackSize(1);
+                GenericStack stack = GenericStack.fromAEStack(aes);
+                if (isCraftingMode() && stack != null) {
+                    stack = new GenericStack(stack.getKey(), 1);
                 }
-                this.inputs.putAEStackInSlot(slotId, aes);
+                this.inputs.setStack(slotId, stack);
                 if (isServer()) {
                     if (isCraftingMode()) {
-                        if (aes != null) {
-                            IAEItemStack ais = ((IAEItemStack) aes);
-                            this.craftingMatrix.setInventorySlotContents(slotId, ais.getItemStack());
-                        } else {
-                            this.craftingMatrix.setInventorySlotContents(slotId, null);
-                        }
+                        this.craftingMatrix.setInventorySlotContents(
+                                slotId,
+                                stack != null && stack.getKey() instanceof AEItemKey itemKey ? itemKey.toStack()
+                                        : null);
                         this.getAndUpdateOutput();
                     }
                 }
                 this.inputsSync.markDirty();
             }
             case CRAFTING_OUTPUT -> {
-                this.outputs.putAEStackInSlot(slotId, aes);
+                this.outputs.setStack(slotId, GenericStack.fromAEStack(aes));
                 this.outputsSync.markDirty();
             }
         }

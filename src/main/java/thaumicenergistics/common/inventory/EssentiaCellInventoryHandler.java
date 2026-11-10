@@ -6,10 +6,11 @@ import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.storage.IMEInventory;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.data.IAEStackType;
 import appeng.me.storage.CellInventoryHandler;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.partitionlist.IPartitionList;
+import thaumicenergistics.common.storage.AEEssentiaKey;
 import thaumicenergistics.common.storage.AEEssentiaStack;
 
 public class EssentiaCellInventoryHandler extends CellInventoryHandler<AEEssentiaStack> {
@@ -30,11 +31,11 @@ public class EssentiaCellInventoryHandler extends CellInventoryHandler<AEEssenti
     }
 
     @Override
-    protected void setConfigPartitionList(boolean hasFuzzy, IAEStackInventory config, FuzzyMode fzMode) {
+    protected void setConfigPartitionList(boolean hasFuzzy, KeyConfigInventory config, FuzzyMode fzMode) {
         final IPartitionList.Builder builder = IPartitionList.builder();
         for (int x = 0; x < config.getSizeInventory(); x++) {
-            if (config.getAEStackInSlot(x) instanceof AEEssentiaStack essentiaStack) {
-                builder.add(essentiaStack.getKey());
+            if (config.getKey(x) instanceof AEEssentiaKey key) {
+                builder.add(key);
             }
         }
         this.setPartitionList(builder.build());

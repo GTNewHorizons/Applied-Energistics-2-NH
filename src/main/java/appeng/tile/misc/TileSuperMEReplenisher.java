@@ -13,6 +13,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import org.jspecify.annotations.Nullable;
+
 import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
 
 import appeng.api.AEApi;
@@ -31,10 +33,14 @@ import appeng.api.networking.storage.IStorageGrid;
 import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.networking.ticking.TickRateModulation;
 import appeng.api.networking.ticking.TickingRequest;
+import appeng.api.stacks.GenericStack;
+import appeng.api.storage.ConfigInventory;
+import appeng.api.storage.IConfigInventoryHost;
 import appeng.api.storage.IMEInventory;
 import appeng.api.storage.IMEInventoryHandler;
 import appeng.api.storage.IMEMonitor;
 import appeng.api.storage.MEMonitorHandler;
+import appeng.api.storage.StackConfigInventory;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
@@ -47,25 +53,23 @@ import appeng.tile.TileEvent;
 import appeng.tile.events.TileEventType;
 import appeng.tile.grid.AENetworkTile;
 import appeng.tile.inventory.AppEngInternalInventory;
-import appeng.tile.inventory.IAEStackInventory;
-import appeng.tile.inventory.IIAEStackInventory;
 import appeng.util.Platform;
 import appeng.util.item.IAEStackList;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 public class TileSuperMEReplenisher extends AENetworkTile
-        implements IMEInventory<IAEStack<?>>, IIAEStackInventory, IPowerChannelState, IGridTickable {
+        implements IMEInventory<IAEStack<?>>, IConfigInventoryHost, IPowerChannelState, IGridTickable {
 
     private final IAEStackList storage = new IAEStackList(true);
     private final IAEStackList out = new IAEStackList(true);
-    private final IAEStackInventory config = new IAEStackInventory(this, 3 * 9, StorageName.CONFIG) {
+    private final StackConfigInventory config = new StackConfigInventory(this, 3 * 9, StorageName.CONFIG) {
 
         @Override
-        public void putAEStackInSlot(int n, IAEStack<?> aes) {
-            if (haveSame(n, aes)) return;
-            if (Platform.isServer() && TileSuperMEReplenisher.this.onConfigChange(n, aes)) return;
-            super.putAEStackInSlot(n, aes);
+        public void setStack(int n, @Nullable GenericStack stack) {
+            if (haveSame(n, stack)) return;
+            if (Platform.isServer() && TileSuperMEReplenisher.this.onConfigChange(n, stack)) return;
+            super.setStack(n, stack);
         }
     };
 
@@ -192,22 +196,17 @@ public class TileSuperMEReplenisher extends AENetworkTile
 
     private TickRateModulation doWork(final IStorageGrid storage) {
         for (int i = 0; i < this.config.getSizeInventory(); i++) {
-            final IAEStack<?> config = this.config.getAEStackInSlot(i);
+            final GenericStack config = this.config.getStack(i);
             if (config == null) continue;
-            final IAEStackType<?> type = config.getStackType();
-            final IAEStack<?> stored = this.storage.findPrecise(config);
+            final IAEStack<?> stored = this.storage.findPrecise(config.toAEStack());
 
-            final long configSize = config.getStackSize();
+            final long configSize = config.getAmount();
             final long storedSize = stored == null ? 0 : stored.getStackSize();
 
             if (((double) storedSize / configSize) < this.threshold) {
-                final IAEStack<?> toRequest = config.copy();
-                toRequest.setStackSize(configSize - storedSize);
-                toRequest(toRequest, storage);
+                toRequest(config.getKey().toAEStack(configSize - storedSize), storage);
             } else if (storedSize > configSize) {
-                final IAEStack<?> toReturn = config.copy();
-                toReturn.setStackSize(storedSize - configSize);
-                toReturn(toReturn, storage, this.storage);
+                toReturn(config.getKey().toAEStack(storedSize - configSize), storage, this.storage);
             }
         }
 
@@ -216,25 +215,25 @@ public class TileSuperMEReplenisher extends AENetworkTile
         return TickRateModulation.SAME;
     }
 
-    private boolean haveSame(final int n, final IAEStack<?> aes) {
+    private boolean haveSame(final int n, final @Nullable GenericStack stack) {
+        if (stack == null) return false;
         for (int i = 0; i < this.config.getSizeInventory(); i++) {
             if (i == n) continue;
-            final IAEStack<?> config = this.config.getAEStackInSlot(i);
-            if (config == null) continue;
-            if (config.equals(aes)) return true;
+            if (stack.getKey().equals(this.config.getKey(i))) return true;
         }
 
         return false;
     }
 
-    private boolean onConfigChange(final int slots, final IAEStack<?> newStack) {
+    private boolean onConfigChange(final int slots, final @Nullable GenericStack newStack) {
         try {
             final IStorageGrid storage = this.getProxy().getStorage();
-            final IAEStack<?> currentConfig = this.config.getAEStackInSlot(slots);
-            if (currentConfig == null) return false;
-            if (currentConfig.equals(newStack)) {
-                final long currentConfigSize = currentConfig.getStackSize();
-                final long newConfigSize = newStack.getStackSize();
+            final GenericStack current = this.config.getStack(slots);
+            if (current == null) return false;
+            final IAEStack<?> currentConfig = current.toAEStack();
+            if (newStack != null && current.getKey().equals(newStack.getKey())) {
+                final long currentConfigSize = current.getAmount();
+                final long newConfigSize = newStack.getAmount();
 
                 if (currentConfigSize > newConfigSize) {
                     final IAEStack<?> stored = this.get(currentConfig);
@@ -584,7 +583,11 @@ public class TileSuperMEReplenisher extends AENetworkTile
     }
 
     @Override
-    public void saveAEStackInv() {
+    public void onChangeConfigInventory(ConfigInventory inv, int slot) {
+        if (this.isClientSide()) {
+            return;
+        }
+
         this.markDirty();
     }
 
@@ -625,7 +628,7 @@ public class TileSuperMEReplenisher extends AENetworkTile
     }
 
     @Override
-    public IAEStackInventory getAEInventoryByName(StorageName name) {
+    public ConfigInventory getAEInventoryByName(StorageName name) {
         if (name == StorageName.CONFIG) return this.config;
         return null;
     }

@@ -10,18 +10,17 @@ import net.minecraft.util.IIcon;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import appeng.api.parts.IPartRenderHelper;
-import appeng.api.storage.StorageName;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.util.AEColor;
 import appeng.parts.automation.UpgradeInventory;
 import appeng.parts.misc.PartStorageBus;
-import appeng.tile.inventory.IAEStackInventory;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import thaumcraft.api.aspects.Aspect;
 import thaumicenergistics.client.textures.BlockTextureManager;
 import thaumicenergistics.common.registries.Renderers;
-import thaumicenergistics.common.storage.AEEssentiaStack;
+import thaumicenergistics.common.storage.AEEssentiaKey;
 
 public class PartEssentiaStorageBus extends PartStorageBus {
 
@@ -48,13 +47,12 @@ public class PartEssentiaStorageBus extends PartStorageBus {
             setPriority(data.getInteger(NBT_KEY_PRIORITY));
         }
 
-        IAEStackInventory config = this.getAEInventoryByName(StorageName.CONFIG);
+        KeyConfigInventory config = this.getConfig();
         // Read the filter list
         for (int index = 0; index < FILTER_SIZE; index++) {
             if (data.hasKey(NBT_KEY_FILTER + index)) {
-                config.putAEStackInSlot(
-                        index,
-                        new AEEssentiaStack(Aspect.aspects.get(data.getString(NBT_KEY_FILTER + index))));
+                final Aspect aspect = Aspect.aspects.get(data.getString(NBT_KEY_FILTER + index));
+                config.setKey(index, aspect == null ? null : AEEssentiaKey.of(aspect));
             }
         }
 

@@ -12,8 +12,9 @@ import com.glodblock.github.common.tile.TileLevelMaintainer;
 import com.glodblock.github.loader.ItemAndBlockHolder;
 import com.glodblock.github.util.NameConst;
 
+import appeng.api.stacks.GenericStack;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.data.IAEStack;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.Platform;
 import appeng.util.item.AEItemStack;
 import cpw.mods.fml.common.registry.GameRegistry;
@@ -47,7 +48,7 @@ public class DriverLevelMaintainer extends DriverSidedTileEntity {
             super(tileEntity, NameConst.BLOCK_LEVEL_MAINTAINER);
         }
 
-        private int getSlot(Arguments args, IAEStackInventory inv, int index, int def) {
+        private int getSlot(Arguments args, ConfigInventory inv, int index, int def) {
             if (index >= 0 && index < args.count()) {
                 int slot = args.checkInteger(index) - 1;
                 if (slot < 0 || slot >= inv.getSizeInventory()) {
@@ -96,9 +97,9 @@ public class DriverLevelMaintainer extends DriverSidedTileEntity {
 
         @Callback(doc = "function([slot:number]):table -- Get the slot status.")
         public Object[] getSlot(Context context, Arguments args) {
-            IAEStackInventory inventory = tileEntity.getAEStackInventory();
+            ConfigInventory inventory = tileEntity.getAEStackInventory();
             int slot = getSlot(args, inventory, 0, 0);
-            IAEStack<?> aeStack = inventory.getAEStackInSlot(slot);
+            IAEStack<?> aeStack = GenericStack.toAEStackOrNull(inventory.getStack(slot));
             if (aeStack != null) {
                 ItemStack stack = Platform.stackConvert(aeStack).getItemStack();
                 Map<String, Object> result = new HashMap<>();

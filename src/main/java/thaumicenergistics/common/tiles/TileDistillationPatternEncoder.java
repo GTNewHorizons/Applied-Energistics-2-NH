@@ -7,9 +7,10 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 
 import appeng.api.AEApi;
+import appeng.api.storage.ConfigInventory;
+import appeng.api.storage.IConfigInventoryHost;
+import appeng.api.storage.StackConfigInventory;
 import appeng.api.storage.StorageName;
-import appeng.tile.inventory.IAEStackInventory;
-import appeng.tile.inventory.IIAEStackInventory;
 import thaumicenergistics.common.tiles.abstraction.ThETileInventory;
 
 /**
@@ -18,7 +19,7 @@ import thaumicenergistics.common.tiles.abstraction.ThETileInventory;
  * @author Nividica
  *
  */
-public class TileDistillationPatternEncoder extends ThETileInventory implements ISidedInventory, IIAEStackInventory {
+public class TileDistillationPatternEncoder extends ThETileInventory implements ISidedInventory, IConfigInventoryHost {
 
     /**
      * NBT Keys
@@ -38,7 +39,7 @@ public class TileDistillationPatternEncoder extends ThETileInventory implements 
 
     public static int ASPECT_SLOT_NUM = 16;
 
-    public final IAEStackInventory aspectsInventory = new IAEStackInventory(this, ASPECT_SLOT_NUM);
+    public final StackConfigInventory aspectsInventory = new StackConfigInventory(this, ASPECT_SLOT_NUM);
 
     /**
      * Default constructor.
@@ -149,12 +150,16 @@ public class TileDistillationPatternEncoder extends ThETileInventory implements 
     }
 
     @Override
-    public void saveAEStackInv() {
+    public void onChangeConfigInventory(ConfigInventory inv, int slot) {
+        if (this.worldObj == null || this.worldObj.isRemote) {
+            return;
+        }
+
         this.markDirty();
     }
 
     @Override
-    public IAEStackInventory getAEInventoryByName(StorageName storageName) {
+    public ConfigInventory getAEInventoryByName(StorageName storageName) {
         // aspectsInventory is not exposed externally through this method
         return null;
     }

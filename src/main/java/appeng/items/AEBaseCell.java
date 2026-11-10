@@ -31,9 +31,11 @@ import appeng.api.exceptions.MissingDefinition;
 import appeng.api.implementations.items.IItemGroup;
 import appeng.api.implementations.items.IStorageCell;
 import appeng.api.implementations.items.IUpgradeModule;
+import appeng.api.stacks.AEKey;
 import appeng.api.storage.ICellHandler;
 import appeng.api.storage.ICellInventoryHandler;
 import appeng.api.storage.IMEInventoryHandler;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.storage.data.IItemList;
@@ -47,7 +49,6 @@ import appeng.items.materials.MaterialType;
 import appeng.items.storage.ItemBasicStorageCell;
 import appeng.me.storage.CellInventory;
 import appeng.me.storage.CellInventoryHandler;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.InventoryAdaptor;
 import appeng.util.IterationCounter;
 import appeng.util.Platform;
@@ -112,7 +113,7 @@ public abstract class AEBaseCell extends AEBaseItem implements IStorageCell, IIt
         return cellHandler != null && cellHandler.getCellInv() != null
                 && cellHandler.getCellInv().getConfigAEInventory() != null
                 && IntStream.range(0, cellHandler.getCellInv().getConfigAEInventory().getSizeInventory())
-                        .anyMatch(i -> cellHandler.getCellInv().getConfigAEInventory().getAEStackInSlot(i) != null);
+                        .anyMatch(i -> cellHandler.getCellInv().getConfigAEInventory().getKey(i) != null);
     }
 
     @SideOnly(Side.CLIENT)
@@ -189,7 +190,7 @@ public abstract class AEBaseCell extends AEBaseItem implements IStorageCell, IIt
                     int usedFilters = 0;
                     ArrayList<String> filtersTexts = new ArrayList<>();
                     for (int i = 0; i < cellInventory.getConfigAEInventory().getSizeInventory(); ++i) {
-                        final IAEStack<?> s = cellInventory.getConfigAEInventory().getAEStackInSlot(i);
+                        final AEKey s = cellInventory.getConfigAEInventory().getKey(i);
                         if (s != null) {
                             usedFilters++;
                             filtersTexts.add(s.getDisplayName());
@@ -293,7 +294,7 @@ public abstract class AEBaseCell extends AEBaseItem implements IStorageCell, IIt
     }
 
     @Override
-    public IAEStackInventory getConfigAEInventory(final ItemStack is) {
+    public KeyConfigInventory getConfigAEInventory(final ItemStack is) {
         return new CellConfig(is);
     }
 

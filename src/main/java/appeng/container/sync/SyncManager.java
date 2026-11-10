@@ -12,20 +12,20 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.Settings;
+import appeng.api.storage.GenericStackSlots;
 import appeng.api.util.IConfigManager;
 import appeng.container.AEBaseContainer;
-import appeng.container.sync.handlers.AEStackInventorySyncHandler;
 import appeng.container.sync.handlers.BooleanSyncHandler;
 import appeng.container.sync.handlers.ConfigEnumSyncHandler;
 import appeng.container.sync.handlers.DeltaObjectSyncHandler;
 import appeng.container.sync.handlers.DoubleSyncHandler;
+import appeng.container.sync.handlers.GenericStackSlotsSyncHandler;
 import appeng.container.sync.handlers.IntSyncHandler;
 import appeng.container.sync.handlers.LongSyncHandler;
 import appeng.container.sync.handlers.ObjectSyncHandler;
 import appeng.core.AELog;
 import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketContainerSync;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.Platform;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -506,39 +506,39 @@ public final class SyncManager {
         }
 
         @Override
-        public @NonNull AEStackInventorySyncHandler aeStackInventoryS2C(final @NonNull String key,
-                final @NonNull IAEStackInventory inventory) {
+        public <T extends GenericStackSlots> @NonNull GenericStackSlotsSyncHandler<T> genericStackSlotsS2C(
+                final @NonNull String key, final @NonNull T slots) {
             return register(
-                    new AEStackInventorySyncHandler(
+                    new GenericStackSlotsSyncHandler<>(
                             SyncManager.this,
                             key,
                             this.qualify(key),
                             SyncDirection.SERVER_TO_CLIENT,
-                            inventory));
+                            slots));
         }
 
         @Override
-        public @NonNull AEStackInventorySyncHandler aeStackInventoryC2S(final @NonNull String key,
-                final @NonNull IAEStackInventory inventory) {
+        public <T extends GenericStackSlots> @NonNull GenericStackSlotsSyncHandler<T> genericStackSlotsC2S(
+                final @NonNull String key, final @NonNull T slots) {
             return register(
-                    new AEStackInventorySyncHandler(
+                    new GenericStackSlotsSyncHandler<>(
                             SyncManager.this,
                             key,
                             this.qualify(key),
                             SyncDirection.CLIENT_TO_SERVER,
-                            inventory));
+                            slots));
         }
 
         @Override
-        public @NonNull AEStackInventorySyncHandler aeStackInventory(final @NonNull String key,
-                final @NonNull IAEStackInventory inventory) {
+        public <T extends GenericStackSlots> @NonNull GenericStackSlotsSyncHandler<T> genericStackSlots(
+                final @NonNull String key, final @NonNull T slots) {
             return register(
-                    new AEStackInventorySyncHandler(
+                    new GenericStackSlotsSyncHandler<>(
                             SyncManager.this,
                             key,
                             this.qualify(key),
                             SyncDirection.BIDIRECTIONAL,
-                            inventory));
+                            slots));
         }
 
         private String qualify(final String key) {

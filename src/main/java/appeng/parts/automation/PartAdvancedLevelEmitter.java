@@ -17,6 +17,7 @@ import net.minecraftforge.common.util.Constants.NBT;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.BooleanOperation;
 import appeng.api.config.Settings;
@@ -33,7 +34,10 @@ import appeng.api.networking.ticking.TickingRequest;
 import appeng.api.parts.IAdvancedLevelEmitter;
 import appeng.api.parts.IPartCollisionHelper;
 import appeng.api.parts.IPartRenderHelper;
+import appeng.api.stacks.AEKey;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.IMEMonitor;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.StorageChannel;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
@@ -45,7 +49,6 @@ import appeng.core.AEConfig;
 import appeng.core.sync.GuiBridge;
 import appeng.helpers.Reflected;
 import appeng.me.GridAccessException;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.Platform;
 import appeng.util.SettingsFrom;
 import cpw.mods.fml.relauncher.Side;
@@ -60,7 +63,7 @@ public class PartAdvancedLevelEmitter extends PartUpgradeable implements IAdvanc
     private static final double GREEN = 4 / 255d;
     private static final double BLUE = 211 / 255d;
 
-    private final IAEStackInventory config = new IAEStackInventory(this, SLOTS, StorageName.CONFIG);
+    private final KeyConfigInventory config = new KeyConfigInventory(this, SLOTS, StorageName.CONFIG);
 
     private final boolean[] slotActive = new boolean[SLOTS];
     private final boolean[] slotInverted = new boolean[SLOTS];
@@ -184,7 +187,7 @@ public class PartAdvancedLevelEmitter extends PartUpgradeable implements IAdvanc
                 continue;
             }
 
-            final IAEStack<?> stack = this.config.getAEStackInSlot(slot);
+            final IAEStack<?> stack = this.getConfiguredStack(slot);
             if (stack == null) {
                 continue;
             }
@@ -220,7 +223,7 @@ public class PartAdvancedLevelEmitter extends PartUpgradeable implements IAdvanc
             this.myWatcher.clear();
 
             for (int slot = 0; slot < SLOTS; slot++) {
-                final IAEStack<?> stack = this.config.getAEStackInSlot(slot);
+                final IAEStack<?> stack = this.getConfiguredStack(slot);
                 if (stack != null) {
                     this.myWatcher.add(stack);
                 }
@@ -238,7 +241,7 @@ public class PartAdvancedLevelEmitter extends PartUpgradeable implements IAdvanc
     }
 
     private void updateReportingValueForSlot(final int slot) {
-        final IAEStack<?> myStack = this.config.getAEStackInSlot(slot);
+        final IAEStack<?> myStack = this.getConfiguredStack(slot);
 
         if (myStack == null) {
             this.lastReportedValue[slot] = 0;
@@ -265,8 +268,8 @@ public class PartAdvancedLevelEmitter extends PartUpgradeable implements IAdvanc
         boolean changed = false;
 
         for (int slot = 0; slot < SLOTS; slot++) {
-            final IAEStack<?> myStack = this.config.getAEStackInSlot(slot);
-            if (myStack != null && fullStack.equals(myStack)) {
+            final AEKey myKey = this.config.getKey(slot);
+            if (myKey != null && myKey.equals(fullStack.getKey())) {
                 this.lastReportedValue[slot] = fullStack.getStackSize();
                 changed = true;
             }
@@ -640,7 +643,7 @@ public class PartAdvancedLevelEmitter extends PartUpgradeable implements IAdvanc
     public LevelItemInfo[] getLevelItemInfoList() {
         final LevelItemInfo[] result = new LevelItemInfo[SLOTS];
         for (int slot = 0; slot < SLOTS; slot++) {
-            final IAEStack<?> stack = this.config.getAEStackInSlot(slot);
+            final IAEStack<?> stack = this.getConfiguredStack(slot);
             if (stack == null) {
                 result[slot] = null;
                 continue;
@@ -665,13 +668,25 @@ public class PartAdvancedLevelEmitter extends PartUpgradeable implements IAdvanc
     }
 
     @Override
-    public void saveAEStackInv() {
+    public void onChangeConfigInventory(ConfigInventory inv, int slot) {
+        if (this.isClientSide()) {
+            return;
+        }
+
         this.getHost().markForSave();
         this.configureWatchers();
     }
 
+    /**
+     * @return the configured resource as a stack for APIs that do not use keys yet
+     */
+    private @Nullable IAEStack<?> getConfiguredStack(final int slot) {
+        final AEKey key = this.config.getKey(slot);
+        return key == null ? null : key.toAEStack();
+    }
+
     @Override
-    public IAEStackInventory getAEInventoryByName(final StorageName name) {
+    public ConfigInventory getAEInventoryByName(final StorageName name) {
         if (name == StorageName.CONFIG) {
             return this.config;
         }

@@ -11,7 +11,6 @@
 package appeng.container;
 
 import static appeng.util.Platform.getItemFromPlayerInventoryBySlotIndex;
-import static appeng.util.Platform.isStacksIdentical;
 import static appeng.util.Platform.setPlayerInventorySlotByIndex;
 
 import java.io.ByteArrayInputStream;
@@ -21,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -58,6 +58,8 @@ import appeng.api.networking.security.IActionHost;
 import appeng.api.networking.security.ISecurityGrid;
 import appeng.api.networking.security.PlayerSource;
 import appeng.api.parts.IPart;
+import appeng.api.stacks.GenericStack;
+import appeng.api.storage.GenericStackSlots;
 import appeng.api.storage.IMEInventoryHandler;
 import appeng.api.storage.StorageChannel;
 import appeng.api.storage.StorageName;
@@ -104,7 +106,6 @@ import appeng.me.NetworkList;
 import appeng.me.cache.ItemFlowGridCache;
 import appeng.parts.automation.UpgradeInventory;
 import appeng.parts.misc.PartStorageBus;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.tile.storage.TileChest;
 import appeng.tile.storage.TileDrive;
 import appeng.util.IterationCounter;
@@ -1230,16 +1231,15 @@ public abstract class AEBaseContainer extends Container {
 
     private boolean needsFullSync = true;
 
-    protected void updateVirtualSlots(StorageName invName, IAEStackInventory inventory,
-            IAEStack<?>[] clientSlotsStacks) {
+    protected void updateVirtualSlots(StorageName invName, GenericStackSlots inventory,
+            @Nullable GenericStack[] clientSlotsStacks) {
         var list = new Int2ObjectOpenHashMap<IAEStack<?>>();
         for (int i = 0; i < inventory.getSizeInventory(); ++i) {
-            IAEStack<?> aes = inventory.getAEStackInSlot(i);
-            IAEStack<?> aesClient = clientSlotsStacks[i];
+            final GenericStack stack = inventory.getStack(i);
 
-            if (needsFullSync || !isStacksIdentical(aes, aesClient)) {
-                list.put(i, aes);
-                clientSlotsStacks[i] = aes != null ? aes.copy() : null;
+            if (needsFullSync || !Objects.equals(stack, clientSlotsStacks[i])) {
+                list.put(i, GenericStack.toAEStackOrNull(stack));
+                clientSlotsStacks[i] = stack;
             }
         }
         needsFullSync = false;

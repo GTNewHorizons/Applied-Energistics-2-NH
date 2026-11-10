@@ -1,5 +1,6 @@
 package appeng.api.stacks;
 
+import java.io.IOException;
 import java.util.Objects;
 
 import net.minecraft.nbt.NBTTagCompound;
@@ -7,6 +8,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import org.jspecify.annotations.Nullable;
 
 import appeng.api.storage.data.IAEStack;
+import io.netty.buffer.ByteBuf;
 
 /**
  * Represents some amount of some generic resource that AE can store or handle in crafting.
@@ -46,6 +48,14 @@ public final class GenericStack {
         return this.key.toAEStack(this.amount);
     }
 
+    /**
+     * Null-tolerant variant of {@link #toAEStack()}. Goes away together with {@link IAEStack}.
+     */
+    @Nullable
+    public static IAEStack<?> toAEStackOrNull(@Nullable GenericStack stack) {
+        return stack == null ? null : stack.toAEStack();
+    }
+
     public NBTTagCompound toNBT() {
         NBTTagCompound tag = this.key.toNBT();
         tag.setLong(NBT_AMOUNT, this.amount);
@@ -59,6 +69,24 @@ public final class GenericStack {
         }
         AEKey key = AEKey.fromNBT(tag);
         return key == null ? null : new GenericStack(key, tag.getLong(NBT_AMOUNT));
+    }
+
+    public static void writeBuffer(ByteBuf output, @Nullable GenericStack stack) throws IOException {
+        output.writeBoolean(stack != null);
+        if (stack != null) {
+            stack.key.writeToPacket(output);
+            output.writeLong(stack.amount);
+        }
+    }
+
+    @Nullable
+    public static GenericStack readBuffer(ByteBuf input) throws IOException {
+        if (!input.readBoolean()) {
+            return null;
+        }
+        final AEKey key = AEKey.readKey(input);
+        final long amount = input.readLong();
+        return key == null ? null : new GenericStack(key, amount);
     }
 
     @Override

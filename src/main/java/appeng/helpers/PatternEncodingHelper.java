@@ -22,24 +22,26 @@ import appeng.api.networking.energy.IEnergySource;
 import appeng.api.networking.security.BaseActionSource;
 import appeng.api.parts.IPatternTerminal;
 import appeng.api.parts.IPatternTerminal.PatternEncodeListener;
+import appeng.api.stacks.AEItemKey;
+import appeng.api.stacks.GenericStack;
 import appeng.api.storage.IMEMonitor;
-import appeng.api.storage.StorageName;
+import appeng.api.storage.StackConfigInventory;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.items.misc.ItemTunnelPattern;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.Platform;
 import appeng.util.item.AEItemStack;
 
 public class PatternEncodingHelper {
 
     static private IAEStack<?>[] getInputs(IPatternTerminal terminal) {
-        final IAEStackInventory inputs = terminal.getAEInventoryByName(StorageName.CRAFTING_INPUT);
+        final StackConfigInventory inputs = terminal.getCraftingInputs();
         final IAEStack<?>[] input = new IAEStack<?>[inputs.getSizeInventory()];
         boolean hasValue = false;
 
         for (int i = 0; i < inputs.getSizeInventory(); i++) {
-            input[i] = inputs.getAEStackInSlot(i);
+            final GenericStack stack = inputs.getStack(i);
+            input[i] = stack == null ? null : stack.toAEStack();
             if (input[i] != null) {
                 hasValue = true;
             }
@@ -62,17 +64,17 @@ public class PatternEncodingHelper {
             }
         }, 3, 3);
 
-        final IAEStackInventory inputs = terminal.getAEInventoryByName(StorageName.CRAFTING_INPUT);
+        final StackConfigInventory inputs = terminal.getCraftingInputs();
         for (int x = 0; x < ic.getSizeInventory(); x++) {
-            if (inputs.getAEStackInSlot(x) instanceof IAEItemStack aes) {
-                ic.setInventorySlotContents(x, aes.getItemStack());
+            if (inputs.getKey(x) instanceof AEItemKey itemKey) {
+                ic.setInventorySlotContents(x, itemKey.toStack(inputs.getAmount(x)));
             }
         }
         return Platform.findMatchingRecipeOutput(ic, world);
     }
 
     static private IAEStack<?>[] getOutputs(IPatternTerminal terminal, World world) {
-        final IAEStackInventory outputs = terminal.getAEInventoryByName(StorageName.CRAFTING_OUTPUT);
+        final StackConfigInventory outputs = terminal.getCraftingOutputs();
         if (terminal.isCraftingRecipe()) {
             final IAEStack<?> out = AEItemStack.create(getCraftingOutput(terminal, world));
 
@@ -84,10 +86,10 @@ public class PatternEncodingHelper {
             boolean hasValue = false;
 
             for (int i = 0; i < outputs.getSizeInventory(); i++) {
-                final IAEStack<?> out = outputs.getAEStackInSlot(i);
+                final GenericStack out = outputs.getStack(i);
 
-                if (out != null && out.getStackSize() > 0) {
-                    list.add(out);
+                if (out != null && out.getAmount() > 0) {
+                    list.add(out.toAEStack());
                     hasValue = true;
                 }
             }

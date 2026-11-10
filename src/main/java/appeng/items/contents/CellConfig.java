@@ -12,9 +12,9 @@ package appeng.items.contents;
 
 import net.minecraft.item.ItemStack;
 
-import appeng.tile.inventory.IAEStackInventory;
+import appeng.api.storage.KeyConfigInventory;
 
-public class CellConfig extends IAEStackInventory {
+public class CellConfig extends KeyConfigInventory {
 
     protected final ItemStack is;
 
@@ -25,7 +25,7 @@ public class CellConfig extends IAEStackInventory {
     }
 
     @Override
-    public void markDirty() {
+    protected void onChange(final int slot) {
         this.writeToNBT(this.is, "list");
     }
 }
