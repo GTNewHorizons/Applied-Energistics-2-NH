@@ -92,7 +92,6 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
 
     private static final int QUERY_MATCH_COLOR = 0x6600FF00;
     private static final int FUZZY_MARK_COLOR = 0xFF4040FF;
-    private static final int SELECTED_COLOR = 0xFF00A000;
     private static final int SLOT_BORDER_COLOR = 0xFF373737;
     private static final int SLOT_FILL_COLOR = 0xFF8B8B8B;
 
@@ -458,10 +457,6 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                 offsetY + QUERY_SLOT_Y + 16,
                 SLOT_FILL_COLOR);
 
-        this.drawSelectionIf(this.container.craftingOnlySync.get(), this.craftingButton);
-        this.drawSelectionIf(this.container.hideUnfilteredSync.get(), this.hideUnfilteredButton);
-        this.drawSelectionIf(this.container.networkOnlySync.get(), this.networkOnlyButton);
-
         final int lineColor = ColorUtils.craftingDiagnosticTerminalLine.getColor();
         for (int line = 0; line <= this.visibleRows; line++) {
             final int y = offsetY + LIST_TOP + line * ROW_HEIGHT - 1;
@@ -496,19 +491,6 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                     SEARCH_PIECE_WIDTH,
                     SEARCH_HEIGHT);
         }
-    }
-
-    private void drawSelectionIf(final boolean active, final GuiImgButton button) {
-        if (!active) {
-            return;
-        }
-
-        drawRect(
-                button.xPosition - 1,
-                button.yPosition - 1,
-                button.xPosition + button.getWidth() + 1,
-                button.yPosition + button.getHeight() + 1,
-                SELECTED_COLOR);
     }
 
     @Override
