@@ -83,6 +83,16 @@ public class TransferInsertSimulationTests {
         throw new AssertionError("The storage bus should be listed");
     }
 
+    private static TransferComponentInfo driveRow(final GameTestHelper helper,
+            final TransferInsertSimulation.Result result) {
+        for (final TransferComponentInfo row : result.rows) {
+            if (row.side == (byte) ForgeDirection.UNKNOWN.ordinal()) {
+                return row;
+            }
+        }
+        throw new AssertionError("The drive should be listed");
+    }
+
     private static PartStorageBus bus(final GameTestHelper helper) {
         return place(helper, AEApi.instance().definitions().parts().storageBus(), ForgeDirection.EAST);
     }
@@ -133,6 +143,10 @@ public class TransferInsertSimulationTests {
             final TransferInsertSimulation.Result result = simulate(helper, Blocks.cobblestone, 64);
             helper.assertEquals(24L, busRow(helper, result).simulatedAmount, "Only the last slot has room");
             helper.assertEquals(0L, result.leftover, "The cell in the drive takes the rest");
+            final TransferComponentInfo drive = driveRow(helper, result);
+            helper.assertEquals(40L, drive.simulatedAmount, "The drive takes the rest");
+            helper.assertEquals(1, drive.simulatedSlots.size(), "One cell takes it");
+            helper.assertEquals(0, drive.simulatedSlots.get(0).slot, "The cell is in the first slot");
         }).thenSucceed();
     }
 

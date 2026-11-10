@@ -67,7 +67,7 @@ public class TransferScannerTests {
                 .thenExecute("scan the network", () -> {
                     List<TransferComponentInfo> rows = scan(helper, coreRegistry());
 
-                    helper.assertEquals(2, rows.size(), "The storage bus and import bus should be found");
+                    helper.assertEquals(3, rows.size(), "The storage bus, import bus and drive should be found");
                     for (TransferComponentInfo row : rows) {
                         helper.assertEquals(0, row.networkTier, "Rows on the first grid have tier 0");
                         helper.assertNotNull(row.selfRep, "Rows should have an icon");

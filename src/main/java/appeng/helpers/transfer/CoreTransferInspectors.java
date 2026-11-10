@@ -11,6 +11,8 @@ import appeng.parts.automation.PartBaseFormationPlane;
 import appeng.parts.automation.PartBaseImportBus;
 import appeng.parts.misc.PartStorageBus;
 import appeng.tile.misc.TileSuperMEReplenisher;
+import appeng.tile.storage.TileChest;
+import appeng.tile.storage.TileDrive;
 
 /**
  * Registers the inspectors for AE2's own components. Subclasses from other mods inherit them.
@@ -28,6 +30,8 @@ public final class CoreTransferInspectors {
         registry.register(PartBaseFormationPlane.class, new FormationPlaneInspector());
         registry.register(PartAnnihilationPlane.class, new AnnihilationPlaneInspector(() -> ITEM_STACK_TYPE));
         registry.register(TileSuperMEReplenisher.class, new SuperReplenisherInspector());
+        registry.register(TileDrive.class, new DriveInspector());
+        registry.register(TileChest.class, new ChestInspector());
         return registry;
     }
 }
