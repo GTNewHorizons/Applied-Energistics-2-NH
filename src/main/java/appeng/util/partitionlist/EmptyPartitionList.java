@@ -8,31 +8,30 @@
  * Applied Energistics 2. If not, see <http://www.gnu.org/licenses/lgpl>.
  */
 
-package appeng.util.prioitylist;
+package appeng.util.partitionlist;
 
-import appeng.api.storage.data.IAEStack;
-import appeng.api.storage.data.IItemList;
+import java.util.Collections;
 
-public class PrecisePriorityList<T extends IAEStack<T>> implements IPartitionList<T> {
+import appeng.api.stacks.AEKey;
 
-    private final IItemList<T> list;
+public final class EmptyPartitionList implements IPartitionList {
 
-    public PrecisePriorityList(final IItemList<T> in) {
-        this.list = in;
-    }
+    public static final EmptyPartitionList INSTANCE = new EmptyPartitionList();
+
+    private EmptyPartitionList() {}
 
     @Override
-    public boolean isListed(final T input) {
-        return this.list.findPrecise(input) != null;
+    public boolean isListed(final AEKey input) {
+        return false;
     }
 
     @Override
     public boolean isEmpty() {
-        return this.list.isEmpty();
+        return true;
     }
 
     @Override
-    public Iterable<T> getItems() {
-        return this.list;
+    public Iterable<AEKey> getKeys() {
+        return Collections.emptyList();
     }
 }

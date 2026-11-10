@@ -31,7 +31,7 @@ import appeng.util.Platform;
 import appeng.util.inv.IInventoryDestination;
 import appeng.util.inv.ItemSlot;
 import appeng.util.item.AEItemStack;
-import appeng.util.prioitylist.OreFilteredList;
+import appeng.util.partitionlist.OreFilterPartitionList;
 
 public class PartImportBus extends PartBaseImportBus<IAEItemStack> implements IInventoryDestination {
 
@@ -196,12 +196,15 @@ public class PartImportBus extends PartBaseImportBus<IAEItemStack> implements II
             final FuzzyMode fzMode) {
         if (!(myTarget instanceof InventoryAdaptor myAdaptor)) return false;
         if (!oreFilterString.isEmpty()) {
-            if (filterPredicate == null) filterPredicate = OreFilteredList.makeFilter(oreFilterString);
+            if (filterPredicate == null) filterPredicate = OreFilterPartitionList.makeFilter(oreFilterString);
+            if (filterPredicate == null) return true;
             for (ItemSlot slot : myAdaptor) {
                 if (this.itemToSend <= 0) break;
-                if (slot.isExtractable() && filterPredicate != null && filterPredicate.test(slot.getAEItemStack())) {
+                if (!slot.isExtractable()) continue;
+                final IAEItemStack stack = slot.getAEItemStack();
+                if (stack != null && filterPredicate.test(stack.getKey())) {
                     while (this.itemToSend > 0) {
-                        if (this.importStuff(myAdaptor, slot.getAEItemStack(), inv, energy, fzMode)) break;
+                        if (this.importStuff(myAdaptor, stack, inv, energy, fzMode)) break;
                     }
                 }
             }

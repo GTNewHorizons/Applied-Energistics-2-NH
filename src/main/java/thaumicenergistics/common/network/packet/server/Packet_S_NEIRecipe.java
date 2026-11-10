@@ -31,7 +31,7 @@ import appeng.items.storage.ItemViewCell;
 import appeng.util.InventoryAdaptor;
 import appeng.util.Platform;
 import appeng.util.item.AEItemStack;
-import appeng.util.prioitylist.IPartitionList;
+import appeng.util.partitionlist.IPartitionList;
 import cpw.mods.fml.common.network.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 import thaumcraft.api.crafting.IArcaneRecipe;
@@ -112,7 +112,7 @@ public class Packet_S_NEIRecipe extends ThEServerPacket {
                 if (is == null) return;
                 final IMEMonitor<IAEItemStack> storage = inv.getItemInventory();
                 final IItemList<IAEItemStack> all = storage.getStorageList();
-                final IPartitionList<IAEItemStack> filter = ItemViewCell.createFilter(act.getViewCells());
+                final IPartitionList filter = ItemViewCell.createFilter(act.getViewCells());
                 final IInventory craftMatrix = act.terminal.craftingGridInventory;
                 final IInventory playerInventory = player.inventory;
                 BaseActionSource as = new PlayerSource(player, act.terminal);
@@ -181,7 +181,7 @@ public class Packet_S_NEIRecipe extends ThEServerPacket {
                                 final IAEItemStack request = AEItemStack.create(candidate);
                                 if (request != null) {
                                     request.setStackSize(1);
-                                    if (filter == null || filter.isListed(request)) {
+                                    if (filter == null || filter.isListed(request.getKey())) {
                                         final IAEItemStack out = Platform
                                                 .poweredExtraction(energy, storage, request, as);
                                         if (out != null) {
@@ -207,8 +207,7 @@ public class Packet_S_NEIRecipe extends ThEServerPacket {
     ItemStack extractItemsByArcaneRecipe(final IEnergySource energySrc, final BaseActionSource mySrc,
             final IMEMonitor<IAEItemStack> src, final World w, final IArcaneRecipe r, final ItemStack output,
             final TileMagicWorkbench workbenchTile, final ItemStack providedTemplate, final int slot,
-            final IItemList<IAEItemStack> items, final Actionable realForFake,
-            final IPartitionList<IAEItemStack> filter) {
+            final IItemList<IAEItemStack> items, final Actionable realForFake, final IPartitionList filter) {
         if (energySrc.extractAEPower(1, Actionable.SIMULATE, PowerMultiplier.CONFIG) > 0.9) {
             if (providedTemplate == null) {
                 return null;
@@ -217,7 +216,7 @@ public class Packet_S_NEIRecipe extends ThEServerPacket {
             final AEItemStack ae_req = AEItemStack.create(providedTemplate);
             ae_req.setStackSize(1);
 
-            if (filter == null || filter.isListed(ae_req)) {
+            if (filter == null || filter.isListed(ae_req.getKey())) {
                 final IAEItemStack ae_ext = src.extractItems(ae_req, realForFake, mySrc);
                 if (ae_ext != null) {
                     final ItemStack extracted = ae_ext.getItemStack();
@@ -245,7 +244,7 @@ public class Packet_S_NEIRecipe extends ThEServerPacket {
                                 && Platform.isSameItem(r.getCraftingResult(workbenchTile), output)) {
                             final IAEItemStack ax = x.copy();
                             ax.setStackSize(1);
-                            if (filter == null || filter.isListed(ax)) {
+                            if (filter == null || filter.isListed(ax.getKey())) {
                                 final IAEItemStack ex = src.extractItems(ax, realForFake, mySrc);
                                 if (ex != null) {
                                     energySrc.extractAEPower(1, realForFake, PowerMultiplier.CONFIG);

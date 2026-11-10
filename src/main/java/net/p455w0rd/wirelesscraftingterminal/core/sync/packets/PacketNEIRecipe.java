@@ -40,7 +40,7 @@ import appeng.items.storage.ItemViewCell;
 import appeng.util.InventoryAdaptor;
 import appeng.util.Platform;
 import appeng.util.item.AEItemStack;
-import appeng.util.prioitylist.IPartitionList;
+import appeng.util.partitionlist.IPartitionList;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.IntObjectPair;
@@ -137,7 +137,7 @@ public class PacketNEIRecipe extends WCTPacket {
                             final IMEMonitor<IAEItemStack> storage = inv.getItemInventory();
                             final IItemList all = storage.getStorageList();
                             final ItemStack[] nullStack = new ItemStack[0];
-                            final IPartitionList<IAEItemStack> filter = ItemViewCell.createFilter(nullStack);
+                            final IPartitionList filter = ItemViewCell.createFilter(nullStack);
 
                             for (int x = 0; x < craftMatrix.getSizeInventory(); x++) {
                                 final ItemStack patternItem = testInv.getStackInSlot(x);
@@ -193,7 +193,7 @@ public class PacketNEIRecipe extends WCTPacket {
                                         for (int y = 0; y < recipe[x].length; y++) {
                                             final IAEItemStack request = AEItemStack.create(recipe[x][y]);
                                             if (request != null) {
-                                                if (filter == null || filter.isListed(request)) {
+                                                if (filter == null || filter.isListed(request.getKey())) {
                                                     request.setStackSize(1);
                                                     final IAEItemStack out = Platform.poweredExtraction(
                                                             energy,

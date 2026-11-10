@@ -6,13 +6,11 @@ import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.storage.IMEInventory;
-import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.me.storage.CellInventoryHandler;
 import appeng.tile.inventory.IAEStackInventory;
-import appeng.util.prioitylist.PrecisePriorityList;
+import appeng.util.partitionlist.IPartitionList;
 import thaumicenergistics.common.storage.AEEssentiaStack;
-import thaumicenergistics.common.storage.EssentiaList;
 
 public class EssentiaCellInventoryHandler extends CellInventoryHandler<AEEssentiaStack> {
 
@@ -32,19 +30,13 @@ public class EssentiaCellInventoryHandler extends CellInventoryHandler<AEEssenti
     }
 
     @Override
-    protected void setPriorityList(boolean hasFuzzy, IAEStackInventory config, FuzzyMode fzMode) {
-        final EssentiaList partitionList = new EssentiaList();
+    protected void setConfigPartitionList(boolean hasFuzzy, IAEStackInventory config, FuzzyMode fzMode) {
+        final IPartitionList.Builder builder = IPartitionList.builder();
         for (int x = 0; x < config.getSizeInventory(); x++) {
-            final IAEStack<?> aes = config.getAEStackInSlot(x);
-            if (aes instanceof AEEssentiaStack essentiaStack) {
-                essentiaStack = essentiaStack.copy();
-                essentiaStack.setStackSize(1);
-
-                partitionList.add(essentiaStack);
+            if (config.getAEStackInSlot(x) instanceof AEEssentiaStack essentiaStack) {
+                builder.add(essentiaStack.getKey());
             }
         }
-        if (!partitionList.isEmpty()) {
-            this.setPartitionList(new PrecisePriorityList<>(partitionList));
-        }
+        this.setPartitionList(builder.build());
     }
 }

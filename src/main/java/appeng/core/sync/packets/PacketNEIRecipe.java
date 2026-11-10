@@ -52,7 +52,7 @@ import appeng.util.InventoryAdaptor;
 import appeng.util.Platform;
 import appeng.util.inv.IInventoryDestination;
 import appeng.util.item.AEItemStack;
-import appeng.util.prioitylist.IPartitionList;
+import appeng.util.partitionlist.IPartitionList;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -146,7 +146,7 @@ public class PacketNEIRecipe extends AppEngPacket {
 
         final IMEMonitor<IAEItemStack> storage = inv.getItemInventory();
         final IItemList all = storage.getStorageList();
-        final IPartitionList<IAEItemStack> filter = ItemViewCell.createFilter(cct.getViewCells());
+        final IPartitionList filter = ItemViewCell.createFilter(cct.getViewCells());
 
         for (int x = 0; x < craftMatrix.getSizeInventory(); x++) {
             final ItemStack patternItem = testInv.getStackInSlot(x);
@@ -194,7 +194,7 @@ public class PacketNEIRecipe extends AppEngPacket {
                     for (int y = 0; y < this.recipe[x].length; y++) {
                         final IAEItemStack request = AEItemStack.create(this.recipe[x][y]);
                         if (request != null) {
-                            if (filter == null || filter.isListed(request)) {
+                            if (filter == null || filter.isListed(request.getKey())) {
                                 request.setStackSize(1);
                                 final IAEItemStack out = Platform
                                         .poweredExtraction(energy, storage, request, cct.getActionSource());

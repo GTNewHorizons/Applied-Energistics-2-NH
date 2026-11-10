@@ -143,7 +143,7 @@ import appeng.util.item.AESharedNBT;
 import appeng.util.item.AEStack;
 import appeng.util.item.OreHelper;
 import appeng.util.item.OreReference;
-import appeng.util.prioitylist.IPartitionList;
+import appeng.util.partitionlist.IPartitionList;
 import baubles.api.BaublesApi;
 import buildcraft.api.tools.IToolWrench;
 import cofh.api.item.IToolHammer;
@@ -1655,8 +1655,7 @@ public class Platform {
     public static ItemStack extractItemsByRecipe(final IEnergySource energySrc, final BaseActionSource mySrc,
             final IMEMonitor<IAEItemStack> src, final World w, final IRecipe r, final ItemStack output,
             final InventoryCrafting ci, final ItemStack providedTemplate, final int slot,
-            final IItemList<IAEItemStack> items, final Actionable realForFake,
-            final IPartitionList<IAEItemStack> filter) {
+            final IItemList<IAEItemStack> items, final Actionable realForFake, final IPartitionList filter) {
         return extractItemsByRecipe(
                 energySrc,
                 mySrc,
@@ -1676,8 +1675,8 @@ public class Platform {
     public static ItemStack extractItemsByRecipe(final IEnergySource energySrc, final BaseActionSource mySrc,
             final IMEMonitor<IAEItemStack> src, final World w, final IRecipe r, final ItemStack output,
             final InventoryCrafting ci, final ItemStack providedTemplate, final int slot,
-            final IItemList<IAEItemStack> items, final Actionable realForFake,
-            final IPartitionList<IAEItemStack> filter, int multiple) {
+            final IItemList<IAEItemStack> items, final Actionable realForFake, final IPartitionList filter,
+            int multiple) {
         if (energySrc.extractAEPower(multiple, Actionable.SIMULATE, PowerMultiplier.CONFIG) > 0.9) {
             if (providedTemplate == null) {
                 return null;
@@ -1686,7 +1685,7 @@ public class Platform {
             final AEItemStack ae_req = AEItemStack.create(providedTemplate);
             ae_req.setStackSize(multiple);
 
-            if (filter == null || filter.isListed(ae_req)) {
+            if (filter == null || filter.isListed(ae_req.getKey())) {
                 final IAEItemStack ae_ext = src.extractItems(ae_req, realForFake, mySrc);
                 if (ae_ext != null) {
                     final ItemStack extracted = ae_ext.getItemStack();
@@ -1715,7 +1714,7 @@ public class Platform {
                         if (r.matches(ci, w) && Platform.isSameItem(r.getCraftingResult(ci), output)) {
                             final IAEItemStack ax = x.copy();
                             ax.setStackSize(multiple);
-                            if (filter == null || filter.isListed(ax)) {
+                            if (filter == null || filter.isListed(ax.getKey())) {
                                 final IAEItemStack ex = src.extractItems(ax, realForFake, mySrc);
                                 if (ex != null) {
                                     energySrc.extractAEPower(multiple, realForFake, PowerMultiplier.CONFIG);

@@ -21,6 +21,7 @@ import appeng.api.config.IncludeExclude;
 import appeng.api.config.StorageFilter;
 import appeng.api.networking.security.BaseActionSource;
 import appeng.api.networking.security.ReshuffleActionSource;
+import appeng.api.stacks.AEKey;
 import appeng.api.storage.IMEInventory;
 import appeng.api.storage.IMEInventoryHandler;
 import appeng.api.storage.IMENetworkInventory;
@@ -29,8 +30,8 @@ import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.storage.data.IItemList;
 import appeng.util.item.ItemFilterList;
-import appeng.util.prioitylist.DefaultPriorityList;
-import appeng.util.prioitylist.IPartitionList;
+import appeng.util.partitionlist.EmptyPartitionList;
+import appeng.util.partitionlist.IPartitionList;
 
 public class MEInventoryHandler<T extends IAEStack<T>> implements IMEInventoryHandler<T> {
 
@@ -38,8 +39,8 @@ public class MEInventoryHandler<T extends IAEStack<T>> implements IMEInventoryHa
     private int myPriority;
     private IncludeExclude myWhitelist;
     private AccessRestriction myAccess;
-    private IPartitionList<T> myPartitionList;
-    private IPartitionList<T> myExtractPartitionList;
+    private IPartitionList myPartitionList;
+    private IPartitionList myExtractPartitionList;
 
     private AccessRestriction cachedAccessRestriction;
     protected boolean hasReadAccess;
@@ -57,8 +58,8 @@ public class MEInventoryHandler<T extends IAEStack<T>> implements IMEInventoryHa
         this.myPriority = 0;
         this.myWhitelist = IncludeExclude.WHITELIST;
         this.setBaseAccess(AccessRestriction.READ_WRITE);
-        this.myPartitionList = new DefaultPriorityList<>();
-        this.myExtractPartitionList = new DefaultPriorityList<>();
+        this.myPartitionList = EmptyPartitionList.INSTANCE;
+        this.myExtractPartitionList = EmptyPartitionList.INSTANCE;
     }
 
     public IncludeExclude getWhitelist() {
@@ -80,19 +81,19 @@ public class MEInventoryHandler<T extends IAEStack<T>> implements IMEInventoryHa
         this.hasWriteAccess = this.cachedAccessRestriction.hasPermission(AccessRestriction.WRITE);
     }
 
-    public IPartitionList<T> getExtractPartitionList() {
+    public IPartitionList getExtractPartitionList() {
         return this.myExtractPartitionList;
     }
 
-    public void setExtractPartitionList(IPartitionList<T> myExtractPartitionList) {
+    public void setExtractPartitionList(IPartitionList myExtractPartitionList) {
         this.myExtractPartitionList = myExtractPartitionList;
     }
 
-    public IPartitionList<T> getPartitionList() {
+    public IPartitionList getPartitionList() {
         return this.myPartitionList;
     }
 
-    public void setPartitionList(final IPartitionList<T> myPartitionList) {
+    public void setPartitionList(final IPartitionList myPartitionList) {
         this.myPartitionList = myPartitionList;
     }
 
@@ -151,10 +152,11 @@ public class MEInventoryHandler<T extends IAEStack<T>> implements IMEInventoryHa
         return bool;
     }
 
+    @SuppressWarnings("unchecked")
     protected IItemList<T> getAvailableItemsFilter(IItemList<T> out, int iteration) {
         if (!getPartitionList().isEmpty() && getWhitelist() == IncludeExclude.WHITELIST) {
-            for (T is : myPartitionList.getItems()) {
-                out.add(is);
+            for (AEKey key : myPartitionList.getKeys()) {
+                out.add((T) key.toAEStack());
             }
             return out;
         }
@@ -178,8 +180,8 @@ public class MEInventoryHandler<T extends IAEStack<T>> implements IMEInventoryHa
     }
 
     public Predicate<T> getExtractFilterCondition() {
-        return this.myWhitelist == IncludeExclude.WHITELIST ? i -> this.myExtractPartitionList.isListed(i)
-                : i -> !this.myExtractPartitionList.isListed(i);
+        return this.myWhitelist == IncludeExclude.WHITELIST ? i -> this.myExtractPartitionList.isListed(i.getKey())
+                : i -> !this.myExtractPartitionList.isListed(i.getKey());
     }
 
     public boolean isExtractFilterActive() {
@@ -208,7 +210,7 @@ public class MEInventoryHandler<T extends IAEStack<T>> implements IMEInventoryHa
     @Override
     public boolean isPrioritized(final T input) {
         if (this.myWhitelist == IncludeExclude.WHITELIST) {
-            return this.myPartitionList.isListed(input) || this.internal.isPrioritized(input);
+            return this.myPartitionList.isListed(input.getKey()) || this.internal.isPrioritized(input);
         }
         return false;
     }
@@ -223,13 +225,13 @@ public class MEInventoryHandler<T extends IAEStack<T>> implements IMEInventoryHa
             return false;
         }
 
-        if (this.myWhitelist == IncludeExclude.BLACKLIST && this.myPartitionList.isListed(input)) {
+        if (this.myWhitelist == IncludeExclude.BLACKLIST && this.myPartitionList.isListed(input.getKey())) {
             return false;
         }
         if (this.myPartitionList.isEmpty() || this.myWhitelist == IncludeExclude.BLACKLIST) {
             return this.internal.canAccept(input);
         }
-        return this.myPartitionList.isListed(input) && this.internal.canAccept(input);
+        return this.myPartitionList.isListed(input.getKey()) && this.internal.canAccept(input);
     }
 
     @Override

@@ -2,10 +2,12 @@ package thaumicenergistics.common.storage;
 
 import java.io.IOException;
 
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.IChatComponent;
+import net.minecraft.util.StatCollector;
 
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -17,6 +19,7 @@ import cpw.mods.fml.common.network.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 import thaumcraft.api.aspects.Aspect;
 import thaumcraft.api.aspects.AspectList;
+import thaumcraft.common.Thaumcraft;
 import thaumicenergistics.common.integration.ModsList;
 
 @NullMarked
@@ -100,6 +103,21 @@ public final class AEEssentiaKey extends AEKey {
     @Override
     public String getDisplayName() {
         return this.aspect.getName();
+    }
+
+    /**
+     * @return The display name if the player has discovered the aspect, otherwise the name for unknown aspects.
+     */
+    public String getDisplayName(@Nullable EntityPlayer player) {
+        if (!this.hasPlayerDiscovered(player)) {
+            return StatCollector.translateToLocal("tc.aspect.unknown");
+        }
+        return this.getDisplayName();
+    }
+
+    public boolean hasPlayerDiscovered(@Nullable EntityPlayer player) {
+        return player != null && Thaumcraft.proxy.getPlayerKnowledge()
+                .hasDiscoveredAspect(player.getCommandSenderName(), this.aspect);
     }
 
     @Override
