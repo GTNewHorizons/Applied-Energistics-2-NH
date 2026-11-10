@@ -19,7 +19,6 @@ import net.minecraftforge.common.util.ForgeDirection;
 import appeng.api.networking.security.BaseActionSource;
 import appeng.api.storage.IExternalStorageHandler;
 import appeng.api.storage.IExternalStorageRegistry;
-import appeng.api.storage.StorageChannel;
 import appeng.api.storage.data.IAEStackType;
 import appeng.core.features.registries.entries.AEFluidTankHandler;
 import appeng.core.features.registries.entries.ExternalIInv;
@@ -36,23 +35,6 @@ public class ExternalStorageRegistry implements IExternalStorageRegistry {
     @Override
     public void addExternalStorageInterface(final IExternalStorageHandler ei) {
         this.Handlers.add(ei);
-    }
-
-    @Override
-    @Deprecated
-    public IExternalStorageHandler getHandler(final TileEntity te, final ForgeDirection d, final StorageChannel chan,
-            final BaseActionSource mySrc) {
-        for (final IExternalStorageHandler x : this.Handlers) {
-            if (x.canHandle(te, d, chan, mySrc)) {
-                return x;
-            }
-        }
-
-        if (this.lastHandler.canHandle(te, d, chan, mySrc)) {
-            return this.lastHandler;
-        }
-
-        return null;
     }
 
     @Override

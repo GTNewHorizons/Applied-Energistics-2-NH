@@ -1,7 +1,5 @@
 package appeng.items.storage;
 
-import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
-
 import java.util.EnumSet;
 import java.util.List;
 
@@ -20,7 +18,6 @@ import appeng.core.features.AEFeature;
 import appeng.core.localization.GuiText;
 import appeng.items.AEBaseItem;
 import appeng.items.contents.CellConfig;
-import appeng.items.contents.CellConfigLegacy;
 import appeng.items.contents.CellUpgrades;
 import appeng.me.storage.CellInventoryHandler;
 import appeng.me.storage.VoidCellInventory;
@@ -79,11 +76,6 @@ public class ItemVoidStorageCell extends AEBaseItem implements ICellWorkbenchIte
     @Override
     public IInventory getUpgradesInventory(ItemStack is) {
         return new CellUpgrades(is, 2);
-    }
-
-    @Override
-    public IInventory getConfigInventory(ItemStack is) {
-        return new CellConfigLegacy(new CellConfig(is), ITEM_STACK_TYPE);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package appeng.test.mockme;
 
+import static appeng.util.item.AEFluidStackType.FLUID_STACK_TYPE;
 import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 
 import java.util.ArrayList;
@@ -19,9 +20,9 @@ import appeng.api.networking.storage.IStorageGrid;
 import appeng.api.storage.ICellProvider;
 import appeng.api.storage.IMEInventory;
 import appeng.api.storage.IMEInventoryHandler;
-import appeng.api.storage.StorageChannel;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
+import appeng.api.storage.data.IAEStackType;
 import appeng.crafting.MECraftingInventory;
 import appeng.crafting.v2.CraftingJobV2;
 import appeng.helpers.PatternHelper;
@@ -50,10 +51,8 @@ public class MockAESystem implements ICellProvider {
     public MockAESystem addStoredItem(ItemStack stack) {
         final IAEItemStack aeStack = AEItemStack.create(stack);
         this.itemStorage.injectItems(aeStack, Actionable.MODULATE);
-        this.sgCache.postAlterationOfStoredItems(
-                StorageChannel.ITEMS,
-                Collections.singletonList(aeStack),
-                dummyActionSource);
+        this.sgCache
+                .postAlterationOfStoredItems(ITEM_STACK_TYPE, Collections.singletonList(aeStack), dummyActionSource);
         return this;
     }
 
@@ -163,8 +162,11 @@ public class MockAESystem implements ICellProvider {
             ITEM_STACK_TYPE);
 
     @Override
-    public List<IMEInventoryHandler> getCellArray(StorageChannel channel) {
-        return Collections.singletonList(storageHandler);
+    public List<IMEInventoryHandler> getCellArray(IAEStackType<?> type) {
+        if (type == ITEM_STACK_TYPE || type == FLUID_STACK_TYPE) {
+            return Collections.singletonList(storageHandler);
+        }
+        return Collections.emptyList();
     }
 
     @Override

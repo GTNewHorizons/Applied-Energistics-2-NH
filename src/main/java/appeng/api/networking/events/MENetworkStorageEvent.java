@@ -13,11 +13,7 @@
 
 package appeng.api.networking.events;
 
-import static appeng.util.item.AEFluidStackType.FLUID_STACK_TYPE;
-import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
-
 import appeng.api.storage.IMEMonitor;
-import appeng.api.storage.StorageChannel;
 import appeng.api.storage.data.IAEStackType;
 
 /**
@@ -33,33 +29,8 @@ public class MENetworkStorageEvent extends MENetworkEvent {
     public final IMEMonitor monitor;
     public final IAEStackType<?> type;
 
-    @Deprecated
-    public final StorageChannel channel;
-
-    @Deprecated
-    public MENetworkStorageEvent(final IMEMonitor o, final StorageChannel chan) {
-        this.monitor = o;
-        this.channel = chan;
-
-        if (chan == StorageChannel.ITEMS) {
-            type = ITEM_STACK_TYPE;
-        } else if (chan == StorageChannel.FLUIDS) {
-            type = FLUID_STACK_TYPE;
-        } else {
-            type = null;
-        }
-    }
-
     public MENetworkStorageEvent(final IMEMonitor o, final IAEStackType<?> type) {
         this.monitor = o;
         this.type = type;
-
-        if (type == ITEM_STACK_TYPE) {
-            channel = StorageChannel.ITEMS;
-        } else if (type == FLUID_STACK_TYPE) {
-            channel = StorageChannel.FLUIDS;
-        } else {
-            channel = null;
-        }
     }
 }

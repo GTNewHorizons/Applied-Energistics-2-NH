@@ -11,7 +11,6 @@
 package appeng.me.cache;
 
 import static appeng.util.Platform.convertStack;
-import static appeng.util.Platform.stackConvert;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -123,7 +122,6 @@ public class CraftingGridCache
     protected final Map<IAEStack<?>, List<ICraftingMedium>> emitableMediums = new HashMap<>();
     // Used for fuzzy lookups
     protected final OreListMultiMap<ICraftingPatternDetails> craftableItemSubstitutes = new OreListMultiMap<>();
-    protected final Map<IAEItemStack, ImmutableList<ICraftingPatternDetails>> craftableItemsLegacy = new HashMap<>();
     protected final Map<IAEStack<?>, ImmutableList<ICraftingPatternDetails>> craftableItems = new HashMap<>();
     private ImmutableMap<IAEStack<?>, ImmutableList<ICraftingPatternDetails>> craftableItemsSnapshot = ImmutableMap
             .of();
@@ -370,9 +368,6 @@ public class CraftingGridCache
             patterns.sort(Comparator.comparing(ICraftingPatternDetails::getPriority).reversed());
             final ImmutableList<ICraftingPatternDetails> immutable = ImmutableList.copyOf(patterns);
             this.craftableItems.put(e.getKey(), immutable);
-
-            final IAEItemStack ais = stackConvert(e.getKey());
-            if (ais != null) craftableItemsLegacy.put(ais, immutable);
         }
 
         this.craftableItemsSnapshot = ImmutableMap.copyOf(this.craftableItems);
@@ -434,16 +429,6 @@ public class CraftingGridCache
         } else {
             details.add(medium);
         }
-    }
-
-    @Override
-    public void setEmitable(final IAEItemStack someItem) {
-        setEmitable(null, convertStack(someItem));
-    }
-
-    @Override
-    public void setEmitable(final IAEStack<?> someItem) {
-        setEmitable(null, someItem);
     }
 
     @Override
@@ -569,11 +554,6 @@ public class CraftingGridCache
     }
 
     @Override
-    public ImmutableMap<IAEItemStack, ImmutableList<ICraftingPatternDetails>> getCraftingPatterns() {
-        return ImmutableMap.copyOf(this.craftableItemsLegacy);
-    }
-
-    @Override
     public ImmutableCollection<ICraftingPatternDetails> getCraftingFor(final IAEItemStack whatToCraft,
             final ICraftingPatternDetails details, final int slotIndex, final World world) {
         return getCraftingFor(convertStack(whatToCraft), details, slotIndex, world);
@@ -615,19 +595,6 @@ public class CraftingGridCache
 
     public static Comparator<ICraftingPatternDetails> getCOMPARATOR() {
         return COMPARATOR;
-    }
-
-    @Override
-    public Future<ICraftingJob> beginCraftingJob(final World world, final IGrid grid, final BaseActionSource actionSrc,
-            final IAEItemStack slotItem, final ICraftingCallback cb) {
-        return beginCraftingJob(
-                world,
-                grid,
-                actionSrc,
-                convertStack(slotItem),
-                CraftingMode.STANDARD,
-                this.liteCraftingDefault,
-                cb);
     }
 
     @Override
@@ -747,23 +714,7 @@ public class CraftingGridCache
     }
 
     @Override
-    public boolean canEmitFor(final IAEItemStack someItem) {
-        return this.emitableMediums.containsKey(convertStack(someItem));
-    }
-
-    @Override
     public boolean isRequesting(final IAEStack<?> what) {
-        for (final CraftingCPUCluster cluster : this.craftingCPUClusters) {
-            if (cluster.isMaking(what)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    @Override
-    public boolean isRequesting(final IAEItemStack what) {
         for (final CraftingCPUCluster cluster : this.craftingCPUClusters) {
             if (cluster.isMaking(what)) {
                 return true;

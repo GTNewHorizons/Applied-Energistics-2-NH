@@ -70,8 +70,6 @@ public final class AEConfig extends Configuration implements IConfigurableObject
     public int quartzOresPerCluster = 4;
     public int quartzOresClusterAmount = 15;
     public final int chargedChange = 4;
-    @Deprecated
-    public int quartzKnifeInputLength = 32;
     public String[] minMeteoriteDistance = { "0=707" };
     public double spatialPowerExponent = 1.35;
     public double spatialPowerMultiplier = 1250.0;
@@ -647,15 +645,6 @@ public final class AEConfig extends Configuration implements IConfigurableObject
     @Override
     public IConfigManager getConfigManager() {
         return this.settings;
-    }
-
-    /**
-     * @deprecated Use the new method getTerminalFontSize() to get more options
-     * @return True if terminal large font is used, false otherwise
-     */
-    @Deprecated
-    public boolean useTerminalUseLargeFont() {
-        return getTerminalFontSize() == TerminalFontSize.LARGE;
     }
 
     public TerminalFontSize getTerminalFontSize() {

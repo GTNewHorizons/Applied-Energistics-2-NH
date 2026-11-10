@@ -156,16 +156,6 @@ public class ItemRepo implements IDisplayRepo {
     }
 
     @Override
-    public IAEItemStack getReferenceItem(int idx) {
-        idx += this.src.getCurrentScroll() * this.rowSize;
-
-        if (idx >= this.view.size()) {
-            return null;
-        }
-        return this.view.get(idx) instanceof IAEItemStack ais ? ais : null;
-    }
-
-    @Override
     public IAEStack<?> getReferenceStack(int idx) {
         idx += this.src.getCurrentScroll() * this.rowSize;
 
@@ -179,11 +169,6 @@ public class ItemRepo implements IDisplayRepo {
     public ItemStack getItem(int idx) {
         IAEStack<?> stack = getReferenceStack(idx);
         return stack instanceof IAEItemStack ais ? ais.getItemStack() : null;
-    }
-
-    @Override
-    public void postUpdate(IAEItemStack stack) {
-        this.postUpdate((IAEStack<?>) stack);
     }
 
     @Override

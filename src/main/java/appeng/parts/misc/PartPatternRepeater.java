@@ -1,6 +1,5 @@
 package appeng.parts.misc;
 
-import static appeng.util.Platform.convertStack;
 import static appeng.util.Platform.readAEStackListNBT;
 import static appeng.util.Platform.writeAEStackListNBT;
 
@@ -49,7 +48,6 @@ import appeng.api.parts.ILevelEmitter;
 import appeng.api.parts.IPartCollisionHelper;
 import appeng.api.parts.IPartRenderHelper;
 import appeng.api.storage.data.AEStackTypeRegistry;
-import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.storage.data.IItemList;
@@ -605,11 +603,6 @@ public class PartPatternRepeater extends PartBasicState
     public void updateWatcher(final ICraftingWatcher newWatcher) {
         this.myCraftingWatcher = newWatcher;
         this.configureWatchers();
-    }
-
-    @Override
-    public void onRequestChange(final ICraftingGrid craftingGrid, IAEItemStack what) {
-        this.updateEmitableStatus(convertStack(what));
     }
 
     @Override

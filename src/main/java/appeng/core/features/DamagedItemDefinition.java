@@ -12,7 +12,6 @@ package appeng.core.features;
 
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.world.IBlockAccess;
 
 import org.jspecify.annotations.NonNull;
 
@@ -60,11 +59,6 @@ public final class DamagedItemDefinition implements IItemDefinition {
 
         return this.isEnabled() && comparableStack.getItem() == this.source.get().getItem()
                 && comparableStack.getItemDamage() == this.source.get().getDamage();
-    }
-
-    @Override
-    public boolean isSameAs(final IBlockAccess world, final int x, final int y, final int z) {
-        return false;
     }
 
     private static class ItemTransformer implements Function<IStackSrc, Item> {

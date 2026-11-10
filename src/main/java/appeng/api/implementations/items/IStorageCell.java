@@ -21,7 +21,6 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import appeng.api.storage.ICellWorkbenchItem;
-import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 
@@ -35,28 +34,13 @@ import appeng.api.storage.data.IAEStackType;
  */
 public interface IStorageCell extends ICellWorkbenchItem {
 
-    @Deprecated
-    int getBytes(ItemStack cellItem);
-
     /**
      * It won't work if the return is not a multiple of 8. The limit is ({@link Long#MAX_VALUE} + 1) / 8.
      *
      * @param cellItem item
      * @return number of bytes
      */
-    default long getBytesLong(ItemStack cellItem) {
-        return getBytes(cellItem);
-    }
-
-    /**
-     * Determines the number of bytes used for any type included on the cell.
-     *
-     * @param cellItem item
-     * @return number of bytes
-     * @deprecated use {@link IStorageCell#getBytesPerType(ItemStack)}
-     */
-    @Deprecated
-    int BytePerType(ItemStack cellItem);
+    long getBytesLong(ItemStack cellItem);
 
     /**
      * Determines the number of bytes used for any type included on the cell.
@@ -73,11 +57,6 @@ public interface IStorageCell extends ICellWorkbenchItem {
      * @return number of types
      */
     int getTotalTypes(ItemStack cellItem);
-
-    @Deprecated
-    default boolean isBlackListed(ItemStack cellItem, IAEItemStack requestedAddition) {
-        return this.isBlackListed(requestedAddition);
-    }
 
     /**
      * Allows you to fine tune which items are allowed on a given cell, if you don't care, just return false; As the

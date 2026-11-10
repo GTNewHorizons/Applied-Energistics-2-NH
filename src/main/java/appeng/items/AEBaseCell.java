@@ -42,7 +42,6 @@ import appeng.core.features.AEFeature;
 import appeng.core.localization.GuiText;
 import appeng.helpers.ICellRestriction;
 import appeng.items.contents.CellConfig;
-import appeng.items.contents.CellConfigLegacy;
 import appeng.items.contents.CellUpgrades;
 import appeng.items.materials.MaterialType;
 import appeng.items.storage.ItemBasicStorageCell;
@@ -249,18 +248,8 @@ public abstract class AEBaseCell extends AEBaseItem implements IStorageCell, IIt
     }
 
     @Override
-    public int getBytes(final ItemStack cellItem) {
-        return (int) this.totalBytes;
-    }
-
-    @Override
     public long getBytesLong(final ItemStack cellItem) {
         return this.totalBytes;
-    }
-
-    @Override
-    public int BytePerType(final ItemStack cell) {
-        return this.perType;
     }
 
     @Override
@@ -301,12 +290,6 @@ public abstract class AEBaseCell extends AEBaseItem implements IStorageCell, IIt
     @Override
     public IInventory getUpgradesInventory(final ItemStack is) {
         return new CellUpgrades(is, 5);
-    }
-
-    @Override
-    @Deprecated
-    public IInventory getConfigInventory(final ItemStack is) {
-        return new CellConfigLegacy(new CellConfig(is), this.getStackType());
     }
 
     @Override

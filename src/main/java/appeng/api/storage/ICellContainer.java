@@ -19,7 +19,4 @@ import appeng.api.networking.security.IActionHost;
  * Represents an {@link appeng.api.networking.IGridHost} that contributes to storage, such as a ME Chest, or ME Drive.
  */
 public interface ICellContainer extends IActionHost, ICellProvider, ISaveProvider, IReshuffleAccess {
-
-    @Deprecated
-    default void blinkCell(int slot) {}
 }

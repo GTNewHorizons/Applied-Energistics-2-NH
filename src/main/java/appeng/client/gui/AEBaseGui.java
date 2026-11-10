@@ -237,11 +237,6 @@ public abstract class AEBaseGui extends GuiContainer implements IGuiTooltipHandl
         }
     }
 
-    @Deprecated
-    public void drawTooltip(final int x, final int y, final int forceWidth, final String message) {
-        drawTooltip(x, y, message);
-    }
-
     public void drawTooltip(final int x, final int y, final String message) {
         if (message != null && !message.isEmpty()) {
             drawTooltip(x, y, message.split("\n"));

@@ -476,12 +476,6 @@ public abstract class CellInventory<StackType extends IAEStack<StackType>> imple
     }
 
     @Override
-    @Deprecated
-    public IInventory getConfigInventory() {
-        return this.cellType.getConfigInventory(this.cellItem);
-    }
-
-    @Override
     public IAEStackInventory getConfigAEInventory() {
         return this.cellType.getConfigAEInventory(this.cellItem);
     }

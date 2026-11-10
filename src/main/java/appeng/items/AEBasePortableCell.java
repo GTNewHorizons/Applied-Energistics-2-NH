@@ -1,7 +1,5 @@
 package appeng.items;
 
-import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
-
 import java.text.NumberFormat;
 import java.util.EnumSet;
 import java.util.List;
@@ -29,7 +27,6 @@ import appeng.core.features.AEFeature;
 import appeng.core.localization.GuiText;
 import appeng.core.sync.GuiBridge;
 import appeng.items.contents.CellConfig;
-import appeng.items.contents.CellConfigLegacy;
 import appeng.items.contents.CellUpgrades;
 import appeng.items.contents.PortableCellViewer;
 import appeng.items.tools.powered.powersink.AEBasePoweredItem;
@@ -95,13 +92,8 @@ public abstract class AEBasePortableCell extends AEBasePoweredItem implements IS
     }
 
     @Override
-    public int getBytes(final ItemStack cellItem) {
+    public long getBytesLong(final ItemStack cellItem) {
         return 512;
-    }
-
-    @Override
-    public int BytePerType(final ItemStack cell) {
-        return 8;
     }
 
     @Override
@@ -142,11 +134,6 @@ public abstract class AEBasePortableCell extends AEBasePoweredItem implements IS
     @Override
     public IInventory getUpgradesInventory(final ItemStack is) {
         return new CellUpgrades(is, 2);
-    }
-
-    @Override
-    public IInventory getConfigInventory(final ItemStack is) {
-        return new CellConfigLegacy(new CellConfig(is), ITEM_STACK_TYPE);
     }
 
     @Override
