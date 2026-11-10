@@ -119,7 +119,8 @@ public enum Settings {
     TRANSFER_DIRECTION(EnumSet.allOf(TransferDirection.class)),
     TRANSFER_CRAFTING_CARD_ONLY(EnumSet.of(YesNo.YES, YesNo.NO)),
     TRANSFER_HIDE_UNFILTERED(EnumSet.of(YesNo.YES, YesNo.NO)),
-    TRANSFER_NETWORK_ONLY(EnumSet.of(YesNo.YES, YesNo.NO));
+    TRANSFER_NETWORK_ONLY(EnumSet.of(YesNo.YES, YesNo.NO)),
+    TRANSFER_SIMULATE(EnumSet.of(YesNo.YES, YesNo.NO));
 
     private final EnumSet<? extends Enum<?>> values;
 

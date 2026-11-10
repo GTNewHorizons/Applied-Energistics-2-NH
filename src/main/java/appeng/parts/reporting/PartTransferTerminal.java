@@ -45,6 +45,7 @@ public class PartTransferTerminal extends AbstractPartDisplay
         this.settings.registerSetting(Settings.TRANSFER_CRAFTING_CARD_ONLY, YesNo.NO);
         this.settings.registerSetting(Settings.TRANSFER_HIDE_UNFILTERED, YesNo.NO);
         this.settings.registerSetting(Settings.TRANSFER_NETWORK_ONLY, YesNo.NO);
+        this.settings.registerSetting(Settings.TRANSFER_SIMULATE, YesNo.NO);
     }
 
     @Override

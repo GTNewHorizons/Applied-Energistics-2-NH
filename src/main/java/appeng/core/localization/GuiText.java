@@ -253,6 +253,22 @@ public enum GuiText implements Localization {
     TransferTermStickySeparator,
 
     TransferTermStickySeparatorDesc,
+
+    TransferTermWouldReceive,
+
+    TransferTermWouldReceiveNothing,
+
+    TransferTermStickyClaimed,
+
+    TransferTermSlotAmount,
+
+    TransferTermLeftover,
+
+    TransferTermDenied,
+
+    TransferTermCraftingCpu,
+
+    TransferTermQueryAmountHint,
     NoCraftingCPUs,
     Clean,
     InvalidPattern,
