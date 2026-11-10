@@ -10,10 +10,13 @@
 
 package appeng.me.cache;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -37,6 +40,7 @@ import appeng.core.AELog;
 import appeng.core.features.AEFeature;
 import appeng.core.settings.ControllerAnimation;
 import appeng.core.stats.Achievements;
+import appeng.me.ChannelAlertTracker;
 import appeng.me.pathfinding.AdHocChannelUpdater;
 import appeng.me.pathfinding.ChannelFinalizer;
 import appeng.me.pathfinding.ControllerValidator;
@@ -61,6 +65,7 @@ public class PathGridCache implements IPathingGrid {
     private ControllerState controllerState = ControllerState.NO_CONTROLLER;
     private ControllerAnimation controllerAnimation;
     private int lastChannels = 0;
+    private boolean adHocCapacityExceeded;
 
     public PathGridCache(final IGrid g) {
         this.myGrid = g;
@@ -74,6 +79,10 @@ public class PathGridCache implements IPathingGrid {
 
         if (this.updateNetwork) {
             this.updateNetwork = false;
+            final EntityPlayerMP placementPlayer = ChannelAlertTracker.takePlacement(this.myGrid);
+            final Set<IGridNode> previouslySatisfied = placementPlayer == null ? Collections.emptySet()
+                    : ChannelAlertTracker.snapshot(this.nodesNeedingChannels);
+            Collection<? extends IGridNode> capacityRejected = Collections.emptySet();
 
             // Preserve the illusion that the network is booting for a while before channel assignment completes.
             this.booting = true;
@@ -90,6 +99,9 @@ public class PathGridCache implements IPathingGrid {
             if (this.controllerState == ControllerState.NO_CONTROLLER) {
                 // Returns 0 if there's an error
                 this.channelsInUse = this.calculateAdHocChannels();
+                if (this.adHocCapacityExceeded) {
+                    capacityRejected = new HashSet<>(this.nodesNeedingChannels);
+                }
 
                 final int nodes = this.myGrid.getNodes().size();
 
@@ -106,6 +118,7 @@ public class PathGridCache implements IPathingGrid {
                 calculation.compute();
                 this.channelsInUse = calculation.getChannelsInUse();
                 this.channelsByBlocks = calculation.getChannelsByBlocks();
+                capacityRejected = calculation.getCapacityRejectedNodes();
             }
 
             // check for achievements
@@ -117,6 +130,11 @@ public class PathGridCache implements IPathingGrid {
             // properly return true.
             this.myGrid.getPivot().beginVisit(new ChannelFinalizer());
             this.myGrid.postEvent(new MENetworkBootingStatusChange(this.booting));
+            if (placementPlayer != null) {
+                ChannelAlertTracker.notifyPlayer(
+                        placementPlayer,
+                        ChannelAlertTracker.findLostChannels(previouslySatisfied, capacityRejected, this.myGrid));
+            }
 
         }
     }
@@ -250,25 +268,19 @@ public class PathGridCache implements IPathingGrid {
 
     private int calculateAdHocChannels() {
         this.ignoredNode.clear();
+        this.adHocCapacityExceeded = false;
 
         final int maxChannels = AEConfig.instance.isFeatureEnabled(AEFeature.Channels) ? 8 : Integer.MAX_VALUE;
 
         int channels = 0;
         for (final IGridNode node : this.nodesNeedingChannels) {
             if (!this.ignoredNode.contains(node)) {
-                // Prevent ad-hoc networks from being connected to the outside and inside node of P2P tunnels at the
-                // same time
-                // this effectively prevents the nesting of P2P-tunnels in ad-hoc networks.
+                // Prevent nested P2P tunnels in ad-hoc networks. This is not a capacity failure.
                 if (node.hasFlag(GridFlags.COMPRESSED_CHANNEL) && !this.cannotCarryCompressedNodes.isEmpty()) {
                     return 0;
                 }
 
                 channels++;
-
-                // return early if we exceed the max channels
-                if (channels > maxChannels) {
-                    return 0;
-                }
 
                 // Multiblocks only require a single channel. Add the remainder of the multi-block to the ignore-list,
                 // to make this method skip them for channel calculation.
@@ -282,6 +294,11 @@ public class PathGridCache implements IPathingGrid {
             }
         }
 
+        // Finish validating restrictions before reporting capacity, regardless of hash iteration order.
+        if (channels > maxChannels) {
+            this.adHocCapacityExceeded = true;
+            return 0;
+        }
         return channels;
     }
 

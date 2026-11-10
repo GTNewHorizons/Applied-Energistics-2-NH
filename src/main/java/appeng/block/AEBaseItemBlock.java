@@ -27,6 +27,7 @@ import appeng.block.misc.BlockLightDetector;
 import appeng.block.misc.BlockSkyCompass;
 import appeng.block.networking.BlockWireless;
 import appeng.client.render.ItemRenderer;
+import appeng.me.ChannelAlertTracker;
 import appeng.me.helpers.IGridProxyable;
 import appeng.tile.AEBaseTile;
 import appeng.util.Platform;
@@ -157,6 +158,9 @@ public class AEBaseItemBlock extends ItemBlock {
                 }
 
                 tile.onPlacement(stack, player, side);
+                if (tile instanceof IGridProxyable machine) {
+                    ChannelAlertTracker.recordPlacement(player, w, machine);
+                }
             } else if (this.blockType instanceof IOrientableBlock) {
                 ori.setOrientation(forward, up);
             }

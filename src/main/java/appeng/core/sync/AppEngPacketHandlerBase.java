@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import appeng.core.sync.packets.PacketAssemblerAnimation;
+import appeng.core.sync.packets.PacketChannelAlert;
 import appeng.core.sync.packets.PacketClick;
 import appeng.core.sync.packets.PacketClickOrDragFakeSlot;
 import appeng.core.sync.packets.PacketColorSelect;
@@ -160,6 +161,7 @@ public class AppEngPacketHandlerBase {
         PACKET_SPATIAL_ACTION(PacketSpatialAction.class),
         PACKET_TOGGLE_INTERFACE_VISIBILITY(PacketToggleInterfaceVisibility.class),
         PACKET_NETWORK_VISUALISER_DATA(PacketNetworkVisualiserData.class),
+        PACKET_CHANNEL_ALERT(PacketChannelAlert.class),
         PACKET_SUPER_WIRELESS_TOOL_DATA(PacketWirelessToolData.class),
         PACKET_SUPER_WIRELESS_TOOL_COMMAND(PacketWirelessToolCommand.class),
         PACKET_CRAFTING_DIAGNOSTIC_RESET(PacketCraftingDiagnosticReset.class),
