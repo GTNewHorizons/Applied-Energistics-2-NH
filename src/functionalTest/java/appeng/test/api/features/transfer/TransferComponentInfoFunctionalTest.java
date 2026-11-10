@@ -2,9 +2,13 @@ package appeng.test.api.features.transfer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Arrays;
+import java.util.Collections;
 
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
@@ -159,5 +163,71 @@ public class TransferComponentInfoFunctionalTest {
         assertFalse(read.description.config.get(0).matchesQuery);
         assertTrue(read.description.config.get(1).matchesQuery);
         assertFalse(queried.withQuery(null).description.config.get(1).matchesQuery);
+    }
+
+    @Test
+    public void rowsStartWithoutASimulation() {
+        final TransferComponentInfo read = roundTrip(
+                new TransferComponentInfo(
+                        null,
+                        "",
+                        null,
+                        0,
+                        0,
+                        0,
+                        0,
+                        (byte) 0,
+                        0,
+                        TransferDescription.builder().build()));
+
+        assertEquals(TransferComponentInfo.NOT_SIMULATED, read.simulatedAmount);
+        assertFalse(read.stickyClaimed);
+        assertTrue(read.simulatedSlots.isEmpty());
+    }
+
+    @Test
+    public void simulationSurvivesTheNetworkAndLaterQueries() {
+        final TransferComponentInfo simulated = new TransferComponentInfo(
+                null,
+                "",
+                null,
+                0,
+                0,
+                0,
+                0,
+                (byte) 0,
+                0,
+                TransferDescription.builder().build()).withSimulation(
+                        123_456_789_012L,
+                        3,
+                        true,
+                        Arrays.asList(
+                                new TransferComponentInfo.SlotAmount(0, 5),
+                                new TransferComponentInfo.SlotAmount(9, 118)));
+
+        final TransferComponentInfo read = roundTrip(simulated);
+        assertEquals(123_456_789_012L, read.simulatedAmount);
+        assertTrue(read.stickyClaimed);
+        assertEquals(2, read.simulatedSlots.size());
+        assertEquals(9, read.simulatedSlots.get(1).slot);
+        assertEquals(118, read.simulatedSlots.get(1).amount);
+        assertEquals(Integer.MAX_VALUE, read.simulationOrder, "The order only sorts rows on the server");
+
+        final TransferComponentInfo requeried = simulated.withQuery(null);
+        assertEquals(3, requeried.simulationOrder);
+        assertEquals(123_456_789_012L, requeried.simulatedAmount);
+    }
+
+    @Test
+    public void liveHandlersStayOnTheServer() {
+        final TransferDescription description = TransferDescription.builder()
+                .liveHandlers(type -> Collections.emptyList()).slotOf(handler -> 0).build();
+
+        final TransferComponentInfo read = roundTrip(
+                new TransferComponentInfo(null, "", null, 0, 0, 0, 0, (byte) 0, 0, description));
+
+        assertNotNull(description.toBuilder().build().liveHandlers, "Copies keep the handlers");
+        assertNull(read.description.liveHandlers);
+        assertNull(read.description.slotOf);
     }
 }

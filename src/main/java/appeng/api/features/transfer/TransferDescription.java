@@ -3,6 +3,8 @@ package appeng.api.features.transfer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 import net.minecraft.item.ItemStack;
 
@@ -10,13 +12,16 @@ import org.jetbrains.annotations.Nullable;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.Settings;
+import appeng.api.storage.IMEInventoryHandler;
 import appeng.api.storage.data.IAEStack;
+import appeng.api.storage.data.IAEStackType;
 import appeng.util.Platform;
 import cpw.mods.fml.common.network.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 /**
- * What an {@link ITransferInspector} reports about a component. Everything except the matcher is sent to the client.
+ * What an {@link ITransferInspector} reports about a component. Everything except the matcher and the live handlers is
+ * sent to the client.
  */
 public final class TransferDescription {
 
@@ -42,6 +47,18 @@ public final class TransferDescription {
     /** Server only, {@link TransferMatcher#NONE} on the client. */
     public final TransferMatcher matcher;
 
+    /**
+     * The component's storage handlers for a stack type, the same instances AE routes stacks into. Used to tell which
+     * row a simulated insert reached. Server only, null for components that are not storage.
+     */
+    @SuppressWarnings("rawtypes")
+    @Nullable
+    public final Function<IAEStackType<?>, List<IMEInventoryHandler>> liveHandlers;
+
+    /** Slot that holds one of {@link #liveHandlers}, or -1. Server only, null for components without slots. */
+    @Nullable
+    public final ToIntFunction<IMEInventoryHandler<?>> slotOf;
+
     private TransferDescription(final Builder builder) {
         this.settings = Collections.unmodifiableList(builder.settings);
         this.upgrades = Collections.unmodifiableList(builder.upgrades);
@@ -56,6 +73,8 @@ public final class TransferDescription {
         this.storageHandler = builder.storageHandler;
         this.fuzzyMode = builder.fuzzyMode;
         this.matcher = builder.matcher;
+        this.liveHandlers = builder.liveHandlers;
+        this.slotOf = builder.slotOf;
     }
 
     public static Builder builder() {
@@ -207,6 +226,9 @@ public final class TransferDescription {
         private String oreFilter;
         private FuzzyMode fuzzyMode;
         private TransferMatcher matcher = TransferMatcher.NONE;
+        @SuppressWarnings("rawtypes")
+        private Function<IAEStackType<?>, List<IMEInventoryHandler>> liveHandlers;
+        private ToIntFunction<IMEInventoryHandler<?>> slotOf;
 
         private Builder() {}
 
@@ -224,6 +246,8 @@ public final class TransferDescription {
             this.oreFilter = from.oreFilter;
             this.fuzzyMode = from.fuzzyMode;
             this.matcher = from.matcher;
+            this.liveHandlers = from.liveHandlers;
+            this.slotOf = from.slotOf;
         }
 
         public Builder setting(final Settings setting, final Enum<?> value) {
@@ -289,6 +313,17 @@ public final class TransferDescription {
 
         public Builder matcher(final TransferMatcher matcher) {
             this.matcher = matcher;
+            return this;
+        }
+
+        @SuppressWarnings("rawtypes")
+        public Builder liveHandlers(@Nullable final Function<IAEStackType<?>, List<IMEInventoryHandler>> liveHandlers) {
+            this.liveHandlers = liveHandlers;
+            return this;
+        }
+
+        public Builder slotOf(@Nullable final ToIntFunction<IMEInventoryHandler<?>> slotOf) {
+            this.slotOf = slotOf;
             return this;
         }
 
