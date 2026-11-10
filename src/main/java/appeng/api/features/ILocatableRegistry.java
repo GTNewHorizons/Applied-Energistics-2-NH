@@ -19,16 +19,6 @@ package appeng.api.features;
 public interface ILocatableRegistry {
 
     /**
-     * Attempts to find the object with the serial specified, if it can it returns the object.
-     *
-     * @param serial serial
-     * @return requestedObject, or null
-     * @deprecated use {@link ILocatableRegistry#getLocatableBy(long)}
-     */
-    @Deprecated
-    Object findLocatableBySerial(long serial);
-
-    /**
      * Gets the {@link ILocatable} with the registered serial, if available
      *
      * @param serial serial

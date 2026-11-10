@@ -94,12 +94,6 @@ public class VoidCellInventory<StackType extends IAEStack<StackType>> implements
     }
 
     @Override
-    @Deprecated
-    public IInventory getConfigInventory() {
-        return this.cellType.getConfigInventory(this.cellItem);
-    }
-
-    @Override
     public IAEStackInventory getConfigAEInventory() {
         return this.cellType.getConfigAEInventory(this.cellItem);
     }

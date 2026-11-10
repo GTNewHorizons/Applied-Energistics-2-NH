@@ -13,15 +13,12 @@
 
 package appeng.api.networking.crafting;
 
-import static appeng.util.Platform.stackConvert;
-
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.CraftingAllow;
 import appeng.api.networking.security.BaseActionSource;
 import appeng.api.networking.storage.IBaseMonitor;
-import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.util.CraftCancelListener;
 import appeng.api.util.CraftCompleteListener;
@@ -76,12 +73,6 @@ public interface ICraftingCPU extends IBaseMonitor {
     @Nullable
     default IAEStack<?> getFinalMultiOutput() {
         return null;
-    }
-
-    @Deprecated
-    @Nullable
-    default IAEItemStack getFinalOutput() {
-        return stackConvert(getFinalMultiOutput());
     }
 
     /**

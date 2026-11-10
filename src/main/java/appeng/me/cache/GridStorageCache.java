@@ -49,7 +49,6 @@ import appeng.api.storage.ICellContainer;
 import appeng.api.storage.ICellProvider;
 import appeng.api.storage.IMEInventoryHandler;
 import appeng.api.storage.IMEMonitor;
-import appeng.api.storage.StorageChannel;
 import appeng.api.storage.data.AEStackTypeRegistry;
 import appeng.api.storage.data.IAEFluidStack;
 import appeng.api.storage.data.IAEItemStack;
@@ -299,17 +298,6 @@ public class GridStorageCache implements IStorageGrid {
             this.buildNetworkStorage(type);
         }
         return this.inventoryHandlers.get(type);
-    }
-
-    @Override
-    @Deprecated
-    public void postAlterationOfStoredItems(final StorageChannel chan, final Iterable<? extends IAEStack<?>> input,
-            final BaseActionSource src) {
-        if (chan == StorageChannel.ITEMS) {
-            this.monitors.get(ITEM_STACK_TYPE).postChange(true, (Iterable<IAEStack<?>>) input, src);
-        } else if (chan == StorageChannel.FLUIDS) {
-            this.monitors.get(FLUID_STACK_TYPE).postChange(true, (Iterable<IAEStack<?>>) input, src);
-        }
     }
 
     @Override

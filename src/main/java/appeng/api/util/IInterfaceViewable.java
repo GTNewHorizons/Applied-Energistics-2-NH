@@ -12,7 +12,7 @@ import appeng.api.storage.data.IAEStackType;
 import appeng.helpers.IPriorityHost;
 
 /**
- * Replacement for {@code IInterfaceTerminalSupport} in API.
+ * A host whose patterns can be viewed in the Interface Terminal.
  */
 public interface IInterfaceViewable extends IGridHost {
 

@@ -463,16 +463,6 @@ public class ItemEssentiaCell extends Item implements ICellHandler, IStorageCell
     }
 
     @Override
-    public int getBytes(ItemStack cellItem) {
-        return (int) Math.min(this.getBytesLong(cellItem), Integer.MAX_VALUE);
-    }
-
-    @Override
-    public int BytePerType(ItemStack cellItem) {
-        return BYTES_PER_ESSENTIA_TYPE;
-    }
-
-    @Override
     public int getBytesPerType(ItemStack cellItem) {
         return BYTES_PER_ESSENTIA_TYPE;
     }

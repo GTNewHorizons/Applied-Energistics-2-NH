@@ -2,6 +2,9 @@ package appeng.api.storage;
 
 import static org.junit.Assert.assertSame;
 
+import java.util.Collections;
+import java.util.List;
+
 import net.minecraftforge.common.util.ForgeDirection;
 
 import org.junit.Test;
@@ -9,6 +12,7 @@ import org.junit.Test;
 import appeng.api.config.AccessRestriction;
 import appeng.api.networking.IGridNode;
 import appeng.api.storage.data.IAEItemStack;
+import appeng.api.storage.data.IAEStackType;
 import appeng.api.util.AECableType;
 import appeng.me.storage.NullInventory;
 
@@ -61,5 +65,10 @@ public class ReshuffleAccessCompatibilityTest {
 
         @Override
         public void saveChanges(IMEInventory cellInventory) {}
+
+        @Override
+        public List<IMEInventoryHandler> getCellArray(IAEStackType<?> type) {
+            return Collections.emptyList();
+        }
     }
 }

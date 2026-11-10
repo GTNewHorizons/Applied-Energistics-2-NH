@@ -209,6 +209,11 @@ public class MECraftingInventory implements IMEInventory<IAEStack> {
         return out;
     }
 
+    @Override
+    public IItemList<IAEStack> getAvailableItems(final IItemList<IAEStack> out, final int iteration) {
+        return this.getAvailableItems(out);
+    }
+
     @SuppressWarnings({ "rawtypes" })
     public IAEStack getAvailableItem(@NonNull IAEStack request) {
         IAEStack<?> stack = this.inventoryMap.get(request.getStackType()).findPrecise(request);

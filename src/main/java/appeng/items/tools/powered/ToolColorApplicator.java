@@ -10,8 +10,6 @@
 
 package appeng.items.tools.powered;
 
-import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
-
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -74,7 +72,6 @@ import appeng.integration.IntegrationRegistry;
 import appeng.integration.IntegrationType;
 import appeng.integration.abstraction.IGT;
 import appeng.items.contents.CellConfig;
-import appeng.items.contents.CellConfigLegacy;
 import appeng.items.contents.CellUpgrades;
 import appeng.items.misc.ItemPaintBall;
 import appeng.items.tools.powered.powersink.AEBasePoweredItem;
@@ -588,13 +585,8 @@ public class ToolColorApplicator extends AEBasePoweredItem
     }
 
     @Override
-    public int getBytes(final ItemStack cellItem) {
+    public long getBytesLong(final ItemStack cellItem) {
         return 512;
-    }
-
-    @Override
-    public int BytePerType(final ItemStack cell) {
-        return 8;
     }
 
     @Override
@@ -655,12 +647,6 @@ public class ToolColorApplicator extends AEBasePoweredItem
     @Override
     public IInventory getUpgradesInventory(final ItemStack is) {
         return new CellUpgrades(is, 2);
-    }
-
-    @Override
-    @Deprecated
-    public IInventory getConfigInventory(final ItemStack is) {
-        return new CellConfigLegacy(new CellConfig(is), ITEM_STACK_TYPE);
     }
 
     @Override

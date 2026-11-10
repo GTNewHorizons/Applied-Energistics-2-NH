@@ -20,17 +20,6 @@ import appeng.api.storage.data.IItemList;
 public interface IMEMonitor<T extends IAEStack> extends IMEInventoryHandler<T>, IBaseMonitor<T> {
 
     /**
-     * This method is discouraged when accessing data via a IMEMonitor
-     * 
-     * @deprecated use/override {@link #getAvailableItems(IItemList,int)} instead
-     */
-    @Override
-    @Deprecated
-    default IItemList<T> getAvailableItems(IItemList out) {
-        return IMEInventoryHandler.super.getAvailableItems(out);
-    }
-
-    /**
      * Get access to the full item list of the network, preferred over {@link IMEInventory} .getAvailableItems(...)
      *
      * @return full storage list.
