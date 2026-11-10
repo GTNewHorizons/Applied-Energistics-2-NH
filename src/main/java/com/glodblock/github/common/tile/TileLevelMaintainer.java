@@ -46,7 +46,9 @@ import appeng.api.networking.security.MachineSource;
 import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.networking.ticking.TickRateModulation;
 import appeng.api.networking.ticking.TickingRequest;
+import appeng.api.stacks.GenericStack;
 import appeng.api.storage.IMEMonitor;
+import appeng.api.storage.StackConfigInventory;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
@@ -58,7 +60,6 @@ import appeng.tile.TileEvent;
 import appeng.tile.events.TileEventType;
 import appeng.tile.grid.AENetworkTile;
 import appeng.tile.inventory.IAEAppEngInventory;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.tile.inventory.InvOperation;
 import appeng.util.Platform;
 import appeng.util.SettingsFrom;
@@ -92,7 +93,7 @@ public class TileLevelMaintainer extends AENetworkTile
         source = new MachineSource(this);
     }
 
-    public IAEStackInventory getAEStackInventory() {
+    public StackConfigInventory getAEStackInventory() {
         return inventory;
     }
 
@@ -792,7 +793,7 @@ public class TileLevelMaintainer extends AENetworkTile
         }
     }
 
-    private class LevelMaintainerInventory extends IAEStackInventory {
+    private class LevelMaintainerInventory extends StackConfigInventory {
 
         public LevelMaintainerInventory(RequestInfo[] requests) {
             super(null, requests.length, StorageName.NONE);
@@ -804,22 +805,15 @@ public class TileLevelMaintainer extends AENetworkTile
         }
 
         @Override
-        public IAEStack<?> getAEStackInSlot(int n) {
-            if (requests[n] != null) {
-                return requests[n].stack;
-            }
-            return null;
+        public @Nullable GenericStack getStack(int n) {
+            final RequestInfo request = requests[n];
+            return request == null ? null : GenericStack.fromAEStack(request.stack);
         }
 
         @Override
-        public void putAEStackInSlot(int slot, IAEStack<?> aes) {
-            updateStack(slot, aes);
-            super.putAEStackInSlot(slot, aes);
-        }
-
-        @Override
-        public void markDirty() {
-
+        public void setStack(int slot, @Nullable GenericStack stack) {
+            updateStack(slot, GenericStack.toAEStackOrNull(stack));
+            super.setStack(slot, stack);
         }
     }
 }

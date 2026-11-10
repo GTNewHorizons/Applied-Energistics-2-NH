@@ -22,6 +22,7 @@ import appeng.api.implementations.guiobjects.IGuiItemObject;
 import appeng.api.implementations.items.IItemGroup;
 import appeng.api.implementations.items.IStorageCell;
 import appeng.api.storage.ICellInventory;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.core.AEConfig;
 import appeng.core.features.AEFeature;
 import appeng.core.localization.GuiText;
@@ -31,7 +32,6 @@ import appeng.items.contents.CellUpgrades;
 import appeng.items.contents.PortableCellViewer;
 import appeng.items.tools.powered.powersink.AEBasePoweredItem;
 import appeng.me.storage.CellInventoryHandler;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.Platform;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -137,7 +137,7 @@ public abstract class AEBasePortableCell extends AEBasePoweredItem implements IS
     }
 
     @Override
-    public IAEStackInventory getConfigAEInventory(ItemStack is) {
+    public KeyConfigInventory getConfigAEInventory(ItemStack is) {
         return new CellConfig(is);
     }
 

@@ -7,10 +7,9 @@ import net.minecraft.nbt.NBTTagCompound;
 
 import com.glodblock.github.util.Util;
 
-import appeng.api.storage.StorageName;
+import appeng.api.stacks.AEItemKey;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.data.IAEFluidStack;
-import appeng.api.storage.data.IAEItemStack;
-import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.parts.misc.PartStorageBus;
 
@@ -30,13 +29,11 @@ public class PartFluidStorageBus extends PartStorageBus {
         super.readFromNBT(data);
 
         // Migrate from old data
-        var config = this.getAEInventoryByName(StorageName.CONFIG);
+        KeyConfigInventory config = this.getConfig();
         for (int i = 0; i < config.getSizeInventory(); i++) {
-            IAEStack<?> stack = config.getAEStackInSlot(i);
-
-            if (stack instanceof IAEItemStack ais) {
-                IAEFluidStack afs = Util.getAEFluidFromItem(ais.getItemStack());
-                config.putAEStackInSlot(i, afs);
+            if (config.getKey(i) instanceof AEItemKey itemKey) {
+                final IAEFluidStack fluid = Util.getAEFluidFromItem(itemKey.toStack());
+                config.setKey(i, fluid == null ? null : fluid.getKey());
             }
         }
     }

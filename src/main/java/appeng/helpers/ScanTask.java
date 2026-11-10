@@ -13,6 +13,8 @@ import net.minecraft.item.ItemStack;
 
 import appeng.api.networking.IGrid;
 import appeng.api.networking.storage.IStorageGrid;
+import appeng.api.stacks.AEKey;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.ICellProvider;
 import appeng.api.storage.IMEInventory;
 import appeng.api.storage.IMEInventoryHandler;
@@ -29,7 +31,6 @@ import appeng.me.helpers.IGridProxyable;
 import appeng.me.storage.CellInventory;
 import appeng.me.storage.MEInventoryHandler;
 import appeng.parts.misc.PartStorageBus;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.IterationCounter;
 import appeng.util.Platform;
 import appeng.util.item.AEItemStack;
@@ -222,12 +223,13 @@ public class ScanTask implements IGuiPacketWritable {
         this.trimRecords();
     }
 
-    private void scan(ItemStack is, IMEInventory<?> inv, IAEStackType<?> type, int slot, IAEStackInventory configInv,
+    private void scan(ItemStack is, IMEInventory<?> inv, IAEStackType<?> type, int slot, ConfigInventory configInv,
             DimensionalCoord dc, long typesUsed, long typesTotal, long bytesUsed, long bytesTotal) {
         if (configInv != null) {
             for (int i = 0; i < configInv.getSizeInventory(); i++) {
-                IAEStack<?> filterStack = configInv.getAEStackInSlot(i);
-                if (filterStack == null) continue;
+                final AEKey configKey = configInv.getKey(i);
+                if (configKey == null) continue;
+                final IAEStack<?> filterStack = configKey.toAEStack();
                 final Map<IAEStack<?>, List<ScanRecord>> map = this.scanData.get(type);
                 final List<ScanRecord> list = map.getOrDefault(filterStack, new ArrayList<>());
                 list.add(new ScanRecord(slot, is, typesUsed, typesTotal, bytesUsed, bytesTotal, dc, new ArrayList<>()));

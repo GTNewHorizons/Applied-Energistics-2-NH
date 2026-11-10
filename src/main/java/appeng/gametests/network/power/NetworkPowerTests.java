@@ -28,11 +28,10 @@ import appeng.api.networking.IGridNode;
 import appeng.api.networking.energy.IAEPowerStorage;
 import appeng.api.networking.energy.IEnergyGrid;
 import appeng.api.parts.IPart;
-import appeng.api.storage.StorageName;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.core.AppEng;
 import appeng.core.settings.TickRates;
 import appeng.parts.automation.PartExportBus;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.tile.networking.TileEnergyAcceptor;
 import appeng.tile.storage.TileDrive;
 
@@ -279,9 +278,9 @@ public class NetworkPowerTests {
     }
 
     private static void configureFilter(GameTestHelper helper, PartExportBus exportBus) {
-        IAEStackInventory config = exportBus.getAEInventoryByName(StorageName.CONFIG);
+        KeyConfigInventory config = exportBus.getConfig();
         helper.assertNotNull(config, "Export bus config inventory should exist");
-        config.putAEStackInSlot(0, itemStack(Blocks.cobblestone, 1));
+        config.setKey(0, itemStack(Blocks.cobblestone, 1).getKey());
     }
 
     private static int exportTimeout(long itemCount) {

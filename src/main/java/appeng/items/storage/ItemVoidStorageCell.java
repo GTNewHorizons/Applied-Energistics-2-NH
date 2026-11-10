@@ -12,8 +12,9 @@ import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.IncludeExclude;
+import appeng.api.stacks.AEKey;
 import appeng.api.storage.ICellWorkbenchItem;
-import appeng.api.storage.data.IAEStack;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.core.features.AEFeature;
 import appeng.core.localization.GuiText;
 import appeng.items.AEBaseItem;
@@ -21,7 +22,6 @@ import appeng.items.contents.CellConfig;
 import appeng.items.contents.CellUpgrades;
 import appeng.me.storage.CellInventoryHandler;
 import appeng.me.storage.VoidCellInventory;
-import appeng.tile.inventory.IAEStackInventory;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -54,7 +54,7 @@ public class ItemVoidStorageCell extends AEBaseItem implements ICellWorkbenchIte
                     if (GuiScreen.isShiftKeyDown()) {
                         lines.add(GuiText.Filter.getLocal() + ": ");
                         for (int i = 0; i < cell.getConfigAEInventory(stack).getSizeInventory(); ++i) {
-                            final IAEStack<?> s = cell.getConfigAEInventory(stack).getAEStackInSlot(i);
+                            final AEKey s = cell.getConfigAEInventory(stack).getKey(i);
                             if (s != null) lines.add(s.getDisplayName());
                         }
                     }
@@ -79,7 +79,7 @@ public class ItemVoidStorageCell extends AEBaseItem implements ICellWorkbenchIte
     }
 
     @Override
-    public IAEStackInventory getConfigAEInventory(ItemStack is) {
+    public KeyConfigInventory getConfigAEInventory(ItemStack is) {
         return new CellConfig(is);
     }
 

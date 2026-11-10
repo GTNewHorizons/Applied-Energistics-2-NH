@@ -15,10 +15,14 @@ import static appeng.util.Platform.isServer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.IInventory;
 
+import org.jspecify.annotations.Nullable;
+
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.SecurityPermissions;
 import appeng.api.config.Settings;
 import appeng.api.config.YesNo;
+import appeng.api.stacks.GenericStack;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
@@ -26,7 +30,6 @@ import appeng.container.guisync.GuiSync;
 import appeng.container.interfaces.IVirtualSlotHolder;
 import appeng.container.slot.SlotRestrictedInput;
 import appeng.parts.automation.PartBaseFormationPlane;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.Platform;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 
@@ -35,7 +38,7 @@ public class ContainerFormationPlane extends ContainerUpgradeable implements IVi
     @GuiSync(10)
     public YesNo placeMode;
     public final PartBaseFormationPlane te;
-    private final IAEStack<?>[] configClientSlot = new IAEStack[63];
+    private final @Nullable GenericStack[] configClientSlot = new GenericStack[63];
 
     public ContainerFormationPlane(final InventoryPlayer ip, final PartBaseFormationPlane te) {
         super(ip, te);
@@ -107,7 +110,7 @@ public class ContainerFormationPlane extends ContainerUpgradeable implements IVi
             if (this.supportItemDrop())
                 this.setPlaceMode((YesNo) this.getUpgradeable().getConfigManager().getSetting(Settings.PLACE_BLOCK));
 
-            final IAEStackInventory config = this.te.getAEInventoryByName(StorageName.CONFIG);
+            final KeyConfigInventory config = this.te.getConfig();
             this.updateVirtualSlots(StorageName.CONFIG, config, this.configClientSlot);
         }
 
@@ -116,9 +119,10 @@ public class ContainerFormationPlane extends ContainerUpgradeable implements IVi
 
     @Override
     public void receiveSlotStacks(StorageName invName, Int2ObjectMap<IAEStack<?>> slotStacks) {
-        final IAEStackInventory config = this.te.getAEInventoryByName(StorageName.CONFIG);
+        final KeyConfigInventory config = this.te.getConfig();
         for (var entry : slotStacks.int2ObjectEntrySet()) {
-            config.putAEStackInSlot(entry.getIntKey(), entry.getValue());
+            final IAEStack<?> stack = entry.getValue();
+            config.setKey(entry.getIntKey(), stack == null ? null : stack.getKey());
         }
 
         if (isServer()) {
@@ -138,8 +142,8 @@ public class ContainerFormationPlane extends ContainerUpgradeable implements IVi
         return this.te.getStackType();
     }
 
-    public IAEStackInventory getConfig() {
-        return this.te.getAEInventoryByName(StorageName.CONFIG);
+    public KeyConfigInventory getConfig() {
+        return this.te.getConfig();
     }
 
     public boolean supportItemDrop() {

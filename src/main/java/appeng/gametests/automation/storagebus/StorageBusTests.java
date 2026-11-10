@@ -34,11 +34,10 @@ import appeng.api.networking.security.MachineSource;
 import appeng.api.networking.security.ReshuffleActionSource;
 import appeng.api.parts.PartItemStack;
 import appeng.api.storage.IMEInventoryHandler;
-import appeng.api.storage.StorageName;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.core.AppEng;
 import appeng.parts.misc.PartStorageBus;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.tile.networking.TileController;
 import appeng.tile.storage.TileDrive;
 
@@ -469,9 +468,9 @@ public class StorageBusTests {
     }
 
     private static void configureStorageBusFilter(GameTestHelper helper, PartStorageBus storageBus, Block block) {
-        IAEStackInventory config = storageBus.getAEInventoryByName(StorageName.CONFIG);
+        KeyConfigInventory config = storageBus.getConfig();
         helper.assertNotNull(config, "Storage bus config inventory should exist");
-        config.putAEStackInSlot(0, itemStack(block, 1));
+        config.setKey(0, itemStack(block, 1).getKey());
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })

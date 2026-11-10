@@ -21,9 +21,12 @@ import appeng.api.networking.energy.IEnergySource;
 import appeng.api.networking.security.BaseActionSource;
 import appeng.api.networking.security.IActionHost;
 import appeng.api.networking.security.MachineSource;
+import appeng.api.stacks.GenericStack;
+import appeng.api.storage.IConfigInventoryHost;
 import appeng.api.storage.IMEMonitor;
 import appeng.api.storage.ITerminalHost;
 import appeng.api.storage.ITerminalPins;
+import appeng.api.storage.StackConfigInventory;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.helpers.PatternHelper;
@@ -31,13 +34,15 @@ import appeng.helpers.UltimatePatternHelper;
 import appeng.items.misc.ItemEncodedPattern;
 import appeng.me.helpers.ChannelPowerSrc;
 import appeng.tile.inventory.IAEAppEngInventory;
-import appeng.tile.inventory.IAEStackInventory;
-import appeng.tile.inventory.IIAEStackInventory;
 import appeng.util.IConfigManagerHost;
 import appeng.util.item.AEItemStack;
 
-public interface IPatternTerminal extends IIAEStackInventory, ITerminalHost, IConfigManagerHost, IViewCellStorage,
+public interface IPatternTerminal extends IConfigInventoryHost, ITerminalHost, IConfigManagerHost, IViewCellStorage,
         IAEAppEngInventory, ITerminalPins, IActionHost {
+
+    StackConfigInventory getCraftingInputs();
+
+    StackConfigInventory getCraftingOutputs();
 
     boolean isCraftingRecipe();
 
@@ -55,8 +60,8 @@ public interface IPatternTerminal extends IIAEStackInventory, ITerminalHost, ICo
 
     void exPatternTerminalCall(IAEStack<?>[] in, IAEStack<?>[] out);
 
-    default void loadPatternFromItem(final ItemStack stack, World world, IAEStackInventory crafting,
-            IAEStackInventory output) {
+    default void loadPatternFromItem(final ItemStack stack, World world, StackConfigInventory crafting,
+            StackConfigInventory output) {
         if (stack != null && stack.getItem() instanceof ICraftingPatternItem pattern) {
             final NBTTagCompound encodedValue = stack.getTagCompound();
 
@@ -92,22 +97,22 @@ public interface IPatternTerminal extends IIAEStackInventory, ITerminalHost, ICo
                 exPatternTerminalCall(inItems, outItems);
 
                 for (int x = 0; x < crafting.getSizeInventory(); x++) {
-                    crafting.putAEStackInSlot(x, null);
+                    crafting.setStack(x, null);
                 }
 
                 for (int x = 0; x < output.getSizeInventory(); x++) {
-                    output.putAEStackInSlot(x, null);
+                    output.setStack(x, null);
                 }
 
                 for (int x = 0; x < crafting.getSizeInventory() && x < inItems.length; x++) {
                     if (inItems[x] != null) {
-                        crafting.putAEStackInSlot(x, inItems[x]);
+                        crafting.setStack(x, GenericStack.fromAEStack(inItems[x]));
                     }
                 }
 
                 for (int x = 0; x < output.getSizeInventory() && x < outItems.length; x++) {
                     if (outItems[x] != null) {
-                        output.putAEStackInSlot(x, outItems[x]);
+                        output.setStack(x, GenericStack.fromAEStack(outItems[x]));
                     }
                 }
             }

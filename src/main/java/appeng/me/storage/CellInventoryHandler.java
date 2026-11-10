@@ -21,10 +21,10 @@ import appeng.api.storage.ICellCacheRegistry;
 import appeng.api.storage.ICellInventory;
 import appeng.api.storage.ICellInventoryHandler;
 import appeng.api.storage.IMEInventory;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.StorageChannel;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.partitionlist.FuzzyPartitionList;
 
 public abstract class CellInventoryHandler<StackType extends IAEStack<StackType>> extends MEInventoryHandler<StackType>
@@ -37,7 +37,7 @@ public abstract class CellInventoryHandler<StackType extends IAEStack<StackType>
 
         if (ci != null) {
             final IInventory upgrades = ci.getUpgradesInventory();
-            final IAEStackInventory config = ci.getConfigAEInventory();
+            final KeyConfigInventory config = ci.getConfigAEInventory();
             final FuzzyMode fzMode = ci.getFuzzyMode();
             final String filter = ci.getOreFilter();
 
@@ -78,7 +78,7 @@ public abstract class CellInventoryHandler<StackType extends IAEStack<StackType>
 
     protected void setOreFilterPartitionList(String filter) {}
 
-    protected void setConfigPartitionList(boolean hasFuzzy, IAEStackInventory config, FuzzyMode fzMode) {}
+    protected void setConfigPartitionList(boolean hasFuzzy, KeyConfigInventory config, FuzzyMode fzMode) {}
 
     @Override
     public ICellInventory<StackType> getCellInv() {

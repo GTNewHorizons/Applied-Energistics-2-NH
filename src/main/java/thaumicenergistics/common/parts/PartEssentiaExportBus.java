@@ -27,7 +27,7 @@ import appeng.api.parts.IPartCollisionHelper;
 import appeng.api.parts.IPartRenderHelper;
 import appeng.api.storage.IMEInventory;
 import appeng.api.storage.IMEMonitor;
-import appeng.api.storage.StorageName;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.util.AEColor;
@@ -37,7 +37,6 @@ import appeng.helpers.ICustomButtonProvider;
 import appeng.me.GridAccessException;
 import appeng.parts.automation.PartBaseExportBus;
 import appeng.parts.automation.UpgradeInventory;
-import appeng.tile.inventory.IAEStackInventory;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import thaumcraft.api.aspects.Aspect;
@@ -48,6 +47,7 @@ import thaumicenergistics.client.textures.BlockTextureManager;
 import thaumicenergistics.common.integration.tc.EssentiaTileContainerHelper;
 import thaumicenergistics.common.registries.EnumCache;
 import thaumicenergistics.common.registries.Renderers;
+import thaumicenergistics.common.storage.AEEssentiaKey;
 import thaumicenergistics.common.storage.AEEssentiaStack;
 
 public class PartEssentiaExportBus extends PartBaseExportBus<AEEssentiaStack> implements ICustomButtonProvider {
@@ -224,8 +224,8 @@ public class PartEssentiaExportBus extends PartBaseExportBus<AEEssentiaStack> im
             if (data.hasKey(NBT_KEY_FILTER_NUMBER + index)) {
                 Aspect aspect = Aspect.aspects.get(data.getString(NBT_KEY_FILTER_NUMBER + index));
                 if (aspect != null) {
-                    IAEStackInventory config = this.getAEInventoryByName(StorageName.CONFIG);
-                    config.putAEStackInSlot(index, new AEEssentiaStack(aspect));
+                    KeyConfigInventory config = this.getConfig();
+                    config.setKey(index, AEEssentiaKey.of(aspect));
                 }
             }
         }

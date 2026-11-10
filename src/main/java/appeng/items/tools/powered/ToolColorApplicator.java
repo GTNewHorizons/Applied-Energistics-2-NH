@@ -50,6 +50,7 @@ import appeng.api.networking.security.BaseActionSource;
 import appeng.api.storage.ICellInventory;
 import appeng.api.storage.ICellInventoryHandler;
 import appeng.api.storage.IMEInventory;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.StorageChannel;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
@@ -76,7 +77,6 @@ import appeng.items.contents.CellUpgrades;
 import appeng.items.misc.ItemPaintBall;
 import appeng.items.tools.powered.powersink.AEBasePoweredItem;
 import appeng.me.storage.CellInventoryHandler;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.tile.misc.TilePaint;
 import appeng.util.ItemSorters;
 import appeng.util.IterationCounter;
@@ -650,7 +650,7 @@ public class ToolColorApplicator extends AEBasePoweredItem
     }
 
     @Override
-    public IAEStackInventory getConfigAEInventory(ItemStack is) {
+    public KeyConfigInventory getConfigAEInventory(ItemStack is) {
         return new CellConfig(is);
     }
 

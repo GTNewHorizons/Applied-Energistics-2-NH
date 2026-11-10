@@ -21,6 +21,7 @@ import appeng.api.networking.security.MachineSource;
 import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.networking.ticking.TickRateModulation;
 import appeng.api.networking.ticking.TickingRequest;
+import appeng.api.stacks.AEFluidKey;
 import appeng.api.storage.IMEMonitor;
 import appeng.api.storage.data.IAEFluidStack;
 import appeng.api.storage.data.IAEStackType;
@@ -103,8 +104,8 @@ public class PartFluidFormationPlane extends PartBaseFormationPlane implements I
         boolean stockOut = false;
 
         for (int i = 0; i < this.Config.getSizeInventory(); i++) {
-            if (!(this.Config.getAEStackInSlot(i) instanceof IAEFluidStack ifs)) continue;
-            final IAEFluidStack fluid = ifs.copy().setStackSize(FluidContainerRegistry.BUCKET_VOLUME);
+            if (!(this.Config.getKey(i) instanceof AEFluidKey fluidKey)) continue;
+            final IAEFluidStack fluid = fluidKey.toAEStack(FluidContainerRegistry.BUCKET_VOLUME);
             final IAEFluidStack canDrain = Platform.poweredExtraction(power, monitor, fluid, src, Actionable.SIMULATE);
             if (canDrain == null || canDrain.getStackSize() < FluidContainerRegistry.BUCKET_VOLUME) {
                 stockOut = true;

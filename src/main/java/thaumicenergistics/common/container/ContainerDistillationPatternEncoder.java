@@ -12,6 +12,8 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.world.World;
 
 import appeng.api.AEApi;
+import appeng.api.stacks.GenericStack;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
@@ -26,7 +28,6 @@ import appeng.helpers.PatternHelper;
 import appeng.helpers.UltimatePatternHelper;
 import appeng.items.misc.ItemEncodedPattern;
 import appeng.items.misc.ItemEncodedUltimatePattern;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.item.AEItemStack;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -36,6 +37,7 @@ import thaumcraft.api.aspects.AspectList;
 import thaumcraft.common.Thaumcraft;
 import thaumcraft.common.lib.research.ScanManager;
 import thaumicenergistics.common.network.packet.client.Packet_C_DistillationEncoder;
+import thaumicenergistics.common.storage.AEEssentiaKey;
 import thaumicenergistics.common.storage.AEEssentiaStack;
 import thaumicenergistics.common.tiles.TileDistillationPatternEncoder;
 
@@ -157,7 +159,7 @@ public class ContainerDistillationPatternEncoder extends AEBaseContainer impleme
      */
     private void clearAspectSlots() {
         for (int i = 0; i < this.encoder.aspectsInventory.getSizeInventory(); i++) {
-            this.encoder.aspectsInventory.putAEStackInSlot(i, null);
+            this.encoder.aspectsInventory.setStack(i, null);
         }
         if (!this.encoder.getWorldObj().isRemote) {
             this.syncAspectSlots();
@@ -216,7 +218,7 @@ public class ContainerDistillationPatternEncoder extends AEBaseContainer impleme
         this.cachedSource = input.getItemStack();
 
         for (int index = 0; index < outItems.length; index++) {
-            this.encoder.aspectsInventory.putAEStackInSlot(index, outItems[index]);
+            this.encoder.aspectsInventory.setStack(index, GenericStack.fromAEStack(outItems[index]));
         }
 
         this.syncAspectSlots();
@@ -265,14 +267,14 @@ public class ContainerDistillationPatternEncoder extends AEBaseContainer impleme
                 if (i < sortedAspects.length) {
                     Aspect aspect = sortedAspects[i];
                     this.encoder.aspectsInventory
-                            .putAEStackInSlot(i, new AEEssentiaStack(aspect, itemAspects.getAmount(aspect)));
+                            .setStack(i, new GenericStack(AEEssentiaKey.of(aspect), itemAspects.getAmount(aspect)));
                 } else {
-                    this.encoder.aspectsInventory.putAEStackInSlot(i, null);
+                    this.encoder.aspectsInventory.setStack(i, null);
                 }
             }
         } else {
             for (int i = 0; i < this.encoder.aspectsInventory.getSizeInventory(); i++) {
-                this.encoder.aspectsInventory.putAEStackInSlot(i, null);
+                this.encoder.aspectsInventory.setStack(i, null);
             }
         }
 
@@ -301,11 +303,11 @@ public class ContainerDistillationPatternEncoder extends AEBaseContainer impleme
             return;
         }
 
-        ArrayList<AEEssentiaStack> outputStacks = new ArrayList<>();
+        ArrayList<IAEStack<?>> outputStacks = new ArrayList<>();
         for (int i = 0; i < this.encoder.aspectsInventory.getSizeInventory(); i++) {
-            AEEssentiaStack stack = (AEEssentiaStack) this.encoder.aspectsInventory.getAEStackInSlot(i);
-            if (stack != null) {
-                outputStacks.add(stack);
+            final GenericStack stack = this.encoder.aspectsInventory.getStack(i);
+            if (stack != null && stack.getKey() instanceof AEEssentiaKey) {
+                outputStacks.add(stack.toAEStack());
             }
         }
 
@@ -340,14 +342,14 @@ public class ContainerDistillationPatternEncoder extends AEBaseContainer impleme
         this.slotPatternEncoded.putStack(pattern);
     }
 
-    public IAEStackInventory getAspectsInventory() {
+    public ConfigInventory getAspectsInventory() {
         return this.encoder.aspectsInventory;
     }
 
     @Override
     public void receiveSlotStacks(StorageName invName, Int2ObjectMap<IAEStack<?>> slotStacks) {
         for (var entry : slotStacks.int2ObjectEntrySet()) {
-            this.encoder.aspectsInventory.putAEStackInSlot(entry.getIntKey(), entry.getValue());
+            this.encoder.aspectsInventory.setStack(entry.getIntKey(), GenericStack.fromAEStack(entry.getValue()));
         }
         this.syncAspectSlots();
     }
@@ -355,7 +357,7 @@ public class ContainerDistillationPatternEncoder extends AEBaseContainer impleme
     private void syncAspectSlots() {
         final Int2ObjectMap<IAEStack<?>> slotStacks = new Int2ObjectOpenHashMap<>();
         for (int i = 0; i < this.encoder.aspectsInventory.getSizeInventory(); i++) {
-            slotStacks.put(i, this.encoder.aspectsInventory.getAEStackInSlot(i));
+            slotStacks.put(i, GenericStack.toAEStackOrNull(this.encoder.aspectsInventory.getStack(i)));
         }
 
         for (Object crafter : this.crafters) {

@@ -5,7 +5,7 @@ import net.minecraft.nbt.NBTTagCompound;
 
 import appeng.items.contents.CellConfig;
 import thaumcraft.api.aspects.Aspect;
-import thaumicenergistics.common.storage.AEEssentiaStack;
+import thaumicenergistics.common.storage.AEEssentiaKey;
 
 public class EssentiaCellConfig extends CellConfig {
 
@@ -44,7 +44,7 @@ public class EssentiaCellConfig extends CellConfig {
 
                 if (partitionAspect != null) {
                     // Add the aspect
-                    this.putAEStackInSlot(i, new AEEssentiaStack(partitionAspect));
+                    this.setKey(i, AEEssentiaKey.of(partitionAspect));
                 }
             }
 

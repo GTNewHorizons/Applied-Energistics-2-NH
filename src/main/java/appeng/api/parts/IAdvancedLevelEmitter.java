@@ -4,10 +4,10 @@ import appeng.api.features.ILevelViewable;
 import appeng.api.implementations.IUpgradeableHost;
 import appeng.api.networking.storage.IStackWatcherHost;
 import appeng.api.networking.ticking.IGridTickable;
-import appeng.tile.inventory.IIAEStackInventory;
+import appeng.api.storage.IConfigInventoryHost;
 
 public interface IAdvancedLevelEmitter
-        extends IStackWatcherHost, IGridTickable, IUpgradeableHost, IIAEStackInventory, ILevelViewable {
+        extends IStackWatcherHost, IGridTickable, IUpgradeableHost, IConfigInventoryHost, ILevelViewable {
 
     int SLOT_COUNT = 6;
 

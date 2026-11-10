@@ -35,6 +35,7 @@ import appeng.api.storage.ICellHandler;
 import appeng.api.storage.IMEInventory;
 import appeng.api.storage.IMEInventoryHandler;
 import appeng.api.storage.ISaveProvider;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.StorageChannel;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.storage.data.IItemList;
@@ -42,7 +43,6 @@ import appeng.core.localization.GuiText;
 import appeng.core.sync.GuiBridge;
 import appeng.items.contents.CellUpgrades;
 import appeng.me.storage.CreativeCellInventory;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.IterationCounter;
 import appeng.util.Platform;
 import cpw.mods.fml.relauncher.Side;
@@ -517,7 +517,7 @@ public class ItemEssentiaCell extends Item implements ICellHandler, IStorageCell
     }
 
     @Override
-    public IAEStackInventory getConfigAEInventory(ItemStack is) {
+    public KeyConfigInventory getConfigAEInventory(ItemStack is) {
         if (this.isCreative(is)) {
             return new CreativeEssentiaCellConfig();
         }

@@ -1,21 +1,18 @@
 package thaumicenergistics.common.inventory;
 
-import appeng.tile.inventory.IAEStackInventory;
+import appeng.api.storage.KeyConfigInventory;
 import thaumcraft.api.aspects.Aspect;
-import thaumicenergistics.common.storage.AEEssentiaStack;
+import thaumicenergistics.common.storage.AEEssentiaKey;
 
-public class CreativeEssentiaCellConfig extends IAEStackInventory {
+public class CreativeEssentiaCellConfig extends KeyConfigInventory {
 
     public CreativeEssentiaCellConfig() {
         super(null, Aspect.aspects.size());
 
         int i = 0;
         for (Aspect aspect : Aspect.aspects.values()) {
-            this.putAEStackInSlot(i, new AEEssentiaStack(aspect));
+            this.setKey(i, AEEssentiaKey.of(aspect));
             i++;
         }
     }
-
-    @Override
-    public void markDirty() {}
 }

@@ -25,7 +25,10 @@ import appeng.api.AEApi;
 import appeng.api.networking.energy.IEnergySource;
 import appeng.api.networking.security.BaseActionSource;
 import appeng.api.parts.IPatternTerminal;
+import appeng.api.storage.ConfigInventory;
+import appeng.api.storage.IConfigInventoryHost;
 import appeng.api.storage.IMEMonitor;
+import appeng.api.storage.StackConfigInventory;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
@@ -34,11 +37,9 @@ import appeng.core.sync.GuiBridge;
 import appeng.helpers.PatternEncodingHelper;
 import appeng.helpers.Reflected;
 import appeng.tile.inventory.AppEngInternalInventory;
-import appeng.tile.inventory.IAEStackInventory;
-import appeng.tile.inventory.IIAEStackInventory;
 import appeng.tile.inventory.InvOperation;
 
-public class PartPatternTerminal extends AbstractPartTerminal implements IIAEStackInventory, IPatternTerminal {
+public class PartPatternTerminal extends AbstractPartTerminal implements IConfigInventoryHost, IPatternTerminal {
 
     private static final CableBusTextures FRONT_BRIGHT_ICON = CableBusTextures.PartPatternTerm_Bright;
     private static final CableBusTextures FRONT_DARK_ICON = CableBusTextures.PartPatternTerm_Dark;
@@ -52,11 +53,11 @@ public class PartPatternTerminal extends AbstractPartTerminal implements IIAESta
     public static final int patternOutputsHeigh = 3;
     public static final int patternOutputPages = 1;
 
-    private final IAEStackInventory crafting = new IAEStackInventory(
+    private final StackConfigInventory crafting = new StackConfigInventory(
             this,
             getPatternInputsWidth() * getPatternInputsHeigh() * getPatternInputPages(),
             StorageName.CRAFTING_INPUT);
-    private final IAEStackInventory output = new IAEStackInventory(
+    private final StackConfigInventory output = new StackConfigInventory(
             this,
             getPatternOutputsWidth() * getPatternOutputsHeigh() * getPatternOutputPages(),
             StorageName.CRAFTING_OUTPUT);
@@ -138,7 +139,11 @@ public class PartPatternTerminal extends AbstractPartTerminal implements IIAESta
     }
 
     @Override
-    public void saveAEStackInv() {
+    public void onChangeConfigInventory(ConfigInventory inv, int slot) {
+        if (this.isClientSide()) {
+            return;
+        }
+
         this.getHost().markForSave();
     }
 
@@ -179,7 +184,17 @@ public class PartPatternTerminal extends AbstractPartTerminal implements IIAESta
     }
 
     @Override
-    public IAEStackInventory getAEInventoryByName(StorageName name) {
+    public StackConfigInventory getCraftingInputs() {
+        return this.crafting;
+    }
+
+    @Override
+    public StackConfigInventory getCraftingOutputs() {
+        return this.output;
+    }
+
+    @Override
+    public ConfigInventory getAEInventoryByName(StorageName name) {
         switch (name) {
             case CRAFTING_INPUT -> {
                 return this.crafting;

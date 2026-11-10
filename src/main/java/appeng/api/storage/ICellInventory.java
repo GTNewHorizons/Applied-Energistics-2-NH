@@ -18,7 +18,6 @@ import net.minecraft.item.ItemStack;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.storage.data.IAEStack;
-import appeng.tile.inventory.IAEStackInventory;
 
 public interface ICellInventory<StackType extends IAEStack<StackType>> extends IMEInventory<StackType> {
 
@@ -54,7 +53,7 @@ public interface ICellInventory<StackType extends IAEStack<StackType>> extends I
     /**
      * @return access configured list
      */
-    IAEStackInventory getConfigAEInventory();
+    KeyConfigInventory getConfigAEInventory();
 
     /**
      * @return access installed upgrades.

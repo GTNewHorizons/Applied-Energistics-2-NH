@@ -29,6 +29,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.LevelType;
@@ -57,7 +58,10 @@ import appeng.api.networking.ticking.TickingRequest;
 import appeng.api.parts.ILevelEmitter;
 import appeng.api.parts.IPartCollisionHelper;
 import appeng.api.parts.IPartRenderHelper;
+import appeng.api.stacks.AEKey;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.IMEMonitor;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.StorageChannel;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.AEStackTypeRegistry;
@@ -74,7 +78,6 @@ import appeng.core.sync.GuiBridge;
 import appeng.helpers.Reflected;
 import appeng.me.GridAccessException;
 import appeng.parts.misc.PartPatternRepeater;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.AEStackTypeFilter;
 import appeng.util.Platform;
 import appeng.util.SettingsFrom;
@@ -86,7 +89,7 @@ public class PartLevelEmitter extends PartUpgradeable implements ILevelEmitter {
 
     private static final int FLAG_ON = 8;
 
-    private final IAEStackInventory config = new IAEStackInventory(this, 1);
+    private final KeyConfigInventory config = new KeyConfigInventory(this, 1);
 
     private boolean prevState = false;
 
@@ -172,7 +175,7 @@ public class PartLevelEmitter extends PartUpgradeable implements ILevelEmitter {
 
         if (this.getInstalledUpgrades(Upgrades.CRAFTING) > 0) {
             try {
-                final IAEStack<?> what = this.config.getAEStackInSlot(0);
+                final IAEStack<?> what = this.getConfiguredStack(0);
                 if (this.getProxy().getCrafting().isRequesting(what)) {
                     return true;
                 }
@@ -231,7 +234,7 @@ public class PartLevelEmitter extends PartUpgradeable implements ILevelEmitter {
 
     // update the system...
     private void configureWatchers() {
-        final IAEStack<?> myStack = this.config.getAEStackInSlot(0);
+        final IAEStack<?> myStack = this.getConfiguredStack(0);
 
         if (this.myWatcher != null) {
             this.myWatcher.clear();
@@ -323,7 +326,7 @@ public class PartLevelEmitter extends PartUpgradeable implements ILevelEmitter {
     }
 
     private void updateReportingValue(IMEMonitor monitor) {
-        final IAEStack<?> myStack = this.config.getAEStackInSlot(0);
+        final IAEStack<?> myStack = this.getConfiguredStack(0);
 
         if (myStack == null || monitor == null) {
             this.lastReportedValue = 0;
@@ -375,10 +378,10 @@ public class PartLevelEmitter extends PartUpgradeable implements ILevelEmitter {
     @Override
     public void onStackChange(final IItemList o, final IAEStack fullStack, final IAEStack diffStack,
             final BaseActionSource src, final StorageChannel chan) {
-        IAEStack<?> myStack = this.config.getAEStackInSlot(0);
-        if (myStack == null) return;
+        final AEKey myKey = this.config.getKey(0);
+        if (myKey == null) return;
 
-        if (fullStack.equals(myStack)) {
+        if (myKey.equals(fullStack.getKey())) {
             this.lastReportedValue = fullStack.getStackSize();
             this.updateState();
         }
@@ -457,7 +460,7 @@ public class PartLevelEmitter extends PartUpgradeable implements ILevelEmitter {
     @Override
     public void onListUpdate() {
         try {
-            IAEStack<?> myStack = this.config.getAEStackInSlot(0);
+            IAEStack<?> myStack = this.getConfiguredStack(0);
             if (myStack != null) {
                 this.updateReportingValue(this.getProxy().getStorage().getMEMonitor(myStack.getStackType()));
             } else {
@@ -832,7 +835,7 @@ public class PartLevelEmitter extends PartUpgradeable implements ILevelEmitter {
     public void provideCrafting(final ICraftingProviderHelper craftingTracker) {
         if (this.getInstalledUpgrades(Upgrades.CRAFTING) > 0) {
             if (this.getConfigManager().getSetting(Settings.CRAFT_VIA_REDSTONE) == YesNo.YES) {
-                final IAEStack<?> what = this.config.getAEStackInSlot(0);
+                final IAEStack<?> what = this.getConfiguredStack(0);
                 if (what != null) {
                     craftingTracker.setEmitable(this, what);
                 }
@@ -842,7 +845,7 @@ public class PartLevelEmitter extends PartUpgradeable implements ILevelEmitter {
 
     @Override
     public LevelItemInfo[] getLevelItemInfoList() {
-        IAEStack<?> stack = this.config.getAEStackInSlot(0);
+        IAEStack<?> stack = this.getConfiguredStack(0);
         if (stack == null) return new LevelItemInfo[] { null };
         return new LevelItemInfo[] { new LevelItemInfo(
                 stack,
@@ -852,13 +855,25 @@ public class PartLevelEmitter extends PartUpgradeable implements ILevelEmitter {
     }
 
     @Override
-    public void saveAEStackInv() {
+    public void onChangeConfigInventory(ConfigInventory inv, int slot) {
+        if (this.isClientSide()) {
+            return;
+        }
+
         this.getHost().markForSave();
         this.configureWatchers();
     }
 
+    /**
+     * @return the configured resource as a stack for APIs that do not use keys yet
+     */
+    private @Nullable IAEStack<?> getConfiguredStack(final int slot) {
+        final AEKey key = this.config.getKey(slot);
+        return key == null ? null : key.toAEStack();
+    }
+
     @Override
-    public IAEStackInventory getAEInventoryByName(StorageName name) {
+    public ConfigInventory getAEInventoryByName(StorageName name) {
         if (name == StorageName.CONFIG) {
             return this.config;
         }
