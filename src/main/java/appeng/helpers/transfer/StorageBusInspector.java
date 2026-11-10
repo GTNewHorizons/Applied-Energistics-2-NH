@@ -66,15 +66,13 @@ public final class StorageBusInspector implements ITransferInspector<PartStorage
                 bus.getInventoryByName("upgrades"),
                 InspectorSupport.has(bus, Upgrades.CRAFTING));
 
+        // The sticky card shows with the other cards, it has no setting of its own to draw.
         InspectorSupport.addSetting(builder, settings, Settings.ACCESS);
         InspectorSupport.addSetting(builder, settings, Settings.EXTRACTION_MODE);
         InspectorSupport.addSetting(builder, settings, Settings.STORAGE_FILTER);
         if (fuzzy) {
             InspectorSupport.addSetting(builder, settings, Settings.FUZZY_MODE);
             builder.fuzzyMode(fuzzyMode);
-        }
-        if (sticky) {
-            InspectorSupport.addSetting(builder, settings, Settings.STICKY_MODE);
         }
 
         if (oreFilter) {

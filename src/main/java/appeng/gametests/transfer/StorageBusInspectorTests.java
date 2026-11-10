@@ -132,6 +132,19 @@ public class StorageBusInspectorTests {
         helper.succeed();
     }
 
+    @GameTest(template = TEMPLATE, timeoutTicks = 20)
+    public static void stickyCardIsNotDrawnAsASetting(GameTestHelper helper) {
+        PartStorageBus bus = bus(helper);
+        install(bus.getInventoryByName("upgrades"), cards().cardSticky());
+
+        for (TransferDescription.SettingEntry entry : INSPECTOR.inspect(bus).settings) {
+            helper.assertFalse(
+                    entry.setting == Settings.STICKY_MODE,
+                    "Sticky mode has no button appearance, the card already shows the sticky state");
+        }
+        helper.succeed();
+    }
+
     /**
      * Sets up a sticky bus facing the template's chest and checks, once the live handler has picked the settings up,
      * which stacks the bus claims ahead of all other storage.
