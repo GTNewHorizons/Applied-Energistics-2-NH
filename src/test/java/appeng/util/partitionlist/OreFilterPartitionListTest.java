@@ -1,4 +1,4 @@
-package appeng.util.prioitylist;
+package appeng.util.partitionlist;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -8,7 +8,7 @@ import java.util.function.Predicate;
 
 import org.junit.Test;
 
-public class OreFilteredListTest {
+public class OreFilterPartitionListTest {
 
     @Test
     public void repeatedConjunctiveOperandIsNotDropped() {
@@ -45,6 +45,6 @@ public class OreFilteredListTest {
     }
 
     private static Predicate<String> makeStringFilter(String expression) {
-        return OreFilteredList.makeBooleanMatcher(expression, filter -> filter::equals);
+        return OreFilterPartitionList.makeBooleanMatcher(expression, filter -> filter::equals);
     }
 }

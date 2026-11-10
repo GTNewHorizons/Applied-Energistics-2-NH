@@ -9,7 +9,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 
 import org.jspecify.annotations.NonNull;
@@ -28,7 +27,6 @@ import cpw.mods.fml.relauncher.SideOnly;
 import io.netty.buffer.ByteBuf;
 import thaumcraft.api.aspects.Aspect;
 import thaumcraft.api.aspects.AspectList;
-import thaumcraft.common.Thaumcraft;
 import thaumicenergistics.client.gui.ThEGuiHelper;
 import thaumicenergistics.client.render.RendererAEEssentiaStack;
 import thaumicenergistics.common.integration.ModsList;
@@ -138,11 +136,7 @@ public class AEEssentiaStack extends AEStack<AEEssentiaStack> {
     }
 
     public String getDisplayName(final EntityPlayer player) {
-        if (!this.hasPlayerDiscovered(player)) {
-            return StatCollector.translateToLocal("tc.aspect.unknown");
-        }
-
-        return this.getDisplayName();
+        return this.getKey().getDisplayName(player);
     }
 
     @Override
@@ -266,13 +260,7 @@ public class AEEssentiaStack extends AEStack<AEEssentiaStack> {
     }
 
     public boolean hasPlayerDiscovered(final EntityPlayer player) {
-        if (player != null) {
-            // Ask Thaumcraft if the player has discovered the aspect
-            return Thaumcraft.proxy.getPlayerKnowledge()
-                    .hasDiscoveredAspect(player.getCommandSenderName(), this.aspect);
-        }
-
-        return false;
+        return this.getKey().hasPlayerDiscovered(player);
     }
 
     public String getChatColor() {

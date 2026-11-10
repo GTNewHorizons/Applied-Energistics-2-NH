@@ -30,6 +30,7 @@ import appeng.api.exceptions.AppEngException;
 import appeng.api.implementations.items.IItemGroup;
 import appeng.api.implementations.items.IStorageCell;
 import appeng.api.implementations.tiles.IChestOrDrive;
+import appeng.api.stacks.AEKey;
 import appeng.api.storage.ICellHandler;
 import appeng.api.storage.IMEInventory;
 import appeng.api.storage.IMEInventoryHandler;
@@ -46,7 +47,6 @@ import appeng.util.IterationCounter;
 import appeng.util.Platform;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import thaumcraft.api.aspects.Aspect;
 import thaumicenergistics.client.textures.BlockTextureManager;
 import thaumicenergistics.common.ThaumicEnergistics;
 import thaumicenergistics.common.inventory.CreativeEssentiaCellConfig;
@@ -54,6 +54,7 @@ import thaumicenergistics.common.inventory.EssentiaCellConfig;
 import thaumicenergistics.common.inventory.EssentiaCellInventory;
 import thaumicenergistics.common.inventory.EssentiaCellInventoryHandler;
 import thaumicenergistics.common.registries.ThEStrings;
+import thaumicenergistics.common.storage.AEEssentiaKey;
 import thaumicenergistics.common.storage.AEEssentiaStack;
 import thaumicenergistics.common.storage.EnumEssentiaStorageTypes;
 import thaumicenergistics.common.storage.EssentiaList;
@@ -138,10 +139,13 @@ public class ItemEssentiaCell extends Item implements ICellHandler, IStorageCell
             final EntityPlayer player) {
 
         List<String> list = new ArrayList<>();
-        for (AEEssentiaStack stack : cellHandler.getPartitionList().getItems()) {
-            if (stack == null) continue;
-            Aspect aspect = stack.getAspect();
-            list.add(String.format("  &#%06x%s", aspect.getColor(), stack.getDisplayName(player)));
+        for (AEKey key : cellHandler.getPartitionList().getKeys()) {
+            if (!(key instanceof AEEssentiaKey essentiaKey)) continue;
+            list.add(
+                    String.format(
+                            "  &#%06x%s",
+                            essentiaKey.getAspect().getColor(),
+                            essentiaKey.getDisplayName(player)));
         }
         return list;
     }
