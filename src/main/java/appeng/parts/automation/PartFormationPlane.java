@@ -38,7 +38,6 @@ import net.minecraftforge.event.world.BlockEvent;
 
 import org.jspecify.annotations.NonNull;
 
-import appeng.api.AEApi;
 import appeng.api.config.AccessRestriction;
 import appeng.api.config.Actionable;
 import appeng.api.config.FuzzyMode;
@@ -60,8 +59,7 @@ import appeng.core.AEConfig;
 import appeng.me.GridAccessException;
 import appeng.me.storage.MEInventoryHandler;
 import appeng.util.Platform;
-import appeng.util.prioitylist.FuzzyPriorityList;
-import appeng.util.prioitylist.PrecisePriorityList;
+import appeng.util.partitionlist.IPartitionList;
 
 public class PartFormationPlane extends PartBaseFormationPlane implements ICellContainer, IMEInventory<IAEItemStack> {
 
@@ -88,22 +86,18 @@ public class PartFormationPlane extends PartBaseFormationPlane implements ICellC
                 this.getInstalledUpgrades(Upgrades.INVERTER) > 0 ? IncludeExclude.BLACKLIST : IncludeExclude.WHITELIST);
         this.myHandler.setPriority(this.priority);
 
-        final IItemList<IAEItemStack> priorityList = AEApi.instance().storage().createItemList();
+        final IPartitionList.Builder builder = IPartitionList.builder();
 
         final int slotsToUse = 18 + this.getInstalledUpgrades(Upgrades.CAPACITY) * 9;
         for (int x = 0; x < this.Config.getSizeInventory() && x < slotsToUse; x++) {
             if (!(this.Config.getAEStackInSlot(x) instanceof IAEItemStack ais)) continue;
-            priorityList.add(ais);
+            builder.add(ais.getKey());
         }
 
         if (this.getInstalledUpgrades(Upgrades.FUZZY) > 0) {
-            this.myHandler.setPartitionList(
-                    new FuzzyPriorityList(
-                            priorityList,
-                            (FuzzyMode) this.getConfigManager().getSetting(Settings.FUZZY_MODE)));
-        } else {
-            this.myHandler.setPartitionList(new PrecisePriorityList(priorityList));
+            builder.fuzzyMode((FuzzyMode) this.getConfigManager().getSetting(Settings.FUZZY_MODE));
         }
+        this.myHandler.setPartitionList(builder.build());
 
         try {
             this.getProxy().getGrid().postEvent(new MENetworkCellArrayUpdate());

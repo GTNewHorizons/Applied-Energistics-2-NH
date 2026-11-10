@@ -1,5 +1,6 @@
-package appeng.util.prioitylist;
+package appeng.util.partitionlist;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,13 +16,15 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraftforge.oredict.OreDictionary;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jspecify.annotations.Nullable;
 
-import appeng.api.storage.data.IAEItemStack;
+import appeng.api.stacks.AEItemKey;
+import appeng.api.stacks.AEKey;
 import appeng.core.AELog;
 import codechicken.nei.FormattedTextField.TextFormatter;
 import cpw.mods.fml.common.Optional;
 
-public class OreFilteredList implements IPartitionList<IAEItemStack> {
+public class OreFilterPartitionList implements IPartitionList {
 
     private static final Pattern BOOLEAN_OPERAND_PATTERN = Pattern.compile("[^&|]+");
 
@@ -87,15 +90,15 @@ public class OreFilteredList implements IPartitionList<IAEItemStack> {
         }
     }
 
-    private final Predicate<IAEItemStack> filterPredicate;
+    private final @Nullable Predicate<AEItemKey> filterPredicate;
 
-    public OreFilteredList(String filter) {
+    public OreFilterPartitionList(String filter) {
         filterPredicate = makeFilter(filter.trim());
     }
 
     @Override
-    public boolean isListed(final IAEItemStack input) {
-        return filterPredicate != null && filterPredicate.test(input);
+    public boolean isListed(final AEKey input) {
+        return this.filterPredicate != null && input instanceof AEItemKey itemKey && this.filterPredicate.test(itemKey);
     }
 
     @Override
@@ -104,11 +107,11 @@ public class OreFilteredList implements IPartitionList<IAEItemStack> {
     }
 
     @Override
-    public Iterable<IAEItemStack> getItems() {
-        return null;
+    public Iterable<AEKey> getKeys() {
+        return Collections.emptyList();
     }
 
-    public static Predicate<IAEItemStack> makeFilter(String f) {
+    public static @Nullable Predicate<AEItemKey> makeFilter(String f) {
         try {
             Predicate<ItemStack> matcher = makeMatcher(f);
             if (matcher == null) return null;
@@ -126,7 +129,7 @@ public class OreFilteredList implements IPartitionList<IAEItemStack> {
             matcher = (is) -> is != null
                     && IntStream.of(OreDictionary.getOreIDs(is)).mapToObj(OreDictionary::getOreName).anyMatch(test);
         } else if (!f.isEmpty()) {
-            matcher = makeBooleanMatcher(f, OreFilteredList::filterToItemStackPredicate);
+            matcher = makeBooleanMatcher(f, OreFilterPartitionList::filterToItemStackPredicate);
         }
         return matcher;
     }
@@ -158,7 +161,7 @@ public class OreFilteredList implements IPartitionList<IAEItemStack> {
         return matcher;
     }
 
-    private static class OreListMatcher implements Predicate<IAEItemStack> {
+    private static class OreListMatcher implements Predicate<AEItemKey> {
 
         final Map<ItemRef, Boolean> cache = new ConcurrentHashMap<>();
         final Predicate<ItemStack> matcher;
@@ -167,9 +170,9 @@ public class OreFilteredList implements IPartitionList<IAEItemStack> {
             this.matcher = matcher;
         }
 
-        public boolean test(IAEItemStack t) {
+        public boolean test(@Nullable AEItemKey t) {
             if (t == null) return false;
-            return cache.compute(new ItemRef(t), (k, v) -> (v != null) ? v : matcher.test(t.getItemStack()));
+            return this.cache.computeIfAbsent(new ItemRef(t), ref -> this.matcher.test(t.getReadonlyStack()));
         }
     }
 
@@ -189,7 +192,7 @@ public class OreFilteredList implements IPartitionList<IAEItemStack> {
         private final int damage;
         private final int hash;
 
-        ItemRef(final IAEItemStack stack) {
+        ItemRef(final AEItemKey stack) {
             this.ref = stack.getItem();
             this.damage = stack.getItem().isDamageable() ? 0 : stack.getItemDamage();
             this.hash = this.ref.hashCode() ^ this.damage;

@@ -30,7 +30,7 @@ import appeng.me.GridAccessException;
 import appeng.me.cache.NetworkMonitor;
 import appeng.util.InventoryAdaptor;
 import appeng.util.IterationCounter;
-import appeng.util.prioitylist.OreFilteredList;
+import appeng.util.partitionlist.OreFilterPartitionList;
 
 public class PartExportBus extends PartBaseExportBus<IAEItemStack> implements ICraftingRequester {
 
@@ -106,10 +106,11 @@ public class PartExportBus extends PartBaseExportBus<IAEItemStack> implements IC
     @Override
     protected void doOreDict(IEnergyGrid energy, IMEMonitor<IAEItemStack> gridInv) {
         if (!oreFilterString.isEmpty()) {
-            if (filterPredicate == null) filterPredicate = OreFilteredList.makeFilter(oreFilterString);
+            if (filterPredicate == null) filterPredicate = OreFilterPartitionList.makeFilter(oreFilterString);
+            if (filterPredicate == null) return;
 
             for (IAEItemStack stack : gridInv.getStorageList()) {
-                if (stack == null || filterPredicate == null || !this.filterPredicate.test(stack)) continue;
+                if (stack == null || !this.filterPredicate.test(stack.getKey())) continue;
                 this.pushItemIntoTarget(energy, gridInv, stack);
                 if (this.itemToSend <= 0) break;
             }

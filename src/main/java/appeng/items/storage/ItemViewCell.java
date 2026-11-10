@@ -23,15 +23,12 @@ import org.jspecify.annotations.Nullable;
 
 import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
 
-import appeng.api.AEApi;
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.Upgrades;
 import appeng.api.implementations.items.IUpgradeModule;
 import appeng.api.storage.ICellWorkbenchItem;
-import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
-import appeng.api.storage.data.IItemList;
 import appeng.core.features.AEFeature;
 import appeng.core.localization.ButtonToolTips;
 import appeng.core.localization.GuiText;
@@ -40,11 +37,9 @@ import appeng.items.contents.CellConfig;
 import appeng.items.contents.CellUpgrades;
 import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.Platform;
-import appeng.util.prioitylist.FuzzyPriorityList;
-import appeng.util.prioitylist.IPartitionList;
-import appeng.util.prioitylist.MergedPriorityList;
-import appeng.util.prioitylist.OreFilteredList;
-import appeng.util.prioitylist.PrecisePriorityList;
+import appeng.util.partitionlist.IPartitionList;
+import appeng.util.partitionlist.MergedPartitionList;
+import appeng.util.partitionlist.OreFilterPartitionList;
 
 public class ItemViewCell extends AEBaseItem implements ICellWorkbenchItem {
 
@@ -54,10 +49,10 @@ public class ItemViewCell extends AEBaseItem implements ICellWorkbenchItem {
         this.setMaxStackSize(1);
     }
 
-    public static IPartitionList<IAEItemStack> createFilter(final ItemStack[] list) {
-        IPartitionList<IAEItemStack> myPartitionList = null;
+    public static @Nullable IPartitionList createFilter(final ItemStack[] list) {
+        IPartitionList myPartitionList = null;
 
-        final MergedPriorityList<IAEItemStack> myMergedList = new MergedPriorityList<>();
+        final MergedPartitionList myMergedList = new MergedPartitionList();
 
         for (final ItemStack currentViewCell : list) {
             if (currentViewCell == null) {
@@ -91,24 +86,21 @@ public class ItemViewCell extends AEBaseItem implements ICellWorkbenchItem {
 
                 if (hasOreFilter) {
                     if (!filter.isEmpty()) {
-                        myMergedList.addNewList(new OreFilteredList(filter), !hasInverter);
+                        myMergedList.addNewList(new OreFilterPartitionList(filter), !hasInverter);
                     }
                 } else {
-                    final IItemList priorityList = AEApi.instance().storage().createAEStackList();
+                    final IPartitionList.Builder builder = IPartitionList.builder();
 
                     for (int x = 0; x < config.getSizeInventory(); x++) {
                         final IAEStack<?> aes = config.getAEStackInSlot(x);
                         if (aes != null) {
-                            priorityList.add(aes);
+                            builder.add(aes.getKey());
                         }
                     }
 
-                    if (!priorityList.isEmpty()) {
-                        if (hasFuzzy) {
-                            myMergedList.addNewList(new FuzzyPriorityList(priorityList, fzMode), !hasInverter);
-                        } else {
-                            myMergedList.addNewList(new PrecisePriorityList(priorityList), !hasInverter);
-                        }
+                    final IPartitionList configList = builder.fuzzyMode(hasFuzzy ? fzMode : null).build();
+                    if (!configList.isEmpty()) {
+                        myMergedList.addNewList(configList, !hasInverter);
                     }
                 }
                 myPartitionList = myMergedList;

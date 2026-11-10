@@ -21,7 +21,7 @@ import appeng.core.sync.packets.PacketSwitchGuis;
 import appeng.core.sync.packets.PacketValueConfig;
 import appeng.helpers.IOreFilterable;
 import appeng.integration.modules.NEI;
-import appeng.util.prioitylist.OreFilteredList.OreFilterTextFormatter;
+import appeng.util.partitionlist.OreFilterPartitionList.OreFilterTextFormatter;
 
 public class GuiOreFilter extends GuiSub implements IDropToFillTextField {
 

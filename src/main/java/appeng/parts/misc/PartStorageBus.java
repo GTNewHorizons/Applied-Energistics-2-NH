@@ -90,9 +90,8 @@ import appeng.tile.inventory.IAEStackInventory;
 import appeng.transformer.annotations.Integration.Method;
 import appeng.util.IterationCounter;
 import appeng.util.Platform;
-import appeng.util.prioitylist.FuzzyPriorityList;
-import appeng.util.prioitylist.OreFilteredList;
-import appeng.util.prioitylist.PrecisePriorityList;
+import appeng.util.partitionlist.IPartitionList;
+import appeng.util.partitionlist.OreFilterPartitionList;
 import buildcraft.api.transport.IPipeTile.PipeType;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -690,7 +689,7 @@ public class PartStorageBus extends PartUpgradeable implements IStorageBus {
                     final boolean hasOreFilter = this.getInstalledUpgrades(Upgrades.ORE_FILTER) > 0;
 
                     if (!hasOreFilter) {
-                        final IItemList priorityList = getItemList();
+                        final IPartitionList.Builder builder = IPartitionList.builder();
 
                         final int slotsToUse = 18 + this.getInstalledUpgrades(Upgrades.CAPACITY) * 9;
                         for (int x = 0; x < this.config.getSizeInventory() && x < slotsToUse; x++) {
@@ -702,23 +701,18 @@ public class PartStorageBus extends PartUpgradeable implements IStorageBus {
                                 is = ItemFluidPacket.getFluidAEStack(ais);
                             }
                             if (is != null) {
-                                priorityList.add(is);
+                                builder.add(is.getKey());
                             }
                         }
 
                         if (this.getStackType() == ITEM_STACK_TYPE && this.getInstalledUpgrades(Upgrades.FUZZY) > 0) {
-                            FuzzyPriorityList<IAEItemStack> partitionList = new FuzzyPriorityList<>(
-                                    priorityList,
-                                    (FuzzyMode) this.getConfigManager().getSetting(Settings.FUZZY_MODE));
-                            this.handler.setPartitionList(partitionList);
-                            this.handler.setExtractPartitionList(partitionList);
-                        } else {
-                            PrecisePriorityList partitionList = new PrecisePriorityList<>(priorityList);
-                            this.handler.setPartitionList(partitionList);
-                            this.handler.setExtractPartitionList(partitionList);
+                            builder.fuzzyMode((FuzzyMode) this.getConfigManager().getSetting(Settings.FUZZY_MODE));
                         }
+                        final IPartitionList partitionList = builder.build();
+                        this.handler.setPartitionList(partitionList);
+                        this.handler.setExtractPartitionList(partitionList);
                     } else {
-                        OreFilteredList partitionList = new OreFilteredList(oreFilterString);
+                        OreFilterPartitionList partitionList = new OreFilterPartitionList(oreFilterString);
                         this.handler.setPartitionList(partitionList);
                         this.handler.setExtractPartitionList(partitionList);
                     }

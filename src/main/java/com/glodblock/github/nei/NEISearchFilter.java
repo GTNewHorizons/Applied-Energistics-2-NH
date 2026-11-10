@@ -8,6 +8,7 @@ import net.minecraft.util.EnumChatFormatting;
 
 import appeng.api.AEApi;
 import appeng.api.implementations.items.IStorageCell;
+import appeng.api.stacks.AEKey;
 import appeng.api.storage.ICellInventory;
 import appeng.api.storage.IMEInventoryHandler;
 import appeng.api.storage.StorageChannel;
@@ -80,9 +81,10 @@ public class NEISearchFilter implements SearchTokenParser.ISearchParserProvider 
                 if (inventory instanceof final CellInventoryHandler handler) {
                     final ICellInventory cellInventory = handler.getCellInv();
                     if (cellInventory != null) {
+                        for (AEKey key : handler.getPartitionList().getKeys()) {
+                            if (pattern.matcher(key.getDisplayName().toLowerCase()).find()) return true;
+                        }
                         final IItemList<IAEStack<?>> out = AEApi.instance().storage().createAEStackList();
-                        for (Object item : handler.getPartitionList().getItems())
-                            out.add((IAEStack<?>) item);
                         cellInventory.getAvailableItems(out, IterationCounter.fetchNewId());
                         for (IAEStack<?> item : out) {
                             boolean result = pattern.matcher(item.getDisplayName().toLowerCase())

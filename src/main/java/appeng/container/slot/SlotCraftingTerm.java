@@ -35,7 +35,7 @@ import appeng.util.InventoryAdaptor;
 import appeng.util.Platform;
 import appeng.util.inv.AdaptorPlayerHand;
 import appeng.util.item.AEItemStack;
-import appeng.util.prioitylist.IPartitionList;
+import appeng.util.partitionlist.IPartitionList;
 
 public class SlotCraftingTerm extends AppEngCraftingSlot {
 
@@ -179,7 +179,7 @@ public class SlotCraftingTerm extends AppEngCraftingSlot {
                     is = next;
 
                     if (inv != null) {
-                        IPartitionList<IAEItemStack> filter = ItemViewCell.createFilter(this.container.getViewCells());
+                        IPartitionList filter = ItemViewCell.createFilter(this.container.getViewCells());
                         extractItems(p, inv, all, is, set, 1, ic, r, filter);
                     }
                 }
@@ -207,7 +207,7 @@ public class SlotCraftingTerm extends AppEngCraftingSlot {
     }
 
     private boolean extractItems(EntityPlayer p, IMEMonitor<IAEItemStack> inv, IItemList all, ItemStack is,
-            ItemStack[] set, int multiple, InventoryCrafting ic, IRecipe r, IPartitionList<IAEItemStack> filter) {
+            ItemStack[] set, int multiple, InventoryCrafting ic, IRecipe r, IPartitionList filter) {
         for (int x = 0; x < this.getPattern().getSizeInventory(); x++) {
             if (this.getPattern().getStackInSlot(x) != null) {
                 set[x] = Platform.extractItemsByRecipe(

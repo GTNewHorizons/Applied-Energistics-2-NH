@@ -25,6 +25,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -50,7 +51,7 @@ import appeng.util.ItemSorters;
 import appeng.util.Platform;
 import appeng.util.item.OreHelper;
 import appeng.util.item.OreReference;
-import appeng.util.prioitylist.IPartitionList;
+import appeng.util.partitionlist.IPartitionList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2BooleanMap;
 
@@ -71,7 +72,7 @@ public class ItemRepo implements IDisplayRepo {
     private String searchString = "";
     private Map<IAEStack<?>, Boolean> searchCache = new WeakHashMap<>();
     private Map<IAEStack<?>, FlowRate> flowRates = new WeakHashMap<>();
-    private IPartitionList myPartitionList;
+    private @Nullable IPartitionList myPartitionList;
     private boolean hasPower;
     private boolean paused = false;
     private Object2ObjectOpenHashMap<IAEStack<?>, SortKey> sortKeys = new Object2ObjectOpenHashMap<>();
@@ -339,7 +340,7 @@ public class ItemRepo implements IDisplayRepo {
                 continue;
             }
 
-            if (this.myPartitionList != null && !this.myPartitionList.isListed(is)) {
+            if (this.myPartitionList != null && !this.myPartitionList.isListed(is.getKey())) {
                 continue;
             }
 

@@ -42,7 +42,7 @@ import appeng.me.storage.MEInventoryHandler;
 import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.IterationCounter;
 import appeng.util.Platform;
-import appeng.util.prioitylist.PrecisePriorityList;
+import appeng.util.partitionlist.EmptyPartitionList;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 
 public class ContainerStorageBus extends ContainerUpgradeable implements IVirtualSlotHolder {
@@ -203,7 +203,7 @@ public class ContainerStorageBus extends ContainerUpgradeable implements IVirtua
         final IteratorState it;
         if (pair == null || pair.getKey() != this.storageBus.getStackType()) {
             // clear filter for fetching items
-            cellInv.setPartitionList(new PrecisePriorityList<>(this.storageBus.getItemList()));
+            cellInv.setPartitionList(EmptyPartitionList.INSTANCE);
             final IItemList list = cellInv
                     .getAvailableItems(this.storageBus.getItemList(), IterationCounter.fetchNewId());
             it = new IteratorState(list.iterator());
