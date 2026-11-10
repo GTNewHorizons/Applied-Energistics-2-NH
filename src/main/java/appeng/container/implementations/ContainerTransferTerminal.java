@@ -20,23 +20,30 @@ import appeng.api.features.transfer.TransferComponentInfo;
 import appeng.api.features.transfer.TransferDescription;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
+import appeng.api.networking.security.MachineSource;
 import appeng.api.parts.ITransferTerminal;
+import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.util.IConfigManager;
 import appeng.container.AEBaseContainer;
+import appeng.container.interfaces.IVirtualSlotSource;
 import appeng.container.sync.SyncCodec;
 import appeng.container.sync.SyncCodecs;
 import appeng.container.sync.SyncRegistrar;
 import appeng.container.sync.handlers.AEStackInventorySyncHandler;
+import appeng.container.sync.handlers.BooleanSyncHandler;
 import appeng.container.sync.handlers.ConfigEnumSyncHandler;
 import appeng.container.sync.handlers.IntSyncHandler;
+import appeng.container.sync.handlers.LongSyncHandler;
 import appeng.container.sync.handlers.ObjectSyncHandler;
 import appeng.core.CommonHelper;
 import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketTransferTerminalUpdate;
+import appeng.helpers.transfer.TransferInsertSimulation;
 import appeng.helpers.transfer.TransferNameFilter;
 import appeng.helpers.transfer.TransferPacketChunks;
 import appeng.helpers.transfer.TransferResultFilter;
+import appeng.helpers.transfer.TransferRowOrder;
 import appeng.helpers.transfer.TransferRowWindow;
 import appeng.helpers.transfer.TransferScanner;
 import appeng.parts.misc.PartStorageBus;
@@ -46,9 +53,10 @@ import cpw.mods.fml.common.network.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-public class ContainerTransferTerminal extends AEBaseContainer {
+public class ContainerTransferTerminal extends AEBaseContainer implements IVirtualSlotSource {
 
     private static final int FINGERPRINT_INTERVAL = 20;
+    private static final int SIMULATION_INTERVAL = 20;
     private static final int MAX_PACKET_BYTES = 512 * 1024;
     private static final int DEFAULT_VISIBLE_ROWS = 3;
     private static final SyncCodec<String> STRING_CODEC = SyncCodecs.of(
@@ -78,9 +86,25 @@ public class ContainerTransferTerminal extends AEBaseContainer {
     /** Number of rows at the top that sticky storage on this network claims the searched stack for. */
     public final IntSyncHandler stickyCountSync;
 
+    /** Whether the rows show where a simulated insert of the searched stack would go. */
+    public final ConfigEnumSyncHandler<YesNo> simulateSync;
+
+    /** Whether the rows currently carry a simulation, which needs a searched stack as well as the setting. */
+    public final BooleanSyncHandler simulatingSync;
+
+    /** How much of the searched stack a simulated insert could not put anywhere. */
+    public final LongSyncHandler leftoverSync;
+
+    /** Whether a network refused the simulated insert because of its security settings. */
+    public final BooleanSyncHandler deniedSync;
+
     private final Map<TransferComponentInfo, List<String>> configNames = new IdentityHashMap<>();
     private List<TransferComponentInfo> scanned = Collections.emptyList();
+
+    /** Rows matching the query and filters, before any simulation. */
+    private List<TransferComponentInfo> matching = Collections.emptyList();
     private List<TransferComponentInfo> filtered = Collections.emptyList();
+    private int ticksSinceSimulation;
     private List<IGrid> grids = Collections.emptyList();
     private long fingerprint;
     private boolean hasScanned;
@@ -125,6 +149,11 @@ public class ContainerTransferTerminal extends AEBaseContainer {
             this.serverLanguageSync.set(CommonHelper.proxy.getServerLanguage());
         }
         this.stickyCountSync = sync.intS2C("stickyCount");
+        this.simulateSync = sync.configEnum("simulate", Settings.TRANSFER_SIMULATE, YesNo.class, settings);
+        this.simulateSync.onServerChange((oldValue, newValue) -> this.queryChanged = true);
+        this.simulatingSync = sync.booleanS2C("simulating");
+        this.leftoverSync = sync.longS2C("simulateLeftover");
+        this.deniedSync = sync.booleanS2C("simulateDenied");
 
         this.bindPlayerInventory(ip, 0, -31);
     }
@@ -142,6 +171,7 @@ public class ContainerTransferTerminal extends AEBaseContainer {
             if (!this.wasOffline) {
                 this.wasOffline = true;
                 this.hasScanned = false;
+                this.matching = Collections.emptyList();
                 this.filtered = Collections.emptyList();
                 this.send(0, 0, Collections.emptyList());
             }
@@ -156,8 +186,12 @@ public class ContainerTransferTerminal extends AEBaseContainer {
 
         if (this.queryChanged) {
             this.queryChanged = false;
-            this.filtered = TransferResultFilter.apply(this.scanned, this.getQuery(), this.getMode(), this::keep);
-            this.stickyCountSync.set(this.countStickyRows());
+            this.matching = TransferResultFilter.apply(this.scanned, this.getQuery(), this.getMode(), this::keep);
+            this.applySimulation();
+            this.windowChanged = true;
+        } else if (this.isSimulating() && ++this.ticksSinceSimulation >= SIMULATION_INTERVAL) {
+            // Storage fills and empties while the terminal is open, and only sends rows that changed.
+            this.applySimulation();
             this.windowChanged = true;
         }
 
@@ -190,9 +224,75 @@ public class ContainerTransferTerminal extends AEBaseContainer {
         return this.query.getAEStackInSlot(0);
     }
 
+    /**
+     * Simulating only asks where a stack entering storage would go, so it forces export without touching the saved
+     * direction, which comes back once simulating is turned off.
+     */
     public TransferDirection getMode() {
+        if (isYes(this.simulateSync)) {
+            return TransferDirection.EXPORT;
+        }
         final TransferDirection mode = this.directionSync.get();
         return mode == null ? TransferDirection.BOTH : mode;
+    }
+
+    /**
+     * @return whether the rows should show where a simulated insert would go, which needs a searched stack
+     */
+    public boolean isSimulating() {
+        return isYes(this.simulateSync) && this.getQuery() != null;
+    }
+
+    private void applySimulation() {
+        this.ticksSinceSimulation = 0;
+        final IGridNode node = this.anchor.getActionableNode();
+        final TransferInsertSimulation.Result result = this.isSimulating() && node != null
+                ? TransferInsertSimulation.run(
+                        this.grids.isEmpty() ? Collections.singletonList(node.getGrid()) : this.grids,
+                        this.matching,
+                        this.getQuery(),
+                        new MachineSource(this.anchor))
+                : null;
+
+        if (result == null || !result.simulated()) {
+            this.filtered = this.matching;
+            this.simulatingSync.set(false);
+            this.leftoverSync.set(0L);
+            this.deniedSync.set(false);
+            this.stickyCountSync.set(this.countStickyRows());
+            return;
+        }
+
+        final List<TransferComponentInfo> rows = new ArrayList<>(result.rows);
+        for (final TransferComponentInfo cpu : result.cpuRows) {
+            // CPUs have no config, so a search by config names never matches them.
+            if (this.searchTextSync.get().isEmpty()) {
+                rows.add(cpu);
+            }
+        }
+        rows.sort(TransferRowOrder.simulated(TransferRowOrder.comparator(true, TransferDirection.EXPORT)));
+        this.filtered = rows;
+        this.simulatingSync.set(true);
+        this.leftoverSync.set(result.leftover);
+        this.deniedSync.set(result.denied);
+        // The amounts show what sticky storage claims, the separator would only repeat it.
+        this.stickyCountSync.set(0);
+    }
+
+    /**
+     * Called when the amount dialog opened from the query slot reopens the terminal with the new amount.
+     */
+    @Override
+    public void updateVirtualSlot(final StorageName invName, final int slotId, final IAEStack<?> aes) {
+        this.query.putAEStackInSlot(0, aes);
+        this.queryChanged = true;
+    }
+
+    /**
+     * @return the rows the terminal lists, in order
+     */
+    public List<TransferComponentInfo> getFilteredRows() {
+        return Collections.unmodifiableList(this.filtered);
     }
 
     public static boolean isYes(final ObjectSyncHandler<YesNo> sync) {

@@ -18,6 +18,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.tileentity.TileEntityChest;
+import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import com.gtnewhorizons.horizonqa.api.GameTestHelper;
@@ -26,17 +27,22 @@ import com.gtnewhorizons.horizonqa.api.annotation.GameTest;
 import com.gtnewhorizons.horizonqa.api.annotation.GameTestHolder;
 
 import appeng.api.AEApi;
+import appeng.api.config.Settings;
+import appeng.api.config.TransferDirection;
+import appeng.api.config.YesNo;
 import appeng.api.features.transfer.TransferComponentInfo;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.crafting.ICraftingGrid;
 import appeng.api.networking.crafting.ICraftingJob;
 import appeng.api.networking.security.BaseActionSource;
 import appeng.api.storage.StorageName;
+import appeng.container.implementations.ContainerTransferTerminal;
 import appeng.core.AppEng;
 import appeng.helpers.transfer.TransferInsertSimulation;
 import appeng.helpers.transfer.TransferScanner;
 import appeng.me.GridAccessException;
 import appeng.parts.misc.PartStorageBus;
+import appeng.parts.reporting.PartTransferTerminal;
 import appeng.tile.crafting.TileCraftingStorageTile;
 import appeng.tile.misc.TileInterface;
 import appeng.tile.networking.TileController;
@@ -226,6 +232,102 @@ public class TransferInsertSimulationTests {
                     helper.assertEquals(0L, result.leftover, "The empty cell takes the rest");
                     helper.assertEquals(0, simulate(helper, Blocks.dirt, 3).cpuRows.size(), "No CPU waits for dirt");
                 }).thenSucceed();
+    }
+
+    private static PartTransferTerminal terminal(final GameTestHelper helper) {
+        return place(helper, AEApi.instance().definitions().parts().transferTerminal(), ForgeDirection.UP);
+    }
+
+    private static ContainerTransferTerminal open(final GameTestHelper helper, final PartTransferTerminal terminal) {
+        final FakePlayer player = helper.spawnFakePlayer("transfer_terminal");
+        return new ContainerTransferTerminal(player.inventory, terminal);
+    }
+
+    private static TransferComponentInfo firstRow(final GameTestHelper helper,
+            final ContainerTransferTerminal container) {
+        final List<TransferComponentInfo> rows = container.getFilteredRows();
+        helper.assertFalse(rows.isEmpty(), "The terminal should list the storage bus");
+        return rows.get(0);
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 120)
+    public static void theTerminalRefreshesTheSimulationWhileOpen(final GameTestHelper helper) {
+        final PartStorageBus bus = bus(helper);
+        final PartTransferTerminal terminal = terminal(helper);
+        terminal.getConfigManager().putSetting(Settings.TRANSFER_SIMULATE, YesNo.YES);
+        terminal.getQueryInventory().putAEStackInSlot(0, itemStack(Blocks.cobblestone, 64));
+        final ContainerTransferTerminal[] container = new ContainerTransferTerminal[1];
+
+        helper.startSequence().thenWaitUntil("wait for the network", 80, () -> {
+            assertActive(helper, terminal, "Terminal should become active");
+            assertActive(helper, bus, "Storage bus should become active");
+            helper.assertNotNull(bus.getInternalHandler(), "Storage bus should find its chest");
+        }).thenExecute("open the terminal", () -> {
+            container[0] = open(helper, terminal);
+            container[0].detectAndSendChanges();
+
+            helper.assertTrue(container[0].simulatingSync.get(), "The rows should carry a simulation");
+            helper.assertEquals(64L, firstRow(helper, container[0]).simulatedAmount, "The chest takes it all");
+            helper.assertEquals(0L, container[0].leftoverSync.get(), "Nothing is left over");
+            helper.assertEquals(0, container[0].stickyCountSync.get(), "The separator is not needed");
+        }).thenExecute("fill the chest and wait a second", () -> {
+            fillChestExceptOne(helper, 0);
+            for (int tick = 0; tick < 20; tick++) {
+                container[0].detectAndSendChanges();
+            }
+
+            helper.assertEquals(0L, firstRow(helper, container[0]).simulatedAmount, "The chest is full now");
+            helper.assertEquals(64L, container[0].leftoverSync.get(), "Nothing else can take it");
+        }).thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void simulatingLocksTheDirectionToExportUntilTurnedOff(final GameTestHelper helper) {
+        final PartTransferTerminal terminal = terminal(helper);
+        terminal.getConfigManager().putSetting(Settings.TRANSFER_DIRECTION, TransferDirection.IMPORT);
+        terminal.getConfigManager().putSetting(Settings.TRANSFER_SIMULATE, YesNo.YES);
+
+        helper.startSequence()
+                .thenWaitUntil(
+                        "wait for the terminal",
+                        60,
+                        () -> assertActive(helper, terminal, "Terminal should become active"))
+                .thenExecute("toggle simulating", () -> {
+                    final ContainerTransferTerminal container = open(helper, terminal);
+                    container.detectAndSendChanges();
+                    helper.assertEquals(TransferDirection.EXPORT, container.getMode(), "Simulating forces export");
+                    helper.assertEquals(
+                            TransferDirection.IMPORT,
+                            terminal.getConfigManager().getSetting(Settings.TRANSFER_DIRECTION),
+                            "The saved direction is kept");
+
+                    container.simulateSync.set(YesNo.NO);
+                    container.detectAndSendChanges();
+                    helper.assertEquals(TransferDirection.IMPORT, container.getMode(), "The direction comes back");
+                    helper.assertFalse(container.simulatingSync.get(), "No simulation without the setting");
+                }).thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 120)
+    public static void theAmountDialogChangesWhatIsSimulated(final GameTestHelper helper) {
+        final PartStorageBus bus = bus(helper);
+        final PartTransferTerminal terminal = terminal(helper);
+        terminal.getConfigManager().putSetting(Settings.TRANSFER_SIMULATE, YesNo.YES);
+        terminal.getQueryInventory().putAEStackInSlot(0, itemStack(Blocks.cobblestone, 1));
+
+        helper.startSequence().thenWaitUntil("wait for the network", 80, () -> {
+            assertActive(helper, terminal, "Terminal should become active");
+            helper.assertNotNull(bus.getInternalHandler(), "Storage bus should find its chest");
+        }).thenExecute("set a new amount", () -> {
+            final ContainerTransferTerminal container = open(helper, terminal);
+            container.detectAndSendChanges();
+            helper.assertEquals(1L, firstRow(helper, container).simulatedAmount, "One is searched at first");
+
+            container.updateVirtualSlot(StorageName.CONFIG, 0, itemStack(Blocks.cobblestone, 300));
+            container.detectAndSendChanges();
+            helper.assertEquals(300L, container.getQuery().getStackSize(), "The query takes the new amount");
+            helper.assertEquals(300L, firstRow(helper, container).simulatedAmount, "The new amount is simulated");
+        }).thenSucceed();
     }
 
     private static ICraftingGrid craftingGrid(final TileController controller) {
