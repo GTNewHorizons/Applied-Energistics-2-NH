@@ -97,6 +97,7 @@ import appeng.me.diagnostics.CraftingDiagnosticSessionId;
 import appeng.me.diagnostics.CraftingNetworkDiagnostics;
 import appeng.me.diagnostics.DiagnosticRowView;
 import appeng.me.helpers.GenericInterestManager;
+import appeng.me.storage.InjectTrace;
 import appeng.tile.crafting.TileCraftingStorageTile;
 import appeng.tile.crafting.TileCraftingTile;
 import appeng.util.ItemSorters;
@@ -505,9 +506,12 @@ public class CraftingGridCache
 
     @Override
     public IAEStack injectItems(IAEStack input, final Actionable type, final BaseActionSource src) {
+        final InjectTrace trace = InjectTrace.current(type);
         for (final CraftingCPUCluster cpu : this.craftingCPUClusters) {
             if (input == null) break;
+            final long before = input.getStackSize();
             input = cpu.injectItems(input, type, src);
+            if (trace != null) trace.cpu(cpu, this.grid, before, input);
         }
 
         return input;
