@@ -6,6 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.IncludeExclude;
@@ -22,6 +23,7 @@ import appeng.api.storage.data.AEStackTypeRegistry;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.me.storage.MEInventoryHandler;
+import appeng.me.storage.NetworkInventoryHandler;
 import appeng.util.prioitylist.IPartitionList;
 import appeng.util.prioitylist.OreFilteredList;
 
@@ -142,33 +144,15 @@ abstract class CellStorageInspector<T extends IGridHost> implements ITransferIns
          */
         @Override
         public boolean canTransfer(final IAEStack<?> stack, final TransferDirection direction) {
-            for (final IMEInventoryHandler handler : this.handlersFor(stack)) {
-                try {
-                    if (direction != TransferDirection.IMPORT && handler.canAccept(stack)) {
-                        return true;
-                    }
-                    if (direction != TransferDirection.EXPORT && handler.getAvailableItem(stack) != null) {
-                        return true;
-                    }
-                } catch (final RuntimeException e) {
-                    // Skip a cell that fails to answer.
-                }
-            }
-            return false;
+            return this.anyHandler(
+                    stack,
+                    handler -> (direction != TransferDirection.IMPORT && handler.canAccept(stack))
+                            || (direction != TransferDirection.EXPORT && handler.getAvailableItem(stack) != null));
         }
 
         @Override
         public boolean isExplicitlyListed(final IAEStack<?> stack) {
-            for (final IMEInventoryHandler handler : this.handlersFor(stack)) {
-                try {
-                    if (handler.isPrioritized(stack)) {
-                        return true;
-                    }
-                } catch (final RuntimeException e) {
-                    // Skip a cell that fails to answer.
-                }
-            }
-            return false;
+            return this.anyHandler(stack, handler -> handler.isPrioritized(stack));
         }
 
         /**
@@ -177,15 +161,25 @@ abstract class CellStorageInspector<T extends IGridHost> implements ITransferIns
          */
         @Override
         public boolean capturesAsSticky(final IAEStack<?> stack) {
+            return this.anyHandler(stack, handler -> {
+                if (!handler.getSticky()) {
+                    return false;
+                }
+                final IAEStack probe = stack.copy();
+                probe.setStackSize(1);
+                return handler.canAccept(probe) && (handler.isPrioritized(probe)
+                        || handler.extractItems(probe, Actionable.SIMULATE, this.source) != null);
+            });
+        }
+
+        /**
+         * Asks each handler in turn, skipping one that fails to answer. A cell from another mod may hand the question on
+         * to a network, which has to be usable again for the next cell after an exception.
+         */
+        private boolean anyHandler(final IAEStack<?> stack, final Predicate<IMEInventoryHandler> question) {
             for (final IMEInventoryHandler handler : this.handlersFor(stack)) {
                 try {
-                    if (!handler.getSticky()) {
-                        continue;
-                    }
-                    final IAEStack probe = stack.copy();
-                    probe.setStackSize(1);
-                    if (handler.canAccept(probe) && (handler.isPrioritized(probe)
-                            || handler.extractItems(probe, Actionable.SIMULATE, this.source) != null)) {
+                    if (NetworkInventoryHandler.guardSimulation(() -> question.test(handler))) {
                         return true;
                     }
                 } catch (final RuntimeException e) {

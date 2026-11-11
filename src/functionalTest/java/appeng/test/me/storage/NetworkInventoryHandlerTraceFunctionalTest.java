@@ -216,6 +216,22 @@ public class NetworkInventoryHandlerTraceFunctionalTest {
     }
 
     @Test
+    public void aSimulationThatThrowsLeavesTheNetworkUsable() {
+        final NetworkInventoryHandler<IAEItemStack> network = network(new MockAESystem(world()));
+        final Storage storage = new Storage(100).failing();
+        network.addNewStorage(storage);
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> NetworkInventoryHandler.guardSimulation(() -> simulate(network, new InjectTrace(), 64)));
+
+        storage.failing = false;
+        assertNull(
+                simulate(network, new InjectTrace(), 64),
+                "the network must not still count itself as busy with the simulation that threw");
+    }
+
+    @Test
     public void realInsertionsAreNotRecorded() {
         final NetworkInventoryHandler<IAEItemStack> network = network(new MockAESystem(world()));
         final Storage storage = new Storage(100);
@@ -247,6 +263,7 @@ public class NetworkInventoryHandlerTraceFunctionalTest {
         private int priority;
         private boolean whitelisted;
         private boolean sticky;
+        private boolean failing;
 
         private Storage(final long capacity) {
             this.capacity = capacity;
@@ -272,8 +289,17 @@ public class NetworkInventoryHandlerTraceFunctionalTest {
             return this;
         }
 
+        /** Throws on every insert, like broken storage from another mod. */
+        private Storage failing() {
+            this.failing = true;
+            return this;
+        }
+
         @Override
         public IAEItemStack injectItems(final IAEItemStack input, final Actionable type, final BaseActionSource src) {
+            if (this.failing) {
+                throw new IllegalStateException("broken storage");
+            }
             final long accepted = Math.min(Math.max(0, this.capacity - this.stored), input.getStackSize());
             if (type == Actionable.MODULATE) {
                 this.stored += accepted;

@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import org.jspecify.annotations.NonNull;
 
@@ -332,7 +333,28 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
         }
     }
 
+    /**
+     * Runs simulated storage calls whose exceptions the caller catches. Networks only leave the recursion guard on
+     * their way out of a call that returns, so after an exception they would stay on it and refuse every later
+     * simulation on this thread. Here the guard is put back as it was however the calls end.
+     */
+    public static <R> R guardSimulation(final Supplier<R> body) {
+        final LinkedList depth = depthOf(Actionable.SIMULATE);
+        final int size = depth.size();
+        try {
+            return body.get();
+        } finally {
+            while (depth.size() > size) {
+                depth.pop();
+            }
+        }
+    }
+
     private LinkedList getDepth(final Actionable type) {
+        return depthOf(type);
+    }
+
+    private static LinkedList depthOf(final Actionable type) {
         final ThreadLocal<LinkedList> depth = type == Actionable.MODULATE ? DEPTH_MOD : DEPTH_SIM;
 
         LinkedList s = depth.get();

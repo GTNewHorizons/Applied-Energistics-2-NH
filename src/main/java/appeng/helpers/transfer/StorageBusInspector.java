@@ -22,6 +22,7 @@ import appeng.api.util.IConfigManager;
 import appeng.helpers.transfer.TransferFilterBuilder.EmptyPolicy;
 import appeng.helpers.transfer.TransferFilterBuilder.Filter;
 import appeng.me.storage.MEInventoryHandler;
+import appeng.me.storage.NetworkInventoryHandler;
 import appeng.parts.misc.PartStorageBus;
 
 /**
@@ -141,18 +142,21 @@ public final class StorageBusInspector implements ITransferInspector<PartStorage
             }
 
             try {
-                final MEInventoryHandler handler = this.stickyBus.getInternalHandler();
-                if (handler == null || !handler.getSticky()) {
-                    return false;
-                }
+                // The bus may face an interface, which hands the extraction on to another network.
+                return NetworkInventoryHandler.guardSimulation(() -> {
+                    final MEInventoryHandler handler = this.stickyBus.getInternalHandler();
+                    if (handler == null || !handler.getSticky()) {
+                        return false;
+                    }
 
-                final IAEStack probe = stack.copy();
-                probe.setStackSize(1);
-                if (!handler.canAccept(probe)) {
-                    return false;
-                }
-                return handler.isPrioritized(probe)
-                        || handler.extractItems(probe, Actionable.SIMULATE, new MachineSource(this.stickyBus)) != null;
+                    final IAEStack probe = stack.copy();
+                    probe.setStackSize(1);
+                    if (!handler.canAccept(probe)) {
+                        return false;
+                    }
+                    return handler.isPrioritized(probe) || handler
+                            .extractItems(probe, Actionable.SIMULATE, new MachineSource(this.stickyBus)) != null;
+                });
             } catch (final RuntimeException e) {
                 // The bus may face an inventory from another mod, which must not take the terminal down.
                 return false;

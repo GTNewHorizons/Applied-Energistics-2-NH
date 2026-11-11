@@ -28,6 +28,7 @@ import appeng.api.storage.data.IAEStackType;
 import appeng.api.util.DimensionalCoord;
 import appeng.me.cluster.implementations.CraftingCPUCluster;
 import appeng.me.storage.InjectTrace;
+import appeng.me.storage.NetworkInventoryHandler;
 
 /**
  * Asks a network where it would put a stack right now, by running a simulated insert and recording which storage
@@ -95,8 +96,10 @@ public final class TransferInsertSimulation {
         final InjectTrace trace = new InjectTrace();
         final IAEStack<?> leftover;
         try {
-            leftover = InjectTrace
-                    .run(trace, () -> (IAEStack<?>) monitor.injectItems(query.copy(), Actionable.SIMULATE, src));
+            leftover = NetworkInventoryHandler.guardSimulation(
+                    () -> InjectTrace.run(
+                            trace,
+                            () -> (IAEStack<?>) monitor.injectItems(query.copy(), Actionable.SIMULATE, src)));
         } catch (final RuntimeException e) {
             // Storage from another mod may throw while simulating, which must not take the terminal down.
             return Result.NONE;
