@@ -163,11 +163,13 @@ public class ItemWirelessUltraTerminal extends ItemBaseWirelessTerminal
                 }
             }
         }
-        writeTypeIds(ultraTerminal, ids);
+        final NBTTagCompound tag = Platform.openNbtData(ultraTerminal);
+        UltraTerminalData.writeTypes(tag, ids);
+        normalizeStoredMode(ultraTerminal);
         final IUltraTerminalType mode = readStoredMode(ultraTerminal);
         if (mode == null || !isAbsorbed(ultraTerminal, mode.getId())) {
             for (final IUltraTerminalType type : getTypes(ultraTerminal)) {
-                Platform.openNbtData(ultraTerminal).setString(MODE, type.getId());
+                UltraTerminalData.writeMode(tag, type.getId());
                 break;
             }
         }
@@ -208,14 +210,35 @@ public class ItemWirelessUltraTerminal extends ItemBaseWirelessTerminal
         if (is == null || !isAbsorbed(is, id)) {
             return;
         }
+        final IUltraTerminalType type = AEApi.instance().registries().ultraTerminal().getById(id);
+        if (type == null) {
+            return;
+        }
         final NBTTagCompound tag = Platform.openNbtData(is);
         if (!tag.hasKey(TYPES, Constants.NBT.TAG_LIST)) {
             // pin the type list first, the item may only have data for its current mode
             final Set<String> ids = new LinkedHashSet<>();
             addAbsorbed(ids, absorbedIds(is));
-            writeTypeIds(is, ids);
+            UltraTerminalData.writeTypes(tag, ids);
         }
-        tag.setString(MODE, AEApi.instance().registries().ultraTerminal().getById(id).getId());
+        UltraTerminalData.writeMode(tag, type.getId());
+    }
+
+    //TODO : inline
+    /**
+     * Converts a mode stored by an older implementation to the id based format.
+     */
+    private static void normalizeStoredMode(final ItemStack is) {
+        final NBTTagCompound tag = is == null ? null : is.getTagCompound();
+        if (tag != null) {
+            UltraTerminalData.normalizeMode(tag, AEApi.instance().registries().ultraTerminal());
+        }
+    }
+
+    @Nullable
+    private static IUltraTerminalType readStoredMode(final ItemStack is) {
+        return UltraTerminalData
+                .readMode(is == null ? null : is.getTagCompound(), AEApi.instance().registries().ultraTerminal());
     }
 
     /**
@@ -264,47 +287,6 @@ public class ItemWirelessUltraTerminal extends ItemBaseWirelessTerminal
     private static Set<String> absorbedIds(final ItemStack is) {
         return UltraTerminalData
                 .readTypes(is == null ? null : is.getTagCompound(), AEApi.instance().registries().ultraTerminal());
-    }
-
-    private static void writeTypeIds(final ItemStack is, final Collection<String> ids) {
-        final NBTTagList list = new NBTTagList();
-        for (final String id : ids) {
-            list.appendTag(new NBTTagString(id));
-        }
-        Platform.openNbtData(is).setTag(TYPES, list);
-    }
-
-    @Nullable
-    private static IUltraTerminalType readStoredMode(final ItemStack is) {
-        final IUltraTerminalRegistry registry = AEApi.instance().registries().ultraTerminal();
-        final NBTTagCompound tag = is == null ? null : is.getTagCompound();
-        if (tag != null && tag.hasKey(MODE)) {
-            final int nbtType = tag.getTag(MODE).getId();
-            if (nbtType == Constants.NBT.TAG_INT) {
-                // the mode of the removed enum based terminal, migrate it to the id based format
-                final String migratedId = TerminalIds.fromLegacyOrdinal(tag.getInteger(MODE));
-                final IUltraTerminalType migrated = migratedId == null ? null : registry.getById(migratedId);
-                final IUltraTerminalType resolved = migrated != null ? migrated : registry.getDefault();
-                if (resolved != null) {
-                    tag.setString(MODE, resolved.getId());
-                }
-                return resolved;
-            }
-            if (nbtType == Constants.NBT.TAG_STRING) {
-                final String id = tag.getString(MODE);
-                final IUltraTerminalType type = registry.getById(id);
-                if (type != null) {
-                    return type;
-                }
-                AELog.warn("[UltraTerminal] Unknown terminal type %s, falling back to the default type", id);
-                final IUltraTerminalType fallback = registry.getDefault();
-                if (fallback != null) {
-                    tag.setString(MODE, fallback.getId());
-                }
-                return fallback;
-            }
-        }
-        return registry.getDefault();
     }
 
     @Override
@@ -377,6 +359,7 @@ public class ItemWirelessUltraTerminal extends ItemBaseWirelessTerminal
 
     @Override
     public void openGui(final ItemStack is, final World w, final EntityPlayer player, final Object mode) {
+        normalizeStoredMode(is);
         final IUltraTerminalType type = resolveAvailableType(player, is, getCurrentType(is));
         if (type == null) {
             return;
