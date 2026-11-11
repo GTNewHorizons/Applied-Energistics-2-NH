@@ -2,14 +2,18 @@ package com.glodblock.github.common.item;
 
 import java.util.EnumSet;
 
+import appeng.api.features.IUltraTerminalType;
 import com.glodblock.github.FluidCraft;
 import com.glodblock.github.common.tabs.FluidCraftingTabs;
+import com.glodblock.github.common.terminal.TerminalIds;
 import com.glodblock.github.loader.IRegister;
 import com.glodblock.github.util.NameConst;
 
 import appeng.api.AEApi;
 import appeng.core.features.AEFeature;
 import cpw.mods.fml.common.registry.GameRegistry;
+import net.minecraft.item.ItemStack;
+import org.jspecify.annotations.Nullable;
 
 public class ItemWirelessPatternTerminal extends ItemBaseWirelessTerminal
         implements IRegister<ItemWirelessPatternTerminal> {
@@ -26,5 +30,11 @@ public class ItemWirelessPatternTerminal extends ItemBaseWirelessTerminal
         GameRegistry.registerItem(this, NameConst.ITEM_WIRELESS_FLUID_PATTERN_TERMINAL, FluidCraft.MODID);
         setCreativeTab(FluidCraftingTabs.INSTANCE);
         return this;
+    }
+
+    @Nullable
+    @Override
+    protected IUltraTerminalType getTerminalType(ItemStack is) {
+        return findTerminalType(TerminalIds.AE2FC_PATTERN);
     }
 }

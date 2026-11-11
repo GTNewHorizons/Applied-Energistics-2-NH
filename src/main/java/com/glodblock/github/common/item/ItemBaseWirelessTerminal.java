@@ -21,7 +21,6 @@ import com.glodblock.github.util.NameConst;
 import com.glodblock.github.util.Util;
 
 import appeng.api.AEApi;
-import appeng.api.features.IUltraTerminalRegistry;
 import appeng.api.features.IUltraTerminalType;
 import appeng.api.features.IWirelessTermHandler;
 import appeng.api.implementations.guiobjects.IGuiItem;
@@ -31,7 +30,7 @@ import appeng.items.tools.powered.ToolWirelessTerminal;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-public class ItemBaseWirelessTerminal extends ToolWirelessTerminal implements IItemInventory, IGuiItem {
+public abstract class ItemBaseWirelessTerminal extends ToolWirelessTerminal implements IItemInventory, IGuiItem {
 
     public static String infinityBoosterCard = "infinityBoosterCard";
     public static String infinityEnergyCard = "InfinityEnergyCard";
@@ -85,13 +84,17 @@ public class ItemBaseWirelessTerminal extends ToolWirelessTerminal implements II
     }
 
     /**
-     * @return the terminal this item opens, or null if the registry has no matching terminal.
+     * @return the terminal type this item opens, or null if it is not registered.
      */
     @Nullable
-    protected IUltraTerminalType getTerminalType(final ItemStack is) {
-        final IUltraTerminalRegistry registry = AEApi.instance().registries().ultraTerminal();
-        final IUltraTerminalType backed = registry.findType(is);
-        return backed != null ? backed : registry.getDefault();
+    protected abstract IUltraTerminalType getTerminalType(ItemStack is);
+
+    /**
+     * @return the registered terminal type with the given id, or null if it is not registered.
+     */
+    @Nullable
+    protected static IUltraTerminalType findTerminalType(final String id) {
+        return AEApi.instance().registries().ultraTerminal().getById(id);
     }
 
     /**
