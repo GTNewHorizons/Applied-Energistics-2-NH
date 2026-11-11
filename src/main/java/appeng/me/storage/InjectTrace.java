@@ -46,6 +46,9 @@ public final class InjectTrace {
 
         private long accepted;
 
+        /** Whether a later hand-over of the same stack recorded this again, see {@link #discard}. */
+        private boolean discarded;
+
         private Entry(final IMEInventoryHandler<?> handler, @Nullable final IGrid grid, final int depth,
                 final int order, final boolean stickyClaim) {
             this.handler = handler;
@@ -70,12 +73,26 @@ public final class InjectTrace {
         public final int order;
         public final long accepted;
 
+        private boolean discarded;
+
         private CpuEntry(final CraftingCPUCluster cpu, @Nullable final IGrid grid, final int order,
                 final long accepted) {
             this.cpu = cpu;
             this.grid = grid;
             this.order = order;
             this.accepted = accepted;
+        }
+    }
+
+    /** A point in the record, taken with {@link #mark}. */
+    static final class Mark {
+
+        private final int entries;
+        private final int cpus;
+
+        private Mark(final int entries, final int cpus) {
+            this.entries = entries;
+            this.cpus = cpus;
         }
     }
 
@@ -126,6 +143,24 @@ public final class InjectTrace {
         }
     }
 
+    Mark mark() {
+        return new Mark(this.entries.size(), this.cpus.size());
+    }
+
+    /**
+     * Drops everything recorded between two marks. Pass 2 of a simulation hands a handler the stack again together with
+     * what it took in pass 1, so a subnetwork behind that handler records its storage a second time with the combined
+     * amount, and what it recorded in pass 1 has to go.
+     */
+    void discard(final Mark from, final Mark to) {
+        for (int index = from.entries; index < to.entries; index++) {
+            this.entries.get(index).discarded = true;
+        }
+        for (int index = from.cpus; index < to.cpus; index++) {
+            this.cpus.get(index).discarded = true;
+        }
+    }
+
     void denied(@Nullable final IGrid grid) {
         if (grid != null) {
             this.denied.add(grid);
@@ -144,11 +179,23 @@ public final class InjectTrace {
     }
 
     public List<Entry> getEntries() {
-        return Collections.unmodifiableList(this.entries);
+        final List<Entry> result = new ArrayList<>(this.entries.size());
+        for (final Entry entry : this.entries) {
+            if (!entry.discarded) {
+                result.add(entry);
+            }
+        }
+        return Collections.unmodifiableList(result);
     }
 
     public List<CpuEntry> getCpus() {
-        return Collections.unmodifiableList(this.cpus);
+        final List<CpuEntry> result = new ArrayList<>(this.cpus.size());
+        for (final CpuEntry cpu : this.cpus) {
+            if (!cpu.discarded) {
+                result.add(cpu);
+            }
+        }
+        return Collections.unmodifiableList(result);
     }
 
     /**

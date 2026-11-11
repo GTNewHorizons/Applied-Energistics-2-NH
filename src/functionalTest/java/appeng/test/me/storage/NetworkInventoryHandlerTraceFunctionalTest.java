@@ -197,6 +197,25 @@ public class NetworkInventoryHandlerTraceFunctionalTest {
     }
 
     @Test
+    public void subnetworkVisitedByBothPassesIsCountedOnce() {
+        final NetworkInventoryHandler<IAEItemStack> outer = network(new MockAESystem(world()));
+        final NetworkInventoryHandler<IAEItemStack> inner = network(new MockAESystem(world()));
+        // Already holds iron, so the inner network can give some up and pass 1 of the outer network visits it.
+        // Pass 2 then hands it the whole stack again, and the inner network routes it a second time.
+        final Storage storage = new Storage(15).holding(5);
+        inner.addNewStorage(storage);
+        outer.addNewStorage(inner);
+
+        final InjectTrace trace = new InjectTrace();
+        final IAEItemStack leftover = simulate(outer, trace, 64);
+
+        assertNotNull(leftover);
+        assertEquals(54, leftover.getStackSize());
+        assertEquals(10, acceptedBy(trace, inner));
+        assertEquals(10, acceptedBy(trace, storage), "the subnetwork's storage must not be counted for each pass");
+    }
+
+    @Test
     public void realInsertionsAreNotRecorded() {
         final NetworkInventoryHandler<IAEItemStack> network = network(new MockAESystem(world()));
         final Storage storage = new Storage(100);

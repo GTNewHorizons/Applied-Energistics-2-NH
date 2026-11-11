@@ -45,6 +45,7 @@ import appeng.util.inv.ItemListIgnoreCrafting;
 import appeng.util.item.NetworkItemList;
 import appeng.util.item.PrioritizedNetworkItemList;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetworkInventory<T> {
 
@@ -153,6 +154,9 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
             // Simulate doesn't have memory, so pass 2 must account for amounts already accepted by pass 1 in
             // the same inventory.
             final Int2LongOpenHashMap simulatedPass1Inserted = new Int2LongOpenHashMap();
+            // What subnetworks behind each handler recorded in pass 1, only kept while tracing.
+            final Int2ObjectOpenHashMap<InjectTrace.Mark[]> tracedPass1 = trace == null ? null
+                    : new Int2ObjectOpenHashMap<>();
 
             int passTwoIndex = -1;
             // Pass 1
@@ -167,8 +171,10 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
                     long before = input.getStackSize();
 
                     final InjectTrace.Entry entry = this.beginTrace(trace, inv, false);
+                    final InjectTrace.Mark nestedFrom = trace == null ? null : trace.mark();
                     input = inv.injectItems(input, type, src);
                     InjectTrace.finish(entry, before, input);
+                    if (trace != null) tracedPass1.put(i, new InjectTrace.Mark[] { nestedFrom, trace.mark() });
                     if (input == null) break outer;
 
                     if (type == Actionable.SIMULATE && inv.validForPass(2)) {
@@ -217,6 +223,12 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
                             final long before = input.getStackSize();
                             final InjectTrace.Entry entry = this.beginTrace(trace, inv, false);
                             if (pass1Inserted > 0) {
+                                if (trace != null) {
+                                    // The handler is about to see its pass 1 share again, and so is any
+                                    // subnetwork behind it, which records it anew.
+                                    final InjectTrace.Mark[] nested = tracedPass1.get(i);
+                                    if (nested != null) trace.discard(nested[0], nested[1]);
+                                }
                                 final T pass2Input = input.copy();
                                 pass2Input.setStackSize(pass2Input.getStackSize() + pass1Inserted);
 
