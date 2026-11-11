@@ -135,6 +135,11 @@ public final class StorageBusInspector implements ITransferInspector<PartStorage
                 return false;
             }
 
+            // AE leaves a bus without power or channel out of its storage, see PartStorageBus.getCellArray.
+            if (!this.stickyBus.getProxy().isActive()) {
+                return false;
+            }
+
             try {
                 final MEInventoryHandler handler = this.stickyBus.getInternalHandler();
                 if (handler == null || !handler.getSticky()) {

@@ -1,5 +1,7 @@
 package appeng.gametests.transfer;
 
+import static appeng.gametests.AEGameTestHelpers.assertActive;
+import static appeng.gametests.AEGameTestHelpers.assertInactive;
 import static appeng.gametests.transfer.TransferTestHelpers.TEMPLATE;
 import static appeng.gametests.transfer.TransferTestHelpers.exports;
 import static appeng.gametests.transfer.TransferTestHelpers.gold;
@@ -9,6 +11,7 @@ import static appeng.gametests.transfer.TransferTestHelpers.iron;
 import static appeng.gametests.transfer.TransferTestHelpers.place;
 import static appeng.gametests.transfer.TransferTestHelpers.water;
 
+import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -162,6 +165,7 @@ public class StorageBusInspectorTests {
         install(bus.getInventoryByName("upgrades"), cards().cardSticky());
 
         helper.startSequence().thenWaitUntil("wait for the handler to pick up the sticky card", 60, () -> {
+            assertActive(helper, bus, "AE only routes into a powered bus");
             MEInventoryHandler<?> handler = bus.getInternalHandler();
             helper.assertNotNull(handler, "Storage bus should have a handler");
             helper.assertTrue(handler.getSticky(), "Handler should become sticky");
@@ -191,6 +195,26 @@ public class StorageBusInspectorTests {
     @GameTest(template = TEMPLATE, timeoutTicks = 100)
     public static void unfilteredEmptyStickyBusClaimsNothing(GameTestHelper helper) {
         assertStickyClaims(helper, AccessRestriction.READ_WRITE, false, false, false);
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 140)
+    public static void unpoweredStickyBusClaimsNothing(GameTestHelper helper) {
+        PartStorageBus bus = bus(helper);
+        access(bus, AccessRestriction.WRITE, ExtractionMode.LOOSE);
+        bus.getAEInventoryByName(StorageName.CONFIG).putAEStackInSlot(0, iron());
+        install(bus.getInventoryByName("upgrades"), cards().cardSticky());
+
+        helper.startSequence().thenWaitUntil("wait for the powered bus to claim iron", 60, () -> {
+            assertActive(helper, bus, "Bus should be powered");
+            helper.assertTrue(INSPECTOR.inspect(bus).matcher.capturesAsSticky(iron()), "A powered sticky bus claims");
+        }).thenExecute("cut the power", () -> helper.setBlock("controller", Blocks.air))
+                .thenWaitUntil("wait for the bus to lose power", 60, () -> assertInactive(helper, bus, "No power"))
+                .thenExecute(
+                        "ask the inspector",
+                        () -> helper.assertFalse(
+                                INSPECTOR.inspect(bus).matcher.capturesAsSticky(iron()),
+                                "AE skips a bus without power, so it claims nothing"))
+                .thenSucceed();
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 20)
