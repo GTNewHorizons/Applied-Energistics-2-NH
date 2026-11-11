@@ -47,8 +47,6 @@ import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
  */
 public class PathingCalculation {
 
-    private static final int CONTROLLER_FACE_CHANNELS = 32;
-
     private final IGrid grid;
     private final int controllerFaceCapacity;
     /**
@@ -94,7 +92,8 @@ public class PathingCalculation {
      */
     public PathingCalculation(IGrid grid) {
         this.grid = grid;
-        this.controllerFaceCapacity = AEConfig.instance.isFeatureEnabled(AEFeature.Channels) ? CONTROLLER_FACE_CHANNELS
+        this.controllerFaceCapacity = AEConfig.instance.isFeatureEnabled(AEFeature.Channels)
+                ? AEConfig.instance.denseCableChannelCapacity
                 : Integer.MAX_VALUE;
 
         // Add every outgoing connection of the controllers (that doesn't point to another controller) to the list.
