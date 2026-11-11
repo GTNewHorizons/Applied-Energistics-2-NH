@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import appeng.core.AELog;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -15,6 +14,7 @@ import org.jspecify.annotations.Nullable;
 
 import appeng.api.features.IUltraTerminalRegistry;
 import appeng.api.features.IUltraTerminalType;
+import appeng.core.AELog;
 
 /** Storage compatibility for the ultra terminal, independent of item and mod initialization. */
 public final class UltraTerminalData {
@@ -59,7 +59,7 @@ public final class UltraTerminalData {
      */
     @Nullable
     public static IUltraTerminalType readMode(final @Nullable NBTTagCompound tag,
-                                              final IUltraTerminalRegistry registry) {
+            final IUltraTerminalRegistry registry) {
         final NBTBase mode = tag == null ? null : tag.getTag(MODE);
         if (mode == null) {
             return null;

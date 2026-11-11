@@ -2,13 +2,13 @@ package appeng.api.features;
 
 import java.util.Objects;
 
-import appeng.api.AEApi;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.StatCollector;
 
 import org.jspecify.annotations.Nullable;
 
+import appeng.api.AEApi;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 

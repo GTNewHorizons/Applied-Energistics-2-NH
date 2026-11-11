@@ -19,7 +19,6 @@ import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.nbt.NBTTagString;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
@@ -48,8 +47,6 @@ import appeng.api.features.IUltraTerminalType;
 import appeng.api.implementations.guiobjects.IGuiItem;
 import appeng.api.implementations.guiobjects.IGuiItemObject;
 import appeng.api.networking.IGridNode;
-import appeng.container.AEBaseContainer;
-import appeng.core.AELog;
 import appeng.core.features.AEFeature;
 import appeng.helpers.ICustomButtonDataObject;
 import appeng.helpers.ICustomButtonProvider;
@@ -66,8 +63,6 @@ import cpw.mods.fml.relauncher.SideOnly;
  */
 public class ItemWirelessUltraTerminal extends ItemBaseWirelessTerminal
         implements IRegister<ItemWirelessUltraTerminal>, IGuiItem, ICustomButtonSource, IWirelessCraftingTerminalItem {
-
-    public final static String MODE = UltraTerminalData.MODE;
 
     public final static String TYPES = UltraTerminalData.TYPES;
 
@@ -395,7 +390,9 @@ public class ItemWirelessUltraTerminal extends ItemBaseWirelessTerminal
         if (modeId != null && !isAbsorbed(terminal, modeId)) {
             return;
         }
-        final IUltraTerminalType requested = modeId != null ? AEApi.instance().registries().ultraTerminal().getById(modeId) : getCurrentType(terminal);
+        final IUltraTerminalType requested = modeId != null
+                ? AEApi.instance().registries().ultraTerminal().getById(modeId)
+                : getCurrentType(terminal);
         final IUltraTerminalType type = resolveAvailableType(player, terminal, requested);
         if (type == null) {
             return;

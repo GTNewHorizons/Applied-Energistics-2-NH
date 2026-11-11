@@ -3,7 +3,6 @@ package com.glodblock.github.client;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.glodblock.github.common.terminal.UltraTerminalButtonState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.entity.player.EntityPlayer;
@@ -17,6 +16,7 @@ import com.glodblock.github.client.gui.GuiFCImgButton;
 import com.glodblock.github.client.gui.widget.GuiModeButton;
 import com.glodblock.github.common.item.ItemWirelessUltraTerminal;
 import com.glodblock.github.common.terminal.IUltraTerminalButtonState;
+import com.glodblock.github.common.terminal.UltraTerminalButtonState;
 import com.glodblock.github.network.CPacketFluidPatternTermBtns;
 import com.glodblock.github.network.CPacketSwitchGuis;
 import com.glodblock.github.util.NameConst;
@@ -325,9 +325,7 @@ public class UltraTerminalButtons implements ICustomButtonDataObject, IUltraTerm
      * Opens the next usable absorbed terminal, wrapping around.
      */
     private void switchToNext() {
-        final String next = ItemWirelessUltraTerminal.getNextModeId(
-                Minecraft.getMinecraft().thePlayer,
-                this.terminal);
+        final String next = ItemWirelessUltraTerminal.getNextModeId(Minecraft.getMinecraft().thePlayer, this.terminal);
         if (next.isEmpty() || next.equals(ItemWirelessUltraTerminal.getModeId(this.terminal))) {
             return;
         }
