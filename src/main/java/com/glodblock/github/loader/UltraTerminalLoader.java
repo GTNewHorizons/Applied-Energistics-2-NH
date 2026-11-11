@@ -27,7 +27,6 @@ import appeng.api.features.IUltraTerminalRegistry;
 import appeng.api.features.IWirelessTermHandler;
 import appeng.api.implementations.guiobjects.IGuiItemObject;
 import appeng.api.networking.IGridNode;
-import appeng.container.AEBaseContainer;
 import appeng.core.sync.GuiBridge;
 import appeng.helpers.WirelessTerminalGuiObject;
 import appeng.items.contents.WirelessCraftingTerminalGuiObject;
@@ -186,16 +185,17 @@ public final class UltraTerminalLoader implements Runnable {
     }
 
     private static IUltraTerminalGuiOpener opener(final GuiBridge bridge) {
-        return (player, terminal, slotIndex, terminalSlotIndex) -> Platform.openGUI(player, null, null, bridge, slotIndex, terminalSlotIndex);
+        return (player, terminal, slotIndex, terminalSlotIndex) -> Platform
+                .openGUI(player, null, null, bridge, slotIndex, terminalSlotIndex);
     }
 
     private static IUltraTerminalGuiOpener itemGuiOpener(final GuiType guiType) {
         return (player, terminal, slotIndex, terminalSlotIndex) -> InventoryHandler.openGui(
-                    player,
-                    player.worldObj,
-                    new BlockPos(slotIndex, 0, terminalSlotIndex),
-                    ForgeDirection.UNKNOWN,
-                    guiType);
+                player,
+                player.worldObj,
+                new BlockPos(slotIndex, 0, terminalSlotIndex),
+                ForgeDirection.UNKNOWN,
+                guiType);
     }
 
     private UltraTerminalLoader() {}
