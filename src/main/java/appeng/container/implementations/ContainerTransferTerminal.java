@@ -23,7 +23,7 @@ import appeng.api.features.transfer.TransferDescription;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.security.ISecurityGrid;
-import appeng.api.networking.security.MachineSource;
+import appeng.api.networking.security.PlayerSource;
 import appeng.api.parts.ITransferTerminal;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
@@ -274,7 +274,8 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
                         this.grids.isEmpty() ? Collections.singletonList(node.getGrid()) : this.grids,
                         this.matching,
                         this.getQuery(),
-                        new MachineSource(this.anchor))
+                        // Inserted the way a player puts a stack into a terminal, so security applies to them.
+                        new PlayerSource(this.getInventoryPlayer().player, this.anchor))
                 : null;
 
         if (result == null || !result.simulated()) {
