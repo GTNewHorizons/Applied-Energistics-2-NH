@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.glodblock.github.common.parts.PartFluidAnnihilationPlane;
+import com.glodblock.github.common.parts.PartFluidFormationPlane;
 import com.glodblock.github.common.parts.PartFluidInterface;
 import com.glodblock.github.common.parts.PartFluidP2PInterface;
 import com.glodblock.github.common.tile.TileFluidInterface;
@@ -19,6 +20,7 @@ import appeng.api.features.transfer.ITransferInspectorRegistry;
 import appeng.api.features.transfer.TransferDescription;
 import appeng.api.features.transfer.TransferMatcher;
 import appeng.api.storage.data.IAEFluidStack;
+import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
 import appeng.helpers.IInterfaceHost;
 import appeng.helpers.transfer.AnnihilationPlaneInspector;
@@ -30,8 +32,9 @@ import appeng.tile.inventory.IAEStackInventory;
  * TEMPORARY - delete before the pull request, along with its call in {@code Registration.postInit} and
  * {@code TempAddonTransferInspectorTests}. These registrations belong in AE2FluidCraft.
  * <p>
- * AE2FC's buses, storage bus and formation plane need nothing, they inherit AE2's inspectors. Only its components that
- * store filters AE2 does not know about are registered here. Thaumic Energistics needs nothing at all.
+ * AE2FC's buses and storage bus need nothing, they inherit AE2's inspectors. Registered here are its components that
+ * store filters AE2 does not know about, and its formation plane, which works differently from AE2's. Thaumic
+ * Energistics needs nothing at all.
  */
 public final class TempAddonTransferInspectors {
 
@@ -46,6 +49,34 @@ public final class TempAddonTransferInspectors {
         registry.register(PartFluidP2PInterface.class, dualInterface);
         registry.register(TileSuperStockReplenisher.class, new StockReplenisherInspector());
         registry.register(PartFluidAnnihilationPlane.class, new AnnihilationPlaneInspector(() -> FLUID_STACK_TYPE));
+        registry.register(PartFluidFormationPlane.class, new FluidFormationPlaneInspector());
+    }
+
+    /**
+     * Unlike AE2's plane, the fluid plane is no storage: it pulls a bucket of the first configured fluid the network
+     * has, reading every config slot whatever cards are installed, and places nothing when none is configured.
+     */
+    private static final class FluidFormationPlaneInspector implements ITransferInspector<PartFluidFormationPlane> {
+
+        @Override
+        public TransferDescription inspect(final PartFluidFormationPlane plane) {
+            final List<IAEStack<?>> config = new ArrayList<>();
+            final IAEStackInventory inventory = plane.getAEInventoryByName(StorageName.CONFIG);
+            for (int slot = 0; slot < inventory.getSizeInventory(); slot++) {
+                if (inventory.getAEStackInSlot(slot) instanceof IAEFluidStack fluid) {
+                    config.add(fluid);
+                }
+            }
+            if (config.isEmpty()) {
+                return null;
+            }
+
+            final TransferDescription.Builder builder = TransferDescription.builder().canExport(true);
+            for (final IAEStack<?> stack : config) {
+                builder.config(stack, false);
+            }
+            return builder.matcher(TransferMatcher.exportOf(config)).build();
+        }
     }
 
     private static final class DualInterfaceInspector implements ITransferInspector<IInterfaceHost> {

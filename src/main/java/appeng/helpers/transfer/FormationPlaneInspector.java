@@ -9,6 +9,7 @@ import appeng.api.config.Upgrades;
 import appeng.api.features.transfer.ITransferInspector;
 import appeng.api.features.transfer.TransferDescription;
 import appeng.api.features.transfer.TransferMatcher;
+import appeng.api.storage.ICellProvider;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.util.IConfigManager;
@@ -24,8 +25,11 @@ public final class FormationPlaneInspector implements ITransferInspector<PartBas
     @Override
     public TransferDescription inspect(final PartBaseFormationPlane plane) {
         final IConfigManager settings = plane.getConfigManager();
-        final FuzzyMode fuzzyMode = (FuzzyMode) settings.getSetting(Settings.FUZZY_MODE);
-        final boolean fuzzy = plane.supportFuzzy() && InspectorSupport.has(plane, Upgrades.FUZZY);
+        // Only the item plane registers a fuzzy mode, asking a plane without one throws.
+        final boolean hasFuzzyMode = settings.getSettings().contains(Settings.FUZZY_MODE);
+        final FuzzyMode fuzzyMode = hasFuzzyMode ? (FuzzyMode) settings.getSetting(Settings.FUZZY_MODE)
+                : FuzzyMode.IGNORE_ALL;
+        final boolean fuzzy = hasFuzzyMode && plane.supportFuzzy() && InspectorSupport.has(plane, Upgrades.FUZZY);
         final List<IAEStack<?>> config = TransferFilterBuilder.activeConfig(
                 plane.getAEInventoryByName(StorageName.CONFIG),
                 TransferFilterBuilder.usableWideSlots(plane.getInstalledUpgrades(Upgrades.CAPACITY)),
@@ -41,7 +45,9 @@ public final class FormationPlaneInspector implements ITransferInspector<PartBas
                 EmptyPolicy.MATCH_ALL);
 
         final TransferDescription.Builder builder = InspectorSupport.withUpgrades(
-                TransferDescription.builder().canExport(true).storageHandler(true).priority(plane.getPriority()),
+                // A plane that is a cell provider is storage AE routes into, others pull stacks out by themselves.
+                TransferDescription.builder().canExport(true).storageHandler(plane instanceof ICellProvider)
+                        .priority(plane.getPriority()),
                 plane.getInventoryByName("upgrades"),
                 false);
         InspectorSupport.addConfig(builder, config, fuzzy);

@@ -10,6 +10,7 @@ import net.minecraftforge.fluids.FluidStack;
 
 import com.glodblock.github.common.parts.PartFluidAnnihilationPlane;
 import com.glodblock.github.common.parts.PartFluidExportBus;
+import com.glodblock.github.common.parts.PartFluidFormationPlane;
 import com.glodblock.github.common.parts.PartFluidStorageBus;
 import com.glodblock.github.common.tile.TileFluidInterface;
 import com.glodblock.github.loader.ItemAndBlockHolder;
@@ -113,6 +114,22 @@ public class TempAddonTransferInspectorTests {
         final TileFluidInterface tile = helper.assertTileEntityPresent(TileFluidInterface.class, "adjacent_chest");
 
         helper.assertNull(inspect(tile), "Nothing is stocked");
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 20)
+    public static void fluidFormationPlanePlacesOnlyItsConfig(GameTestHelper helper) {
+        final PartFluidFormationPlane plane = place(helper, new ItemStack(ItemAndBlockHolder.FLUID_FORMATION_PLANE));
+
+        helper.assertNull(inspect(plane), "A plane with nothing configured places nothing");
+
+        plane.getAEInventoryByName(StorageName.CONFIG).putAEStackInSlot(40, water());
+        final TransferDescription description = inspect(plane);
+
+        helper.assertTrue(moves(description, water(), TransferDirection.EXPORT), "Every config slot is read");
+        helper.assertFalse(moves(description, lava(), TransferDirection.EXPORT), "Other fluids stay");
+        helper.assertFalse(moves(description, water(), TransferDirection.IMPORT), "A plane never imports");
+        helper.assertFalse(description.storageHandler, "The plane pulls fluid, it is no storage");
         helper.succeed();
     }
 
