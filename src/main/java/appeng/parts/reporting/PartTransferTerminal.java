@@ -36,7 +36,7 @@ public class PartTransferTerminal extends AbstractPartDisplay
     private final IConfigManager settings = new ConfigManager(this);
     private final IAEStackInventory query = new IAEStackInventory(this, 1);
     private String searchText = "";
-    private boolean needsUpdate;
+    private long changeCount;
 
     public PartTransferTerminal(final ItemStack is) {
         super(is);
@@ -144,22 +144,20 @@ public class PartTransferTerminal extends AbstractPartDisplay
     }
 
     @Override
-    public boolean needsUpdate() {
-        final boolean result = this.needsUpdate;
-        this.needsUpdate = false;
-        return result;
+    public long getChangeCount() {
+        return this.changeCount;
     }
 
     @MENetworkEventSubscribe
     public void onNetworkBootingChanged(final MENetworkBootingStatusChange event) {
         if (!event.isBooting) {
-            this.needsUpdate = true;
+            this.changeCount++;
         }
     }
 
     @MENetworkEventSubscribe
     public void onCellArrayChanged(final MENetworkCellArrayUpdate event) {
-        this.needsUpdate = true;
+        this.changeCount++;
     }
 
     @Override

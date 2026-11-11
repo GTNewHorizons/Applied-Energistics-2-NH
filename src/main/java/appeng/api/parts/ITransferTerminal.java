@@ -10,9 +10,10 @@ import appeng.tile.inventory.IAEStackInventory;
 public interface ITransferTerminal extends IActionHost, IConfigurableObject {
 
     /**
-     * @return true if the network changed since the last call, calling this resets the flag
+     * @return a number that grows each time the network changes in a way that calls for a rescan, so each open screen
+     *         can tell for itself whether it has seen the change
      */
-    boolean needsUpdate();
+    long getChangeCount();
 
     /**
      * @return the one slot holding the stack being searched for

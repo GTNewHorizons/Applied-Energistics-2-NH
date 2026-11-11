@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -101,6 +102,18 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
     /** Whether a network refused the simulated insert because of its security settings. */
     public final BooleanSyncHandler deniedSync;
 
+    /** Settings every screen open on this terminal shares, with the handler that shows each. */
+    private final Map<Settings, ConfigEnumSyncHandler<?>> sharedSettings = new EnumMap<>(Settings.class);
+
+    /** The value of each shared setting this screen last applied. */
+    private final Map<Settings, Enum<?>> appliedSettings = new EnumMap<>(Settings.class);
+
+    /** The searched stack this screen last applied, the slot is shared by every screen too. */
+    private IAEStack<?> appliedQuery;
+
+    /** The terminal's change count at the last scan, see {@link ITransferTerminal#getChangeCount()}. */
+    private long seenChangeCount;
+
     private final Map<TransferComponentInfo, List<String>> configNames = new IdentityHashMap<>();
     private List<TransferComponentInfo> scanned = Collections.emptyList();
 
@@ -158,6 +171,12 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         this.leftoverSync = sync.longS2C("simulateLeftover");
         this.deniedSync = sync.booleanS2C("simulateDenied");
 
+        this.sharedSettings.put(Settings.TRANSFER_DIRECTION, this.directionSync);
+        this.sharedSettings.put(Settings.TRANSFER_CRAFTING_CARD_ONLY, this.craftingOnlySync);
+        this.sharedSettings.put(Settings.TRANSFER_HIDE_UNFILTERED, this.hideUnfilteredSync);
+        this.sharedSettings.put(Settings.TRANSFER_NETWORK_ONLY, this.networkOnlySync);
+        this.sharedSettings.put(Settings.TRANSFER_SIMULATE, this.simulateSync);
+
         this.bindPlayerInventory(ip, 0, -31);
     }
 
@@ -167,6 +186,7 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
             return;
         }
 
+        this.followSharedState();
         super.detectAndSendChanges();
 
         final IGridNode node = this.anchor.getActionableNode();
@@ -182,7 +202,7 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         }
         this.wasOffline = false;
 
-        if (!this.hasScanned || this.anchor.needsUpdate() || this.fingerprintChanged()) {
+        if (!this.hasScanned || this.anchor.getChangeCount() != this.seenChangeCount || this.fingerprintChanged()) {
             this.scan(node);
             this.queryChanged = true;
         }
@@ -204,6 +224,50 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         }
     }
 
+    /**
+     * The query slot and the settings belong to the terminal, so a change made through another player's screen only
+     * shows up there, without this screen's handlers hearing of it. A setting changed on this screen's server side is
+     * handed to the terminal in turn, so the other screens see it.
+     */
+    private void followSharedState() {
+        final IConfigManager config = this.anchor.getConfigManager();
+        for (final Map.Entry<Settings, ConfigEnumSyncHandler<?>> shared : this.sharedSettings.entrySet()) {
+            final Settings setting = shared.getKey();
+            final ConfigEnumSyncHandler<?> handler = shared.getValue();
+            Enum<?> value = config.getSetting(setting);
+            final Enum<?> applied = this.appliedSettings.put(setting, value);
+
+            if (applied != null && value != applied) {
+                handler.syncFromConfig();
+            } else if (handler.get() != null && handler.get() != value) {
+                value = handler.get();
+                config.putSetting(setting, value);
+                this.appliedSettings.put(setting, value);
+            } else {
+                continue;
+            }
+
+            if (setting == Settings.TRANSFER_NETWORK_ONLY) {
+                this.hasScanned = false;
+            } else {
+                this.queryChanged = true;
+            }
+        }
+
+        final IAEStack<?> query = this.getQuery();
+        if (!sameStack(query, this.appliedQuery)) {
+            this.appliedQuery = query == null ? null : query.copy();
+            this.queryChanged = true;
+        }
+    }
+
+    private static boolean sameStack(final IAEStack<?> a, final IAEStack<?> b) {
+        if (a == null || b == null) {
+            return a == b;
+        }
+        return a.isSameType((Object) b) && a.getStackSize() == b.getStackSize();
+    }
+
     private boolean fingerprintChanged() {
         if (++this.ticksSinceFingerprint < FINGERPRINT_INTERVAL) {
             return false;
@@ -219,6 +283,7 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         this.scanned = TransferScanner.scan(this.grids, AEApi.instance().registries().transferInspectors());
         this.configNames.clear();
         this.fingerprint = TransferScanner.fingerprint(this.grids);
+        this.seenChangeCount = this.anchor.getChangeCount();
         this.ticksSinceFingerprint = 0;
         this.hasScanned = true;
     }

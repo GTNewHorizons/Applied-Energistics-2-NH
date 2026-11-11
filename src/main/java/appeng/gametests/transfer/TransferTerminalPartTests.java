@@ -152,12 +152,46 @@ public class TransferTerminalPartTests {
     @GameTest(template = TEMPLATE, timeoutTicks = 20)
     public static void storageChangesRequestARescan(GameTestHelper helper) {
         PartTransferTerminal terminal = terminal(helper);
-        terminal.needsUpdate();
+        long before = terminal.getChangeCount();
 
         terminal.onCellArrayChanged(new MENetworkCellArrayUpdate());
 
-        helper.assertTrue(terminal.needsUpdate(), "A storage change should request a rescan");
-        helper.assertFalse(terminal.needsUpdate(), "Reading the flag should reset it");
+        helper.assertTrue(terminal.getChangeCount() > before, "A storage change should request a rescan");
+        helper.assertEquals(
+                terminal.getChangeCount(),
+                terminal.getChangeCount(),
+                "Every open screen has to see the change, so reading it must not reset it");
         helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void aSecondViewerFollowsWhatTheFirstChanges(GameTestHelper helper) {
+        PartTransferTerminal terminal = terminal(helper);
+
+        helper.startSequence()
+                .thenWaitUntil(
+                        "wait for the terminal to join the network",
+                        60,
+                        () -> assertActive(helper, terminal, "Terminal should become active"))
+                .thenExecute("open the terminal twice", () -> {
+                    ContainerTransferTerminal first = new ContainerTransferTerminal(
+                            helper.spawnFakePlayer("transfer_terminal").inventory,
+                            terminal);
+                    ContainerTransferTerminal second = new ContainerTransferTerminal(
+                            helper.spawnFakePlayer("transfer_terminal_2").inventory,
+                            terminal);
+                    first.detectAndSendChanges();
+                    second.detectAndSendChanges();
+                    helper.assertFalse(second.simulatingSync.get(), "Nothing is searched yet");
+
+                    // What the first viewer's client sends ends up in the terminal both screens share.
+                    terminal.getConfigManager().putSetting(Settings.TRANSFER_SIMULATE, YesNo.YES);
+                    terminal.getQueryInventory().putAEStackInSlot(0, iron());
+                    first.detectAndSendChanges();
+                    second.detectAndSendChanges();
+
+                    helper.assertEquals(YesNo.YES, second.simulateSync.get(), "The setting reaches the second screen");
+                    helper.assertTrue(second.simulatingSync.get(), "The second screen simulates the new search");
+                }).thenSucceed();
     }
 }
