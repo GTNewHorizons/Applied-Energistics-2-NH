@@ -4,6 +4,7 @@ import static appeng.gametests.AEGameTestHelpers.assertActive;
 import static appeng.gametests.transfer.TransferTestHelpers.TEMPLATE;
 import static appeng.gametests.transfer.TransferTestHelpers.iron;
 import static appeng.gametests.transfer.TransferTestHelpers.place;
+import static net.minecraftforge.common.util.ForgeDirection.NORTH;
 
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.util.FakePlayer;
@@ -18,10 +19,13 @@ import appeng.api.config.Settings;
 import appeng.api.config.TransferDirection;
 import appeng.api.config.YesNo;
 import appeng.api.networking.events.MENetworkCellArrayUpdate;
+import appeng.api.storage.StorageName;
 import appeng.container.implementations.ContainerTransferTerminal;
 import appeng.core.AppEng;
 import appeng.helpers.transfer.TransferRowWindow;
+import appeng.parts.automation.PartExportBus;
 import appeng.parts.reporting.PartTransferTerminal;
+import appeng.tile.networking.TileCableBus;
 
 @GameTestHolder(AppEng.MOD_ID)
 public class TransferTerminalPartTests {
@@ -162,6 +166,54 @@ public class TransferTerminalPartTests {
                 terminal.getChangeCount(),
                 "Every open screen has to see the change, so reading it must not reset it");
         helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 140)
+    public static void networkChangesRescanAtMostEveryFewTicks(GameTestHelper helper) {
+        PartTransferTerminal terminal = terminal(helper);
+        ContainerTransferTerminal[] container = new ContainerTransferTerminal[1];
+        int[] rowsBefore = new int[1];
+
+        helper.startSequence()
+                .thenWaitUntil(
+                        "wait for the terminal to join the network",
+                        60,
+                        () -> assertActive(helper, terminal, "Terminal should become active"))
+                .thenExecute("open the terminal", () -> {
+                    container[0] = new ContainerTransferTerminal(
+                            helper.spawnFakePlayer("transfer_terminal").inventory,
+                            terminal);
+                    container[0].detectAndSendChanges();
+                    rowsBefore[0] = container[0].getFilteredRows().size();
+                    PartExportBus bus = place(helper, AEApi.instance().definitions().parts().exportBus(), NORTH);
+                    bus.getAEInventoryByName(StorageName.CONFIG).putAEStackInSlot(0, iron());
+                })
+                .thenWaitUntil(
+                        "wait for the export bus to join the network",
+                        60,
+                        () -> assertActive(
+                                helper,
+                                (PartExportBus) helper
+                                        .assertTileEntityPresent(TileCableBus.class, TransferTestHelpers.CABLE_LABEL)
+                                        .getPart(NORTH),
+                                "Export bus should become active"))
+                .thenExecute("report the change right after a scan", () -> {
+                    container[0].detectAndSendChanges();
+                    terminal.onCellArrayChanged(new MENetworkCellArrayUpdate());
+                    container[0].detectAndSendChanges();
+                    helper.assertEquals(
+                            rowsBefore[0],
+                            container[0].getFilteredRows().size(),
+                            "A scan right after the last one waits");
+
+                    for (int tick = 0; tick < 10; tick++) {
+                        container[0].detectAndSendChanges();
+                    }
+                    helper.assertEquals(
+                            rowsBefore[0] + 1,
+                            container[0].getFilteredRows().size(),
+                            "The waiting scan lists the export bus");
+                }).thenSucceed();
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 100)

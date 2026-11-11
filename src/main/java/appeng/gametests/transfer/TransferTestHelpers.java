@@ -22,7 +22,7 @@ import appeng.util.item.AEItemStack;
 final class TransferTestHelpers {
 
     static final String TEMPLATE = "storage_bus";
-    private static final String CABLE_LABEL = "storage_bus";
+    static final String CABLE_LABEL = "storage_bus";
 
     private TransferTestHelpers() {}
 

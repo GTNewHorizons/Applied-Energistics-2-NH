@@ -61,6 +61,8 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
 
     private static final int FINGERPRINT_INTERVAL = 20;
     private static final int SIMULATION_INTERVAL = 20;
+    /** Fewest ticks between two scans caused by network changes. */
+    private static final int MIN_RESCAN_INTERVAL = 10;
     private static final int MAX_PACKET_BYTES = 512 * 1024;
     private static final int DEFAULT_VISIBLE_ROWS = 3;
     private static final SyncCodec<String> STRING_CODEC = SyncCodecs.of(
@@ -113,6 +115,10 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
 
     /** The terminal's change count at the last scan, see {@link ITransferTerminal#getChangeCount()}. */
     private long seenChangeCount;
+    private int ticksSinceScan;
+
+    /** Whether the network changed while the last scan was too recent to scan again. */
+    private boolean rescanPending;
 
     private final Map<TransferComponentInfo, List<String>> configNames = new IdentityHashMap<>();
     private List<TransferComponentInfo> scanned = Collections.emptyList();
@@ -202,9 +208,19 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         }
         this.wasOffline = false;
 
-        if (!this.hasScanned || this.anchor.getChangeCount() != this.seenChangeCount || this.fingerprintChanged()) {
+        this.ticksSinceScan++;
+        if (!this.hasScanned) {
             this.scan(node);
             this.queryChanged = true;
+        } else if (this.rescanPending || this.anchor.getChangeCount() != this.seenChangeCount
+                || this.fingerprintChanged()) {
+            // Storage that keeps changing would otherwise have every open screen walk all linked networks each tick.
+            if (this.ticksSinceScan < MIN_RESCAN_INTERVAL) {
+                this.rescanPending = true;
+            } else {
+                this.scan(node);
+                this.queryChanged = true;
+            }
         }
 
         if (this.queryChanged) {
@@ -284,6 +300,8 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         this.configNames.clear();
         this.fingerprint = TransferScanner.fingerprint(this.grids);
         this.seenChangeCount = this.anchor.getChangeCount();
+        this.ticksSinceScan = 0;
+        this.rescanPending = false;
         this.ticksSinceFingerprint = 0;
         this.hasScanned = true;
     }
