@@ -1,11 +1,9 @@
 package com.glodblock.github.client;
 
-import static appeng.util.Platform.nextEnum;
-import static com.glodblock.github.inventory.item.WirelessMagnet.modeKey;
-
 import java.util.ArrayList;
 import java.util.List;
 
+import com.glodblock.github.common.terminal.UltraTerminalButtonState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.entity.player.EntityPlayer;
@@ -19,7 +17,6 @@ import com.glodblock.github.client.gui.GuiFCImgButton;
 import com.glodblock.github.client.gui.widget.GuiModeButton;
 import com.glodblock.github.common.item.ItemWirelessUltraTerminal;
 import com.glodblock.github.common.terminal.IUltraTerminalButtonState;
-import com.glodblock.github.inventory.item.WirelessMagnet;
 import com.glodblock.github.network.CPacketFluidPatternTermBtns;
 import com.glodblock.github.network.CPacketSwitchGuis;
 import com.glodblock.github.util.NameConst;
@@ -27,7 +24,6 @@ import com.glodblock.github.util.NameConst;
 import appeng.api.features.IUltraTerminalType;
 import appeng.helpers.ICustomButtonDataObject;
 import appeng.util.Platform;
-import cpw.mods.fml.common.network.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 /**
@@ -36,11 +32,10 @@ import io.netty.buffer.ByteBuf;
  */
 public class UltraTerminalButtons implements ICustomButtonDataObject, IUltraTerminalButtonState {
 
-    public static String restockItems = "restock";
-
     private static final int SPACING = 20;
 
     private final ItemStack terminal;
+    private final UltraTerminalButtonState state;
     private final boolean utilityButtons;
     private final List<GuiModeButton> flyoutButtons = new ArrayList<>();
 
@@ -57,8 +52,6 @@ public class UltraTerminalButtons implements ICustomButtonDataObject, IUltraTerm
     private GuiFCImgButton restockEnableBtn;
     private GuiFCImgButton restockDisableBtn;
 
-    private WirelessMagnet.Mode magnetMode = WirelessMagnet.Mode.Off;
-    private boolean reStock;
     private int offset;
 
     private List<GuiButton> modeButtonList;
@@ -75,6 +68,7 @@ public class UltraTerminalButtons implements ICustomButtonDataObject, IUltraTerm
      */
     public UltraTerminalButtons(ItemStack terminal, boolean utilityButtons) {
         this.terminal = terminal;
+        this.state = new UltraTerminalButtonState(terminal);
         this.utilityButtons = utilityButtons;
     }
 
@@ -305,7 +299,7 @@ public class UltraTerminalButtons implements ICustomButtonDataObject, IUltraTerm
                 FluidCraft.proxy.netHandler.sendToServer(
                         new CPacketFluidPatternTermBtns(
                                 CPacketFluidPatternTermBtns.Command.MAGNET_MODE,
-                                this.magnetMode.ordinal()));
+                                this.state.getMagnetMode().ordinal()));
             } else if (btn == this.magnetFilter) {
                 FluidCraft.proxy.netHandler.sendToServer(
                         new CPacketFluidPatternTermBtns(CPacketFluidPatternTermBtns.Command.MAGNET_OPEN_FILTER, 0));
@@ -331,30 +325,23 @@ public class UltraTerminalButtons implements ICustomButtonDataObject, IUltraTerm
      * Opens the next usable absorbed terminal, wrapping around.
      */
     private void switchToNext() {
-        final IUltraTerminalType current = ItemWirelessUltraTerminal.getCurrentType(this.terminal);
-        final List<IUltraTerminalType> types = usableTypes(this.terminal);
-        if (types.isEmpty()) {
+        final String next = ItemWirelessUltraTerminal.getNextModeId(
+                Minecraft.getMinecraft().thePlayer,
+                this.terminal);
+        if (next.isEmpty() || next.equals(ItemWirelessUltraTerminal.getModeId(this.terminal))) {
             return;
         }
-        final int currentIndex = current == null ? -1 : types.indexOf(current);
-        for (int i = 1; i <= types.size(); i++) {
-            final IUltraTerminalType candidate = types.get(Math.floorMod(currentIndex + i, types.size()));
-            if (candidate == current) {
-                continue;
-            }
-            this.switchTo(candidate.getId());
-            return;
-        }
+        this.switchTo(next);
     }
 
     @Override
     public void toggleRestock() {
-        this.reStock = !this.reStock;
+        this.state.toggleRestock();
     }
 
     public void toggleRestockVisibility() {
         if (Platform.isClient() && this.restockEnableBtn != null && this.restockDisableBtn != null) {
-            if (this.reStock) {
+            if (this.state.isRestockEnabled()) {
                 this.restockEnableBtn.setVisibility(true);
                 this.restockDisableBtn.setVisibility(false);
             } else {
@@ -366,14 +353,14 @@ public class UltraTerminalButtons implements ICustomButtonDataObject, IUltraTerm
 
     @Override
     public void toggleMagnetMode() {
-        this.magnetMode = nextEnum(this.magnetMode);
+        this.state.toggleMagnetMode();
     }
 
     public void toggleMagnetButtonsVisibility() {
         if (this.magnetOff == null || this.magnetME == null || this.magnetInv == null) {
             return;
         }
-        switch (this.magnetMode) {
+        switch (this.state.getMagnetMode()) {
             case Off -> {
                 this.magnetME.setVisibility(false);
                 this.magnetInv.setVisibility(false);
@@ -394,30 +381,18 @@ public class UltraTerminalButtons implements ICustomButtonDataObject, IUltraTerm
 
     @Override
     public void readData(NBTTagCompound tag) {
-        if (tag == null) {
-            return;
-        }
-        this.reStock = tag.getBoolean(restockItems);
-        if (tag.hasKey(modeKey)) {
-            final int ordinal = tag.getInteger(modeKey);
-            if (ordinal >= 0 && ordinal < WirelessMagnet.Mode.values().length) {
-                this.magnetMode = WirelessMagnet.Mode.values()[ordinal];
-            }
-        }
+        this.state.readData(tag);
     }
 
     @Override
     public void writeData(NBTTagCompound tag) {
-        tag.setBoolean(restockItems, this.reStock);
-        tag.setInteger(modeKey, this.magnetMode.ordinal());
+        this.state.writeData(tag);
     }
 
     @Override
     public void readByte(ByteBuf buf) {
-        this.reStock = buf.readBoolean();
-        this.magnetMode = WirelessMagnet.Mode.values()[buf.readInt()];
-        ItemWirelessUltraTerminal.setModeId(this.terminal, ByteBufUtils.readUTF8String(buf));
-
+        this.state.readByte(buf);
+        // the widgets mirror the state, refresh them after the state changed
         this.refreshModeButtons();
         this.toggleMagnetButtonsVisibility();
         this.toggleRestockVisibility();
@@ -425,8 +400,6 @@ public class UltraTerminalButtons implements ICustomButtonDataObject, IUltraTerm
 
     @Override
     public void writeByte(ByteBuf buf) {
-        buf.writeBoolean(this.reStock);
-        buf.writeInt(this.magnetMode.ordinal());
-        ByteBufUtils.writeUTF8String(buf, ItemWirelessUltraTerminal.getModeId(this.terminal));
+        this.state.writeByte(buf);
     }
 }

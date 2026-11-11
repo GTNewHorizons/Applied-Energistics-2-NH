@@ -224,7 +224,6 @@ public class ItemWirelessUltraTerminal extends ItemBaseWirelessTerminal
         UltraTerminalData.writeMode(tag, type.getId());
     }
 
-    //TODO : inline
     /**
      * Converts a mode stored by an older implementation to the id based format.
      */
