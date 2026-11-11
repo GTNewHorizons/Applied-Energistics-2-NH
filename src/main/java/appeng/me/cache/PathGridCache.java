@@ -251,7 +251,9 @@ public class PathGridCache implements IPathingGrid {
     private int calculateAdHocChannels() {
         this.ignoredNode.clear();
 
-        final int maxChannels = AEConfig.instance.isFeatureEnabled(AEFeature.Channels) ? 8 : Integer.MAX_VALUE;
+        final int maxChannels = AEConfig.instance.isFeatureEnabled(AEFeature.Channels)
+                ? AEConfig.instance.normalCableChannelCapacity
+                : Integer.MAX_VALUE;
 
         int channels = 0;
         for (final IGridNode node : this.nodesNeedingChannels) {
