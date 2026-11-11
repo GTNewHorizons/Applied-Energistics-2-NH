@@ -1236,17 +1236,6 @@ public abstract class AEBaseContainer extends Container {
         }
     }
 
-    // terminal index of the next gui of the ultra terminal, its item mode is written after the container exists
-    private int switchAbleGuiItemNext = Integer.MIN_VALUE;
-
-    public int getSwitchAbleGuiNext() {
-        return this.switchAbleGuiItemNext;
-    }
-
-    public void setSwitchAbleGuiNext(int n) {
-        this.switchAbleGuiItemNext = n;
-    }
-
     private boolean needsFullSync = true;
 
     protected void updateVirtualSlots(StorageName invName, IAEStackInventory inventory,

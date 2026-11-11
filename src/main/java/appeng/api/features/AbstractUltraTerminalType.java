@@ -2,6 +2,7 @@ package appeng.api.features;
 
 import java.util.Objects;
 
+import appeng.api.AEApi;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.StatCollector;
@@ -71,9 +72,9 @@ public abstract class AbstractUltraTerminalType implements IUltraTerminalType {
     }
 
     @Override
-    public void openGui(final EntityPlayer player, final ItemStack terminal, final int slotIndex,
-            final int previousIndex) {
-        this.opener.open(player, terminal, slotIndex);
+    public void openGui(final EntityPlayer player, final ItemStack terminal, final int slotIndex) {
+        final int index = AEApi.instance().registries().ultraTerminal().getIndex(this);
+        this.opener.open(player, terminal, slotIndex, index < 0 ? Integer.MIN_VALUE : index);
     }
 
     @Override

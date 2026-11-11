@@ -141,7 +141,7 @@ public class ItemBaseWirelessTerminal extends ToolWirelessTerminal implements II
     public void openGui(final ItemStack is, final World w, final EntityPlayer player, final Object mode) {
         final IUltraTerminalType type = getTerminalType(is);
         if (type != null) {
-            type.openGui(player, is, player.inventory.currentItem, Integer.MIN_VALUE);
+            type.openGui(player, is, player.inventory.currentItem);
         }
     }
 
