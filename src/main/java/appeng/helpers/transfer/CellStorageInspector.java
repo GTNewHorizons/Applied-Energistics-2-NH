@@ -173,8 +173,8 @@ abstract class CellStorageInspector<T extends IGridHost> implements ITransferIns
         }
 
         /**
-         * Asks each handler in turn, skipping one that fails to answer. A cell from another mod may hand the question on
-         * to a network, which has to be usable again for the next cell after an exception.
+         * Asks each handler in turn, skipping one that fails to answer. A cell from another mod may hand the question
+         * on to a network, which has to be usable again for the next cell after an exception.
          */
         private boolean anyHandler(final IAEStack<?> stack, final Predicate<IMEInventoryHandler> question) {
             for (final IMEInventoryHandler handler : this.handlersFor(stack)) {

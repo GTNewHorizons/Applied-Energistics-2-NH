@@ -214,14 +214,15 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
             this.queryChanged = true;
         } else if (this.rescanPending || this.anchor.getChangeCount() != this.seenChangeCount
                 || this.fingerprintChanged()) {
-            // Storage that keeps changing would otherwise have every open screen walk all linked networks each tick.
-            if (this.ticksSinceScan < MIN_RESCAN_INTERVAL) {
-                this.rescanPending = true;
-            } else {
-                this.scan(node);
-                this.queryChanged = true;
-            }
-        }
+                    // Storage that keeps changing would otherwise have every open screen walk all linked networks each
+                    // tick.
+                    if (this.ticksSinceScan < MIN_RESCAN_INTERVAL) {
+                        this.rescanPending = true;
+                    } else {
+                        this.scan(node);
+                        this.queryChanged = true;
+                    }
+                }
 
         if (this.queryChanged) {
             this.queryChanged = false;
@@ -322,8 +323,7 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
 
     private boolean canBuild(final IGrid grid) {
         final ISecurityGrid security = grid.getCache(ISecurityGrid.class);
-        return security == null
-                || security.hasPermission(this.getInventoryPlayer().player, SecurityPermissions.BUILD);
+        return security == null || security.hasPermission(this.getInventoryPlayer().player, SecurityPermissions.BUILD);
     }
 
     public IAEStack<?> getQuery() {

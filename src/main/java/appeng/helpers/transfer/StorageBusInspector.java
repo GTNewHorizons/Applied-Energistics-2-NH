@@ -154,8 +154,9 @@ public final class StorageBusInspector implements ITransferInspector<PartStorage
                     if (!handler.canAccept(probe)) {
                         return false;
                     }
-                    return handler.isPrioritized(probe) || handler
-                            .extractItems(probe, Actionable.SIMULATE, new MachineSource(this.stickyBus)) != null;
+                    return handler.isPrioritized(probe)
+                            || handler.extractItems(probe, Actionable.SIMULATE, new MachineSource(this.stickyBus))
+                                    != null;
                 });
             } catch (final RuntimeException e) {
                 // The bus may face an inventory from another mod, which must not take the terminal down.
