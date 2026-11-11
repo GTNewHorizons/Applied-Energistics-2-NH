@@ -135,7 +135,6 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     private GuiImgButton resetButton;
     private VirtualMEPhantomSlotPrecise querySlot;
     private boolean tallMode;
-    private boolean queryScrolled;
     private int visibleRows = SMALL_VISIBLE_ROWS;
     private int cacheStart;
     private int serverTotal;
@@ -494,18 +493,9 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         this.closeGui();
     }
 
-    @Override
-    public void handleMouseInput() {
-        this.queryScrolled = false;
-        super.handleMouseInput();
-        final int wheel = Mouse.getEventDWheel();
-        if (wheel != 0 && !this.queryScrolled) {
-            this.getScrollBar().wheel(wheel);
-        }
-    }
-
     /**
-     * Scrolling over the query slot changes the searched amount by one, or by a whole stack with Shift held.
+     * Scrolling over the query slot changes the searched amount by one, or by a whole stack with Shift held. Anywhere
+     * else the base class scrolls the list.
      */
     @Override
     protected boolean mouseWheelEvent(final int x, final int y, final int wheel) {
@@ -514,7 +504,6 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
             return super.mouseWheelEvent(x, y, wheel);
         }
 
-        this.queryScrolled = true;
         final long step = isShiftKeyDown() ? stackStep(query) : 1;
         final long current = query.getStackSize();
         final long change = wheel * step;
