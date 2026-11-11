@@ -2,28 +2,25 @@ package com.glodblock.github.common.item;
 
 import java.util.EnumSet;
 
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
+
+import org.jspecify.annotations.Nullable;
 
 import com.glodblock.github.FluidCraft;
 import com.glodblock.github.common.tabs.FluidCraftingTabs;
+import com.glodblock.github.common.terminal.TerminalIds;
 import com.glodblock.github.loader.IRegister;
 import com.glodblock.github.util.NameConst;
 
 import appeng.api.AEApi;
-import appeng.api.features.IWirelessTermHandler;
-import appeng.api.implementations.guiobjects.IGuiItemObject;
+import appeng.api.features.IUltraTerminalType;
 import appeng.core.features.AEFeature;
-import appeng.core.sync.GuiBridge;
-import appeng.items.contents.WirelessPatternTerminalGuiObject;
 import cpw.mods.fml.common.registry.GameRegistry;
 
 public class ItemWirelessPatternTerminal extends ItemBaseWirelessTerminal
         implements IRegister<ItemWirelessPatternTerminal> {
 
     public ItemWirelessPatternTerminal() {
-        super(GuiBridge.GUI_PATTERN_TERMINAL);
         AEApi.instance().registries().wireless().registerWirelessHandler(this);
         this.setFeature(EnumSet.of(AEFeature.WirelessAccessTerminal, AEFeature.PoweredTools));
         setUnlocalizedName(NameConst.ITEM_WIRELESS_FLUID_PATTERN_TERMINAL);
@@ -37,10 +34,9 @@ public class ItemWirelessPatternTerminal extends ItemBaseWirelessTerminal
         return this;
     }
 
+    @Nullable
     @Override
-    public IGuiItemObject getGuiObject(ItemStack is, World world, EntityPlayer p, int x, int y, int z) {
-        final IWirelessTermHandler wh = AEApi.instance().registries().wireless().getWirelessTerminalHandler(is);
-        if (wh == null) return null;
-        return new WirelessPatternTerminalGuiObject(wh, is, p, world, x, y, z);
+    protected IUltraTerminalType getTerminalType(ItemStack is) {
+        return findTerminalType(TerminalIds.AE2FC_PATTERN);
     }
 }

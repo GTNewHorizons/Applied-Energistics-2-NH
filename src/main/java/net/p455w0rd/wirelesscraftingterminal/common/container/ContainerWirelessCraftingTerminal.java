@@ -31,7 +31,10 @@ import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
 
 import org.jspecify.annotations.NonNull;
 
+import com.glodblock.github.common.item.ItemWirelessUltraTerminal;
+
 import appeng.api.AEApi;
+import appeng.api.implementations.guiobjects.IGuiItemObject;
 import appeng.api.implementations.tiles.IViewCellStorage;
 import appeng.api.parts.ICraftingTerminal;
 import appeng.container.ContainerNull;
@@ -88,7 +91,8 @@ public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
 
         this.setCustomName("WCTContainer");
 
-        final ItemStack wirelessTerminal = RandomUtils.getWirelessTerm(inventoryPlayer);
+        final ItemStack wirelessTerminal = host instanceof IGuiItemObject itemHost ? itemHost.getItemStack()
+                : RandomUtils.getWirelessTerm(inventoryPlayer);
 
         this.boosterInventory = new WCTInventoryBooster(wirelessTerminal);
         this.magnetInventory = new WCTInventoryMagnet(wirelessTerminal);
@@ -116,7 +120,7 @@ public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
         for (int i = 0; i < 9; ++i) {
             ItemStack stack = this.player.inventory.getStackInSlot(i);
             Slot slot;
-            if (stack != null && stack.getItem() == this.thisItem) {
+            if (stack == this.containerstack) {
                 slot = new SlotDisabled(this.inventoryPlayer, i, i * 18 + 8, 58);
             } else {
                 slot = new SlotPlayerHotBar(this.inventoryPlayer, i, i * 18 + 8, 58);
@@ -130,7 +134,7 @@ public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
                 int slotIndex = j + i * 9 + 9;
                 ItemStack stack = this.player.inventory.getStackInSlot(slotIndex);
                 Slot slot;
-                if (stack != null && stack.getItem() == this.thisItem) {
+                if (stack == this.containerstack) {
                     slot = new SlotDisabled(this.inventoryPlayer, slotIndex, j * 18 + 8, i * 18);
                 } else {
                     slot = new SlotPlayerInv(this.inventoryPlayer, slotIndex, j * 18 + 8, i * 18);
@@ -183,7 +187,7 @@ public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
         SlotMagnet magnetSlot = new SlotMagnet(this.magnetInventory, 152, -20);
         this.addSlotToContainer(magnetSlot);
 
-        trashSlot = new SlotTrash(this.trashInventory, 80, -20, player);
+        trashSlot = new SlotTrash(this.trashInventory, 80, -20, player, wirelessTerminal);
         trashSlot.setContainer(this);
         this.addSlotToContainer(trashSlot);
 
@@ -284,9 +288,10 @@ public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
         return null;
     }
 
+    @Override
     public boolean isPowered() {
-        double pwr = this.thisItem.getAECurrentPower(this.containerstack);
-        return (pwr > 0.0);
+        return this.thisItem.hasInfinityPower(this.containerstack)
+                || this.thisItem.getAECurrentPower(this.containerstack) > 0.0;
     }
 
     /**
@@ -353,8 +358,7 @@ public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
     @Override
     public ItemStack slotClick(int slot, int button, int flag, EntityPlayer player) {
         try {
-            if (slot >= 0 && getSlot(slot) != null
-                    && getSlot(slot).getStack() == RandomUtils.getWirelessTerm(player.inventory)) {
+            if (slot >= 0 && getSlot(slot) != null && getSlot(slot).getStack() == this.containerstack) {
                 return null;
             }
             return super.slotClick(slot, button, flag, player);
@@ -367,10 +371,13 @@ public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
     @Override
     public PrimaryGui createPrimaryGui() {
         ContainerOpenContext context = getOpenContext();
-        return new WCTPrimaryGui(
-                Reference.GUI_WCT,
+        final WCTPrimaryGui primary = new WCTPrimaryGui(
+                this.containerstack.getItem() instanceof ItemWirelessUltraTerminal ? Reference.GUI_ULTRA_WCT
+                        : Reference.GUI_WCT,
                 ((IPrimaryGuiIconProvider) ct).getPrimaryGuiIcon(),
                 context.getTile(),
                 context.getSide());
+        primary.setSlotIndex(getTargetSlotIndex());
+        return primary;
     }
 }

@@ -117,7 +117,6 @@ import appeng.api.storage.data.IAETagCompound;
 import appeng.api.storage.data.IItemList;
 import appeng.api.util.AEColor;
 import appeng.api.util.DimensionalCoord;
-import appeng.container.AEBaseContainer;
 import appeng.container.slot.SlotFake;
 import appeng.core.AEConfig;
 import appeng.core.AELog;
@@ -366,7 +365,12 @@ public class Platform {
     }
 
     public static void openGUI(@NonNull final EntityPlayer p, @Nullable final TileEntity tile,
-            @Nullable final ForgeDirection side, @NonNull final GuiBridge type, int slotIndex) {
+            @Nullable final ForgeDirection side, @NonNull final GuiBridge type, final int slotIndex) {
+        openGUI(p, tile, side, type, slotIndex, Integer.MIN_VALUE);
+    }
+
+    public static void openGUI(@NonNull final EntityPlayer p, @Nullable final TileEntity tile,
+            @Nullable final ForgeDirection side, @NonNull final GuiBridge type, int slotIndex, final int itemGuiIndex) {
         if (isClient()) {
             return;
         }
@@ -389,7 +393,7 @@ public class Platform {
                         type.ordinal() << 5 | (1 << 4),
                         p.getEntityWorld(),
                         itemGuiSlotOffset + slotIndex,
-                        p.openContainer instanceof AEBaseContainer abc ? abc.getSwitchAbleGuiNext() : Integer.MIN_VALUE,
+                        itemGuiIndex,
                         0);
             } else if (tile == null || type.getType() == GuiHostType.ITEM) {
                 p.openGui(AppEng.instance(), type.ordinal() << 5 | (1 << 3), p.getEntityWorld(), x, y, z);

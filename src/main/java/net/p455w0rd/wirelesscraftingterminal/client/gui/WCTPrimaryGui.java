@@ -5,6 +5,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.p455w0rd.wirelesscraftingterminal.common.WCTGuiHandler;
+import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
 
 import appeng.container.PrimaryGui;
 
@@ -20,7 +21,7 @@ public class WCTPrimaryGui extends PrimaryGui {
                 (int) this.gui,
                 player,
                 player.worldObj,
-                (int) player.posX,
+                (int) this.gui == Reference.GUI_ULTRA_WCT ? this.slotIndex : (int) player.posX,
                 (int) player.posY,
                 (int) player.posZ);
     }

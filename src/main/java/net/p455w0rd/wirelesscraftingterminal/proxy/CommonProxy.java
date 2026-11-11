@@ -86,7 +86,7 @@ public class CommonProxy {
                     if (item == null) {
                         continue;
                     }
-                    if (item.getItem() instanceof IWirelessCraftingTerminalItem) {
+                    if (hasMagnetCard(item)) {
                         wirelessTerm = item;
                         break;
                     }
@@ -104,7 +104,7 @@ public class CommonProxy {
                 if (item == null) {
                     continue;
                 }
-                if (item.getItem() instanceof IWirelessCraftingTerminalItem) {
+                if (hasMagnetCard(item)) {
                     wirelessTerm = item;
                     break;
                 }
@@ -130,6 +130,21 @@ public class CommonProxy {
                 }
             }
         }
+    }
+
+    /**
+     * @return true if the terminal is a wireless crafting terminal with an installed magnet card.
+     */
+    private static boolean hasMagnetCard(final ItemStack stack) {
+        if (!(stack.getItem() instanceof IWirelessCraftingTerminalItem) || !stack.hasTagCompound()) {
+            return false;
+        }
+        final NBTTagList magnetSlot = stack.getTagCompound().getTagList("MagnetSlot", 10);
+        if (magnetSlot.tagCount() == 0) {
+            return false;
+        }
+        final ItemStack magnet = ItemStack.loadItemStackFromNBT(magnetSlot.getCompoundTagAt(0));
+        return magnet != null && magnet.getItem() instanceof ItemMagnet;
     }
 
     @SubscribeEvent

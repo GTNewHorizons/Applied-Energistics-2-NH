@@ -8,9 +8,10 @@ import net.p455w0rd.wirelesscraftingterminal.api.IWirelessCraftingTermHandler;
 import net.p455w0rd.wirelesscraftingterminal.common.utils.RandomUtils;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.network.NetworkHandler;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketOpenGui;
-import net.p455w0rd.wirelesscraftingterminal.items.ItemWirelessCraftingTerminal;
 import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
 
+import appeng.api.AEApi;
+import appeng.api.features.IWirelessTermHandler;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.relauncher.Side;
 
@@ -29,15 +30,9 @@ public class WCTInteractionHelper implements IWCTInteractionHelper {
         if (is == null) {
             return;
         }
-        if (is.hasTagCompound()) {
-            // Get the security terminal source key
-            String sourceKey = is.getTagCompound().getString(ItemWirelessCraftingTerminal.LINK_KEY_STRING);
-
-            // Ensure the source is not empty nor null
-            if ((sourceKey != null) && (!sourceKey.isEmpty())) {
-                // The terminal is linked.
-                NetworkHandler.instance.sendToServer(new PacketOpenGui(Reference.GUI_WCT));
-            }
+        final IWirelessTermHandler handler = AEApi.instance().registries().wireless().getWirelessTerminalHandler(is);
+        if (handler != null && !handler.getEncryptionKey(is).isEmpty()) {
+            NetworkHandler.instance.sendToServer(new PacketOpenGui(Reference.GUI_WCT));
         }
     }
 

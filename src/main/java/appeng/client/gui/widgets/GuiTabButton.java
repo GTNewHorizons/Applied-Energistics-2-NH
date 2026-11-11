@@ -102,17 +102,24 @@ public class GuiTabButton extends GuiButton implements ITooltip {
                 this.zLevel = 100.0F;
                 this.itemRenderer.zLevel = 100.0F;
 
-                GL11.glEnable(GL11.GL_LIGHTING);
-                GL11.glEnable(GL12.GL_RESCALE_NORMAL);
-                RenderHelper.enableGUIStandardItemLighting();
-                final FontRenderer fontrenderer = minecraft.fontRenderer;
-                this.itemRenderer.renderItemAndEffectIntoGUI(
-                        fontrenderer,
-                        minecraft.renderEngine,
-                        this.myItem,
-                        offsetX + this.xPosition + 3,
-                        this.yPosition + 3);
-                GL11.glDisable(GL11.GL_LIGHTING);
+                // rendering an item stack changes the gl state for the widgets drawn after it
+                GL11.glPushAttrib(
+                        GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_LIGHTING_BIT);
+                try {
+                    GL11.glEnable(GL11.GL_LIGHTING);
+                    GL11.glEnable(GL12.GL_RESCALE_NORMAL);
+                    RenderHelper.enableGUIStandardItemLighting();
+                    final FontRenderer fontrenderer = minecraft.fontRenderer;
+                    this.itemRenderer.renderItemAndEffectIntoGUI(
+                            fontrenderer,
+                            minecraft.renderEngine,
+                            this.myItem,
+                            offsetX + this.xPosition + 3,
+                            this.yPosition + 3);
+                    GL11.glDisable(GL11.GL_LIGHTING);
+                } finally {
+                    GL11.glPopAttrib();
+                }
 
                 this.itemRenderer.zLevel = 0.0F;
                 this.zLevel = 0.0F;
