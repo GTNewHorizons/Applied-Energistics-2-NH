@@ -2,6 +2,7 @@ package appeng.container.implementations;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -13,6 +14,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 
 import appeng.api.AEApi;
+import appeng.api.config.SecurityPermissions;
 import appeng.api.config.Settings;
 import appeng.api.config.TransferDirection;
 import appeng.api.config.YesNo;
@@ -20,6 +22,7 @@ import appeng.api.features.transfer.TransferComponentInfo;
 import appeng.api.features.transfer.TransferDescription;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
+import appeng.api.networking.security.ISecurityGrid;
 import appeng.api.networking.security.MachineSource;
 import appeng.api.parts.ITransferTerminal;
 import appeng.api.storage.StorageName;
@@ -212,12 +215,32 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
     private void scan(final IGridNode node) {
         final IGrid grid = node.getGrid();
         this.grids = isYes(this.networkOnlySync) ? Collections.singletonList(grid)
-                : new ArrayList<>(grid.getAllRecursiveGridConnections(PartStorageBus.class, true));
+                : this.visibleGrids(grid, grid.getAllRecursiveGridConnections(PartStorageBus.class, true));
         this.scanned = TransferScanner.scan(this.grids, AEApi.instance().registries().transferInspectors());
         this.configNames.clear();
         this.fingerprint = TransferScanner.fingerprint(this.grids);
         this.ticksSinceFingerprint = 0;
         this.hasScanned = true;
+    }
+
+    /**
+     * Linked networks reach this one through any storage bus touching an interface, including other players' networks.
+     * Only those the player may build on are shown, the same permission the terminal itself needs to open.
+     */
+    private List<IGrid> visibleGrids(final IGrid own, final Collection<? extends IGrid> linked) {
+        final List<IGrid> visible = new ArrayList<>(linked.size());
+        for (final IGrid grid : linked) {
+            if (grid == own || this.canBuild(grid)) {
+                visible.add(grid);
+            }
+        }
+        return visible;
+    }
+
+    private boolean canBuild(final IGrid grid) {
+        final ISecurityGrid security = grid.getCache(ISecurityGrid.class);
+        return security == null
+                || security.hasPermission(this.getInventoryPlayer().player, SecurityPermissions.BUILD);
     }
 
     public IAEStack<?> getQuery() {
