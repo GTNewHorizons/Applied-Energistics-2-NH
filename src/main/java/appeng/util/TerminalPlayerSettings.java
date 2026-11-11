@@ -5,7 +5,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.common.util.Constants;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.storage.data.AEStackTypeRegistry;
 import appeng.api.storage.data.IAEStackType;
@@ -33,7 +33,7 @@ public class TerminalPlayerSettings {
         this.savedString = tag.getString(NBT_SAVED_STRING);
     }
 
-    public void writeToNBT(@NotNull ItemStack stack) {
+    public void writeToNBT(@NonNull ItemStack stack) {
         if (!stack.hasTagCompound()) {
             stack.setTagCompound(new NBTTagCompound());
         }

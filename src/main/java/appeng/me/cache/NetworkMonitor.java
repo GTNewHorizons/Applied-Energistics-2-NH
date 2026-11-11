@@ -23,10 +23,9 @@ import java.util.WeakHashMap;
 import java.util.function.Predicate;
 
 import javax.annotation.Nonnegative;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -54,18 +53,18 @@ import appeng.util.item.PrioritizedNetworkItemList;
 
 public class NetworkMonitor<T extends IAEStack<T>> implements IMEMonitor<T> {
 
-    @Nonnull
+    @NonNull
     private static final Deque<NetworkMonitor<?>> GLOBAL_DEPTH = Lists.newLinkedList();
 
-    @Nonnull
+    @NonNull
     private final GridStorageCache myGridCache;
 
     private final IAEStackType<T> stackType;
 
-    @Nonnull
+    @NonNull
     private final IItemList<T> cachedList;
 
-    @Nonnull
+    @NonNull
     private final Map<IMEMonitorHandlerReceiver, Object> listeners;
 
     private boolean sendEvent = false;
@@ -155,7 +154,7 @@ public class NetworkMonitor<T extends IAEStack<T>> implements IMEMonitor<T> {
 
     @Override
     @SuppressWarnings({ "unchecked" })
-    public @NotNull IAEStackType<T> getStackType() {
+    public @NonNull IAEStackType<T> getStackType() {
         return (IAEStackType<T>) this.getHandler().getStackType();
     }
 
@@ -169,7 +168,7 @@ public class NetworkMonitor<T extends IAEStack<T>> implements IMEMonitor<T> {
         return this.getHandler().getSlot();
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public IItemList<T> getStorageList() {
         if (this.hasChanged) {

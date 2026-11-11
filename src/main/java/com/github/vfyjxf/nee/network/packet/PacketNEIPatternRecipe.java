@@ -1,0 +1,224 @@
+package com.github.vfyjxf.nee.network.packet;
+
+import static com.github.vfyjxf.nee.nei.NEEPatternTerminalHandler.INPUT_KEY;
+import static com.github.vfyjxf.nee.nei.NEEPatternTerminalHandler.OUTPUT_KEY;
+import static com.github.vfyjxf.nee.processor.RecipeProcessor.AspectRecipeIndex_isLoaded;
+import static com.github.vfyjxf.nee.processor.RecipeProcessor.TCNEIPlugin_isLoaded;
+import static com.github.vfyjxf.nee.processor.RecipeProcessor.ThaumicEnergistics_isLoaded;
+import static thaumicenergistics.common.storage.AEEssentiaStackType.ESSENTIA_STACK_ID;
+
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.inventory.Container;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraftforge.fluids.FluidStack;
+
+import org.jspecify.annotations.NonNull;
+
+import com.djgiannuzz.thaumcraftneiplugin.items.ItemAspect;
+import com.github.vfyjxf.nee.utils.GuiUtils;
+import com.github.vfyjxf.nee.utils.ItemUtils;
+
+import appeng.api.networking.IGrid;
+import appeng.api.networking.IGridNode;
+import appeng.api.networking.security.ISecurityGrid;
+import appeng.api.networking.storage.IStorageGrid;
+import appeng.api.storage.StorageName;
+import appeng.api.storage.data.AEStackTypeRegistry;
+import appeng.api.storage.data.IAEStack;
+import appeng.container.AEBaseContainer;
+import appeng.container.implementations.ContainerPatternTerm;
+import appeng.helpers.IContainerCraftingPacket;
+import appeng.util.item.AEFluidStack;
+import appeng.util.item.AEItemStack;
+import cpw.mods.fml.common.network.ByteBufUtils;
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import io.netty.buffer.ByteBuf;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+
+public class PacketNEIPatternRecipe implements IMessage {
+
+    NBTTagCompound input;
+    NBTTagCompound output;
+
+    public PacketNEIPatternRecipe() {}
+
+    public PacketNEIPatternRecipe(@NonNull NBTTagCompound input, NBTTagCompound output) {
+        this.input = input;
+        this.output = output;
+    }
+
+    @Override
+    public void fromBytes(ByteBuf buf) {
+        this.input = ByteBufUtils.readTag(buf);
+        if (buf.readBoolean()) {
+            this.output = ByteBufUtils.readTag(buf);
+        }
+    }
+
+    @Override
+    public void toBytes(ByteBuf buf) {
+        ByteBufUtils.writeTag(buf, this.input);
+        if (this.output != null) {
+            buf.writeBoolean(true);
+            ByteBufUtils.writeTag(buf, this.output);
+        } else {
+            buf.writeBoolean(false);
+        }
+    }
+
+    public static final class Handler implements IMessageHandler<PacketNEIPatternRecipe, IMessage> {
+
+        @Override
+        public IMessage onMessage(PacketNEIPatternRecipe message, MessageContext ctx) {
+            EntityPlayerMP player = ctx.getServerHandler().playerEntity;
+            Container container = player.openContainer;
+
+            if (message.input != null && GuiUtils.isPatternContainer(container)
+                    && container instanceof IContainerCraftingPacket) {
+                ContainerPatternTerm baseContainer = (ContainerPatternTerm) container;
+                setCraftingRecipe(baseContainer, message.output == null);
+
+                if (message.output == null) {
+                    craftingRecipe(baseContainer, message);
+                } else {
+                    processRecipe(baseContainer, message);
+                }
+            }
+
+            return null;
+        }
+
+        private void setCraftingRecipe(AEBaseContainer container, boolean craftingMode) {
+
+            if (container instanceof ContainerPatternTerm cpt) {
+                cpt.setCraftingMode(craftingMode);
+            }
+
+        }
+
+        private ItemStack[] getMatrix(NBTTagCompound items, String prefix, int size) {
+            ItemStack[] matrix = new ItemStack[size];
+
+            for (int i = 0; i < size; i++) {
+                NBTTagCompound currentStack = (NBTTagCompound) items.getTag(prefix + i);
+                matrix[i] = currentStack == null ? null : ItemUtils.loadItemStackFromNBT(currentStack);
+            }
+
+            return matrix;
+        }
+
+        private void craftingRecipe(ContainerPatternTerm container, PacketNEIPatternRecipe message) {
+            final IGridNode node = container.getNetworkNode();
+
+            if (node == null) {
+                return;
+            }
+
+            final IGrid grid = node.getGrid();
+
+            if (grid == null) {
+                return;
+            }
+
+            final IStorageGrid inv = grid.getCache(IStorageGrid.class);
+            final ISecurityGrid security = grid.getCache(ISecurityGrid.class);
+
+            if (inv != null && security != null) {
+                var list = new Int2ObjectOpenHashMap<IAEStack<?>>();
+                final ItemStack[] recipeInput = getMatrix(message.input, INPUT_KEY, 9);
+
+                for (int i = 0; i < recipeInput.length; i++) {
+                    IAEStack<?> aes = AEItemStack.create(recipeInput[i]);
+                    list.put(i, aes);
+                }
+
+                updateVirtualSlots(container, StorageName.CRAFTING_INPUT, list);
+            }
+        }
+
+        private void processRecipe(ContainerPatternTerm container, PacketNEIPatternRecipe message) {
+            final IGridNode node = container.getNetworkNode();
+
+            if (node == null) {
+                return;
+            }
+
+            final IGrid grid = node.getGrid();
+
+            if (grid == null) {
+                return;
+            }
+
+            final IStorageGrid inv = grid.getCache(IStorageGrid.class);
+            final ISecurityGrid security = grid.getCache(ISecurityGrid.class);
+
+            if (inv != null && security != null) {
+                var input = new Int2ObjectOpenHashMap<IAEStack<?>>();
+                var output = new Int2ObjectOpenHashMap<IAEStack<?>>();
+
+                final ItemStack[] recipeInput = getMatrix(
+                        message.input,
+                        INPUT_KEY,
+                        container.getPatternInputsWidth() * container.getPatternInputsHeigh()
+                                * container.getPatternInputPages());
+                final ItemStack[] recipeOutput = getMatrix(
+                        message.output,
+                        OUTPUT_KEY,
+                        container.getPatternOutputsWidth() * container.getPatternOutputsHeigh()
+                                * container.getPatternOutputPages());
+
+                for (int i = 0; i < recipeInput.length; i++) {
+                    final ItemStack nextStack = recipeInput[i];
+                    if (nextStack == null) continue;
+
+                    final IAEStack<?> aes = this.getAEStack(nextStack);
+
+                    if (aes == null) continue;
+
+                    input.put(i, aes);
+                }
+
+                for (int i = 0; i < recipeOutput.length; i++) {
+                    final ItemStack nextStack = recipeOutput[i];
+                    if (nextStack == null) continue;
+
+                    final IAEStack<?> aes = this.getAEStack(nextStack);
+
+                    if (aes == null) continue;
+
+                    output.put(i, aes);
+                }
+
+                container.clear();
+                updateVirtualSlots(container, StorageName.CRAFTING_INPUT, input);
+                updateVirtualSlots(container, StorageName.CRAFTING_OUTPUT, output);
+            }
+        }
+
+        private void updateVirtualSlots(ContainerPatternTerm container, StorageName storageName,
+                Int2ObjectOpenHashMap<IAEStack<?>> stacks) {
+            for (var entry : stacks.int2ObjectEntrySet()) {
+                container.updateVirtualSlot(storageName, entry.getIntKey(), entry.getValue());
+            }
+        }
+
+        private IAEStack<?> getAEStack(final ItemStack is) {
+            final FluidStack fluidStack = ItemUtils.getFluidFromDisplayStack(is);
+            if (fluidStack != null) {
+                return AEFluidStack.create(fluidStack);
+            } else if (ThaumicEnergistics_isLoaded && isAspect(is)) {
+                return AEStackTypeRegistry.getType(ESSENTIA_STACK_ID).convertStackFromItem(is);
+            } else {
+                return AEItemStack.create(is);
+            }
+        }
+
+        private static boolean isAspect(ItemStack is) {
+            return (TCNEIPlugin_isLoaded && is.getItem() instanceof ItemAspect) || (AspectRecipeIndex_isLoaded
+                    && is.getItem() instanceof com.gtnewhorizons.aspectrecipeindex.common.items.ItemAspect);
+        }
+    }
+}

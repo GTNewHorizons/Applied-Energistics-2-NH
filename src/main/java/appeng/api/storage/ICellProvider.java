@@ -19,7 +19,7 @@ import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 import java.util.Collections;
 import java.util.List;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.storage.data.IAEStackType;
 
@@ -56,7 +56,7 @@ public interface ICellProvider {
      *
      * @return a valid list of handlers
      */
-    @Nonnull
+    @NonNull
     @SuppressWarnings("rawtypes")
     default List<IMEInventoryHandler> getCellArray(IAEStackType<?> type) {
         if (type == ITEM_STACK_TYPE) {

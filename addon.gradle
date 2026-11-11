@@ -1,6 +1,15 @@
 
 import org.gradle.api.tasks.GradleBuild
 
+// For BetterP2P
+apply plugin: 'org.jetbrains.kotlin.jvm'
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = 1.8
+    }
+}
+
 SourceSet functionalTestSet = null
 
 sourceSets {

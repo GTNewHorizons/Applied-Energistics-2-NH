@@ -10,10 +10,10 @@
 
 package appeng.services.export;
 
-import javax.annotation.Nonnull;
-
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
+
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Preconditions;
 
@@ -62,7 +62,7 @@ public final class ForgeExportConfig implements ExportConfig {
      *
      * @param config to be wrapped configuration.
      */
-    public ForgeExportConfig(@Nonnull final Configuration config) {
+    public ForgeExportConfig(@NonNull final Configuration config) {
         this.config = Preconditions.checkNotNull(config);
 
         this.exportItemNamesEnabled = this.config.getBoolean(
@@ -111,7 +111,7 @@ public final class ForgeExportConfig implements ExportConfig {
     }
 
     @Override
-    public void setCache(@Nonnull final String digest) {
+    public void setCache(@NonNull final String digest) {
         final Property digestProperty = this.config.get(CACHE_CATEGORY, DIGEST_KEY, DIGEST_DEFAULT);
         digestProperty.set(digest);
 

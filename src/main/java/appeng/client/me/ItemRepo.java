@@ -21,10 +21,10 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -471,7 +471,7 @@ public class ItemRepo implements IDisplayRepo {
     }
 
     @Override
-    public void setSearchString(@Nonnull final String searchString) {
+    public void setSearchString(@NonNull final String searchString) {
         if (!searchString.equals(this.searchString)) {
             this.searchString = searchString;
             this.searchCache.clear();

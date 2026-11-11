@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.util.Platform;
 import io.netty.buffer.ByteBuf;
@@ -51,7 +51,7 @@ public class ActionHandler<T> extends AbstractSyncHandler {
         this.send(null);
     }
 
-    public @NotNull ActionHandler<T> onClientAction(final @NotNull Consumer<T> listener) {
+    public @NonNull ActionHandler<T> onClientAction(final @NonNull Consumer<T> listener) {
         if (!this.direction.canReceiveFrom(SyncEndpoint.SERVER)) {
             throw new IllegalStateException("Handler " + this.fullKey + " does not receive actions on the client.");
         }
@@ -60,12 +60,12 @@ public class ActionHandler<T> extends AbstractSyncHandler {
         return this;
     }
 
-    public @NotNull ActionHandler<T> onClientAction(final @NotNull Runnable listener) {
+    public @NonNull ActionHandler<T> onClientAction(final @NonNull Runnable listener) {
         Objects.requireNonNull(listener, "listener");
         return this.onClientAction(ignored -> listener.run());
     }
 
-    public @NotNull ActionHandler<T> onServerAction(final @NotNull Consumer<T> listener) {
+    public @NonNull ActionHandler<T> onServerAction(final @NonNull Consumer<T> listener) {
         if (!this.direction.canReceiveFrom(SyncEndpoint.CLIENT)) {
             throw new IllegalStateException("Handler " + this.fullKey + " does not receive actions on the server.");
         }
@@ -74,7 +74,7 @@ public class ActionHandler<T> extends AbstractSyncHandler {
         return this;
     }
 
-    public @NotNull ActionHandler<T> onServerAction(final @NotNull Runnable listener) {
+    public @NonNull ActionHandler<T> onServerAction(final @NonNull Runnable listener) {
         Objects.requireNonNull(listener, "listener");
         return this.onServerAction(ignored -> listener.run());
     }

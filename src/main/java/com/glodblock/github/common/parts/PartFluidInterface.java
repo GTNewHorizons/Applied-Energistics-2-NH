@@ -1,0 +1,314 @@
+package com.glodblock.github.common.parts;
+
+import static appeng.util.item.AEFluidStackType.FLUID_STACK_TYPE;
+import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
+
+import java.io.IOException;
+import java.util.List;
+
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraftforge.common.util.ForgeDirection;
+import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidTankInfo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
+import com.glodblock.github.client.FluidInterfaceButtons;
+import com.glodblock.github.common.item.ItemFluidPacket;
+import com.glodblock.github.inventory.AEFluidInventory;
+import com.glodblock.github.inventory.IAEFluidTank;
+import com.glodblock.github.inventory.IDualHost;
+import com.glodblock.github.loader.ItemAndBlockHolder;
+import com.glodblock.github.util.DualHostSettings;
+import com.glodblock.github.util.DualityFluidInterface;
+import com.glodblock.github.util.Util;
+import com.google.common.collect.ImmutableSet;
+
+import appeng.api.config.Actionable;
+import appeng.api.config.Upgrades;
+import appeng.api.networking.IGridNode;
+import appeng.api.networking.crafting.ICraftingLink;
+import appeng.api.networking.events.MENetworkChannelsChanged;
+import appeng.api.networking.events.MENetworkEventSubscribe;
+import appeng.api.networking.events.MENetworkPowerStatusChange;
+import appeng.api.networking.ticking.TickRateModulation;
+import appeng.api.networking.ticking.TickingRequest;
+import appeng.api.storage.IMEMonitor;
+import appeng.api.storage.data.IAEFluidStack;
+import appeng.api.storage.data.IAEStack;
+import appeng.api.storage.data.IAEStackType;
+import appeng.helpers.ICustomButtonDataObject;
+import appeng.helpers.ICustomButtonProvider;
+import appeng.parts.misc.PartInterface;
+import appeng.tile.inventory.AppEngInternalAEInventory;
+import appeng.util.SettingsFrom;
+import cpw.mods.fml.common.network.ByteBufUtils;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import io.netty.buffer.ByteBuf;
+
+public class PartFluidInterface extends PartInterface implements IDualHost, ICustomButtonProvider {
+
+    private final AppEngInternalAEInventory config = new AppEngInternalAEInventory(this, 6);
+    private final DualityFluidInterface fluidDuality = new DualityFluidInterface(this.getProxy(), this);
+
+    private ICustomButtonDataObject customButtonDataObject;
+
+    public PartFluidInterface(ItemStack is) {
+        super(is);
+
+        this.customButtonDataObject = new FluidInterfaceButtons(false);
+    }
+
+    @Override
+    public void getDrops(final List<ItemStack> drops, final boolean wrenched) {
+        this.fluidDuality.addDrops(drops);
+        super.getDrops(drops, wrenched);
+    }
+
+    @MENetworkEventSubscribe
+    public void stateChange(final MENetworkChannelsChanged c) {
+        fluidDuality.onChannelStateChange(c);
+        super.stateChange(c);
+    }
+
+    @MENetworkEventSubscribe
+    public void stateChange(final MENetworkPowerStatusChange c) {
+        fluidDuality.onPowerStateChange(c);
+        super.stateChange(c);
+    }
+
+    @Override
+    public void gridChanged() {
+        super.gridChanged();
+        fluidDuality.gridChanged();
+    }
+
+    @Override
+    public DualityFluidInterface getDualityFluid() {
+        return fluidDuality;
+    }
+
+    @Override
+    public AEFluidInventory getInternalFluid() {
+        return fluidDuality.getTanks();
+    }
+
+    @Override
+    public IMEMonitor<IAEFluidStack> getFluidInventory() {
+        return this.fluidDuality.getFluidInventory();
+    }
+
+    @Override
+    @Nullable
+    public IMEMonitor<?> getMEMonitor(@NonNull IAEStackType<?> type) {
+        if (type == ITEM_STACK_TYPE) {
+            return this.getItemInventory();
+        } else if (type == FLUID_STACK_TYPE) {
+            return this.getFluidInventory();
+        }
+
+        return this.fluidDuality.getMEMonitor(type);
+    }
+
+    @Override
+    public AppEngInternalAEInventory getConfig() {
+        Util.mirrorFluidToPacket(this.config, fluidDuality.getConfig());
+        return config;
+    }
+
+    @Override
+    public void writeToStream(ByteBuf data) throws IOException {
+        super.writeToStream(data);
+        for (int i = 0; i < config.getSizeInventory(); i++) {
+            ByteBufUtils.writeItemStack(data, config.getStackInSlot(i));
+        }
+        getInternalFluid().writeToBuf(data);
+    }
+
+    @Override
+    public boolean readFromStream(ByteBuf data) throws IOException {
+        super.readFromStream(data);
+        boolean changed = false;
+        for (int i = 0; i < config.getSizeInventory(); i++) {
+            ItemStack stack = ByteBufUtils.readItemStack(data);
+            if (!ItemStack.areItemStacksEqual(stack, config.getStackInSlot(i))) {
+                config.setInventorySlotContents(i, stack);
+                changed = true;
+            }
+        }
+        fluidDuality.loadConfigFromPacket(this.config);
+        changed |= getInternalFluid().readFromBuf(data);
+        return changed;
+    }
+
+    @Override
+    public void readFromNBT(NBTTagCompound data) {
+        super.readFromNBT(data);
+        config.readFromNBT(data, "ConfigInv");
+        fluidDuality.loadConfigFromPacket(this.config);
+        getInternalFluid().readFromNBT(data, "FluidInv");
+        fluidDuality.readCraftingTrackerFromNBT(data);
+    }
+
+    @Override
+    public void writeToNBT(NBTTagCompound data) {
+        super.writeToNBT(data);
+        config.writeToNBT(data, "ConfigInv");
+        getInternalFluid().writeToNBT(data, "FluidInv");
+        fluidDuality.writeCraftingTrackerToNBT(data);
+    }
+
+    @Override
+    public void uploadSettings(@NonNull SettingsFrom from, @NonNull NBTTagCompound compound) {
+        super.uploadSettings(from, compound);
+        DualHostSettings.uploadSettings(this, compound);
+    }
+
+    @Override
+    @NonNull
+    public NBTTagCompound downloadSettings(SettingsFrom from) {
+        NBTTagCompound output = super.downloadSettings(from);
+        DualHostSettings.downloadSettings(this, output);
+        return output;
+    }
+
+    @Override
+    public int getInstalledUpgrades(final Upgrades u) {
+        return getInterfaceDuality().getInstalledUpgrades(u);
+    }
+
+    @Override
+    public ImmutableSet<ICraftingLink> getRequestedJobs() {
+        return ImmutableSet.<ICraftingLink>builder().addAll(super.getRequestedJobs())
+                .addAll(fluidDuality.getRequestedJobs()).build();
+    }
+
+    @Override
+    public IAEStack<?> injectCraftedItems(final ICraftingLink link, final IAEStack<?> items, final Actionable mode) {
+        if (items instanceof IAEFluidStack) {
+            return fluidDuality.injectCraftedItems(link, items, mode);
+        }
+        return super.injectCraftedItems(link, items, mode);
+    }
+
+    @Override
+    public void jobStateChange(final ICraftingLink link) {
+        super.jobStateChange(link);
+        fluidDuality.jobStateChange(link);
+    }
+
+    @Override
+    public int fill(ForgeDirection from, FluidStack resource, boolean doFill) {
+        return fluidDuality.fill(from, resource, doFill);
+    }
+
+    @Override
+    public FluidStack drain(ForgeDirection from, FluidStack resource, boolean doDrain) {
+        return fluidDuality.drain(from, resource, doDrain);
+    }
+
+    @Override
+    public FluidStack drain(ForgeDirection from, int maxDrain, boolean doDrain) {
+        return fluidDuality.drain(from, maxDrain, doDrain);
+    }
+
+    @Override
+    public boolean canFill(ForgeDirection from, Fluid fluid) {
+        return fluidDuality.canFill(from, fluid);
+    }
+
+    @Override
+    public boolean canDrain(ForgeDirection from, Fluid fluid) {
+        return fluidDuality.canDrain(from, fluid);
+    }
+
+    @Override
+    public FluidTankInfo[] getTankInfo(ForgeDirection from) {
+        return fluidDuality.getTankInfo(from);
+    }
+
+    @Override
+    public void onFluidInventoryChanged(IAEFluidTank inv, int slot) {
+        saveChanges();
+        getTileEntity().markDirty();
+        fluidDuality.onFluidInventoryChanged(inv, slot);
+    }
+
+    @Override
+    public void setConfig(int id, IAEFluidStack fluid) {
+        if (id >= 0 && id < 6) {
+            config.setInventorySlotContents(
+                    id,
+                    ItemFluidPacket.newDisplayStack(fluid == null ? null : fluid.getFluidStack()));
+            fluidDuality.getConfig().setFluidInSlot(id, fluidDuality.getStandardFluid(fluid));
+        }
+    }
+
+    @Override
+    public void setFluidInv(int id, IAEFluidStack fluid) {
+        if (id >= 0 && id < 6) {
+            getInternalFluid().setFluidInSlot(id, fluid);
+        }
+    }
+
+    @Override
+    public TickingRequest getTickingRequest(final IGridNode node) {
+        TickingRequest item = super.getTickingRequest(node);
+        TickingRequest fluid = fluidDuality.getTickingRequest(node);
+        return new TickingRequest(
+                Math.min(item.minTickRate, fluid.minTickRate),
+                Math.max(item.maxTickRate, fluid.maxTickRate),
+                item.isSleeping && fluid.isSleeping,
+                true);
+    }
+
+    @Override
+    public TickRateModulation tickingRequest(IGridNode node, int TicksSinceLastCall) {
+        TickRateModulation item = super.tickingRequest(node, TicksSinceLastCall);
+        TickRateModulation fluid = fluidDuality.tickingRequest(node, TicksSinceLastCall);
+        if (item.ordinal() >= fluid.ordinal()) {
+            return item;
+        } else {
+            return fluid;
+        }
+    }
+
+    @Override
+    public ItemStack getPrimaryGuiIcon() {
+        return ItemAndBlockHolder.FLUID_INTERFACE.stack();
+    }
+
+    @Override
+    public void writeCustomButtonData() {}
+
+    @Override
+    public void readCustomButtonData() {}
+
+    @Override
+    public void initCustomButtons(int guiLeft, int guiTop, int xSize, int ySize, int xOffset, int yOffset,
+            List<GuiButton> buttonList) {
+        if (customButtonDataObject != null)
+            customButtonDataObject.initCustomButtons(guiLeft, guiTop, xSize, ySize, xOffset, yOffset, buttonList);
+    }
+
+    @SideOnly(Side.CLIENT)
+    @Override
+    public boolean actionPerformedCustomButtons(final GuiButton btn) {
+        return customButtonDataObject != null && customButtonDataObject.actionPerformedCustomButtons(btn);
+    }
+
+    @Override
+    public ICustomButtonDataObject getDataObject() {
+        return customButtonDataObject;
+    }
+
+    @Override
+    public void setDataObject(ICustomButtonDataObject dataObject) {
+        customButtonDataObject = dataObject;
+    }
+}

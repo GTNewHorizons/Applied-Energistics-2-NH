@@ -10,7 +10,7 @@
 
 package appeng.me.storage;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.AccessRestriction;
 import appeng.api.config.Actionable;
@@ -52,7 +52,7 @@ public class VoidFluidInventory implements IMEInventoryHandler<IAEFluidStack> {
     }
 
     @Override
-    public IAEFluidStack getAvailableItem(@Nonnull IAEFluidStack request, int iteration) {
+    public IAEFluidStack getAvailableItem(@NonNull IAEFluidStack request, int iteration) {
         return null;
     }
 

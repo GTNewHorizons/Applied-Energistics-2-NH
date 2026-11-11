@@ -14,9 +14,9 @@ import java.io.File;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.item.Item;
+
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
@@ -46,20 +46,20 @@ public class ExportProcess implements Runnable {
     private static final String EXPORT_START_MESSAGE = "Item Exporting ( started )";
     private static final String EXPORT_END_MESSAGE = "Item Exporting ( ended after %s ms)";
 
-    @Nonnull
+    @NonNull
     private final File exportDirectory;
 
-    @Nonnull
+    @NonNull
     private final Checker<List<ModContainer>> modChecker;
 
-    @Nonnull
+    @NonNull
     private final ExportConfig config;
 
     /**
      * @param exportDirectory directory where the final CSV file will be exported to
      * @param config          configuration to manipulate the export process
      */
-    public ExportProcess(@Nonnull final File exportDirectory, @Nonnull final ExportConfig config) {
+    public ExportProcess(@NonNull final File exportDirectory, @NonNull final ExportConfig config) {
         this.exportDirectory = Preconditions.checkNotNull(exportDirectory);
         this.config = Preconditions.checkNotNull(config);
 

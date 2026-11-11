@@ -1,9 +1,9 @@
 package appeng.api.parts;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.nbt.NBTTagCompound;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Mark a part with this interface to seamlessly transition it from a deprecated part to a supported part. Def method
@@ -28,6 +28,6 @@ public interface IPartDeprecated {
      * @param extra the extra data for the deprecated part
      * @return the transformed extra data for the replacement part. To delete the tag, pass a new blank compound tag.
      */
-    @Nonnull
+    @NonNull
     NBTTagCompound transformNBT(NBTTagCompound extra);
 }

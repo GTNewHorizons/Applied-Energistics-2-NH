@@ -19,9 +19,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import javax.annotation.Nonnull;
-
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.collect.ImmutableList;
 
@@ -170,7 +168,7 @@ public class MEMonitorHandler<StackType extends IAEStack<?>> implements IMEMonit
     }
 
     @Override
-    public StackType getAvailableItem(@Nonnull StackType request, int iteration) {
+    public StackType getAvailableItem(@NonNull StackType request, int iteration) {
         return this.getHandler().getAvailableItem(request, iteration);
     }
 
@@ -200,7 +198,7 @@ public class MEMonitorHandler<StackType extends IAEStack<?>> implements IMEMonit
     }
 
     @Override
-    public @NotNull IAEStackType<?> getStackType() {
+    public @NonNull IAEStackType<?> getStackType() {
         return this.getHandler().getStackType();
     }
 }

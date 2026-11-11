@@ -1,6 +1,6 @@
 package appeng.client.gui.slots;
 
-import javax.annotation.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.storage.data.IAEStack;
 

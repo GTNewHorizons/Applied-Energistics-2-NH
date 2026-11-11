@@ -25,8 +25,8 @@ import net.minecraftforge.common.util.Constants.NBT;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.ForgeEventFactory;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
 
@@ -172,8 +172,22 @@ public class ToolMemoryCard extends AEBaseItem implements IMemoryCard {
     }
 
     private static final String PATTERNS_KEY = "interfacePatterns";
+    private static final String PLAYER_COPY_PATTERNS_NBT_KEY = "ae2.memoryCardCopyPatterns";
 
-    public static void savePatterns(final NBTTagCompound data, final IInterfaceHost iHost) {
+    /** Stores the player's client config value on the server. */
+    public static void setCopyPatterns(final EntityPlayer player, final boolean copyPatterns) {
+        player.getEntityData().setBoolean(PLAYER_COPY_PATTERNS_NBT_KEY, copyPatterns);
+    }
+
+    private static boolean canCopyPatterns(final EntityPlayer player) {
+        return player.getEntityData().getBoolean(PLAYER_COPY_PATTERNS_NBT_KEY);
+    }
+
+    public static void savePatterns(final NBTTagCompound data, final EntityPlayer player, final IInterfaceHost iHost) {
+        if (!canCopyPatterns(player)) {
+            return;
+        }
+
         final IInventory patterns = iHost.getInterfaceDuality().getPatterns();
         final NBTTagList tagList = new NBTTagList();
 
@@ -196,7 +210,7 @@ public class ToolMemoryCard extends AEBaseItem implements IMemoryCard {
 
     public static void insertPatterns(final NBTTagCompound data, final EntityPlayer player,
             final IInterfaceHost iHost) {
-        if (!data.hasKey(PATTERNS_KEY, NBT.TAG_LIST)) {
+        if (!canCopyPatterns(player) || !data.hasKey(PATTERNS_KEY, NBT.TAG_LIST)) {
             return;
         }
 
@@ -327,7 +341,7 @@ public class ToolMemoryCard extends AEBaseItem implements IMemoryCard {
     }
 
     @Nullable
-    private static ItemStack extractUpgrade(final List<ItemStack> upgrades, @NotNull final ItemStack requested) {
+    private static ItemStack extractUpgrade(final List<ItemStack> upgrades, @NonNull final ItemStack requested) {
         for (int i = 0; i < upgrades.size(); i++) {
             final ItemStack upgrade = upgrades.get(i);
             if (isMatchingUpgrade(requested, upgrade)) {
@@ -340,7 +354,7 @@ public class ToolMemoryCard extends AEBaseItem implements IMemoryCard {
     }
 
     @Nullable
-    private static ItemStack extractUpgradeFromPlayer(final EntityPlayer player, @NotNull final ItemStack requested) {
+    private static ItemStack extractUpgradeFromPlayer(final EntityPlayer player, @NonNull final ItemStack requested) {
         for (int i = 0; i < player.inventory.getSizeInventory(); i++) {
             final ItemStack stack = player.inventory.getStackInSlot(i);
             if (isMatchingUpgrade(requested, stack)) {
@@ -362,8 +376,8 @@ public class ToolMemoryCard extends AEBaseItem implements IMemoryCard {
     }
 
     @Nullable
-    private static ItemStack extractUpgradeFromNetworkTool(@NotNull final ItemStack toolStack,
-            @NotNull final INetworkToolItem networkTool, @NotNull final ItemStack requested) {
+    private static ItemStack extractUpgradeFromNetworkTool(@NonNull final ItemStack toolStack,
+            @NonNull final INetworkToolItem networkTool, @NonNull final ItemStack requested) {
         final NetworkToolViewer networkToolInventory = new NetworkToolViewer(
                 toolStack,
                 null,
@@ -382,7 +396,7 @@ public class ToolMemoryCard extends AEBaseItem implements IMemoryCard {
         return null;
     }
 
-    private static boolean isMatchingUpgrade(@NotNull final ItemStack requested, @Nullable final ItemStack candidate) {
+    private static boolean isMatchingUpgrade(@NonNull final ItemStack requested, @Nullable final ItemStack candidate) {
         return candidate != null && candidate.stackSize > 0 && requested.isItemEqual(candidate);
     }
 }

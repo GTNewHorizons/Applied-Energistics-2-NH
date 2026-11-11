@@ -1,0 +1,57 @@
+package com.glodblock.github.common.item;
+
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.world.World;
+
+import org.jspecify.annotations.Nullable;
+
+import com.glodblock.github.FluidCraft;
+import com.glodblock.github.common.parts.PartFluidInterface;
+import com.glodblock.github.common.tabs.FluidCraftingTabs;
+import com.glodblock.github.util.NameConst;
+
+import appeng.api.AEApi;
+import appeng.api.parts.IPartItem;
+import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+
+public class ItemPartFluidInterface extends FCBaseItem implements IPartItem {
+
+    public ItemPartFluidInterface() {
+        this.setMaxStackSize(64);
+        this.setUnlocalizedName(NameConst.ITEM_PART_FLUID_INTERFACE);
+        AEApi.instance().partHelper().setItemBusRenderer(this);
+    }
+
+    @Nullable
+    @Override
+    public PartFluidInterface createPartFromItemStack(ItemStack is) {
+        return new PartFluidInterface(is);
+    }
+
+    @Override
+    public boolean onItemUse(ItemStack stack, EntityPlayer player, World world, int x, int y, int z, int side,
+            float xOffset, float yOffset, float zOffset) {
+        return AEApi.instance().partHelper().placeBus(stack, x, y, z, side, player, world);
+    }
+
+    @Override
+    public ItemPartFluidInterface register() {
+        GameRegistry.registerItem(this, NameConst.ITEM_PART_FLUID_INTERFACE, FluidCraft.MODID);
+        setCreativeTab(FluidCraftingTabs.INSTANCE);
+        return this;
+    }
+
+    @Override
+    protected String getIconString() {
+        return NameConst.RES_KEY + "part_fluid_interface";
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public int getSpriteNumber() {
+        return 0;
+    }
+}
