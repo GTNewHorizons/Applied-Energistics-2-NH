@@ -9,5 +9,5 @@ import net.minecraft.item.ItemStack;
  */
 public interface IUltraTerminalGuiOpener {
 
-    void open(EntityPlayer player, ItemStack terminal, int slotIndex);
+    void open(EntityPlayer player, ItemStack terminal, int slotIndex, int terminalIndex);
 }

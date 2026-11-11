@@ -384,7 +384,7 @@ public class ItemWirelessUltraTerminal extends ItemBaseWirelessTerminal
         if (!type.getId().equals(getModeId(is))) {
             setModeId(is, type.getId());
         }
-        type.openGui(player, is, player.inventory.currentItem, Integer.MIN_VALUE);
+        type.openGui(player, is, player.inventory.currentItem);
     }
 
     @Override
@@ -413,8 +413,7 @@ public class ItemWirelessUltraTerminal extends ItemBaseWirelessTerminal
         if (modeId != null && !isAbsorbed(terminal, modeId)) {
             return;
         }
-        final IUltraTerminalRegistry registry = AEApi.instance().registries().ultraTerminal();
-        final IUltraTerminalType requested = modeId != null ? registry.getById(modeId) : getCurrentType(terminal);
+        final IUltraTerminalType requested = modeId != null ? AEApi.instance().registries().ultraTerminal().getById(modeId) : getCurrentType(terminal);
         final IUltraTerminalType type = resolveAvailableType(player, terminal, requested);
         if (type == null) {
             return;
@@ -422,15 +421,12 @@ public class ItemWirelessUltraTerminal extends ItemBaseWirelessTerminal
         if (!AEApi.instance().registries().wireless().performCheck(terminal, player)) {
             return;
         }
-        final int index = registry.getIndex(type);
         if (!type.getId().equals(getModeId(terminal))) {
             setModeId(terminal, type.getId());
         }
-        // the gui opening channel carries the registry index, both sides resolve it again
-        if (player.openContainer instanceof AEBaseContainer container) {
-            container.setSwitchAbleGuiNext(index);
-        }
-        type.openGui(player, terminal, term.getLeft(), index);
+
+        // the opener resolves the registry index of the type and carries it to the item gui
+        type.openGui(player, terminal, term.getLeft());
     }
 
     @Override

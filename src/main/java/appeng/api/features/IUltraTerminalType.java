@@ -83,10 +83,8 @@ public interface IUltraTerminalType {
 
     /**
      * Opens the gui of this terminal. Called on the server side only.
-     *
-     * @param previousIndex the index of the mode that was opened before, {@link Integer#MIN_VALUE} if unknown.
      */
-    void openGui(EntityPlayer player, ItemStack terminal, int slotIndex, int previousIndex);
+    void openGui(EntityPlayer player, ItemStack terminal, int slotIndex);
 
     /**
      * @return the stack shown for this terminal in the guis and the tooltips, the ingredient by default.

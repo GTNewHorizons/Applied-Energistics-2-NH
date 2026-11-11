@@ -116,7 +116,6 @@ public class CPacketFluidPatternTermBtns implements IMessage {
                     }
                     case MAGNET_OPEN_FILTER -> {
                         final PrimaryGui pGui = abc.createPrimaryGui();
-                        final int nextGui = abc.getSwitchAbleGuiNext();
 
                         InventoryHandler.openGui(
                                 player,
@@ -130,10 +129,6 @@ public class CPacketFluidPatternTermBtns implements IMessage {
 
                         if (player.openContainer instanceof IContainerSubGui sg) {
                             sg.setPrimaryGui(pGui);
-                        }
-
-                        if (player.openContainer instanceof AEBaseContainer ab) {
-                            ab.setSwitchAbleGuiNext(nextGui);
                         }
                     }
                 }

@@ -164,7 +164,7 @@ public final class UltraTerminalLoader implements Runnable {
                             TerminalIds.WCT_CRAFTING,
                             LANG_KEY + "wct",
                             wctStack,
-                            (player, terminal, slotIndex) -> WCTGuiHandler
+                            (player, terminal, slotIndex, terminalSlotIndex) -> WCTGuiHandler
                                     .launchGui(Reference.GUI_ULTRA_WCT, player, player.worldObj, slotIndex, 0, 0)) {
 
                         @Nullable
@@ -186,21 +186,16 @@ public final class UltraTerminalLoader implements Runnable {
     }
 
     private static IUltraTerminalGuiOpener opener(final GuiBridge bridge) {
-        return (player, terminal, slotIndex) -> Platform.openGUI(player, null, null, bridge, slotIndex);
+        return (player, terminal, slotIndex, terminalSlotIndex) -> Platform.openGUI(player, null, null, bridge, slotIndex, terminalSlotIndex);
     }
 
     private static IUltraTerminalGuiOpener itemGuiOpener(final GuiType guiType) {
-        return (player, terminal, slotIndex) -> {
-            final int next = player.openContainer instanceof AEBaseContainer container
-                    ? container.getSwitchAbleGuiNext()
-                    : 0;
-            InventoryHandler.openGui(
+        return (player, terminal, slotIndex, terminalSlotIndex) -> InventoryHandler.openGui(
                     player,
                     player.worldObj,
-                    new BlockPos(slotIndex, 0, next),
+                    new BlockPos(slotIndex, 0, terminalSlotIndex),
                     ForgeDirection.UNKNOWN,
                     guiType);
-        };
     }
 
     private UltraTerminalLoader() {}
