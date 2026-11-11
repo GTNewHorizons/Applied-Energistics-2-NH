@@ -22,6 +22,7 @@ import appeng.api.storage.ICellWorkbenchItem;
 import appeng.core.AppEng;
 import appeng.helpers.transfer.ChestInspector;
 import appeng.helpers.transfer.DriveInspector;
+import appeng.helpers.transfer.TransferResultFilter;
 import appeng.tile.storage.TileChest;
 import appeng.tile.storage.TileDrive;
 
@@ -73,6 +74,32 @@ public class CellStorageInspectorTests {
             helper.assertEquals(1, description.config.size(), "The partition is shown");
             helper.assertFalse(description.sticky, "No cell has a sticky card");
         }).thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void anOreFilteredCellIsListedWithItsFilter(final GameTestHelper helper) {
+        final TileDrive drive = drive(helper);
+        final ItemStack cell = cell1k();
+        final ICellWorkbenchItem item = (ICellWorkbenchItem) cell.getItem();
+        item.setOreFilter(cell, "ingotIron");
+        InventoryHelper.setSlot(
+                item.getUpgradesInventory(cell),
+                0,
+                AEApi.instance().definitions().materials().cardOreFilter().maybeStack(1).get());
+        helper.setSlot("drive", 0, cell);
+
+        helper.startSequence()
+                .thenWaitUntil(
+                        "wait for the drive to see its cell",
+                        80,
+                        () -> assertActive(helper, drive.getProxy(), "Drive should become active"))
+                .thenExecute("ask the inspector", () -> {
+                    final TransferDescription description = DRIVE.inspect(drive);
+                    helper.assertEquals("ingotIron", description.oreFilter, "The cell's ore filter is shown");
+                    helper.assertTrue(
+                            TransferResultFilter.passesToggles(description, false, true),
+                            "An ore filter counts as a filter");
+                }).thenSucceed();
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 100)

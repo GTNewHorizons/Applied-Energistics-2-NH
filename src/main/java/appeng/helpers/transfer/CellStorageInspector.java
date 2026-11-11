@@ -2,7 +2,9 @@ package appeng.helpers.transfer;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 
 import appeng.api.config.Actionable;
@@ -20,6 +22,8 @@ import appeng.api.storage.data.AEStackTypeRegistry;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.me.storage.MEInventoryHandler;
+import appeng.util.prioitylist.IPartitionList;
+import appeng.util.prioitylist.OreFilteredList;
 
 /**
  * Describes a block that holds storage cells, such as an ME Drive or ME Chest, by asking its live cell handlers.
@@ -56,6 +60,7 @@ abstract class CellStorageInspector<T extends IGridHost> implements ITransferIns
                 .priority(this.priority(host)).canImport(true).canExport(true);
 
         int configCount = 0;
+        final Set<String> oreFilters = new LinkedHashSet<>();
         for (final IAEStackType<?> type : AEStackTypeRegistry.getAllTypes()) {
             for (final IMEInventoryHandler handler : this.handlers(host, type)) {
                 sticky |= handler.getSticky();
@@ -66,12 +71,29 @@ abstract class CellStorageInspector<T extends IGridHost> implements ITransferIns
                         || cell.getIncludeExcludeMode() == IncludeExclude.BLACKLIST) {
                     continue;
                 }
-                for (final Object stack : partitioned.getPartitionList().getItems()) {
+                final IPartitionList<?> partition = partitioned.getPartitionList();
+                if (partition instanceof OreFilteredList) {
+                    // An ore filter has no stacks to list, only the expression the cell was given.
+                    final String filter = cell.getCellInv() == null ? null : cell.getCellInv().getOreFilter();
+                    if (filter != null && !filter.isEmpty()) {
+                        oreFilters.add(filter);
+                    }
+                    continue;
+                }
+                final Iterable<?> stacks = partition == null ? null : partition.getItems();
+                if (stacks == null) {
+                    continue;
+                }
+                for (final Object stack : stacks) {
                     if (configCount++ < MAX_CONFIG) {
                         builder.config((IAEStack<?>) stack, cell.isFuzzy());
                     }
                 }
             }
+        }
+        if (!oreFilters.isEmpty()) {
+            // A cell takes a stack when any of the filters matches, which is what | means in a filter.
+            builder.oreFilter(String.join("|", oreFilters));
         }
 
         return builder.sticky(sticky).matcher(new CellMatcher(type -> this.handlers(host, type), this.source(host)))
