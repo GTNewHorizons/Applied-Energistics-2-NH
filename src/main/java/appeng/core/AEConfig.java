@@ -28,6 +28,7 @@ import appeng.api.config.CraftingStatus;
 import appeng.api.config.PinSectionOrder;
 import appeng.api.config.PowerMultiplier;
 import appeng.api.config.PowerUnits;
+import appeng.api.config.SaveSearchMode;
 import appeng.api.config.SearchBoxFocusPriority;
 import appeng.api.config.SearchBoxMode;
 import appeng.api.config.Settings;
@@ -90,6 +91,7 @@ public final class AEConfig extends Configuration implements IConfigurableObject
     public boolean previewBlocks;
     public int previewLineWidth;
     public boolean preserveSearchBar = true;
+    public boolean selectSearchBarText = false;
     public boolean showOnlyInterfacesWithFreeSlotsInInterfaceTerminal = false;
     public boolean autoFocusInterfaceTerminalSearch = true;
     public boolean showContainerInteractionTooltips = true;
@@ -190,7 +192,7 @@ public final class AEConfig extends Configuration implements IConfigurableObject
         this.settings.registerSetting(Settings.TERMINAL_STYLE, TerminalStyle.TALL);
         this.settings.registerSetting(Settings.HIDE_STORED, YesNo.NO);
         this.settings.registerSetting(Settings.SEARCH_MODE, SearchBoxMode.MANUAL_SEARCH);
-        this.settings.registerSetting(Settings.SAVE_SEARCH, YesNo.NO);
+        this.settings.registerSetting(Settings.SAVE_SEARCH, SaveSearchMode.NO);
         this.settings.registerSetting(Settings.CRAFTING_STATUS, CraftingStatus.TILE);
         this.settings.registerSetting(Settings.CRAFTING_SORT_BY, CraftingSortOrder.NAME);
         this.settings.registerSetting(Settings.CPU_SORT_BY, CPUSortBy.NAME);
@@ -392,6 +394,7 @@ public final class AEConfig extends Configuration implements IConfigurableObject
         this.previewBlocks = this.get("Client", "previewBlocks", true).getBoolean(true);
         this.previewLineWidth = this.get("Client", "previewLineWidth", 3).getInt(3);
         this.preserveSearchBar = this.get("Client", "preserveSearchBar", true).getBoolean(true);
+        this.selectSearchBarText = this.get("Client", "selectSearchBarText", false).getBoolean(false);
         this.showOnlyInterfacesWithFreeSlotsInInterfaceTerminal = this
                 .get("Client", "showOnlyInterfacesWithFreeSlotsInInterfaceTerminal", false).getBoolean(false);
         this.autoFocusInterfaceTerminalSearch = this.get("Client", "autoFocusInterfaceTerminalSearch", true)
