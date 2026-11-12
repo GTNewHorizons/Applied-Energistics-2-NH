@@ -63,6 +63,11 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
     private static final int SIMULATION_INTERVAL = 20;
     /** Fewest ticks between two scans caused by network changes. */
     private static final int MIN_RESCAN_INTERVAL = 10;
+    /**
+     * Most ticks between two scans. Filters edited on a component, changes on linked networks and new links made from
+     * another network raise no event here, so the rows are refreshed this often anyway.
+     */
+    private static final int MAX_RESCAN_INTERVAL = 100;
     private static final int MAX_PACKET_BYTES = 512 * 1024;
     private static final int DEFAULT_VISIBLE_ROWS = 3;
     private static final SyncCodec<String> STRING_CODEC = SyncCodecs.of(
@@ -213,7 +218,8 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         if (!this.hasScanned) {
             this.scan(node);
             this.queryChanged = true;
-        } else if (this.rescanPending || this.anchor.getChangeCount() != this.seenChangeCount
+        } else if (this.ticksSinceScan >= MAX_RESCAN_INTERVAL || this.rescanPending
+                || this.anchor.getChangeCount() != this.seenChangeCount
                 || this.fingerprintChanged()) {
                     // Storage that keeps changing would otherwise have every open screen walk all linked networks each
                     // tick.

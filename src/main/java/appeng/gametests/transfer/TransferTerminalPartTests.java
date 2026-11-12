@@ -6,6 +6,9 @@ import static appeng.gametests.transfer.TransferTestHelpers.iron;
 import static appeng.gametests.transfer.TransferTestHelpers.place;
 import static net.minecraftforge.common.util.ForgeDirection.NORTH;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -18,6 +21,8 @@ import appeng.api.AEApi;
 import appeng.api.config.Settings;
 import appeng.api.config.TransferDirection;
 import appeng.api.config.YesNo;
+import appeng.api.features.transfer.TransferComponentInfo;
+import appeng.api.features.transfer.TransferDescription;
 import appeng.api.networking.events.MENetworkCellArrayUpdate;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
@@ -215,6 +220,59 @@ public class TransferTerminalPartTests {
                             container[0].getFilteredRows().size(),
                             "The waiting scan lists the export bus");
                 }).thenSucceed();
+    }
+
+    /**
+     * @return the configured stacks of the row for the part on the given side of the template's cable
+     */
+    private static List<IAEStack<?>> configOfRowOnSide(GameTestHelper helper, ContainerTransferTerminal container,
+            ForgeDirection side) {
+        for (TransferComponentInfo row : container.getFilteredRows()) {
+            if (row.side == (byte) side.ordinal()) {
+                List<IAEStack<?>> stacks = new ArrayList<>();
+                for (TransferDescription.ConfigEntry entry : row.description.config) {
+                    stacks.add(entry.stack);
+                }
+                return stacks;
+            }
+        }
+        throw new AssertionError("No row for the part on side " + side);
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 160)
+    public static void filterEditsShowUpWithoutANetworkEvent(GameTestHelper helper) {
+        PartTransferTerminal terminal = terminal(helper);
+        PartExportBus bus = place(helper, AEApi.instance().definitions().parts().exportBus(), NORTH);
+        ContainerTransferTerminal[] container = new ContainerTransferTerminal[1];
+
+        helper.startSequence().thenWaitUntil("wait for the terminal and the bus to join the network", 60, () -> {
+            assertActive(helper, terminal, "Terminal should become active");
+            assertActive(helper, bus, "Export bus should become active");
+        }).thenExecute("edit the bus filter while the terminal is open", () -> {
+            container[0] = new ContainerTransferTerminal(
+                    helper.spawnFakePlayer("transfer_terminal").inventory,
+                    terminal);
+            container[0].detectAndSendChanges();
+            helper.assertTrue(
+                    configOfRowOnSide(helper, container[0], NORTH).isEmpty(),
+                    "The bus starts without a filter");
+
+            // Editing a filter posts no network event and adds no machine.
+            bus.getAEInventoryByName(StorageName.CONFIG).putAEStackInSlot(0, iron());
+            for (int tick = 0; tick < 50; tick++) {
+                container[0].detectAndSendChanges();
+            }
+            helper.assertTrue(
+                    configOfRowOnSide(helper, container[0], NORTH).isEmpty(),
+                    "Rows are not rebuilt every tick");
+
+            for (int tick = 0; tick < 60; tick++) {
+                container[0].detectAndSendChanges();
+            }
+            List<IAEStack<?>> config = configOfRowOnSide(helper, container[0], NORTH);
+            helper.assertEquals(1, config.size(), "The periodic rescan picks up the new filter");
+            helper.assertTrue(iron().isSameType((Object) config.get(0)), "The filter names iron");
+        }).thenSucceed();
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 160)
