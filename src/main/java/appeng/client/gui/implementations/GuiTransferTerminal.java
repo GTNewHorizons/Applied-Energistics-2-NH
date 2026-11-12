@@ -187,26 +187,22 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                 this.tallMode ? TerminalStyle.TALL : TerminalStyle.SMALL);
         this.buttonList.add(this.terminalStyleBox);
 
-        this.directionButton = new GuiImgButton(
-                this.guiLeft + FILTER_BUTTON_X,
-                this.guiTop + FILTER_BUTTON_Y,
+        this.directionButton = this.addFilterButton(
+                0,
                 Settings.TRANSFER_DIRECTION,
-                this.container.getMode()) {
-
-            @Override
-            public String getMessage() {
-                final String message = super.getMessage();
-                return this.enabled ? message : message + "\n" + ButtonToolTips.TransferTermDirectionLocked.getLocal();
-            }
-        };
-        this.buttonList.add(this.directionButton);
+                this.container.getMode(),
+                ButtonToolTips.TransferTermDirectionLocked);
         this.craftingButton = this
-                .addToggleButton(1, Settings.TRANSFER_CRAFTING_CARD_ONLY, this.container.craftingOnlySync);
+                .addToggleButton(1, Settings.TRANSFER_CRAFTING_CARD_ONLY, this.container.craftingOnlySync, null);
         this.hideUnfilteredButton = this
-                .addToggleButton(2, Settings.TRANSFER_HIDE_UNFILTERED, this.container.hideUnfilteredSync);
+                .addToggleButton(2, Settings.TRANSFER_HIDE_UNFILTERED, this.container.hideUnfilteredSync, null);
         this.networkOnlyButton = this
-                .addToggleButton(3, Settings.TRANSFER_NETWORK_ONLY, this.container.networkOnlySync);
-        this.simulateButton = this.addToggleButton(4, Settings.TRANSFER_SIMULATE, this.container.simulateSync);
+                .addToggleButton(3, Settings.TRANSFER_NETWORK_ONLY, this.container.networkOnlySync, null);
+        this.simulateButton = this.addToggleButton(
+                4,
+                Settings.TRANSFER_SIMULATE,
+                this.container.simulateSync,
+                ButtonToolTips.TransferTermSimulateNeedsStack);
         this.updateFilterButtons();
         this.resetButton = new GuiImgButton(
                 this.guiLeft + RESET_BUTTON_X,
@@ -232,19 +228,24 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         this.refreshRows();
     }
 
-    private GuiImgButton addFilterButton(final int index, final Settings setting, final Enum<?> value) {
-        final GuiImgButton button = new GuiImgButton(
+    /**
+     * @param lockedReason why the button does nothing while it is disabled, or null if it is never disabled
+     */
+    private GuiImgButton addFilterButton(final int index, final Settings setting, final Enum<?> value,
+            final ButtonToolTips lockedReason) {
+        final GuiImgButton button = new LockableButton(
                 this.guiLeft + FILTER_BUTTON_X + index * FILTER_BUTTON_STEP,
                 this.guiTop + FILTER_BUTTON_Y,
                 setting,
-                value);
+                value,
+                lockedReason);
         this.buttonList.add(button);
         return button;
     }
 
     private GuiImgButton addToggleButton(final int index, final Settings setting,
-            final ConfigEnumSyncHandler<YesNo> sync) {
-        return this.addFilterButton(index, setting, valueOf(sync));
+            final ConfigEnumSyncHandler<YesNo> sync, final ButtonToolTips lockedReason) {
+        return this.addFilterButton(index, setting, valueOf(sync), lockedReason);
     }
 
     private static YesNo valueOf(final ConfigEnumSyncHandler<YesNo> sync) {
@@ -257,10 +258,12 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         }
         // Simulating forces export, the saved direction shows again once it is turned off.
         this.directionButton.set(this.container.getMode());
-        this.directionButton.setEnabled(!ContainerTransferTerminal.isYes(this.container.simulateSync));
+        this.directionButton.setEnabled(!this.container.isSimulating());
         this.craftingButton.set(valueOf(this.container.craftingOnlySync));
         this.hideUnfilteredButton.set(valueOf(this.container.hideUnfilteredSync));
         this.networkOnlyButton.set(valueOf(this.container.networkOnlySync));
+        // A simulation needs a stack to insert, the server turns the setting off when the slot is emptied.
+        this.simulateButton.setEnabled(this.container.getQuery() != null);
         this.simulateButton.set(valueOf(this.container.simulateSync));
     }
 
@@ -376,6 +379,8 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
 
     @Override
     public void updateScreen() {
+        // Which buttons are usable depends on the searched stack too, which changes without a setting changing.
+        this.updateFilterButtons();
         this.requestSearchAndWindow();
         super.updateScreen();
     }
@@ -422,6 +427,9 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         } else if (button == this.networkOnlyButton) {
             this.toggle(this.networkOnlyButton, this.container.networkOnlySync);
         } else if (button == this.simulateButton) {
+            if (!this.simulateButton.enabled) {
+                return;
+            }
             this.toggle(this.simulateButton, this.container.simulateSync);
             this.updateFilterButtons();
         } else if (button == this.terminalStyleBox) {
@@ -969,6 +977,30 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
             return component == null ? "" : component.getUnformattedText();
         } catch (final RuntimeException e) {
             return "";
+        }
+    }
+
+    /**
+     * A filter button that says in its tooltip why it does nothing, for as long as it is disabled.
+     */
+    private static final class LockableButton extends GuiImgButton {
+
+        private final ButtonToolTips lockedReason;
+
+        private LockableButton(final int x, final int y, final Settings setting, final Enum<?> value,
+                final ButtonToolTips lockedReason) {
+            super(x, y, setting, value);
+            this.lockedReason = lockedReason;
+        }
+
+        @Override
+        public String getMessage() {
+            final String message = super.getMessage();
+            if (this.enabled || this.lockedReason == null) {
+                return message;
+            }
+            final String reason = EnumChatFormatting.GRAY + this.lockedReason.getLocal().replace("\\n", "\n");
+            return message == null ? reason : message + "\n" + reason;
         }
     }
 

@@ -283,6 +283,14 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
             this.appliedQuery = query == null ? null : query.copy();
             this.queryChanged = true;
         }
+
+        // There is nothing to simulate without a searched stack, so emptying the slot turns the setting off.
+        if (query == null && isYes(this.simulateSync)) {
+            config.putSetting(Settings.TRANSFER_SIMULATE, YesNo.NO);
+            this.appliedSettings.put(Settings.TRANSFER_SIMULATE, YesNo.NO);
+            this.simulateSync.syncFromConfig();
+            this.queryChanged = true;
+        }
     }
 
     private static boolean sameStack(final IAEStack<?> a, final IAEStack<?> b) {
@@ -342,7 +350,7 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
      * direction, which comes back once simulating is turned off.
      */
     public TransferDirection getMode() {
-        if (isYes(this.simulateSync)) {
+        if (this.isSimulating()) {
             return TransferDirection.EXPORT;
         }
         final TransferDirection mode = this.directionSync.get();

@@ -321,6 +321,7 @@ public enum ButtonToolTips implements Localization {
     TransferTermSimulateYes,
     TransferTermSimulateNo,
     TransferTermDirectionLocked,
+    TransferTermSimulateNeedsStack,
     InterfaceTerminalVisibility,
     InterfaceTerminalVisibilityVisible,
     InterfaceTerminalVisibilityHidden,

@@ -300,6 +300,7 @@ public class TransferInsertSimulationTests {
         final PartTransferTerminal terminal = terminal(helper);
         terminal.getConfigManager().putSetting(Settings.TRANSFER_DIRECTION, TransferDirection.IMPORT);
         terminal.getConfigManager().putSetting(Settings.TRANSFER_SIMULATE, YesNo.YES);
+        terminal.getQueryInventory().putAEStackInSlot(0, itemStack(Blocks.cobblestone, 1));
 
         helper.startSequence()
                 .thenWaitUntil(

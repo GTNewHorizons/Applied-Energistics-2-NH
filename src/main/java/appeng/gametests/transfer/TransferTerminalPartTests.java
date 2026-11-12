@@ -312,6 +312,42 @@ public class TransferTerminalPartTests {
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void simulatingNeedsASearchedStack(GameTestHelper helper) {
+        PartTransferTerminal terminal = terminal(helper);
+        terminal.getConfigManager().putSetting(Settings.TRANSFER_DIRECTION, TransferDirection.IMPORT);
+        terminal.getConfigManager().putSetting(Settings.TRANSFER_SIMULATE, YesNo.YES);
+        terminal.getQueryInventory().putAEStackInSlot(0, iron());
+
+        helper.startSequence()
+                .thenWaitUntil(
+                        "wait for the terminal to join the network",
+                        60,
+                        () -> assertActive(helper, terminal, "Terminal should become active"))
+                .thenExecute("empty the search slot while simulating", () -> {
+                    ContainerTransferTerminal container = new ContainerTransferTerminal(
+                            helper.spawnFakePlayer("transfer_terminal").inventory,
+                            terminal);
+                    container.detectAndSendChanges();
+                    helper.assertTrue(container.simulatingSync.get(), "A searched stack is simulated");
+                    helper.assertEquals(TransferDirection.EXPORT, container.getMode(), "Simulating forces export");
+
+                    terminal.getQueryInventory().putAEStackInSlot(0, null);
+                    container.detectAndSendChanges();
+
+                    helper.assertEquals(YesNo.NO, container.simulateSync.get(), "Simulate turns off without a stack");
+                    helper.assertEquals(
+                            YesNo.NO,
+                            terminal.getConfigManager().getSetting(Settings.TRANSFER_SIMULATE),
+                            "The terminal remembers it is off");
+                    helper.assertFalse(container.simulatingSync.get(), "Nothing is simulated");
+                    helper.assertEquals(
+                            TransferDirection.IMPORT,
+                            container.getMode(),
+                            "The saved direction applies again");
+                }).thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
     public static void aSecondViewerFollowsWhatTheFirstChanges(GameTestHelper helper) {
         PartTransferTerminal terminal = terminal(helper);
 
