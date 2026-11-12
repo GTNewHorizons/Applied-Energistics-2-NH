@@ -16,6 +16,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import appeng.api.implementations.tiles.ITileStorageMonitorable;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridHost;
 import appeng.api.networking.IGridNode;
@@ -118,9 +119,13 @@ public final class TransferGridLinks {
             return null;
         }
 
-        final IGrid connected = bus.getConnectedGrid();
-        if (connected != null) {
-            return connected;
+        // Only a monitorable tile can hand the bus another network. Asking the bus about anything else would build a
+        // throwaway storage wrapper around every chest, tank or drawer it faces, on every scan.
+        if (front instanceof ITileStorageMonitorable) {
+            final IGrid connected = bus.getConnectedGrid();
+            if (connected != null) {
+                return connected;
+            }
         }
 
         final IInterfaceHost host = interfaceFacing(front, bus.getSide().getOpposite());
