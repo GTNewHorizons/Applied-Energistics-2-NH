@@ -125,6 +125,9 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
     /** Whether the network changed while the last scan was too recent to scan again. */
     private boolean rescanPending;
 
+    /** Whether the last scan searched only the terminal's own network, see {@link #isNetworkOnly()}. */
+    private boolean scannedNetworkOnly;
+
     private final Map<TransferComponentInfo, List<String>> configNames = new IdentityHashMap<>();
     private List<TransferComponentInfo> scanned = Collections.emptyList();
 
@@ -215,6 +218,10 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         this.wasOffline = false;
 
         this.ticksSinceScan++;
+        if (this.hasScanned && this.isNetworkOnly() != this.scannedNetworkOnly) {
+            // Turning Simulate on or off changes which networks are searched.
+            this.hasScanned = false;
+        }
         if (!this.hasScanned) {
             this.scan(node);
             this.queryChanged = true;
@@ -310,7 +317,8 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
 
     private void scan(final IGridNode node) {
         final IGrid grid = node.getGrid();
-        this.grids = isYes(this.networkOnlySync) ? Collections.singletonList(grid)
+        this.scannedNetworkOnly = this.isNetworkOnly();
+        this.grids = this.scannedNetworkOnly ? Collections.singletonList(grid)
                 : this.visibleGrids(grid, grid.getAllRecursiveGridConnections(PartStorageBus.class, true));
         this.scanned = TransferScanner.scan(this.grids, AEApi.instance().registries().transferInspectors());
         this.configNames.clear();
@@ -364,6 +372,14 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         return isYes(this.simulateSync) && this.getQuery() != null;
     }
 
+    /**
+     * A simulation shows where the stack would actually go, which may be a linked network, so it searches them all
+     * without touching the saved setting.
+     */
+    private boolean isNetworkOnly() {
+        return isYes(this.networkOnlySync) && !this.isSimulating();
+    }
+
     private void applySimulation() {
         this.ticksSinceSimulation = 0;
         final IGridNode node = this.anchor.getActionableNode();
@@ -384,12 +400,7 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         }
 
         final List<TransferComponentInfo> rows = new ArrayList<>(result.rows);
-        for (final TransferComponentInfo cpu : result.cpuRows) {
-            // CPUs have no config, so a search by config names never matches them.
-            if (this.searchTextSync.get().isEmpty()) {
-                rows.add(cpu);
-            }
-        }
+        rows.addAll(result.cpuRows);
         rows.sort(TransferRowOrder.simulated(TransferRowOrder.comparator(true, TransferDirection.EXPORT)));
         this.filtered = rows;
         this.simulatingSync.set(true);
@@ -449,6 +460,11 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
     }
 
     private boolean keep(final TransferComponentInfo row) {
+        // A simulation shows where the stack would actually go, hiding part of that would only mislead. The saved
+        // filters apply again once it is turned off, like the direction.
+        if (this.isSimulating()) {
+            return true;
+        }
         if (!TransferResultFilter
                 .passesToggles(row.description, isYes(this.craftingOnlySync), isYes(this.hideUnfilteredSync))) {
             return false;

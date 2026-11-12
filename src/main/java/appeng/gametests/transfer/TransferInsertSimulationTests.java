@@ -324,6 +324,40 @@ public class TransferInsertSimulationTests {
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 120)
+    public static void simulatingIgnoresEveryOtherFilter(final GameTestHelper helper) {
+        final PartStorageBus bus = bus(helper);
+        final PartTransferTerminal terminal = terminal(helper);
+        // Each of these would hide the storage bus, which has no crafting card and no filter.
+        terminal.getConfigManager().putSetting(Settings.TRANSFER_CRAFTING_CARD_ONLY, YesNo.YES);
+        terminal.getConfigManager().putSetting(Settings.TRANSFER_HIDE_UNFILTERED, YesNo.YES);
+        terminal.getConfigManager().putSetting(Settings.TRANSFER_NETWORK_ONLY, YesNo.YES);
+        terminal.getConfigManager().putSetting(Settings.TRANSFER_SIMULATE, YesNo.YES);
+        terminal.getQueryInventory().putAEStackInSlot(0, itemStack(Blocks.cobblestone, 64));
+
+        helper.startSequence().thenWaitUntil("wait for the network", 80, () -> {
+            assertActive(helper, terminal, "Terminal should become active");
+            assertActive(helper, bus, "Storage bus should become active");
+            helper.assertNotNull(bus.getInternalHandler(), "Storage bus should find its chest");
+        }).thenExecute("toggle simulating with every filter on", () -> {
+            final ContainerTransferTerminal container = open(helper, terminal);
+            container.searchTextSync.set("no config is named this");
+            container.detectAndSendChanges();
+            helper.assertEquals(
+                    64L,
+                    firstRow(helper, container).simulatedAmount,
+                    "The storage bus is listed while simulating");
+
+            container.simulateSync.set(YesNo.NO);
+            container.detectAndSendChanges();
+            helper.assertTrue(container.getFilteredRows().isEmpty(), "The saved filters apply again");
+            helper.assertEquals(
+                    YesNo.YES,
+                    terminal.getConfigManager().getSetting(Settings.TRANSFER_HIDE_UNFILTERED),
+                    "Simulating leaves the saved filters alone");
+        }).thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 120)
     public static void theAmountDialogChangesWhatIsSimulated(final GameTestHelper helper) {
         final PartStorageBus bus = bus(helper);
         final PartTransferTerminal terminal = terminal(helper);
