@@ -14,9 +14,8 @@ import org.lwjgl.input.Keyboard;
 import appeng.api.implementations.ICraftingPatternItem;
 import appeng.api.networking.crafting.ICraftingPatternDetails;
 import appeng.client.gui.implementations.GuiCellWorkbench;
-import appeng.client.gui.implementations.GuiPatternTerm;
+import appeng.client.gui.implementations.GuiMEMonitorable;
 import appeng.client.gui.implementations.GuiStorageBus;
-import appeng.client.gui.slots.VirtualMEPatternSlot;
 import appeng.integration.modules.NEI;
 import codechicken.nei.ItemPanels;
 import codechicken.nei.KeyManager;
@@ -34,14 +33,13 @@ public class NEIInputHandler implements IContainerInputHandler {
 
     @Override
     public boolean keyTyped(@NonNull GuiContainer gui, char keyChar, int keyCode) {
-        if (!(gui instanceof GuiPatternTerm terminal) || !NEIClientConfig.isLoaded()
+        if (!(gui instanceof GuiMEMonitorable terminal) || !NEIClientConfig.isLoaded()
                 || terminal.isSearchFieldManuallyFocused()
                 || NEI.searchField.focused()) {
             return false;
         }
 
-        if (!(terminal.getVirtualMESlotUnderMouse() instanceof VirtualMEPatternSlot slot)
-                || slot.getAEStack() == null) {
+        if (GuiContainerManager.getStackMouseOver(gui) == null) {
             return false;
         }
 
