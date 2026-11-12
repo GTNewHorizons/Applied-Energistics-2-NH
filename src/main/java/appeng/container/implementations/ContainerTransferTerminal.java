@@ -109,6 +109,9 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
     /** Whether a network refused the simulated insert because of its security settings. */
     public final BooleanSyncHandler deniedSync;
 
+    /** Whether the network refused the simulated insert because its storage is being reshuffled. */
+    public final BooleanSyncHandler lockedSync;
+
     /** Settings every screen open on this terminal shares, with the handler that shows each. */
     private final Map<Settings, ConfigEnumSyncHandler<?>> sharedSettings = new EnumMap<>(Settings.class);
 
@@ -184,6 +187,7 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         this.simulatingSync = sync.booleanS2C("simulating");
         this.leftoverSync = sync.longS2C("simulateLeftover");
         this.deniedSync = sync.booleanS2C("simulateDenied");
+        this.lockedSync = sync.booleanS2C("simulateLocked");
 
         this.sharedSettings.put(Settings.TRANSFER_DIRECTION, this.directionSync);
         this.sharedSettings.put(Settings.TRANSFER_CRAFTING_CARD_ONLY, this.craftingOnlySync);
@@ -406,6 +410,7 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         this.simulatingSync.set(true);
         this.leftoverSync.set(result.leftover);
         this.deniedSync.set(result.denied);
+        this.lockedSync.set(result.locked);
         // The amounts show what sticky storage claims, the separator would only repeat it.
         this.stickyCountSync.set(0);
     }
@@ -417,6 +422,7 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         this.simulatingSync.set(false);
         this.leftoverSync.set(0L);
         this.deniedSync.set(false);
+        this.lockedSync.set(false);
         this.stickyCountSync.set(0);
     }
 

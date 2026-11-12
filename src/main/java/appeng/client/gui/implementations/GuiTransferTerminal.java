@@ -720,7 +720,10 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
 
         if (leftover != null && relX >= leftoverX && relX < 8 + TITLE_WIDTH && relY >= 5 && relY < 16) {
             tooltip.clear();
-            if (this.container.leftoverSync.get() > 0) {
+            if (this.container.lockedSync.get()) {
+                // Everything is left over then, the reason is what matters.
+                tooltip.add(GuiText.TransferTermLocked.getLocal());
+            } else if (this.container.leftoverSync.get() > 0) {
                 tooltip.add(GuiText.TransferTermLeftover.getLocal(this.container.leftoverSync.get()));
             }
             if (this.container.deniedSync.get()) {
@@ -752,6 +755,9 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     private String leftoverLabel() {
         if (!this.container.simulatingSync.get()) {
             return null;
+        }
+        if (this.container.lockedSync.get()) {
+            return GuiText.TransferTermLockedShort.getLocal();
         }
         final long leftover = this.container.leftoverSync.get();
         if (leftover > 0) {

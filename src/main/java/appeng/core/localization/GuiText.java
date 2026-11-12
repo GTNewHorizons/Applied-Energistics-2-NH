@@ -270,6 +270,10 @@ public enum GuiText implements Localization {
 
     TransferTermDeniedShort,
 
+    TransferTermLocked,
+
+    TransferTermLockedShort,
+
     TransferTermCraftingCpu,
 
     TransferTermQueryAmountHint,

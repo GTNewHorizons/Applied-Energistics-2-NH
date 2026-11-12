@@ -26,6 +26,7 @@ import appeng.api.storage.IMEMonitor;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.util.DimensionalCoord;
+import appeng.me.cache.NetworkMonitor;
 import appeng.me.cluster.implementations.CraftingCPUCluster;
 import appeng.me.storage.InjectTrace;
 import appeng.me.storage.NetworkInventoryHandler;
@@ -41,7 +42,7 @@ public final class TransferInsertSimulation {
     /** What a simulated insert found. */
     public static final class Result {
 
-        static final Result NONE = new Result(null, Collections.emptyList(), 0, false);
+        static final Result NONE = new Result(null, Collections.emptyList(), 0, false, false);
 
         /**
          * The given rows in their given order. Storage rows carry how much they would receive, other rows are
@@ -58,12 +59,18 @@ public final class TransferInsertSimulation {
         /** Whether a network refused the insert for lack of permission. */
         public final boolean denied;
 
+        /**
+         * Whether the network is locked while its storage is reshuffled, which refuses every insert until it is done.
+         */
+        public final boolean locked;
+
         private Result(final List<TransferComponentInfo> rows, final List<TransferComponentInfo> cpuRows,
-                final long leftover, final boolean denied) {
+                final long leftover, final boolean denied, final boolean locked) {
             this.rows = rows;
             this.cpuRows = cpuRows;
             this.leftover = leftover;
             this.denied = denied;
+            this.locked = locked;
         }
 
         public boolean simulated() {
@@ -89,6 +96,9 @@ public final class TransferInsertSimulation {
         final IMEMonitor monitor = storage == null ? null : storage.getMEMonitor(query.getStackType());
         if (monitor == null) {
             return Result.NONE;
+        }
+        if (monitor instanceof NetworkMonitor<?>network && network.isLocked()) {
+            return lockedResult(rows, query.getStackSize());
         }
 
         final Map<IMEInventoryHandler<?>, Integer> rowByHandler = mapHandlers(rows, query.getStackType());
@@ -137,7 +147,23 @@ public final class TransferInsertSimulation {
                 marked,
                 cpuRows(grids, trace.getCpus()),
                 leftover == null ? 0 : leftover.getStackSize(),
-                trace.anyDenied());
+                trace.anyDenied(),
+                false);
+    }
+
+    /**
+     * A locked network turns away every insert but the reshuffle's own, so no storage would receive anything. Only the
+     * terminal's own network is checked: a locked linked network takes nothing through its storage bus, which the rows
+     * already show.
+     */
+    private static Result lockedResult(final List<TransferComponentInfo> rows, final long amount) {
+        final List<TransferComponentInfo> marked = new ArrayList<>(rows.size());
+        for (final TransferComponentInfo row : rows) {
+            marked.add(
+                    row.description.liveHandlers == null ? row
+                            : row.withSimulation(0, Integer.MAX_VALUE, false, Collections.emptyList()));
+        }
+        return new Result(marked, Collections.emptyList(), amount, false, true);
     }
 
     private static Map<IMEInventoryHandler<?>, Integer> mapHandlers(final List<TransferComponentInfo> rows,

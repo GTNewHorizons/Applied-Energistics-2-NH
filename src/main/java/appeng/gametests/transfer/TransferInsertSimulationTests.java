@@ -35,12 +35,14 @@ import appeng.api.networking.IGrid;
 import appeng.api.networking.crafting.ICraftingGrid;
 import appeng.api.networking.crafting.ICraftingJob;
 import appeng.api.networking.security.BaseActionSource;
+import appeng.api.networking.storage.IStorageGrid;
 import appeng.api.storage.StorageName;
 import appeng.container.implementations.ContainerTransferTerminal;
 import appeng.core.AppEng;
 import appeng.helpers.transfer.TransferInsertSimulation;
 import appeng.helpers.transfer.TransferScanner;
 import appeng.me.GridAccessException;
+import appeng.me.cache.NetworkMonitor;
 import appeng.parts.misc.PartStorageBus;
 import appeng.parts.reporting.PartTransferTerminal;
 import appeng.tile.crafting.TileCraftingStorageTile;
@@ -160,6 +162,34 @@ public class TransferInsertSimulationTests {
             final TransferInsertSimulation.Result result = simulate(helper, Blocks.cobblestone, 64);
             helper.assertEquals(24L, busRow(helper, result).simulatedAmount, "Only the last slot has room");
             helper.assertEquals(40L, result.leftover, "There is no other storage");
+        }).thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void aLockedNetworkSaysWhyNothingFits(final GameTestHelper helper) {
+        final PartStorageBus bus = bus(helper);
+
+        helper.startSequence().thenWaitUntil("wait for the bus to find its chest", 80, () -> {
+            assertActive(helper, bus, "Storage bus should become active");
+            helper.assertEquals(
+                    64L,
+                    busRow(helper, simulate(helper, Blocks.cobblestone, 64)).simulatedAmount,
+                    "The chest has room while unlocked");
+        }).thenExecute("simulate while the network reshuffles", () -> {
+            final NetworkMonitor<?> monitor = (NetworkMonitor<?>) grid(helper)
+                    .<IStorageGrid>getCache(IStorageGrid.class)
+                    .getMEMonitor(itemStack(Blocks.cobblestone, 1).getStackType());
+            monitor.setLocked(true);
+            final TransferInsertSimulation.Result result;
+            try {
+                result = simulate(helper, Blocks.cobblestone, 64);
+            } finally {
+                monitor.setLocked(false);
+            }
+
+            helper.assertTrue(result.locked, "The lock is reported");
+            helper.assertEquals(64L, result.leftover, "Nothing is taken in");
+            helper.assertEquals(0L, busRow(helper, result).simulatedAmount, "The chest receives nothing");
         }).thenSucceed();
     }
 
