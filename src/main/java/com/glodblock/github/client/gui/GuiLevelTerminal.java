@@ -43,10 +43,10 @@ import com.glodblock.github.util.ModAndClassUtil;
 import com.glodblock.github.util.NameConst;
 import com.glodblock.github.util.Util;
 
+import appeng.api.config.SaveSearchMode;
 import appeng.api.config.Settings;
 import appeng.api.config.TerminalFontSize;
 import appeng.api.config.TerminalStyle;
-import appeng.api.config.YesNo;
 import appeng.api.features.LevelItemInfo;
 import appeng.api.features.LevelState;
 import appeng.api.storage.ITerminalHost;
@@ -297,7 +297,8 @@ public class GuiLevelTerminal extends FCBaseMEGui implements IDropToFillTextFiel
             final GuiImgButton iBtn = (GuiImgButton) btn;
             final Enum<?> cv = iBtn.getCurrentValue();
             final Enum<?> next = Platform.rotateEnum(cv, backwards, iBtn.getSetting().getPossibleValues());
-            AEConfig.instance.preserveSearchBar = next == YesNo.YES;
+            AEConfig.instance.preserveSearchBar = next != SaveSearchMode.NO;
+            AEConfig.instance.selectSearchBarText = next == SaveSearchMode.SELECT;
             AEConfig.instance.settings.putSetting(Settings.SAVE_SEARCH, next);
             searchStringSave.set(next);
 
