@@ -135,6 +135,9 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     private GuiImgButton resetButton;
     private VirtualMEPhantomSlotPrecise querySlot;
     private boolean tallMode;
+
+    /** Whether the search box was last set up for a simulation, which turns it off. */
+    private boolean shownSimulating;
     private int visibleRows = SMALL_VISIBLE_ROWS;
     private int cacheStart;
     private int serverTotal;
@@ -192,12 +195,21 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                 Settings.TRANSFER_DIRECTION,
                 this.container.getMode(),
                 ButtonToolTips.TransferTermDirectionLocked);
-        this.craftingButton = this
-                .addToggleButton(1, Settings.TRANSFER_CRAFTING_CARD_ONLY, this.container.craftingOnlySync, null);
-        this.hideUnfilteredButton = this
-                .addToggleButton(2, Settings.TRANSFER_HIDE_UNFILTERED, this.container.hideUnfilteredSync, null);
-        this.networkOnlyButton = this
-                .addToggleButton(3, Settings.TRANSFER_NETWORK_ONLY, this.container.networkOnlySync, null);
+        this.craftingButton = this.addToggleButton(
+                1,
+                Settings.TRANSFER_CRAFTING_CARD_ONLY,
+                this.container.craftingOnlySync,
+                ButtonToolTips.TransferTermFilterLocked);
+        this.hideUnfilteredButton = this.addToggleButton(
+                2,
+                Settings.TRANSFER_HIDE_UNFILTERED,
+                this.container.hideUnfilteredSync,
+                ButtonToolTips.TransferTermFilterLocked);
+        this.networkOnlyButton = this.addToggleButton(
+                3,
+                Settings.TRANSFER_NETWORK_ONLY,
+                this.container.networkOnlySync,
+                ButtonToolTips.TransferTermFilterLocked);
         this.simulateButton = this.addToggleButton(
                 4,
                 Settings.TRANSFER_SIMULATE,
@@ -256,15 +268,37 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         if (this.directionButton == null) {
             return;
         }
-        // Simulating forces export, the saved direction shows again once it is turned off.
+        // Simulating shows every component the stack would reach, so it forces export and turns the other filters off.
+        // The saved values show again once it is turned off.
+        final boolean simulating = this.container.isSimulating();
         this.directionButton.set(this.container.getMode());
-        this.directionButton.setEnabled(!this.container.isSimulating());
-        this.craftingButton.set(valueOf(this.container.craftingOnlySync));
-        this.hideUnfilteredButton.set(valueOf(this.container.hideUnfilteredSync));
-        this.networkOnlyButton.set(valueOf(this.container.networkOnlySync));
+        this.directionButton.setEnabled(!simulating);
+        updateLockedToggle(this.craftingButton, this.container.craftingOnlySync, simulating);
+        updateLockedToggle(this.hideUnfilteredButton, this.container.hideUnfilteredSync, simulating);
+        updateLockedToggle(this.networkOnlyButton, this.container.networkOnlySync, simulating);
         // A simulation needs a stack to insert, the server turns the setting off when the slot is emptied.
         this.simulateButton.setEnabled(this.container.getQuery() != null);
         this.simulateButton.set(valueOf(this.container.simulateSync));
+
+        if (this.searchField != null) {
+            this.searchField.setEnabled(!simulating);
+            if (simulating) {
+                this.searchField.setFocused(false);
+            }
+        }
+        if (simulating != this.shownSimulating) {
+            this.shownSimulating = simulating;
+            this.updateSearchTooltip();
+            if (this.searchField != null) {
+                this.refreshRows();
+            }
+        }
+    }
+
+    private static void updateLockedToggle(final GuiImgButton button, final ConfigEnumSyncHandler<YesNo> sync,
+            final boolean locked) {
+        button.setEnabled(!locked);
+        button.set(locked ? YesNo.NO : valueOf(sync));
     }
 
     private void saveSearch() {
@@ -296,6 +330,9 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                     serverLanguage,
                     this.clientLanguage);
         }
+        if (this.container.isSimulating()) {
+            tooltip += "\n" + EnumChatFormatting.GRAY + ButtonToolTips.TransferTermFilterLocked.getLocal();
+        }
         return tooltip.replace("\\n", "\n");
     }
 
@@ -311,8 +348,14 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         this.getScrollBar().setRange(0, Math.max(0, this.rowCount() - this.visibleRows), 1);
     }
 
+    /**
+     * @return the text to search by, nothing while simulating since the search is off then
+     */
     private String searchText() {
-        return this.searchField == null ? "" : this.searchField.getText().trim();
+        if (this.searchField == null || this.container.isSimulating()) {
+            return "";
+        }
+        return this.searchField.getText().trim();
     }
 
     private boolean languagesMatch() {
@@ -456,7 +499,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
 
     @Override
     protected void keyTyped(final char character, final int key) {
-        if (!this.searchField.textboxKeyTyped(character, key)) {
+        if (this.container.isSimulating() || !this.searchField.textboxKeyTyped(character, key)) {
             super.keyTyped(character, key);
         }
     }
@@ -464,7 +507,12 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     @Override
     protected void mouseClicked(final int mouseX, final int mouseY, final int button) {
         super.mouseClicked(mouseX, mouseY, button);
-        this.searchField.mouseClicked(mouseX, mouseY, button);
+        // A disabled field still takes focus and clears on right click, so it gets no clicks while locked.
+        if (this.container.isSimulating()) {
+            this.searchField.setFocused(false);
+        } else {
+            this.searchField.mouseClicked(mouseX, mouseY, button);
+        }
         if (button == 0) {
             this.handleHighlightClick(mouseX - this.guiLeft, mouseY - this.guiTop);
         }
@@ -551,12 +599,14 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
 
     @Override
     public boolean isOverTextField(final int mouseX, final int mouseY) {
-        return this.searchField.isMouseIn(mouseX, mouseY);
+        return !this.container.isSimulating() && this.searchField.isMouseIn(mouseX, mouseY);
     }
 
     @Override
     public void setTextFieldValue(final String displayName, final int mouseX, final int mouseY, final ItemStack stack) {
-        this.searchField.setText(displayName);
+        if (!this.container.isSimulating()) {
+            this.searchField.setText(displayName);
+        }
     }
 
     @Override

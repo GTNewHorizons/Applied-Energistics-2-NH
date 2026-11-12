@@ -606,6 +606,7 @@ gui.tooltips.appliedenergistics2.TransferTermSimulateYes=Showing where the searc
 gui.tooltips.appliedenergistics2.TransferTermSimulateNo=Showing every component that could receive the searched stack.
 gui.tooltips.appliedenergistics2.TransferTermDirectionLocked=Locked to export while Simulate Insertion is on.
 gui.tooltips.appliedenergistics2.TransferTermSimulateNeedsStack=Put a stack in the search slot first.
+gui.tooltips.appliedenergistics2.TransferTermFilterLocked=Off while Simulate Insertion is on, which shows everything the stack would reach.
 gui.tooltips.appliedenergistics2.TransferTerminal=If items are vanishing and you can't figure out where,\nuse this terminal to search through every storage bus,\nME drive, ME chest, import bus, export bus, interface,\nformation plane, annihilation plane, ME replenisher,\nstock replenisher and stocking input bus or hatch\nin your entire network.\nSorts the search results by the components most likely\nto have moved the item first (usually priority).\nComponents in other networks are sorted below those in\nthe current network, since their priority settings do\nnot interact across network borders.\nYou may need to pick up and move this terminal into\nother networks to properly diagnose issues. You can\nfilter the results to only the current network to help\nnarrow down issues.
 gui.tooltips.appliedenergistics2.SearchFieldInputs=Recipe Inputs
 gui.tooltips.appliedenergistics2.SearchFieldOutputs=Recipe Outputs
