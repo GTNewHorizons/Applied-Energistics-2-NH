@@ -20,6 +20,7 @@ import appeng.api.config.TransferDirection;
 import appeng.api.config.YesNo;
 import appeng.api.networking.events.MENetworkCellArrayUpdate;
 import appeng.api.storage.StorageName;
+import appeng.api.storage.data.IAEStack;
 import appeng.container.implementations.ContainerTransferTerminal;
 import appeng.core.AppEng;
 import appeng.helpers.transfer.TransferRowWindow;
@@ -213,6 +214,42 @@ public class TransferTerminalPartTests {
                             rowsBefore[0] + 1,
                             container[0].getFilteredRows().size(),
                             "The waiting scan lists the export bus");
+                }).thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 160)
+    public static void goingOfflineClearsTheSimulationNotes(GameTestHelper helper) {
+        PartTransferTerminal terminal = terminal(helper);
+        terminal.getConfigManager().putSetting(Settings.TRANSFER_SIMULATE, YesNo.YES);
+        IAEStack<?> lotsOfIron = iron();
+        lotsOfIron.setStackSize(1_000_000);
+        terminal.getQueryInventory().putAEStackInSlot(0, lotsOfIron);
+        ContainerTransferTerminal[] container = new ContainerTransferTerminal[1];
+
+        helper.startSequence()
+                .thenWaitUntil(
+                        "wait for the terminal to join the network",
+                        60,
+                        () -> assertActive(helper, terminal, "Terminal should become active"))
+                .thenExecute("simulate an insert that does not fit", () -> {
+                    container[0] = new ContainerTransferTerminal(
+                            helper.spawnFakePlayer("transfer_terminal").inventory,
+                            terminal);
+                    container[0].detectAndSendChanges();
+                    helper.assertTrue(container[0].simulatingSync.get(), "The insert should be simulated");
+                    helper.assertTrue(container[0].leftoverSync.get() > 0, "A million iron cannot all fit");
+                    helper.destroyBlock("controller");
+                })
+                .thenWaitUntil(
+                        "wait for the terminal to lose power",
+                        60,
+                        () -> helper.assertFalse(terminal.getProxy().isActive(), "Terminal should go offline"))
+                .thenExecute("tick the screen while offline", () -> {
+                    container[0].detectAndSendChanges();
+                    helper.assertFalse(container[0].simulatingSync.get(), "No simulation is shown while offline");
+                    helper.assertEquals(0L, container[0].leftoverSync.get(), "The leftover note is cleared");
+                    helper.assertFalse(container[0].deniedSync.get(), "The denied note is cleared");
+                    helper.assertEquals(0, container[0].stickyCountSync.get(), "The sticky separator is cleared");
                 }).thenSucceed();
     }
 

@@ -202,6 +202,7 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
                 this.hasScanned = false;
                 this.matching = Collections.emptyList();
                 this.filtered = Collections.emptyList();
+                this.clearSimulationState();
                 this.send(0, 0, Collections.emptyList());
             }
             return;
@@ -363,9 +364,7 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
 
         if (result == null || !result.simulated()) {
             this.filtered = this.matching;
-            this.simulatingSync.set(false);
-            this.leftoverSync.set(0L);
-            this.deniedSync.set(false);
+            this.clearSimulationState();
             this.stickyCountSync.set(this.countStickyRows());
             return;
         }
@@ -383,6 +382,16 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         this.leftoverSync.set(result.leftover);
         this.deniedSync.set(result.denied);
         // The amounts show what sticky storage claims, the separator would only repeat it.
+        this.stickyCountSync.set(0);
+    }
+
+    /**
+     * Forgets the last simulation, so its notes do not stay on a screen whose rows no longer carry it.
+     */
+    private void clearSimulationState() {
+        this.simulatingSync.set(false);
+        this.leftoverSync.set(0L);
+        this.deniedSync.set(false);
         this.stickyCountSync.set(0);
     }
 
