@@ -180,8 +180,11 @@ public class TransferScannerTests {
                     for (TransferComponentInfo row : scan(helper, registry)) {
                         if (row.side == (byte) ForgeDirection.UP.ordinal()) {
                             helper.assertNull(row.description.liveHandlers, "An import bus is not storage");
+                            helper.assertFalse(row.description.storageHandler, "An import bus is not routed into");
                             continue;
                         }
+                        // The inspector left it unset, as one from another mod might.
+                        helper.assertTrue(row.description.storageHandler, "A cell provider is storage AE routes into");
                         PartStorageBus bus = (PartStorageBus) helper
                                 .assertTileEntityPresent(TileCableBus.class, "storage_bus")
                                 .getPart(ForgeDirection.getOrientation(row.side));

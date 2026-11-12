@@ -113,14 +113,15 @@ public final class TransferScanner {
 
     /**
      * Storage handlers of any cell provider are the instances its network routes stacks into, so they are attached here
-     * for every inspector. An inspector that set its own is left alone.
+     * for every inspector, which also marks the row as storage. An inspector that set its own handlers is left alone.
      */
     static TransferDescription withLiveHandlers(final TransferDescription description, final IGridHost machine) {
         if (description.liveHandlers != null || !(machine instanceof ICellProvider provider)) {
             return description;
         }
 
-        final TransferDescription.Builder builder = description.toBuilder().liveHandlers(provider::getCellArray);
+        final TransferDescription.Builder builder = description.toBuilder().liveHandlers(provider::getCellArray)
+                .storageHandler(true);
         if (description.slotOf == null && machine instanceof TileDrive drive) {
             builder.slotOf(handler -> driveSlotOf(drive, handler));
         }
