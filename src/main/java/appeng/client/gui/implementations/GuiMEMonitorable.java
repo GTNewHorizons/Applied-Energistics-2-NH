@@ -1159,8 +1159,8 @@ public class GuiMEMonitorable extends AEBaseGui
     public void handleKeyboardInput() {
         super.handleKeyboardInput();
 
-        // Pause the terminal when holding shift
-        if (enableShiftPause) this.repo.setPaused(isShiftKeyDown());
+        // Pause the terminal when holding shift or control
+        if (enableShiftPause) this.repo.setPaused(isShiftKeyDown() || isCtrlKeyDown());
     }
 
     public boolean hideItemPanelSlot(int tx, int ty, int tw, int th) {
