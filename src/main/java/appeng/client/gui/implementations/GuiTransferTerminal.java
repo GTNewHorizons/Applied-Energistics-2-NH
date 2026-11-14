@@ -8,6 +8,7 @@ import java.util.Map;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
@@ -18,6 +19,7 @@ import net.minecraft.util.ResourceLocation;
 
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
 
 import appeng.api.config.ActionItems;
 import appeng.api.config.Settings;
@@ -1053,10 +1055,13 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                 drawRect(x, y, x + STRIP_CELL, y + STRIP_CELL, QUERY_MATCH_COLOR);
             }
 
-            final ItemStack icon = entry.stack.getItemStackForNEI();
-            if (icon != null) {
-                this.drawItem(x, y, icon);
-            }
+            // Drawn as the stack itself, an item made for NEI would carry the slot's meaningless fluid amount.
+            GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_LIGHTING_BIT);
+            RenderHelper.enableGUIStandardItemLighting();
+            GL11.glEnable(GL12.GL_RESCALE_NORMAL);
+            GL11.glEnable(GL11.GL_DEPTH_TEST);
+            entry.stack.drawInGui(this.mc, x, y);
+            GL11.glPopAttrib();
             if (entry.fuzzy) {
                 drawRect(x, y + STRIP_CELL - 2, x + 2, y + STRIP_CELL, FUZZY_MARK_COLOR);
             }
