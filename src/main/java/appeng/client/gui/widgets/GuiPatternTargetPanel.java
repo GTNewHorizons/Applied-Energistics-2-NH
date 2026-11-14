@@ -6,16 +6,16 @@ import java.util.List;
 
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
-import net.minecraft.util.StatCollector;
 
 import appeng.api.crafting.PatternMatch;
 import appeng.client.gui.AEBaseGui;
+import appeng.client.gui.implementations.GuiInterfaceTerminal;
 import appeng.core.localization.GuiText;
 import appeng.crafting.target.PatternTargetList;
 
 /**
- * Side panel of the Pattern Terminal that lists the interfaces for the encoded pattern. Coordinates are relative to
- * the terminal's top left corner.
+ * Side panel of the Pattern Terminal that lists the interfaces for the encoded pattern. Coordinates are relative to the
+ * terminal's top left corner.
  */
 public class GuiPatternTargetPanel {
 
@@ -275,7 +275,7 @@ public class GuiPatternTargetPanel {
     }
 
     private static String displayName(PatternTargetList.Entry entry) {
-        return entry.icon != null ? entry.icon.getDisplayName() : StatCollector.translateToLocal(entry.rawName);
+        return GuiInterfaceTerminal.translateRawName(entry.rawName, null, entry.icon);
     }
 
     private static final class Row {

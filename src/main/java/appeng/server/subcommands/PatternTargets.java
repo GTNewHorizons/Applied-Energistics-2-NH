@@ -9,6 +9,7 @@ import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.IChatComponent;
 import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.StatCollector;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import appeng.api.crafting.PatternMatch;
@@ -27,16 +28,18 @@ public class PatternTargets implements ISubCommand {
 
     private static final int MAX_RUNS = 1000;
 
+    // Same order as GuiInterfaceTerminal#translateRawName, but the key goes to the client, so a dedicated server still
+    // shows the player's language. CRIB, for one, reports the machine's key without ".name".
     private static IChatComponent providerName(IInterfaceViewable provider) {
+        final String rawName = provider.getRawName();
+        if (StatCollector.canTranslate(rawName)) {
+            return new ChatComponentTranslation(rawName);
+        }
+        if (StatCollector.canTranslate(rawName + ".name")) {
+            return new ChatComponentTranslation(rawName + ".name");
+        }
         final ItemStack rep = provider.getDisplayRep();
-        if (rep == null) {
-            return new ChatComponentText(provider.getRawName());
-        }
-        if (rep.hasDisplayName()) {
-            return new ChatComponentText(rep.getDisplayName());
-        }
-        // The client translates the key, so a dedicated server still shows the player's language.
-        return new ChatComponentTranslation(rep.getUnlocalizedName() + ".name");
+        return new ChatComponentText(rep != null ? rep.getDisplayName() : rawName);
     }
 
     private static int[] parseCoords(String[] args) {
@@ -149,6 +152,23 @@ public class PatternTargets implements ISubCommand {
                                 location.z,
                                 new ChatComponentTranslation(matchKey(entry.match)),
                                 entry.freeSlots));
+            }
+        }
+
+        if (list) {
+            for (PatternTargetQuery.Conflict conflict : PatternTargetQuery.findConflicts(grid, pattern)) {
+                final DimensionalCoord location = conflict.provider.getLocation();
+                sender.addChatMessage(
+                        new ChatComponentTranslation(
+                                "commands.ae2.PatternTargetsConflict",
+                                providerName(conflict.provider),
+                                location.x,
+                                location.y,
+                                location.z,
+                                conflict.slot,
+                                new ChatComponentTranslation(
+                                        conflict.sameRecipe ? "commands.ae2.PatternTargetsSameRecipe"
+                                                : "commands.ae2.PatternTargetsOtherRecipe")));
             }
         }
 

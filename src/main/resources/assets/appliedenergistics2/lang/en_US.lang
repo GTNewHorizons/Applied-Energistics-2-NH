@@ -1261,6 +1261,9 @@ commands.ae2.PatternTargetsEntry=%s at %s %s %s: %s, free slots: %s
 commands.ae2.PatternTargetsMatch=match
 commands.ae2.PatternTargetsNoMatch=no match
 commands.ae2.PatternTargetsUnknown=unknown
+commands.ae2.PatternTargetsConflict=Already in %s at %s %s %s, slot %s: %s
+commands.ae2.PatternTargetsSameRecipe=same recipe
+commands.ae2.PatternTargetsOtherRecipe=different recipe
 
 # Achievements
 achievement.ae2.Compass=Meteorite Hunter

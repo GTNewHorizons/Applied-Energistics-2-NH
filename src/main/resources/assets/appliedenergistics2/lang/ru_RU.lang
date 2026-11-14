@@ -914,6 +914,9 @@ commands.ae2.PatternTargetsEntry=%s на %s %s %s: %s, свободных сло
 commands.ae2.PatternTargetsMatch=подходит
 commands.ae2.PatternTargetsNoMatch=не подходит
 commands.ae2.PatternTargetsUnknown=неизвестно
+commands.ae2.PatternTargetsConflict=Уже есть в %s на %s %s %s, слот %s: %s
+commands.ae2.PatternTargetsSameRecipe=такой же рецепт
+commands.ae2.PatternTargetsOtherRecipe=другой рецепт
 
 # Achievements
 achievement.ae2.Compass=Охотник на метеориты
