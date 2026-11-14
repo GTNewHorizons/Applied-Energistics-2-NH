@@ -147,7 +147,8 @@ public final class TransferInsertSimulation {
                 marked,
                 cpuRows(grids, trace.getCpus()),
                 leftover == null ? 0 : leftover.getStackSize(),
-                trace.anyDenied(),
+                // The insert may reach networks hidden from the player, only the ones they can see may say no.
+                trace.wasDeniedOnAny(grids),
                 false);
     }
 

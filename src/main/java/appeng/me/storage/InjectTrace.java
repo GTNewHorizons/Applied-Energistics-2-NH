@@ -1,6 +1,7 @@
 package appeng.me.storage;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -205,8 +206,19 @@ public final class InjectTrace {
         return this.denied.contains(grid);
     }
 
-    public boolean anyDenied() {
-        return !this.denied.isEmpty();
+    /**
+     * Only the given networks count. An insert may also pass through networks hidden from whoever asked, whose refusal
+     * would give their existence away.
+     *
+     * @return whether any of the given networks refused the insert because the source lacked permission
+     */
+    public boolean wasDeniedOnAny(final Collection<? extends IGrid> grids) {
+        for (final IGrid grid : grids) {
+            if (this.denied.contains(grid)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static long sizeOf(@Nullable final IAEStack<?> stack) {
