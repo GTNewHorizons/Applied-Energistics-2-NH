@@ -25,7 +25,9 @@ import appeng.api.features.transfer.TransferComponentInfo;
 import appeng.api.features.transfer.TransferDescription;
 import appeng.api.features.transfer.TransferMatcher;
 import appeng.util.item.AEFluidStack;
+import appeng.util.item.AEFluidStackType;
 import appeng.util.item.AEItemStack;
+import appeng.util.item.AEItemStackType;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -249,6 +251,22 @@ public class TransferComponentInfoFunctionalTest {
                                 (byte) 0,
                                 0,
                                 TransferDescription.builder().build())).description.generic);
+    }
+
+    @Test
+    public void storedTypesSurviveTheNetworkInOrder() {
+        final TransferDescription description = TransferDescription.builder()
+                .storedType(AEFluidStackType.FLUID_STACK_TYPE).storedType(AEItemStackType.ITEM_STACK_TYPE)
+                .storedType(AEFluidStackType.FLUID_STACK_TYPE).build();
+
+        final TransferComponentInfo read = roundTrip(
+                new TransferComponentInfo(null, "", null, 0, 0, 0, 0, (byte) 0, 0, description));
+
+        assertEquals(
+                Arrays.asList(AEFluidStackType.FLUID_STACK_TYPE, AEItemStackType.ITEM_STACK_TYPE),
+                read.description.storedTypes,
+                "Each type once, in the order given");
+        assertEquals(2, description.toBuilder().build().storedTypes.size(), "Copies keep the types");
     }
 
     @Test

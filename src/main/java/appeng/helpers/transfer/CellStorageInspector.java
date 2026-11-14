@@ -2,6 +2,7 @@ package appeng.helpers.transfer;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -71,9 +72,11 @@ abstract class CellStorageInspector<T extends IGridHost> implements ITransferIns
 
         int configCount = 0;
         final Set<String> oreFilters = new LinkedHashSet<>();
+        final Set<IAEStackType<?>> storedTypes = new HashSet<>();
         for (final IAEStackType<?> type : AEStackTypeRegistry.getAllTypes()) {
             for (final IMEInventoryHandler handler : this.handlers(host, type)) {
                 sticky |= handler.getSticky();
+                storedTypes.add(type);
             }
             for (final IMEInventoryHandler handler : this.partitionHandlers(host, type)) {
                 final ICellInventoryHandler<?> cell = cellOf(handler);
@@ -99,6 +102,12 @@ abstract class CellStorageInspector<T extends IGridHost> implements ITransferIns
                         builder.config((IAEStack<?>) stack, cell.isFuzzy());
                     }
                 }
+            }
+        }
+        // In the order the storage terminals show their type buttons.
+        for (final IAEStackType<?> type : AEStackTypeRegistry.getSortedTypes()) {
+            if (storedTypes.contains(type)) {
+                builder.storedType(type);
             }
         }
         if (!oreFilters.isEmpty()) {

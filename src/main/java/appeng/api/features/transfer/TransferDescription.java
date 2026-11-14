@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.Settings;
 import appeng.api.storage.IMEInventoryHandler;
+import appeng.api.storage.data.AEStackTypeRegistry;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.util.Platform;
@@ -28,6 +29,9 @@ public final class TransferDescription {
     public final List<SettingEntry> settings;
     public final List<ItemStack> upgrades;
     public final List<ConfigEntry> config;
+
+    /** Kinds of stack the component has storage for, such as the kinds of cell in a drive. */
+    public final List<IAEStackType<?>> storedTypes;
     public final boolean hasCraftingCard;
     public final boolean canImport;
     public final boolean canExport;
@@ -75,6 +79,7 @@ public final class TransferDescription {
         this.settings = Collections.unmodifiableList(builder.settings);
         this.upgrades = Collections.unmodifiableList(builder.upgrades);
         this.config = Collections.unmodifiableList(builder.config);
+        this.storedTypes = Collections.unmodifiableList(builder.storedTypes);
         this.hasCraftingCard = builder.hasCraftingCard;
         this.canImport = builder.canImport;
         this.canExport = builder.canExport;
@@ -121,6 +126,11 @@ public final class TransferDescription {
             out.writeBoolean(entry.matchesQuery);
         }
 
+        out.writeByte(this.storedTypes.size());
+        for (final IAEStackType<?> type : this.storedTypes) {
+            out.writeByte(AEStackTypeRegistry.getNetworkId(type));
+        }
+
         out.writeBoolean(this.hasCraftingCard);
         out.writeBoolean(this.canImport);
         out.writeBoolean(this.canExport);
@@ -160,6 +170,11 @@ public final class TransferDescription {
             final IAEStack<?> stack = Platform.readStackByte(in);
             final boolean fuzzy = in.readBoolean();
             builder.config.add(new ConfigEntry(stack, fuzzy, in.readBoolean()));
+        }
+
+        final int storedTypeCount = in.readUnsignedByte();
+        for (int i = 0; i < storedTypeCount; i++) {
+            builder.storedType(AEStackTypeRegistry.getTypeFromNetworkId(in.readByte()));
         }
 
         builder.hasCraftingCard(in.readBoolean());
@@ -232,6 +247,7 @@ public final class TransferDescription {
         private final List<SettingEntry> settings = new ArrayList<>();
         private final List<ItemStack> upgrades = new ArrayList<>();
         private final List<ConfigEntry> config = new ArrayList<>();
+        private final List<IAEStackType<?>> storedTypes = new ArrayList<>();
         private boolean hasCraftingCard;
         private boolean canImport;
         private boolean canExport;
@@ -254,6 +270,7 @@ public final class TransferDescription {
             this.settings.addAll(from.settings);
             this.upgrades.addAll(from.upgrades);
             this.config.addAll(from.config);
+            this.storedTypes.addAll(from.storedTypes);
             this.hasCraftingCard = from.hasCraftingCard;
             this.canImport = from.canImport;
             this.canExport = from.canExport;
@@ -287,6 +304,13 @@ public final class TransferDescription {
 
         public Builder config(final IAEStack<?> stack, final boolean fuzzy) {
             this.config.add(new ConfigEntry(stack, fuzzy, false));
+            return this;
+        }
+
+        public Builder storedType(final IAEStackType<?> type) {
+            if (type != null && !this.storedTypes.contains(type)) {
+                this.storedTypes.add(type);
+            }
             return this;
         }
 

@@ -158,6 +158,7 @@ gui.appliedenergistics2.TransferTermOut=OUT
 gui.appliedenergistics2.TransferTermBoth=I/O
 gui.appliedenergistics2.TransferTermNone=OFF
 gui.appliedenergistics2.TransferTermPriority=Priority: %s
+gui.appliedenergistics2.TransferTermCellTypes=Cells: %s
 gui.appliedenergistics2.TransferTermOreFilter=Ore filter: %s
 gui.appliedenergistics2.TransferTermFuzzySlot=Fuzzy
 gui.appliedenergistics2.TransferTermShowingSlots=Showing %s of %s filter slots

@@ -13,6 +13,8 @@ import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IChatComponent;
+import net.minecraft.util.IIcon;
+import net.minecraft.util.ResourceLocation;
 
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
@@ -28,6 +30,7 @@ import appeng.api.parts.ITransferTerminal;
 import appeng.api.storage.data.IAEFluidStack;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
+import appeng.api.storage.data.IAEStackType;
 import appeng.api.util.NamedDimensionalCoord;
 import appeng.client.gui.AEBaseGui;
 import appeng.client.gui.slots.VirtualMEPhantomSlotPrecise;
@@ -879,6 +882,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
             drawRect(LIST_RIGHT - STICKY_CLAIM_WIDTH, rowTop, LIST_RIGHT, rowTop + ROW_HEIGHT - 1, STICKY_LINE_COLOR);
             rightEdge -= STICKY_CLAIM_WIDTH + 1;
         }
+        rightEdge = this.drawStoredTypes(row, rowTop, rightEdge, relX, relY, tooltip);
         rightEdge = this.drawUpgrades(row, rowTop, rightEdge, relX, relY, tooltip);
         rightEdge = this.drawSettings(row, rowTop, rightEdge, relX, relY, tooltip);
 
@@ -909,6 +913,34 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
             drawRect(LIST_LEFT, rowTop, LIST_RIGHT, rowTop + ROW_HEIGHT - 1, DIMMED_ROW_COLOR);
             GL11.glPopMatrix();
         }
+    }
+
+    /**
+     * Draws one small icon for each kind of stack the component has storage for, the same icons the storage terminals'
+     * type buttons use.
+     */
+    private int drawStoredTypes(final Row row, final int rowTop, int rightEdge, final int relX, final int relY,
+            final List<String> tooltip) {
+        for (int index = row.description.storedTypes.size() - 1; index >= 0; index--) {
+            final IAEStackType<?> type = row.description.storedTypes.get(index);
+            final ResourceLocation texture = type.getButtonTexture();
+            final IIcon icon = type.getButtonIcon();
+            if (texture == null || icon == null || rightEdge - HALF_BUTTON_SIZE - TEXT_X < NAME_MIN_WIDTH) {
+                continue;
+            }
+            rightEdge -= HALF_BUTTON_SIZE + 1;
+            GL11.glColor4f(1, 1, 1, 1);
+            GL11.glEnable(GL11.GL_BLEND);
+            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            this.mc.renderEngine.bindTexture(texture);
+            this.drawTexturedModelRectFromIcon(rightEdge, rowTop + 1, icon, HALF_BUTTON_SIZE, HALF_BUTTON_SIZE);
+
+            if (this.isOverCell(relX, relY, rightEdge, rowTop + 1)) {
+                tooltip.clear();
+                tooltip.add(type.getDisplayName());
+            }
+        }
+        return rightEdge;
     }
 
     private int drawUpgrades(final Row row, final int rowTop, int rightEdge, final int relX, final int relY,
@@ -1290,6 +1322,13 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                             this.info.dim));
             if (this.description.hasPriority) {
                 lines.add(String.format(GuiText.TransferTermPriority.getLocal(), this.description.priority));
+            }
+            if (!this.description.storedTypes.isEmpty()) {
+                final List<String> names = new ArrayList<>(this.description.storedTypes.size());
+                for (final IAEStackType<?> type : this.description.storedTypes) {
+                    names.add(type.getDisplayName());
+                }
+                lines.add(String.format(GuiText.TransferTermCellTypes.getLocal(), String.join(", ", names)));
             }
             if (this.description.oreFilter != null) {
                 lines.add(String.format(GuiText.TransferTermOreFilter.getLocal(), this.description.oreFilter));

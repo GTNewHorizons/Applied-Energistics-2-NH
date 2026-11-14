@@ -6,6 +6,9 @@ import static appeng.gametests.AEGameTestHelpers.insertItems;
 import static appeng.gametests.AEGameTestHelpers.itemStack;
 import static appeng.gametests.transfer.TransferTestHelpers.exports;
 import static appeng.gametests.transfer.TransferTestHelpers.imports;
+import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
+
+import java.util.Collections;
 
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
@@ -73,6 +76,30 @@ public class CellStorageInspectorTests {
                     "The partition lists cobblestone");
             helper.assertEquals(1, description.config.size(), "The partition is shown");
             helper.assertFalse(description.sticky, "No cell has a sticky card");
+        }).thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void aDriveSaysWhichKindsOfCellItHolds(final GameTestHelper helper) {
+        final TileDrive drive = drive(helper);
+        helper.setSlot("drive", 0, cell1k());
+
+        helper.startSequence().thenWaitUntil("wait for the drive to see its cell", 80, () -> {
+            assertActive(helper, drive.getProxy(), "Drive should become active");
+            helper.assertEquals(
+                    Collections.singletonList(ITEM_STACK_TYPE),
+                    DRIVE.inspect(drive).storedTypes,
+                    "An item cell stores items only");
+        }).thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void anEmptyDriveHoldsNoKindOfCell(final GameTestHelper helper) {
+        final TileDrive drive = drive(helper);
+
+        helper.startSequence().thenWaitUntil("wait for the drive to join the network", 80, () -> {
+            assertActive(helper, drive.getProxy(), "Drive should become active");
+            helper.assertTrue(DRIVE.inspect(drive).storedTypes.isEmpty(), "A drive without cells stores nothing");
         }).thenSucceed();
     }
 
