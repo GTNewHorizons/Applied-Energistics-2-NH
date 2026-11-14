@@ -605,11 +605,16 @@ public final class Registration {
         ((P2PTunnelRegistry) registries.p2pTunnel()).configure();
 
         // TEMPORARY - remove before the pull request, see TempAddonTransferInspectors and TempGTTransferInspectors
+        // A version of the addon without one of the classes these name only loses its Transfer Terminal rows.
         if (appeng.util.Platform.isAE2FCLoaded) {
-            appeng.integration.modules.TempAddonTransferInspectors.register();
+            try {
+                appeng.integration.modules.TempAddonTransferInspectors.register();
+            } catch (final LinkageError ignored) {}
         }
         if (appeng.util.Platform.isGTLoaded) {
-            appeng.integration.modules.TempGTTransferInspectors.register();
+            try {
+                appeng.integration.modules.TempGTTransferInspectors.register();
+            } catch (final LinkageError ignored) {}
         }
 
         // add to localization..
