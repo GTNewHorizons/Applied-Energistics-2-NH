@@ -42,6 +42,7 @@ import appeng.client.gui.slots.VirtualMEPatternSlot;
 import appeng.client.gui.slots.VirtualMEPhantomSlot;
 import appeng.client.gui.slots.VirtualMESlot;
 import appeng.client.gui.widgets.GuiImgButton;
+import appeng.client.gui.widgets.GuiPatternTargetPanel;
 import appeng.client.gui.widgets.GuiTabButton;
 import appeng.container.implementations.ContainerPatternTerm;
 import appeng.container.slot.AppEngSlot;
@@ -52,6 +53,7 @@ import appeng.core.localization.GuiText;
 import appeng.core.sync.GuiBridge;
 import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketSwitchGuis;
+import appeng.crafting.target.PatternTargetList;
 
 public class GuiPatternTerm extends GuiMEMonitorable {
 
@@ -80,6 +82,7 @@ public class GuiPatternTerm extends GuiMEMonitorable {
     private boolean craftingMode;
     @NonNull
     private IAEItemStack blankPatternView = IPatternTerminal.createBlankPattern().setStackSize(0);
+    private final GuiPatternTargetPanel targetPanel = new GuiPatternTargetPanel(this);
 
     public GuiPatternTerm(final InventoryPlayer inventoryPlayer, final ITerminalHost te,
             final ContainerPatternTerm containerPatternTerm) {
@@ -95,6 +98,16 @@ public class GuiPatternTerm extends GuiMEMonitorable {
 
     @Override
     protected void mouseClicked(final int xCoord, final int yCoord, final int btn) {
+        final int panelX = xCoord - this.guiLeft;
+        final int panelY = yCoord - this.guiTop;
+        if (this.targetPanel.contains(panelX, panelY)) {
+            final PatternTargetList.Entry target = this.targetPanel.getEntryAt(panelX, panelY);
+            if (btn == 0 && target != null) {
+                this.container.sendToTargetAction.send(target.index);
+            }
+            // The panel lies outside the GUI, where a click would otherwise drop the held item.
+            return;
+        }
 
         if (btn == 2 && doubleBtn.mousePressed(this.mc, xCoord, yCoord)) { //
             NetworkHandler.instance.sendToServer(new PacketSwitchGuis(GuiBridge.GUI_PATTERN_MULTI));
@@ -299,6 +312,32 @@ public class GuiPatternTerm extends GuiMEMonitorable {
         super.drawFG(offsetX, offsetY, mouseX, mouseY);
 
         drawTitle();
+        this.drawTargetPanel(mouseX - offsetX, mouseY - offsetY);
+    }
+
+    private void drawTargetPanel(final int mouseX, final int mouseY) {
+        this.targetPanel.setList(this.container.getClientTargets());
+        // The view cell column takes the first 33 pixels to the right of the terminal.
+        this.targetPanel.setBounds(this.xSize + 35, 0, this.ySize);
+        this.targetPanel.draw(mouseX, mouseY);
+        final PatternTargetList.Entry hovered = this.targetPanel.getEntryAt(mouseX, mouseY);
+        if (hovered != null) {
+            this.drawHoveringText(this.targetPanel.getTooltip(hovered), mouseX, mouseY, this.fontRendererObj);
+        }
+    }
+
+    @Override
+    protected boolean mouseWheelEvent(final int x, final int y, final int wheel) {
+        if (this.targetPanel.mouseWheel(x - this.guiLeft, y - this.guiTop, wheel)) {
+            return true;
+        }
+        return super.mouseWheelEvent(x, y, wheel);
+    }
+
+    @Override
+    public boolean hideItemPanelSlot(final int x, final int y, final int w, final int h) {
+        return this.targetPanel.intersects(x - this.guiLeft, y - this.guiTop, w, h)
+                || super.hideItemPanelSlot(x, y, w, h);
     }
 
     protected void drawTitle() {

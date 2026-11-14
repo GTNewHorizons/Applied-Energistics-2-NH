@@ -428,7 +428,14 @@ public enum GuiText implements Localization {
     HoldCtrlForContents,
 
     UpgradesInstalled,
-    FakeUpgrade;
+    FakeUpgrade,
+
+    PatternTargetsTitle,
+    PatternTargetsMatch,
+    PatternTargetsUnknown,
+    PatternTargetsNone,
+    PatternTargetsFreeSlots,
+    PatternTargetsClick;
 
     private final String root;
 

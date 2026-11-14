@@ -1,6 +1,6 @@
 package appeng.api.features;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.crafting.IPatternTargetMatcher;
 
@@ -17,6 +17,5 @@ public interface IPatternTargetRegistry {
     /**
      * Returns the matcher for keys of exactly this class, or null if none is registered.
      */
-    @Nullable
-    <K> IPatternTargetMatcher<K> getMatcher(Class<K> keyClass);
+    <K> @Nullable IPatternTargetMatcher<K> getMatcher(Class<K> keyClass);
 }

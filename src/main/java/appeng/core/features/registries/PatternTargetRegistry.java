@@ -3,7 +3,7 @@ package appeng.core.features.registries;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.crafting.IPatternTargetMatcher;
 import appeng.api.features.IPatternTargetRegistry;
@@ -26,7 +26,7 @@ public class PatternTargetRegistry implements IPatternTargetRegistry {
 
     @Override
     @SuppressWarnings("unchecked")
-    public @Nullable <K> IPatternTargetMatcher<K> getMatcher(Class<K> keyClass) {
+    public <K> @Nullable IPatternTargetMatcher<K> getMatcher(Class<K> keyClass) {
         return (IPatternTargetMatcher<K>) this.matchers.get(keyClass);
     }
 }
