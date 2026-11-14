@@ -132,7 +132,9 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
     private long seenChangeCount;
     private int ticksSinceScan;
 
-    /** Whether the network changed while the last scan was too recent to scan again. */
+    /**
+     * Whether the network or the set of networks to search changed while the last scan was too recent to scan again.
+     */
     private boolean rescanPending;
 
     /** Whether the last scan searched only the terminal's own network, see {@link #isNetworkOnly()}. */
@@ -174,7 +176,7 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
                 .configEnum("hideUnfiltered", Settings.TRANSFER_HIDE_UNFILTERED, YesNo.class, settings);
         this.hideUnfilteredSync.onServerChange((oldValue, newValue) -> this.queryChanged = true);
         this.networkOnlySync = sync.configEnum("networkOnly", Settings.TRANSFER_NETWORK_ONLY, YesNo.class, settings);
-        this.networkOnlySync.onServerChange((oldValue, newValue) -> this.hasScanned = false);
+        this.networkOnlySync.onServerChange((oldValue, newValue) -> this.rescanPending = true);
         this.searchTextSync = sync.objectC2S("searchText", STRING_CODEC, "")
                 .onServerChange((oldValue, newValue) -> this.queryChanged = true);
         this.savedSearchSync = sync.object("savedSearch", STRING_CODEC, anchor.getSearchText())
@@ -231,8 +233,9 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
 
         this.ticksSinceScan++;
         if (this.hasScanned && this.isNetworkOnly() != this.scannedNetworkOnly) {
-            // Turning Simulate on or off changes which networks are searched.
-            this.hasScanned = false;
+            // Turning Simulate on or off changes which networks are searched. A client toggling it every tick must not
+            // have the networks walked every tick, so this waits like any other rescan.
+            this.rescanPending = true;
         }
         if (!this.hasScanned) {
             this.scan(node);
@@ -291,7 +294,7 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
             }
 
             if (setting == Settings.TRANSFER_NETWORK_ONLY) {
-                this.hasScanned = false;
+                this.rescanPending = true;
             } else {
                 this.queryChanged = true;
             }

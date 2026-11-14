@@ -222,6 +222,57 @@ public class TransferTerminalPartTests {
                 }).thenSucceed();
     }
 
+    @GameTest(template = TEMPLATE, timeoutTicks = 140)
+    public static void togglingNetworkOnlyRescansAtMostEveryFewTicks(GameTestHelper helper) {
+        PartTransferTerminal terminal = terminal(helper);
+        ContainerTransferTerminal[] container = new ContainerTransferTerminal[1];
+        int[] rowsBefore = new int[1];
+
+        helper.startSequence()
+                .thenWaitUntil(
+                        "wait for the terminal to join the network",
+                        60,
+                        () -> assertActive(helper, terminal, "Terminal should become active"))
+                .thenExecute("open the terminal, then add a bus it has not seen", () -> {
+                    container[0] = new ContainerTransferTerminal(
+                            helper.spawnFakePlayer("transfer_terminal").inventory,
+                            terminal);
+                    container[0].detectAndSendChanges();
+                    rowsBefore[0] = container[0].getFilteredRows().size();
+                    PartExportBus bus = place(helper, AEApi.instance().definitions().parts().exportBus(), NORTH);
+                    bus.getAEInventoryByName(StorageName.CONFIG).putAEStackInSlot(0, iron());
+                })
+                .thenWaitUntil(
+                        "wait for the export bus to join the network",
+                        60,
+                        () -> assertActive(
+                                helper,
+                                (PartExportBus) helper
+                                        .assertTileEntityPresent(TileCableBus.class, TransferTestHelpers.CABLE_LABEL)
+                                        .getPart(NORTH),
+                                "Export bus should become active"))
+                .thenExecute("toggle network only on every tick", () -> {
+                    for (int tick = 0; tick < 5; tick++) {
+                        // What another screen on the terminal changes reaches this one through the terminal.
+                        terminal.getConfigManager()
+                                .putSetting(Settings.TRANSFER_NETWORK_ONLY, tick % 2 == 0 ? YesNo.YES : YesNo.NO);
+                        container[0].detectAndSendChanges();
+                    }
+                    helper.assertEquals(
+                            rowsBefore[0],
+                            container[0].getFilteredRows().size(),
+                            "Toggling right after a scan does not scan again");
+
+                    for (int tick = 0; tick < 10; tick++) {
+                        container[0].detectAndSendChanges();
+                    }
+                    helper.assertEquals(
+                            rowsBefore[0] + 1,
+                            container[0].getFilteredRows().size(),
+                            "The waiting scan lists the export bus");
+                }).thenSucceed();
+    }
+
     /**
      * @return the configured stacks of the row for the part on the given side of the template's cable
      */
