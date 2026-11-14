@@ -163,8 +163,11 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
     private final Map<TransferComponentInfo, List<String>> configNames = new IdentityHashMap<>();
     private List<TransferComponentInfo> scanned = Collections.emptyList();
 
-    /** Storage the scan found no inspected row for, only listed while it would receive a simulated insert. */
-    private List<TransferComponentInfo> uninspected = Collections.emptyList();
+    /**
+     * Storage the scan found no inspected row for, only listed while it would receive a simulated insert. Null until a
+     * simulation first needs it after a scan.
+     */
+    private List<TransferComponentInfo> uninspected;
 
     /** Rows matching the query and filters, before any simulation. */
     private List<TransferComponentInfo> matching = Collections.emptyList();
@@ -176,6 +179,12 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
     private boolean queryChanged;
     private boolean windowChanged;
     private boolean wasOffline;
+
+    /** Whether the terminal was offline at the last tick, unlike {@link #wasOffline} a resend does not reset it. */
+    private boolean offline;
+
+    /** How many times the networks were scanned, for tests. */
+    private int scanCount;
     private int ticksSinceFingerprint;
     private int lastSentTotal;
     private int lastSentStart;
@@ -243,11 +252,16 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         this.followSharedState();
         super.detectAndSendChanges();
 
+        // Counted while offline too, so a network coming back waits for the throttle like any other rescan.
+        if (this.ticksSinceScan < Integer.MAX_VALUE) {
+            this.ticksSinceScan++;
+        }
+
         final IGridNode node = this.anchor.getActionableNode();
         if (node == null || !node.isActive()) {
+            this.offline = true;
             if (!this.wasOffline) {
                 this.wasOffline = true;
-                this.hasScanned = false;
                 this.matching = Collections.emptyList();
                 this.filtered = Collections.emptyList();
                 this.clearSimulationState();
@@ -256,8 +270,14 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
             return;
         }
         this.wasOffline = false;
+        if (this.offline) {
+            // The networks may have changed while this one was down, but one that keeps flickering must not have them
+            // all walked each time it comes back. The last scan's rows show until the throttled rescan.
+            this.offline = false;
+            this.rescanPending = true;
+            this.queryChanged = true;
+        }
 
-        this.ticksSinceScan++;
         if (this.hasScanned && this.isNetworkOnly() != this.scannedNetworkOnly) {
             // Turning Simulate on or off changes which networks are searched. A client toggling it every tick must not
             // have the networks walked every tick, so this waits like any other rescan.
@@ -368,7 +388,9 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         this.scannedNetworkOnly = this.isNetworkOnly();
         this.grids = this.scannedNetworkOnly ? Collections.singletonList(grid) : this.linkedGrids(grid);
         this.scanned = TransferScanner.scan(this.grids, AEApi.instance().registries().transferInspectors());
-        this.uninspected = TransferScanner.scanUninspected(this.grids, this.scanned);
+        // Only needed while simulating, see withUninspected.
+        this.uninspected = null;
+        this.scanCount++;
         this.updateTypes();
         this.configNames.clear();
         this.fingerprint = TransferScanner.fingerprint(this.grids);
@@ -479,6 +501,9 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
     }
 
     private List<TransferComponentInfo> withUninspected(final List<TransferComponentInfo> rows) {
+        if (this.uninspected == null) {
+            this.uninspected = TransferScanner.scanUninspected(this.grids, this.scanned);
+        }
         if (this.uninspected.isEmpty()) {
             return rows;
         }
@@ -513,6 +538,13 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
      */
     public List<TransferComponentInfo> getFilteredRows() {
         return Collections.unmodifiableList(this.filtered);
+    }
+
+    /**
+     * @return how many times this screen scanned the networks, for tests
+     */
+    public int getScanCount() {
+        return this.scanCount;
     }
 
     public static boolean isYes(final ObjectSyncHandler<YesNo> sync) {
