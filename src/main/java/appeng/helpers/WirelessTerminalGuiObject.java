@@ -19,8 +19,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.AEApi;
 import appeng.api.config.Actionable;
@@ -134,7 +134,7 @@ public class WirelessTerminalGuiObject implements IPortableCell, IActionHost, II
     }
 
     @Override
-    public @Nullable IMEMonitor<?> getMEMonitor(@NotNull IAEStackType<?> type) {
+    public @Nullable IMEMonitor<?> getMEMonitor(@NonNull IAEStackType<?> type) {
         if (this.sg == null) {
             return null;
         }
@@ -308,7 +308,7 @@ public class WirelessTerminalGuiObject implements IPortableCell, IActionHost, II
     }
 
     @Override
-    public @NotNull Reference2BooleanMap<IAEStackType<?>> getTypeFilter(EntityPlayer player) {
+    public @NonNull Reference2BooleanMap<IAEStackType<?>> getTypeFilter(EntityPlayer player) {
         return this.terminalSettings.getFilters(player).getFiltersMap();
     }
 

@@ -15,7 +15,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Preconditions;
 
@@ -33,7 +33,7 @@ public final class CompassRegion {
     private RandomAccessFile raf = null;
     private ByteBuffer buffer;
 
-    public CompassRegion(final int cx, final int cz, final int worldID, @Nonnull final File worldCompassFolder) {
+    public CompassRegion(final int cx, final int cz, final int worldID, @NonNull final File worldCompassFolder) {
         Preconditions.checkNotNull(worldCompassFolder);
         Preconditions.checkArgument(worldCompassFolder.isDirectory());
 

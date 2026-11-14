@@ -2,9 +2,9 @@ package appeng.client.gui.slots;
 
 import static appeng.client.gui.implementations.GuiMEMonitorable.keyBindPickBlockAction;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.container.sync.handlers.AEStackInventorySyncHandler;
 import appeng.core.sync.GuiBridge;

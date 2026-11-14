@@ -10,9 +10,9 @@
 
 package appeng.recipes;
 
-import javax.annotation.Nonnull;
-
 import net.minecraftforge.common.config.Configuration;
+
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Preconditions;
 
@@ -25,7 +25,7 @@ public class CustomRecipeForgeConfiguration implements CustomRecipeConfig {
 
     private final boolean isEnabled;
 
-    public CustomRecipeForgeConfiguration(@Nonnull final Configuration config) {
+    public CustomRecipeForgeConfiguration(@NonNull final Configuration config) {
         Preconditions.checkNotNull(config);
 
         this.isEnabled = config.getBoolean(

@@ -2,14 +2,13 @@ package com.glodblock.github.util;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.util.IIcon;
 
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 
 import appeng.api.storage.data.IAEFluidStack;

@@ -12,12 +12,12 @@ package appeng.block.solids;
 
 import java.util.Random;
 
-import javax.annotation.Nullable;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.AEApi;
 import appeng.api.exceptions.MissingDefinition;

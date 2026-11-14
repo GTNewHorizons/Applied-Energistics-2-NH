@@ -2177,21 +2177,17 @@ public class GuiInterfaceTerminal extends AEBaseGui
     // Individual pattern slot multiplication using scrollwheel
     @Override
     public void handleMouseInput() {
-        if (!GuiScreen.isCtrlKeyDown()) {
-            super.handleMouseInput();
+        final int wheel = GuiScreen.isCtrlKeyDown() ? Mouse.getEventDWheel() : 0;
+        final InterfaceTerminalEntry entry = this.masterList.hoveredEntry;
+
+        if (wheel != 0 && entry != null && entry.getInventory().getStackInSlot(entry.hoveredSlotIdx) != null) {
+            NetworkHandler.instance.sendToServer(
+                    new PacketInventoryAction(
+                            wheel > 0 ? InventoryAction.MULTIPLY_PATTERN : InventoryAction.DIVIDE_PATTERN,
+                            entry.hoveredSlotIdx,
+                            entry.id));
         } else {
-            int wheel = Mouse.getEventDWheel();
-            if (wheel == 0) {
-                super.handleMouseInput();
-            } else {
-                final int x = Mouse.getEventX() * this.width / this.mc.displayWidth;
-                final int y = this.height - Mouse.getEventY() * this.height / this.mc.displayHeight - 1;
-                if (wheel > 0) {
-                    mouseClicked(x, y, 0);
-                } else {
-                    mouseClicked(x, y, 1);
-                }
-            }
+            super.handleMouseInput();
         }
     }
 }

@@ -10,10 +10,10 @@
 
 package appeng.integration.modules.helpers;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.security.BaseActionSource;
@@ -133,7 +133,7 @@ public class FactorizationBarrel implements IMEInventory<IAEItemStack> {
     }
 
     @Override
-    public IAEItemStack getAvailableItem(@Nonnull IAEItemStack request, int iteration) {
+    public IAEItemStack getAvailableItem(@NonNull IAEItemStack request, int iteration) {
         if (!this.containsItemType(request, false)) {
             return null;
         }

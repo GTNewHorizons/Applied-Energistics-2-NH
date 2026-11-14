@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IItemList;
@@ -41,14 +41,14 @@ public abstract class CraftingTask implements ITreeSerializable {
 
     public static final class StepOutput {
 
-        @Nonnull
+        @NonNull
         public final List<CraftingRequest> extraInputsRequired;
 
         public StepOutput() {
             this(Collections.emptyList());
         }
 
-        public StepOutput(@Nonnull List<CraftingRequest> extraInputsRequired) {
+        public StepOutput(@NonNull List<CraftingRequest> extraInputsRequired) {
             this.extraInputsRequired = extraInputsRequired;
         }
     }

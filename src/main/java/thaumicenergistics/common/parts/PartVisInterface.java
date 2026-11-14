@@ -2,6 +2,7 @@ package thaumicenergistics.common.parts;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.util.function.BiConsumer;
 
 import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.Tessellator;
@@ -14,8 +15,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.event.ForgeEventFactory;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
@@ -31,6 +32,7 @@ import appeng.api.networking.ticking.TickingRequest;
 import appeng.api.parts.IPartCollisionHelper;
 import appeng.api.parts.IPartRenderHelper;
 import appeng.api.util.AEColor;
+import appeng.api.util.DimensionalCoord;
 import appeng.parts.PartBasicState;
 import appeng.util.Platform;
 import cpw.mods.fml.relauncher.Side;
@@ -304,7 +306,7 @@ public class PartVisInterface extends PartBasicState implements IGridTickable, I
      * Drains vis from either the vis relay network, or from the p2p source.
      */
     @Override
-    public int consumeVis(final @NotNull Aspect digiVisAspect, final int amount) {
+    public int consumeVis(final @NonNull Aspect digiVisAspect, final int amount) {
         // Ensure the interface is active
         if (!this.getProxy().isActive()) {
             return 0;
@@ -454,6 +456,34 @@ public class PartVisInterface extends PartBasicState implements IGridTickable, I
                 + this.countLinkedDevices(grid, PartCreativeVisInterface.class)
                 + this.countLinkedDevices(grid, PartArcaneCraftingTerminal.class)
                 + this.countLinkedDevices(grid, TileArcaneAssembler.class);
+    }
+
+    private static void addVisLinks(final IGrid grid, final Class<? extends IGridHost> machineClass,
+            final BiConsumer<DimensionalCoord, DimensionalCoord> out) {
+        for (IGridNode node : grid.getMachines(machineClass)) {
+            DigiVisSourceData sourceData = getMachineSourceData(node.getMachine());
+
+            if (sourceData == null) {
+                continue;
+            }
+
+            // Only report links whose source still exists and shares the grid.
+            IDigiVisSource source = sourceData.tryGetSource(grid);
+
+            if (source != null) {
+                out.accept(source.getLocation(), node.getGridBlock().getLocation());
+            }
+        }
+    }
+
+    /**
+     * Reports every established vis link of the grid, from source to consumer.
+     */
+    public static void addVisLinks(final IGrid grid, final BiConsumer<DimensionalCoord, DimensionalCoord> out) {
+        addVisLinks(grid, PartVisInterface.class, out);
+        addVisLinks(grid, PartCreativeVisInterface.class, out);
+        addVisLinks(grid, PartArcaneCraftingTerminal.class, out);
+        addVisLinks(grid, TileArcaneAssembler.class, out);
     }
 
     @Override

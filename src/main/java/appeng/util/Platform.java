@@ -26,9 +26,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
@@ -70,7 +67,8 @@ import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.oredict.OreDictionary;
 
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.glodblock.github.common.item.ItemFluidDrop;
 import com.glodblock.github.common.item.ItemFluidPacket;
@@ -362,13 +360,13 @@ public class Platform {
     // xCord game limit
     public final static int itemGuiSlotOffset = 30_000_001;
 
-    public static void openGUI(@Nonnull final EntityPlayer p, @Nullable final TileEntity tile,
-            @Nullable final ForgeDirection side, @Nonnull final GuiBridge type) {
+    public static void openGUI(@NonNull final EntityPlayer p, @Nullable final TileEntity tile,
+            @Nullable final ForgeDirection side, @NonNull final GuiBridge type) {
         openGUI(p, tile, side, type, Integer.MIN_VALUE);
     }
 
-    public static void openGUI(@Nonnull final EntityPlayer p, @Nullable final TileEntity tile,
-            @Nullable final ForgeDirection side, @Nonnull final GuiBridge type, int slotIndex) {
+    public static void openGUI(@NonNull final EntityPlayer p, @Nullable final TileEntity tile,
+            @Nullable final ForgeDirection side, @NonNull final GuiBridge type, int slotIndex) {
         if (isClient()) {
             return;
         }
@@ -677,9 +675,9 @@ public class Platform {
      * ItemStack do it manually by checking if the tag exists or use the
      * {@link com.gtnewhorizon.gtnhlib.item.ItemStackNBT} util class.
      */
-    @Nonnull
+    @NonNull
     @Deprecated
-    public static NBTTagCompound openNbtData(@Nonnull final ItemStack i) {
+    public static NBTTagCompound openNbtData(@NonNull final ItemStack i) {
         NBTTagCompound compound = i.getTagCompound();
         if (compound == null) {
             i.setTagCompound(compound = new NBTTagCompound());
@@ -1289,9 +1287,9 @@ public class Platform {
      * @return the extracted stack, or {@code null} if nothing can be extracted
      */
     @Nullable
-    public static <StackType extends IAEStack> StackType poweredExtraction(@Nonnull final IEnergySource energy,
-            @Nonnull final IMEInventory<StackType> cell, @Nonnull final StackType request,
-            @Nonnull final BaseActionSource src) {
+    public static <StackType extends IAEStack> StackType poweredExtraction(@NonNull final IEnergySource energy,
+            @NonNull final IMEInventory<StackType> cell, @NonNull final StackType request,
+            @NonNull final BaseActionSource src) {
         return poweredExtraction(energy, cell, request, src, Actionable.MODULATE);
     }
 
@@ -1301,9 +1299,9 @@ public class Platform {
      * @return the extracted stack, or {@code null} if nothing can be extracted
      */
     @Nullable
-    public static <StackType extends IAEStack> StackType poweredExtraction(@Nonnull final IEnergySource energy,
-            @Nonnull final IMEInventory<StackType> cell, @Nonnull final StackType request,
-            @Nonnull final BaseActionSource src, @Nonnull final Actionable mode) {
+    public static <StackType extends IAEStack> StackType poweredExtraction(@NonNull final IEnergySource energy,
+            @NonNull final IMEInventory<StackType> cell, @NonNull final StackType request,
+            @NonNull final BaseActionSource src, @NonNull final Actionable mode) {
         final int typeMultiplier = request.getAmountPerUnit();
 
         final double availablePower = energy.extractAEPower(
@@ -1342,9 +1340,9 @@ public class Platform {
      * @return the remaining stack that could not be inserted, or {@code null} if everything was inserted
      */
     @Nullable
-    public static <StackType extends IAEStack> StackType poweredInsert(@Nonnull final IEnergySource energy,
-            @Nonnull final IMEInventory<StackType> cell, @Nonnull final StackType input,
-            @Nonnull final BaseActionSource src) {
+    public static <StackType extends IAEStack> StackType poweredInsert(@NonNull final IEnergySource energy,
+            @NonNull final IMEInventory<StackType> cell, @NonNull final StackType input,
+            @NonNull final BaseActionSource src) {
         return poweredInsert(energy, cell, input, src, Actionable.MODULATE);
     }
 
@@ -1354,9 +1352,9 @@ public class Platform {
      * @return the remaining stack that could not be inserted, or {@code null} if everything was inserted
      */
     @Nullable
-    public static <StackType extends IAEStack> StackType poweredInsert(@Nonnull final IEnergySource energy,
-            @Nonnull final IMEInventory<StackType> cell, @Nonnull final StackType input,
-            @Nonnull final BaseActionSource src, @Nonnull final Actionable mode) {
+    public static <StackType extends IAEStack> StackType poweredInsert(@NonNull final IEnergySource energy,
+            @NonNull final IMEInventory<StackType> cell, @NonNull final StackType input,
+            @NonNull final BaseActionSource src, @NonNull final Actionable mode) {
         final int typeMultiplier = input.getAmountPerUnit();
 
         final double availablePower = energy.extractAEPower(
@@ -2204,9 +2202,9 @@ public class Platform {
         return NumberFormatUtil.formatNumber(v);
     }
 
-    @NotNull
+    @NonNull
     @Contract("_ -> new")
-    public static ItemStack copyStackWithSizeOne(@NotNull ItemStack itemStack) {
+    public static ItemStack copyStackWithSizeOne(@NonNull ItemStack itemStack) {
         ItemStack copy = itemStack.copy();
         copy.stackSize = 1;
         return copy;
@@ -2233,7 +2231,7 @@ public class Platform {
      * {@link CableBusContainer} owned by a multipart tile entity.
      */
     @Nullable
-    public static IPart getPartFromTE(@Nullable final TileEntity te, @NotNull final ForgeDirection side) {
+    public static IPart getPartFromTE(@Nullable final TileEntity te, @NonNull final ForgeDirection side) {
         if (te == null) return null;
         if (te instanceof IPartHost host) return host.getPart(side);
 
@@ -2250,7 +2248,7 @@ public class Platform {
      * and ForgeMultipart cable bus parts.
      */
     @Nullable
-    public static SelectedPart selectPartFromTE(@Nullable final TileEntity te, @NotNull final Vec3 pos) {
+    public static SelectedPart selectPartFromTE(@Nullable final TileEntity te, @NonNull final Vec3 pos) {
         if (te == null) return null;
         if (te instanceof IPartHost host) return host.selectPart(pos);
 

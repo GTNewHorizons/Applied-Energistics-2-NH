@@ -3,8 +3,6 @@ package com.glodblock.github.common.tile;
 import static appeng.util.Platform.writeStackNBT;
 import static com.glodblock.github.loader.RecipeLoader.BUCKET;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.Item;
@@ -17,6 +15,7 @@ import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 
 import org.apache.commons.lang3.tuple.MutablePair;
+import org.jspecify.annotations.NonNull;
 
 import com.glodblock.github.FluidCraft;
 import com.glodblock.github.util.NameConst;
@@ -80,7 +79,7 @@ public class TileFluidAutoFiller extends AENetworkInvTile
         inventory.setInventorySlotContents(0, BUCKET.copy());
     }
 
-    @Nonnull
+    @NonNull
     public ItemStack getContainerItem() {
         normalizeContainerItem();
         return getInventory().getStackInSlot(0);
@@ -131,7 +130,7 @@ public class TileFluidAutoFiller extends AENetworkInvTile
         return data;
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public IInventory getInternalInventory() {
         return inventory;

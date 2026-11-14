@@ -10,10 +10,10 @@
 
 package appeng.me.storage;
 
-import javax.annotation.Nonnull;
-
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
+
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.security.BaseActionSource;
@@ -164,7 +164,7 @@ public class MEIInventoryWrapper implements IMEInventory<IAEItemStack> {
     }
 
     @Override
-    public IAEItemStack getAvailableItem(@Nonnull IAEItemStack request, int iteration) {
+    public IAEItemStack getAvailableItem(@NonNull IAEItemStack request, int iteration) {
         long count = 0;
         for (int x = 0; x < this.target.getSizeInventory(); x++) {
             ItemStack stack = this.target.getStackInSlot(x);

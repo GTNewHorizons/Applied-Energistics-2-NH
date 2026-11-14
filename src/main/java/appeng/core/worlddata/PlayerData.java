@@ -12,13 +12,13 @@ package appeng.core.worlddata;
 
 import java.util.UUID;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.common.config.ConfigCategory;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
@@ -45,7 +45,7 @@ final class PlayerData implements IWorldPlayerData, IOnWorldStartable, IOnWorldS
 
     private int lastPlayerID;
 
-    public PlayerData(@Nonnull final Configuration configFile) {
+    public PlayerData(@NonNull final Configuration configFile) {
         Preconditions.checkNotNull(configFile);
 
         this.config = configFile;
@@ -72,7 +72,7 @@ final class PlayerData implements IWorldPlayerData, IOnWorldStartable, IOnWorldS
     }
 
     @Override
-    public int getPlayerID(@Nonnull final GameProfile profile) {
+    public int getPlayerID(@NonNull final GameProfile profile) {
         Preconditions.checkNotNull(profile);
         Preconditions.checkNotNull(this.config.getCategory("players"));
         Preconditions.checkState(profile.isComplete());

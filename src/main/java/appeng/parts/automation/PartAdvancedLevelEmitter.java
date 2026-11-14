@@ -16,7 +16,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants.NBT;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.BooleanOperation;
 import appeng.api.config.Settings;
@@ -604,7 +604,7 @@ public class PartAdvancedLevelEmitter extends PartUpgradeable implements IAdvanc
     }
 
     @Override
-    public void uploadSettings(@NotNull final SettingsFrom from, @NotNull final NBTTagCompound compound) {
+    public void uploadSettings(@NonNull final SettingsFrom from, @NonNull final NBTTagCompound compound) {
         super.uploadSettings(from, compound);
 
         final NBTTagList list = compound.getTagList("slots", NBT.TAG_COMPOUND);
@@ -619,8 +619,8 @@ public class PartAdvancedLevelEmitter extends PartUpgradeable implements IAdvanc
     }
 
     @Override
-    @NotNull
-    public NBTTagCompound downloadSettings(@NotNull final SettingsFrom from) {
+    @NonNull
+    public NBTTagCompound downloadSettings(@NonNull final SettingsFrom from) {
         final NBTTagCompound nbt = super.downloadSettings(from);
 
         final NBTTagList list = new NBTTagList();

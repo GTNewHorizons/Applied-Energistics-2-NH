@@ -13,7 +13,7 @@ package appeng.recipes.loader;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Preconditions;
 
@@ -28,7 +28,7 @@ public class JarLoader implements IRecipeLoader {
     }
 
     @Override
-    public BufferedReader getFile(@Nonnull final String s) throws Exception {
+    public BufferedReader getFile(@NonNull final String s) throws Exception {
         Preconditions.checkNotNull(s);
         Preconditions.checkArgument(!s.isEmpty());
 

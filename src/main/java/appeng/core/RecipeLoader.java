@@ -14,9 +14,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import javax.annotation.Nonnull;
-
 import org.apache.commons.io.FileUtils;
+import org.jspecify.annotations.NonNull;
 
 import com.google.common.base.Preconditions;
 
@@ -42,13 +41,13 @@ public class RecipeLoader implements Runnable {
     private static final String ASSETS_RECIPE_PATH = "/assets/appliedenergistics2/recipes/";
     private static final String ASSETS_GTNH_RECIPE_PATH = "/assets/appliedenergistics2/GTNHRecipes/";
 
-    @Nonnull
+    @NonNull
     private final IRecipeHandler handler;
 
-    @Nonnull
+    @NonNull
     private final CustomRecipeConfig config;
 
-    @Nonnull
+    @NonNull
     private final File recipeDirectory;
 
     /**
@@ -56,8 +55,8 @@ public class RecipeLoader implements Runnable {
      * @param handler handler to load the recipes
      * @throws NullPointerException if handler is <tt>null</tt>
      */
-    public RecipeLoader(@Nonnull final File recipeDirectory, @Nonnull final CustomRecipeConfig config,
-            @Nonnull final IRecipeHandler handler) {
+    public RecipeLoader(@NonNull final File recipeDirectory, @NonNull final CustomRecipeConfig config,
+            @NonNull final IRecipeHandler handler) {
         this.recipeDirectory = Preconditions.checkNotNull(recipeDirectory);
         Preconditions.checkArgument(!recipeDirectory.isFile());
         this.config = Preconditions.checkNotNull(config);

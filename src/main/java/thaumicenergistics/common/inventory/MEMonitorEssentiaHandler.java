@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.config.AccessRestriction;
 import appeng.api.config.Actionable;
@@ -27,7 +27,7 @@ import thaumicenergistics.common.storage.EssentiaList;
 
 public class MEMonitorEssentiaHandler implements IStorageBusMonitor<AEEssentiaStack> {
 
-    @NotNull
+    @NonNull
     private final IAspectContainer aspectContainer;
 
     private final HashMap<IMEMonitorHandlerReceiver<AEEssentiaStack>, Object> listeners = new HashMap<>();
@@ -36,7 +36,7 @@ public class MEMonitorEssentiaHandler implements IStorageBusMonitor<AEEssentiaSt
     private StorageFilter mode;
     private boolean init = false;
 
-    public MEMonitorEssentiaHandler(@NotNull IAspectContainer aspectContainer) {
+    public MEMonitorEssentiaHandler(@NonNull IAspectContainer aspectContainer) {
         this.aspectContainer = aspectContainer;
     }
 
@@ -126,7 +126,7 @@ public class MEMonitorEssentiaHandler implements IStorageBusMonitor<AEEssentiaSt
     }
 
     @Override
-    public AEEssentiaStack getAvailableItem(@NotNull AEEssentiaStack request, int iteration) {
+    public AEEssentiaStack getAvailableItem(@NonNull AEEssentiaStack request, int iteration) {
         if (!this.init) {
             this.onTick();
         }
@@ -236,7 +236,7 @@ public class MEMonitorEssentiaHandler implements IStorageBusMonitor<AEEssentiaSt
     }
 
     @Override
-    public @NotNull IAEStackType<?> getStackType() {
+    public @NonNull IAEStackType<?> getStackType() {
         return ESSENTIA_STACK_TYPE;
     }
 }

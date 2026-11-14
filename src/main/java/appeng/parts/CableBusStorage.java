@@ -10,9 +10,9 @@
 
 package appeng.parts;
 
-import javax.annotation.Nullable;
-
 import net.minecraftforge.common.util.ForgeDirection;
+
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.implementations.parts.IPartCable;
 import appeng.api.parts.IFacadePart;

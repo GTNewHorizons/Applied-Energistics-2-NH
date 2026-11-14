@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import buildcraft.compat.nei.RecipeHandlerAssemblyTable;
 import buildcraft.compat.nei.RecipeHandlerIntegrationTable;
@@ -16,13 +16,13 @@ import codechicken.nei.recipe.IRecipeHandler;
  */
 public class BuildCraftRecipeProcessor implements IRecipeProcessor {
 
-    @Nonnull
+    @NonNull
     @Override
     public String getRecipeProcessorId() {
         return "BuildCraft";
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public List<PositionedStack> getRecipeInput(IRecipeHandler recipe, int recipeIndex, String identifier) {
         if (recipe instanceof RecipeHandlerAssemblyTable) {
@@ -33,7 +33,7 @@ public class BuildCraftRecipeProcessor implements IRecipeProcessor {
         return new ArrayList<>();
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public List<PositionedStack> getRecipeOutput(IRecipeHandler recipe, int recipeIndex, String identifier) {
         if (recipe instanceof RecipeHandlerAssemblyTable) {

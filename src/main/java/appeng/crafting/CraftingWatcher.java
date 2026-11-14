@@ -14,7 +14,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import appeng.api.networking.crafting.ICraftingWatcher;
 import appeng.api.networking.crafting.ICraftingWatcherHost;
@@ -54,21 +54,19 @@ public class CraftingWatcher implements ICraftingWatcher {
         return this.myInterests.contains(o);
     }
 
-    @Nonnull
+    @NonNull
     @Override
     public Iterator<IAEStack> iterator() {
         return new ItemWatcherIterator(this, this.myInterests.iterator());
     }
 
-    @Nonnull
     @Override
-    public Object[] toArray() {
+    public Object @NonNull [] toArray() {
         return this.myInterests.toArray();
     }
 
-    @Nonnull
     @Override
-    public <T> T[] toArray(@Nonnull final T[] a) {
+    public <T> T @NonNull [] toArray(final T @NonNull [] a) {
         return this.myInterests.toArray(a);
     }
 
@@ -87,12 +85,12 @@ public class CraftingWatcher implements ICraftingWatcher {
     }
 
     @Override
-    public boolean containsAll(@Nonnull final Collection<?> c) {
+    public boolean containsAll(@NonNull final Collection<?> c) {
         return this.myInterests.containsAll(c);
     }
 
     @Override
-    public boolean addAll(@Nonnull final Collection<? extends IAEStack> c) {
+    public boolean addAll(@NonNull final Collection<? extends IAEStack> c) {
         boolean didChange = false;
 
         for (final IAEStack o : c) {
@@ -103,7 +101,7 @@ public class CraftingWatcher implements ICraftingWatcher {
     }
 
     @Override
-    public boolean removeAll(@Nonnull final Collection<?> c) {
+    public boolean removeAll(@NonNull final Collection<?> c) {
         boolean didSomething = false;
         for (final Object o : c) {
             didSomething = this.remove(o) || didSomething;
@@ -112,7 +110,7 @@ public class CraftingWatcher implements ICraftingWatcher {
     }
 
     @Override
-    public boolean retainAll(@Nonnull final Collection<?> c) {
+    public boolean retainAll(@NonNull final Collection<?> c) {
         boolean changed = false;
         final Iterator<IAEStack> i = this.iterator();
 
