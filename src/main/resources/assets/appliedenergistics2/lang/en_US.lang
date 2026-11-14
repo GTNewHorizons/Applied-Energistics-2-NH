@@ -1247,6 +1247,14 @@ commands.ae2.ProfilerFailedDim=No such dimension
 commands.ae2.ToggleFullAccess=Toggles OP full AE access, ignoring security terminal settings
 commands.ae2.ToggleDebugTiming=Toggle debug tick manager logging
 commands.ae2.ToggleDebugPathfinding=Toggle pathfinding debug logging
+commands.ae2.PatternTargets=Checks the encoded pattern in your hand against every pattern provider of the grid you look at, or of the grid at [x y z]. Add "list" to print each provider, "x100" to run the check 100 times.
+commands.ae2.PatternTargetsNoPattern=Hold an encoded pattern
+commands.ae2.PatternTargetsAverage=%s runs, average: %s µs, best: %s µs
+commands.ae2.PatternTargetsResult=Providers: %s, distinct keys: %s, match: %s, no match: %s, unknown: %s, time: %s µs
+commands.ae2.PatternTargetsEntry=%s at %s %s %s: %s, free slots: %s
+commands.ae2.PatternTargetsMatch=match
+commands.ae2.PatternTargetsNoMatch=no match
+commands.ae2.PatternTargetsUnknown=unknown
 
 # Achievements
 achievement.ae2.Compass=Meteorite Hunter

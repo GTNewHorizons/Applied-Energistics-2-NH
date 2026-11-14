@@ -67,6 +67,7 @@ import appeng.api.config.Settings;
 import appeng.api.config.Upgrades;
 import appeng.api.config.YesNo;
 import appeng.api.crafting.ICraftingIconProvider;
+import appeng.api.crafting.IPatternTarget;
 import appeng.api.implementations.ICraftingPatternItem;
 import appeng.api.implementations.IUpgradeableHost;
 import appeng.api.implementations.tiles.ICraftingMachine;
@@ -104,6 +105,7 @@ import appeng.api.util.IConfigManager;
 import appeng.core.AEConfig;
 import appeng.core.AELog;
 import appeng.core.settings.TickRates;
+import appeng.crafting.target.CraftingMachineTarget;
 import appeng.me.GridAccessException;
 import appeng.me.cache.NetworkMonitor;
 import appeng.me.helpers.AENetworkProxy;
@@ -1662,6 +1664,42 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
                     }
                     return icon;
                 }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the target of the first adjacent machine that describes itself, or null if none does.
+     */
+    @Nullable
+    public IPatternTarget getPatternTarget() {
+        final TileEntity hostTile = this.iHost.getTileEntity();
+        final World hostWorld = hostTile.getWorldObj();
+
+        for (final ForgeDirection direction : this.iHost.getTargets()) {
+            final int xPos = hostTile.xCoord + direction.offsetX;
+            final int yPos = hostTile.yCoord + direction.offsetY;
+            final int zPos = hostTile.zCoord + direction.offsetZ;
+            // getTileEntity loads the chunk, and an interface on a chunk border must not do that from a query.
+            if (!hostWorld.blockExists(xPos, yPos, zPos)) {
+                continue;
+            }
+
+            final TileEntity directedTile = hostWorld.getTileEntity(xPos, yPos, zPos);
+            if (directedTile == null) {
+                continue;
+            }
+
+            final IPatternTarget target = getCapability(directedTile, IPatternTarget.class);
+            if (target != null) {
+                return target;
+            }
+
+            // acceptsPlans() only says whether the machine is idle right now, so the type alone decides.
+            if (directedTile instanceof ICraftingMachine) {
+                return CraftingMachineTarget.INSTANCE;
             }
         }
 
