@@ -366,8 +366,7 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
     private void scan(final IGridNode node) {
         final IGrid grid = node.getGrid();
         this.scannedNetworkOnly = this.isNetworkOnly();
-        this.grids = this.scannedNetworkOnly ? Collections.singletonList(grid)
-                : this.visibleGrids(grid, grid.getAllRecursiveGridConnections(PartStorageBus.class, true));
+        this.grids = this.scannedNetworkOnly ? Collections.singletonList(grid) : this.linkedGrids(grid);
         this.scanned = TransferScanner.scan(this.grids, AEApi.instance().registries().transferInspectors());
         this.uninspected = TransferScanner.scanUninspected(this.grids, this.scanned);
         this.updateTypes();
@@ -378,6 +377,18 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         this.rescanPending = false;
         this.ticksSinceFingerprint = 0;
         this.hasScanned = true;
+    }
+
+    /**
+     * Finding the links asks storage buses what they face, which may be storage from another mod. If that throws, only
+     * the terminal's own network is searched rather than taking the server tick down.
+     */
+    private List<IGrid> linkedGrids(final IGrid own) {
+        try {
+            return this.visibleGrids(own, own.getAllRecursiveGridConnections(PartStorageBus.class, true));
+        } catch (final RuntimeException | LinkageError e) {
+            return Collections.singletonList(own);
+        }
     }
 
     /**
