@@ -5,9 +5,9 @@ import java.util.Map;
 
 import org.jspecify.annotations.Nullable;
 
+import appeng.api.crafting.CraftingMachineTarget;
 import appeng.api.crafting.IPatternTargetMatcher;
 import appeng.api.features.IPatternTargetRegistry;
-import appeng.crafting.target.CraftingMachineTarget;
 
 public class PatternTargetRegistry implements IPatternTargetRegistry {
 
