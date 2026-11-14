@@ -40,6 +40,12 @@ public final class TransferDescription {
     /** True if AE routes stacks into this component by priority, false if it works on its own schedule. */
     public final boolean storageHandler;
 
+    /**
+     * True for a row the terminal made up for storage that has no inspector, it only knows where the storage is and
+     * what it would receive.
+     */
+    public final boolean generic;
+
     /** Mode used by fuzzy config entries, null if none are fuzzy. Server only. */
     @Nullable
     public final FuzzyMode fuzzyMode;
@@ -71,6 +77,7 @@ public final class TransferDescription {
         this.priority = builder.priority;
         this.oreFilter = builder.oreFilter;
         this.storageHandler = builder.storageHandler;
+        this.generic = builder.generic;
         this.fuzzyMode = builder.fuzzyMode;
         this.matcher = builder.matcher;
         this.liveHandlers = builder.liveHandlers;
@@ -112,6 +119,7 @@ public final class TransferDescription {
         out.writeBoolean(this.canExport);
         out.writeBoolean(this.sticky);
         out.writeBoolean(this.storageHandler);
+        out.writeBoolean(this.generic);
         out.writeBoolean(this.hasPriority);
         out.writeInt(this.priority);
         out.writeBoolean(this.oreFilter != null);
@@ -152,6 +160,7 @@ public final class TransferDescription {
         builder.canExport(in.readBoolean());
         builder.sticky(in.readBoolean());
         builder.storageHandler(in.readBoolean());
+        builder.generic(in.readBoolean());
         final boolean hasPriority = in.readBoolean();
         final int priority = in.readInt();
         if (hasPriority) {
@@ -221,6 +230,7 @@ public final class TransferDescription {
         private boolean canExport;
         private boolean sticky;
         private boolean storageHandler;
+        private boolean generic;
         private boolean hasPriority;
         private int priority;
         private String oreFilter;
@@ -241,6 +251,7 @@ public final class TransferDescription {
             this.canExport = from.canExport;
             this.sticky = from.sticky;
             this.storageHandler = from.storageHandler;
+            this.generic = from.generic;
             this.hasPriority = from.hasPriority;
             this.priority = from.priority;
             this.oreFilter = from.oreFilter;
@@ -292,6 +303,11 @@ public final class TransferDescription {
 
         public Builder storageHandler(final boolean storageHandler) {
             this.storageHandler = storageHandler;
+            return this;
+        }
+
+        public Builder generic(final boolean generic) {
+            this.generic = generic;
             return this;
         }
 

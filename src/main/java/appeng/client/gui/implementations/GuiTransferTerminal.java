@@ -1130,6 +1130,9 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
             if (this.info.networkTier > 0) {
                 lines.add(GuiText.TransferTermSubNetworkTooltip.getLocal());
             }
+            if (this.description.generic) {
+                lines.add(EnumChatFormatting.GRAY + GuiText.TransferTermNoDetails.getLocal());
+            }
             this.addSimulationLines(lines);
             return lines;
         }

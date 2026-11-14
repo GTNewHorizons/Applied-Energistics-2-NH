@@ -204,6 +204,7 @@ gui.appliedenergistics2.TransferTermDeniedShort=Refused
 gui.appliedenergistics2.TransferTermLocked=The network is reshuffling its storage and takes nothing in until it is done.
 gui.appliedenergistics2.TransferTermLockedShort=Locked
 gui.appliedenergistics2.TransferTermCraftingCpu=Crafting CPU waiting for this stack
+gui.appliedenergistics2.TransferTermNoDetails=No details are known about this storage, it is only listed while it would receive the stack.
 gui.appliedenergistics2.TransferTermQueryAmountHint=Scroll to change the amount, hold Shift for a whole stack.\nMiddle click to type the amount.
 gui.appliedenergistics2.METunnel=ME
 gui.appliedenergistics2.ItemTunnel=Item

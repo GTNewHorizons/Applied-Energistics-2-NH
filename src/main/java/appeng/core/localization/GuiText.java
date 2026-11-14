@@ -276,6 +276,8 @@ public enum GuiText implements Localization {
 
     TransferTermCraftingCpu,
 
+    TransferTermNoDetails,
+
     TransferTermQueryAmountHint,
     NoCraftingCPUs,
     Clean,

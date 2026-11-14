@@ -94,13 +94,63 @@ public final class TransferScanner {
         if (inspected == null) {
             return;
         }
-        final TransferDescription description = withLiveHandlers(inspected, machine);
+        addLocatedRow(rows, seen, node, machine, tier, withLiveHandlers(inspected, machine));
+    }
 
+    /**
+     * Storage that ended up without a row, because no inspector knows it or its inspector left it out or failed, can
+     * still receive part of a simulated insert. These rows let the terminal show where that part went.
+     *
+     * @param grids     networks to scan, in the same order as for {@link #scan}
+     * @param inspected the rows {@link #scan} found on those networks
+     * @return one row for each cell provider without a row, which only knows where it is, its priority and its storage
+     *         handlers
+     */
+    public static List<TransferComponentInfo> scanUninspected(final Collection<? extends IGrid> grids,
+            final List<TransferComponentInfo> inspected) {
+        final List<TransferComponentInfo> rows = new ArrayList<>();
+        final Set<String> seen = new HashSet<>();
+        for (final TransferComponentInfo row : inspected) {
+            seen.add(locationKey(row.dim, row.x, row.y, row.z, row.side));
+        }
+
+        int tier = 0;
+        for (final IGrid grid : grids) {
+            for (final Class<? extends IGridHost> machineClass : grid.getMachinesClasses()) {
+                if (!ICellProvider.class.isAssignableFrom(machineClass)) {
+                    continue;
+                }
+                for (final IGridNode node : grid.getMachines(machineClass)) {
+                    try {
+                        final IGridHost machine = node.getMachine();
+                        addLocatedRow(rows, seen, node, machine, tier, genericDescription((ICellProvider) machine));
+                    } catch (final RuntimeException | LinkageError e) {
+                        // Skip the broken component.
+                    }
+                }
+            }
+            tier++;
+        }
+
+        return rows;
+    }
+
+    private static TransferDescription genericDescription(final ICellProvider provider) {
+        return TransferDescription.builder().generic(true).storageHandler(true).canExport(true)
+                .priority(provider.getPriority()).liveHandlers(provider::getCellArray).build();
+    }
+
+    /**
+     * Adds a row for the component at the node's location, unless a row for the same location and side was added
+     * already.
+     */
+    private static void addLocatedRow(final List<TransferComponentInfo> rows, final Set<String> seen,
+            final IGridNode node, final IGridHost machine, final int tier, final TransferDescription description) {
         final IGridBlock block = node.getGridBlock();
         final DimensionalCoord location = block.getLocation();
         final byte side = (byte) (machine instanceof AEBasePart part ? part.getSide() : ForgeDirection.UNKNOWN)
                 .ordinal();
-        if (!seen.add(location.getDimension() + ":" + location.x + ":" + location.y + ":" + location.z + ":" + side)) {
+        if (!seen.add(locationKey(location.getDimension(), location.x, location.y, location.z, side))) {
             return;
         }
 
@@ -116,6 +166,10 @@ public final class TransferScanner {
                         side,
                         tier,
                         description));
+    }
+
+    private static String locationKey(final int dim, final int x, final int y, final int z, final byte side) {
+        return dim + ":" + x + ":" + y + ":" + z + ":" + side;
     }
 
     /**

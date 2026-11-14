@@ -7,6 +7,7 @@ import static appeng.gametests.AEGameTestHelpers.itemStack;
 import static appeng.gametests.transfer.TransferTestHelpers.install;
 import static appeng.gametests.transfer.TransferTestHelpers.place;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -39,6 +40,8 @@ import appeng.api.networking.storage.IStorageGrid;
 import appeng.api.storage.StorageName;
 import appeng.container.implementations.ContainerTransferTerminal;
 import appeng.core.AppEng;
+import appeng.core.features.registries.TransferInspectorRegistry;
+import appeng.helpers.transfer.StorageBusInspector;
 import appeng.helpers.transfer.TransferInsertSimulation;
 import appeng.helpers.transfer.TransferScanner;
 import appeng.me.GridAccessException;
@@ -48,6 +51,7 @@ import appeng.parts.reporting.PartTransferTerminal;
 import appeng.tile.crafting.TileCraftingStorageTile;
 import appeng.tile.misc.TileInterface;
 import appeng.tile.networking.TileController;
+import appeng.tile.storage.TileDrive;
 import appeng.util.Platform;
 
 @GameTestHolder(AppEng.MOD_ID)
@@ -432,6 +436,79 @@ public class TransferInsertSimulationTests {
         } catch (final Exception e) {
             throw new AssertionError("The job should calculate and start", e);
         }
+    }
+
+    /**
+     * @return a registry that only knows the storage bus, so the template's drive has no inspector
+     */
+    private static TransferInspectorRegistry busOnlyRegistry() {
+        final TransferInspectorRegistry registry = new TransferInspectorRegistry();
+        registry.register(PartStorageBus.class, new StorageBusInspector());
+        return registry;
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void storageWithoutAnInspectorGetsAGenericRow(final GameTestHelper helper) {
+        final PartStorageBus bus = bus(helper);
+        helper.setSlot(DRIVE_LABEL, 0, cell1k());
+
+        helper.startSequence().thenWaitUntil("wait for the drive to be listed", 80, () -> {
+            assertActive(helper, bus, "Storage bus should become active");
+            final List<IGrid> grids = Collections.singletonList(grid(helper));
+
+            final List<TransferComponentInfo> inspected = TransferScanner.scan(grids, busOnlyRegistry());
+            final List<TransferComponentInfo> generic = TransferScanner.scanUninspected(grids, inspected);
+            helper.assertEquals(1, generic.size(), "Only the drive has no row");
+            final TransferComponentInfo drive = generic.get(0);
+            helper.assertTrue(drive.description.generic, "The drive's row is generic");
+            helper.assertTrue(drive.description.storageHandler, "It is storage AE routes into");
+            helper.assertNotNull(drive.description.liveHandlers, "It knows its storage handlers");
+            helper.assertNotNull(drive.selfRep, "It shows the drive's icon");
+            helper.assertTrue(drive.description.config.isEmpty(), "It knows nothing about filters");
+            helper.assertEquals(0, drive.networkTier, "It is on the terminal's own network");
+
+            final List<TransferComponentInfo> core = TransferScanner
+                    .scan(grids, AEApi.instance().registries().transferInspectors());
+            helper.assertTrue(
+                    TransferScanner.scanUninspected(grids, core).isEmpty(),
+                    "Storage that has an inspected row gets no generic one");
+        }).thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void storageWhoseInspectorLeftItOutGetsAGenericRow(final GameTestHelper helper) {
+        final PartStorageBus bus = bus(helper);
+
+        helper.startSequence().thenWaitUntil("wait for the drive to be listed", 80, () -> {
+            assertActive(helper, bus, "Storage bus should become active");
+            final List<IGrid> grids = Collections.singletonList(grid(helper));
+            final TransferInspectorRegistry registry = busOnlyRegistry();
+            registry.register(TileDrive.class, drive -> null);
+
+            final List<TransferComponentInfo> inspected = TransferScanner.scan(grids, registry);
+            helper.assertEquals(1, TransferScanner.scanUninspected(grids, inspected).size(), "The drive is kept");
+        }).thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void aGenericRowShowsWhatItWouldReceive(final GameTestHelper helper) {
+        final PartStorageBus bus = bus(helper);
+        fillChestExceptOne(helper, 40);
+        helper.setSlot(DRIVE_LABEL, 0, cell1k());
+
+        helper.startSequence().thenWaitUntil("wait for the drive to take the rest", 80, () -> {
+            assertActive(helper, bus, "Storage bus should become active");
+            final List<IGrid> grids = Collections.singletonList(grid(helper));
+            final List<TransferComponentInfo> rows = new ArrayList<>(TransferScanner.scan(grids, busOnlyRegistry()));
+            rows.addAll(TransferScanner.scanUninspected(grids, rows));
+
+            final TransferInsertSimulation.Result result = TransferInsertSimulation
+                    .run(grids, rows, itemStack(Blocks.cobblestone, 64), SOURCE);
+            final TransferComponentInfo drive = driveRow(helper, result);
+            helper.assertTrue(drive.description.generic, "The drive has no inspector");
+            helper.assertEquals(40L, drive.simulatedAmount, "Its share of the stack is shown");
+            helper.assertEquals(0L, result.leftover, "Every part of the stack has a row");
+        }).thenSucceed();
     }
 
     private static ItemStack processingPattern(final Block input, final Block output) {

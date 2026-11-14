@@ -219,6 +219,39 @@ public class TransferComponentInfoFunctionalTest {
     }
 
     @Test
+    public void genericRowsAreToldApartOnTheClient() {
+        final TransferDescription generic = TransferDescription.builder().generic(true).storageHandler(true).build();
+
+        assertTrue(
+                roundTrip(
+                        new TransferComponentInfo(
+                                null,
+                                "",
+                                null,
+                                0,
+                                0,
+                                0,
+                                0,
+                                (byte) 0,
+                                0,
+                                generic)).description.generic);
+        assertTrue(generic.toBuilder().build().generic, "Copies keep the flag");
+        assertFalse(
+                roundTrip(
+                        new TransferComponentInfo(
+                                null,
+                                "",
+                                null,
+                                0,
+                                0,
+                                0,
+                                0,
+                                (byte) 0,
+                                0,
+                                TransferDescription.builder().build())).description.generic);
+    }
+
+    @Test
     public void liveHandlersStayOnTheServer() {
         final TransferDescription description = TransferDescription.builder()
                 .liveHandlers(type -> Collections.emptyList()).slotOf(handler -> 0).build();

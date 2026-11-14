@@ -143,6 +143,9 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
     private final Map<TransferComponentInfo, List<String>> configNames = new IdentityHashMap<>();
     private List<TransferComponentInfo> scanned = Collections.emptyList();
 
+    /** Storage the scan found no inspected row for, only listed while it would receive a simulated insert. */
+    private List<TransferComponentInfo> uninspected = Collections.emptyList();
+
     /** Rows matching the query and filters, before any simulation. */
     private List<TransferComponentInfo> matching = Collections.emptyList();
     private List<TransferComponentInfo> filtered = Collections.emptyList();
@@ -336,6 +339,7 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         this.grids = this.scannedNetworkOnly ? Collections.singletonList(grid)
                 : this.visibleGrids(grid, grid.getAllRecursiveGridConnections(PartStorageBus.class, true));
         this.scanned = TransferScanner.scan(this.grids, AEApi.instance().registries().transferInspectors());
+        this.uninspected = TransferScanner.scanUninspected(this.grids, this.scanned);
         this.configNames.clear();
         this.fingerprint = TransferScanner.fingerprint(this.grids);
         this.seenChangeCount = this.anchor.getChangeCount();
@@ -401,7 +405,7 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         final TransferInsertSimulation.Result result = this.isSimulating() && node != null
                 ? TransferInsertSimulation.run(
                         this.grids.isEmpty() ? Collections.singletonList(node.getGrid()) : this.grids,
-                        this.matching,
+                        this.withUninspected(this.matching),
                         this.getQuery(),
                         // Inserted the way a player puts a stack into a terminal, so security applies to them.
                         new PlayerSource(this.getInventoryPlayer().player, this.anchor))
@@ -414,7 +418,13 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
             return;
         }
 
-        final List<TransferComponentInfo> rows = new ArrayList<>(result.rows);
+        final List<TransferComponentInfo> rows = new ArrayList<>(result.rows.size() + result.cpuRows.size());
+        for (final TransferComponentInfo row : result.rows) {
+            // Storage without an inspector has nothing to show but where a simulated insert went.
+            if (!row.description.generic || row.simulatedAmount > 0) {
+                rows.add(row);
+            }
+        }
         rows.addAll(result.cpuRows);
         rows.sort(TransferRowOrder.simulated(TransferRowOrder.comparator(true, TransferDirection.EXPORT)));
         this.filtered = rows;
@@ -424,6 +434,16 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         this.lockedSync.set(result.locked);
         // The amounts show what sticky storage claims, the separator would only repeat it.
         this.stickyCountSync.set(0);
+    }
+
+    private List<TransferComponentInfo> withUninspected(final List<TransferComponentInfo> rows) {
+        if (this.uninspected.isEmpty()) {
+            return rows;
+        }
+        final List<TransferComponentInfo> all = new ArrayList<>(rows.size() + this.uninspected.size());
+        all.addAll(rows);
+        all.addAll(this.uninspected);
+        return all;
     }
 
     /**
