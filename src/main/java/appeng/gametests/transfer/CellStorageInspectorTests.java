@@ -178,4 +178,35 @@ public class CellStorageInspectorTests {
             helper.assertEquals(1, description.config.size(), "The chest's partition is shown");
         }).thenSucceed();
     }
+
+    private static ItemStack unpartitionedStickyCell() {
+        final ItemStack cell = cell1k();
+        InventoryHelper.setSlot(
+                ((ICellWorkbenchItem) cell.getItem()).getUpgradesInventory(cell),
+                0,
+                AEApi.instance().definitions().materials().cardSticky().maybeStack(1).get());
+        return cell;
+    }
+
+    // AE never offers a sticky cell a stack it does not claim, however much room the cell has.
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void aStickyCellOnlyTakesWhatItClaims(final GameTestHelper helper) {
+        final TileDrive drive = drive(helper);
+        final ItemStack cell = unpartitionedStickyCell();
+        insertItems(helper, cell, Blocks.cobblestone, 10);
+        helper.setSlot("drive", 0, cell);
+
+        helper.startSequence().thenWaitUntil("wait for the drive to see its cell", 80, () -> {
+            assertActive(helper, drive.getProxy(), "Drive should become active");
+            helper.assertTrue(DRIVE.inspect(drive).sticky, "The cell has a sticky card");
+        }).thenExecute("ask the inspector", () -> {
+            final TransferDescription description = DRIVE.inspect(drive);
+            helper.assertTrue(
+                    exports(description, itemStack(Blocks.cobblestone, 1)),
+                    "The sticky cell takes what it already holds");
+            helper.assertFalse(
+                    exports(description, itemStack(Blocks.dirt, 1)),
+                    "The sticky cell takes nothing it neither lists nor holds");
+        }).thenSucceed();
+    }
 }

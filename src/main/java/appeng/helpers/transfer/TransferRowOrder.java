@@ -13,8 +13,9 @@ import appeng.api.features.transfer.TransferComponentInfo;
  * ones. Stacks leaving storage are drained from the lowest priority first. Handlers that tie on all of that are chosen
  * in an unspecified order by AE.
  * <p>
- * Sticky handlers only claim a stack they whitelist or already hold, a sticky card alone changes nothing. Only the
- * export order takes them into account, the other directions sort by priority alone.
+ * Sticky handlers only claim a stack they whitelist or already hold, and are never offered any other stack, so the
+ * matchers leave them out of an export search for one they would not claim. Only the export order takes them into
+ * account, the other directions sort by priority alone.
  */
 public final class TransferRowOrder {
 

@@ -173,6 +173,9 @@ public class StorageBusInspectorTests {
             TransferDescription description = INSPECTOR.inspect(bus);
             helper.assertEquals(expectIron, description.matcher.capturesAsSticky(iron()), "Sticky claim on iron");
             helper.assertFalse(description.matcher.capturesAsSticky(gold()), "Gold is neither listed nor stored");
+            // AE never offers a sticky bus a stack it does not claim.
+            helper.assertEquals(expectIron, exports(description, iron()), "Iron is only exported when claimed");
+            helper.assertFalse(exports(description, gold()), "Gold is never exported to the sticky bus");
         }).thenSucceed();
     }
 

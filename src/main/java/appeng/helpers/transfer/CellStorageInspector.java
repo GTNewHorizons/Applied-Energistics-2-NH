@@ -157,13 +157,15 @@ abstract class CellStorageInspector<T extends IGridHost> implements ITransferIns
         }
 
         /**
-         * Export means a cell would accept the stack, import means one holds it already and could give it up.
+         * Export means a cell would accept the stack, import means one holds it already and could give it up. AE only
+         * offers a stack to a sticky cell that claims it, so a sticky cell never accepts anything else.
          */
         @Override
         public boolean canTransfer(final IAEStack<?> stack, final TransferDirection direction) {
             return this.anyHandler(
                     stack,
-                    handler -> (direction != TransferDirection.IMPORT && handler.canAccept(stack))
+                    handler -> (direction != TransferDirection.IMPORT && handler.canAccept(stack)
+                            && (!handler.getSticky() || this.claims(handler, stack)))
                             || (direction != TransferDirection.EXPORT && handler.getAvailableItem(stack) != null));
         }
 
@@ -178,15 +180,18 @@ abstract class CellStorageInspector<T extends IGridHost> implements ITransferIns
          */
         @Override
         public boolean capturesAsSticky(final IAEStack<?> stack) {
-            return this.anyHandler(stack, handler -> {
-                if (!handler.getSticky()) {
-                    return false;
-                }
-                final IAEStack probe = stack.copy();
-                probe.setStackSize(1);
-                return handler.canAccept(probe) && (handler.isPrioritized(probe)
-                        || handler.extractItems(probe, Actionable.SIMULATE, this.source) != null);
-            });
+            return this.anyHandler(stack, handler -> handler.getSticky() && this.claims(handler, stack));
+        }
+
+        /**
+         * @return whether the handler would take the stack in the sticky pass: it accepts it, and either whitelists it
+         *         or already holds some
+         */
+        private boolean claims(final IMEInventoryHandler handler, final IAEStack<?> stack) {
+            final IAEStack probe = stack.copy();
+            probe.setStackSize(1);
+            return handler.canAccept(probe) && (handler.isPrioritized(probe)
+                    || handler.extractItems(probe, Actionable.SIMULATE, this.source) != null);
         }
 
         /**

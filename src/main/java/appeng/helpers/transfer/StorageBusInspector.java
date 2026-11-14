@@ -114,7 +114,8 @@ public final class StorageBusInspector implements ITransferInspector<PartStorage
                 return false;
             }
             if (direction == TransferDirection.EXPORT) {
-                return this.canExport && this.partition.test(stack);
+                // AE only offers a stack to sticky storage that claims it, a sticky bus never takes anything else.
+                return this.canExport && this.partition.test(stack) && !Boolean.FALSE.equals(this.stickyClaim(stack));
             }
             return this.canImport && (!this.extractFilterActive || this.partition.test(stack));
         }
@@ -124,21 +125,25 @@ public final class StorageBusInspector implements ITransferInspector<PartStorage
             return this.partition.isListed(stack);
         }
 
+        @Override
+        public boolean capturesAsSticky(final IAEStack<?> stack) {
+            // AE leaves a bus without power or channel out of its storage, see PartStorageBus.getCellArray.
+            return this.stickyBus != null && this.stickyBus.getProxy().isActive()
+                    && Boolean.TRUE.equals(this.stickyClaim(stack));
+        }
+
         /**
          * Asks the live handler the same question as the sticky pass of {@code NetworkInventoryHandler.injectItems}:
          * the stack has to be accepted, and either whitelisted or already extractable. A bus without read access can
          * therefore only claim stacks through its whitelist.
+         *
+         * @return whether the sticky handler claims the stack, or null if the bus has no sticky handler right now or
+         *         failed to answer
          */
-        @Override
         @SuppressWarnings({ "unchecked", "rawtypes" })
-        public boolean capturesAsSticky(final IAEStack<?> stack) {
+        private Boolean stickyClaim(final IAEStack<?> stack) {
             if (this.stickyBus == null || stack == null || stack.getStackType() != this.type) {
-                return false;
-            }
-
-            // AE leaves a bus without power or channel out of its storage, see PartStorageBus.getCellArray.
-            if (!this.stickyBus.getProxy().isActive()) {
-                return false;
+                return null;
             }
 
             try {
@@ -146,7 +151,7 @@ public final class StorageBusInspector implements ITransferInspector<PartStorage
                 return NetworkInventoryHandler.guardSimulation(() -> {
                     final MEInventoryHandler handler = this.stickyBus.getInternalHandler();
                     if (handler == null || !handler.getSticky()) {
-                        return false;
+                        return null;
                     }
 
                     final IAEStack probe = stack.copy();
@@ -160,7 +165,7 @@ public final class StorageBusInspector implements ITransferInspector<PartStorage
                 });
             } catch (final RuntimeException e) {
                 // The bus may face an inventory from another mod, which must not take the terminal down.
-                return false;
+                return null;
             }
         }
     }
