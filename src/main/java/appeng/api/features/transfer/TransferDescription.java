@@ -46,6 +46,12 @@ public final class TransferDescription {
      */
     public final boolean generic;
 
+    /**
+     * Whether the terminal leaves this kind of component out until the player turns it on, for components there tend to
+     * be many of. Server only.
+     */
+    public final boolean hiddenByDefault;
+
     /** Mode used by fuzzy config entries, null if none are fuzzy. Server only. */
     @Nullable
     public final FuzzyMode fuzzyMode;
@@ -78,6 +84,7 @@ public final class TransferDescription {
         this.oreFilter = builder.oreFilter;
         this.storageHandler = builder.storageHandler;
         this.generic = builder.generic;
+        this.hiddenByDefault = builder.hiddenByDefault;
         this.fuzzyMode = builder.fuzzyMode;
         this.matcher = builder.matcher;
         this.liveHandlers = builder.liveHandlers;
@@ -231,6 +238,7 @@ public final class TransferDescription {
         private boolean sticky;
         private boolean storageHandler;
         private boolean generic;
+        private boolean hiddenByDefault;
         private boolean hasPriority;
         private int priority;
         private String oreFilter;
@@ -252,6 +260,7 @@ public final class TransferDescription {
             this.sticky = from.sticky;
             this.storageHandler = from.storageHandler;
             this.generic = from.generic;
+            this.hiddenByDefault = from.hiddenByDefault;
             this.hasPriority = from.hasPriority;
             this.priority = from.priority;
             this.oreFilter = from.oreFilter;
@@ -303,6 +312,11 @@ public final class TransferDescription {
 
         public Builder storageHandler(final boolean storageHandler) {
             this.storageHandler = storageHandler;
+            return this;
+        }
+
+        public Builder hiddenByDefault(final boolean hiddenByDefault) {
+            this.hiddenByDefault = hiddenByDefault;
             return this;
         }
 

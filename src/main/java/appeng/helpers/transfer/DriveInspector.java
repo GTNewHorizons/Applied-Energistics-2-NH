@@ -19,6 +19,14 @@ public final class DriveInspector extends CellStorageInspector<TileDrive> {
         return drive.getCellArray(type);
     }
 
+    /**
+     * Networks often have many drives, which would bury the components a player is looking for.
+     */
+    @Override
+    protected boolean hiddenByDefault() {
+        return true;
+    }
+
     @Override
     protected int priority(final TileDrive drive) {
         return drive.getPriority();

@@ -32,6 +32,7 @@ import appeng.api.util.NamedDimensionalCoord;
 import appeng.client.gui.AEBaseGui;
 import appeng.client.gui.slots.VirtualMEPhantomSlotPrecise;
 import appeng.client.gui.slots.VirtualMESlot;
+import appeng.client.gui.widgets.GuiContextMenu;
 import appeng.client.gui.widgets.GuiImgButton;
 import appeng.client.gui.widgets.GuiScrollbar;
 import appeng.client.gui.widgets.IDropToFillTextField;
@@ -49,6 +50,7 @@ import appeng.core.localization.PlayerMessages;
 import appeng.helpers.transfer.ConfigStripWindow;
 import appeng.helpers.transfer.TransferNameFilter;
 import appeng.helpers.transfer.TransferRowWindow;
+import appeng.helpers.transfer.TransferTypeFilter;
 import appeng.util.Platform;
 import appeng.util.ReadableNumberConverter;
 
@@ -132,7 +134,9 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
     private GuiImgButton hideUnfilteredButton;
     private GuiImgButton networkOnlyButton;
     private GuiImgButton simulateButton;
+    private GuiImgButton typesButton;
     private GuiImgButton resetButton;
+    private final TypeMenu typeMenu = new TypeMenu();
     private VirtualMEPhantomSlotPrecise querySlot;
     private boolean tallMode;
 
@@ -155,6 +159,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         this.container.hideUnfilteredSync.onClientChange((oldValue, newValue) -> this.updateFilterButtons());
         this.container.networkOnlySync.onClientChange((oldValue, newValue) -> this.updateFilterButtons());
         this.container.simulateSync.onClientChange((oldValue, newValue) -> this.updateFilterButtons());
+        this.container.typesSync.onClientChange((oldValue, newValue) -> this.typeMenu.refresh());
         this.container.savedSearchSync.onClientChange((oldValue, newValue) -> {
             if (this.searchField != null && this.searchField.getText().equals(oldValue)) {
                 this.searchField.setText(newValue);
@@ -215,6 +220,12 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                 Settings.TRANSFER_SIMULATE,
                 this.container.simulateSync,
                 ButtonToolTips.TransferTermSimulateNeedsStack);
+        this.typesButton = this.addFilterButton(
+                5,
+                Settings.ACTIONS,
+                ActionItems.TRANSFER_COMPONENT_TYPES,
+                ButtonToolTips.TransferTermFilterLocked);
+        this.typeMenu.close();
         this.updateFilterButtons();
         this.resetButton = new GuiImgButton(
                 this.guiLeft + RESET_BUTTON_X,
@@ -280,6 +291,10 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         updateLockedToggle(this.craftingButton, this.container.craftingOnlySync, simulating);
         updateLockedToggle(this.hideUnfilteredButton, this.container.hideUnfilteredSync, simulating);
         updateLockedToggle(this.networkOnlyButton, this.container.networkOnlySync, simulating);
+        this.typesButton.setEnabled(!simulating);
+        if (simulating) {
+            this.typeMenu.close();
+        }
         // A simulation needs a stack to insert, the server turns the setting off when the slot is emptied.
         this.simulateButton.setEnabled(this.container.getQuery() != null);
         this.simulateButton.set(valueOf(this.container.simulateSync));
@@ -318,6 +333,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         this.container.craftingOnlySync.set(YesNo.NO);
         this.container.hideUnfilteredSync.set(YesNo.NO);
         this.container.networkOnlySync.set(YesNo.NO);
+        this.container.resetTypesAction.send();
         this.updateFilterButtons();
         if (this.container.getQuery() != null) {
             this.container.querySync.applyAndQueueDelta(new AEStackInventoryDelta(0, null));
@@ -465,6 +481,11 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                     Settings.TRANSFER_DIRECTION.getPossibleValues());
             this.directionButton.set(next);
             this.container.directionSync.set(next);
+        } else if (button == this.typesButton) {
+            if (this.typesButton.enabled) {
+                this.typeMenu
+                        .open(this.typesButton.xPosition, this.typesButton.yPosition + this.typesButton.height + 1);
+            }
         } else if (button == this.resetButton) {
             this.resetFilters();
         } else if (button == this.craftingButton) {
@@ -499,6 +520,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         this.lastMouseY = mouseY;
         super.drawScreen(mouseX, mouseY, partialTicks);
         this.handleTooltip(mouseX, mouseY, this.searchField);
+        this.typeMenu.draw(mouseX, mouseY);
     }
 
     @Override
@@ -510,6 +532,18 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
 
     @Override
     protected void mouseClicked(final int mouseX, final int mouseY, final int button) {
+        if (this.typeMenu.isActive()) {
+            // A click on a line toggles it and keeps the menu open. A click on the button that opened the menu only
+            // closes it, any other click closes it and goes on to what is under it.
+            final boolean onTypesButton = this.typesButton.mousePressed(this.mc, mouseX, mouseY);
+            if (this.typeMenu.mouseClick(mouseX, mouseY, button)) {
+                return;
+            }
+            this.typeMenu.close();
+            if (onTypesButton) {
+                return;
+            }
+        }
         super.mouseClicked(mouseX, mouseY, button);
         // A disabled field still takes focus and clears on right click, so it gets no clicks while locked.
         if (this.container.isSimulating()) {
@@ -559,6 +593,9 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
      */
     @Override
     protected boolean mouseWheelEvent(final int x, final int y, final int wheel) {
+        if (this.typeMenu.mouseWheelEvent(x, y, wheel)) {
+            return true;
+        }
         final IAEStack<?> query = this.container.getQuery();
         if (query == null || !this.isOverQuerySlot(x - this.guiLeft, y - this.guiTop)) {
             return super.mouseWheelEvent(x, y, wheel);
@@ -748,7 +785,8 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
         GL11.glColor4f(1, 1, 1, 1);
         this.getScrollBar().draw(this);
 
-        if (!tooltip.isEmpty()) {
+        // The open drop-down covers what is under it.
+        if (!tooltip.isEmpty() && !this.typeMenu.isMouseOn(this.lastMouseX, this.lastMouseY)) {
             this.drawTooltip(relX + 12, relY, tooltip.toArray(new String[0]));
         }
     }
@@ -1037,6 +1075,135 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
             return component == null ? "" : component.getUnformattedText();
         } catch (final RuntimeException e) {
             return "";
+        }
+    }
+
+    /**
+     * The drop-down of kinds of component. Its lines are kinds, sorted by name, and each reads its on or off state from
+     * the server's latest list, so turning one on or off does not rebuild the menu or lose its scroll position.
+     */
+    private final class TypeMenu {
+
+        private static final int MAX_ROWS = 10;
+
+        private Menu menu;
+        private int x;
+        private int y;
+
+        private boolean isActive() {
+            return this.menu != null && this.menu.isActive();
+        }
+
+        private void open(final int x, final int y) {
+            this.x = x;
+            this.y = y;
+            this.build();
+        }
+
+        private void close() {
+            if (this.menu != null) {
+                this.menu.clear();
+                this.menu = null;
+            }
+        }
+
+        /**
+         * Rebuilds the open menu if a rescan found other kinds of component, a kind turned on or off needs nothing.
+         */
+        private void refresh() {
+            if (this.isActive() && !this.menu.sameKeys(this.sortedKeys())) {
+                this.build();
+            }
+        }
+
+        private void build() {
+            this.close();
+            final List<String> keys = this.sortedKeys();
+            if (keys.isEmpty()) {
+                return;
+            }
+            this.menu = new Menu(Math.min(keys.size(), MAX_ROWS));
+            this.menu.init(keys, this.x, this.y);
+        }
+
+        private boolean mouseClick(final int mouseX, final int mouseY, final int button) {
+            return this.isActive() && this.menu.isMouseOn(mouseX, mouseY)
+                    && this.menu.mouseClick(mouseX, mouseY, button);
+        }
+
+        private boolean mouseWheelEvent(final int mouseX, final int mouseY, final int wheel) {
+            return this.isActive() && this.menu.mouseWheelEvent(mouseX, mouseY, wheel);
+        }
+
+        private void draw(final int mouseX, final int mouseY) {
+            if (this.isActive()) {
+                this.menu.draw(mouseX, mouseY);
+            }
+        }
+
+        private boolean isMouseOn(final int mouseX, final int mouseY) {
+            return this.isActive() && this.menu.isMouseOn(mouseX, mouseY);
+        }
+
+        private List<String> sortedKeys() {
+            final List<TransferTypeFilter.Entry> entries = new ArrayList<>(container.typesSync.get());
+            entries.sort((a, b) -> nameOf(a).compareToIgnoreCase(nameOf(b)));
+            final List<String> keys = new ArrayList<>(entries.size());
+            for (final TransferTypeFilter.Entry entry : entries) {
+                keys.add(entry.key);
+            }
+            return keys;
+        }
+
+        private TransferTypeFilter.Entry entryOf(final String key) {
+            for (final TransferTypeFilter.Entry entry : container.typesSync.get()) {
+                if (entry.key.equals(key)) {
+                    return entry;
+                }
+            }
+            return null;
+        }
+
+        private final class Menu extends GuiContextMenu {
+
+            private Menu(final int visibleRows) {
+                super(visibleRows);
+            }
+
+            private boolean sameKeys(final List<String> keys) {
+                return this.list.equals(keys);
+            }
+
+            @Override
+            public void action(final int index) {
+                final String key = (String) this.list.get(index);
+                final TransferTypeFilter.Entry entry = entryOf(key);
+                if (entry != null) {
+                    container.toggleTypeAction.send((entry.shown ? "0" : "1") + key);
+                }
+            }
+
+            @Override
+            public String getDrawText(final int index) {
+                final TransferTypeFilter.Entry entry = entryOf((String) this.list.get(index));
+                if (entry == null) {
+                    return "";
+                }
+                return (entry.shown ? EnumChatFormatting.DARK_GREEN + "[x] " : EnumChatFormatting.GRAY + "[  ] ")
+                        + nameOf(entry);
+            }
+        }
+    }
+
+    /**
+     * Some mods' items fail to name themselves, which must not take the screen down.
+     */
+    private static String nameOf(final TransferTypeFilter.Entry entry) {
+        try {
+            final String name = entry.icon.getDisplayName();
+            return name == null ? entry.key : name;
+        } catch (final RuntimeException e) {
+            return entry.key;
         }
     }
 

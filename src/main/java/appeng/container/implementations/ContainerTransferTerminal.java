@@ -32,6 +32,7 @@ import appeng.api.util.IConfigManager;
 import appeng.container.AEBaseContainer;
 import appeng.container.interfaces.IVirtualSlotSource;
 import appeng.container.sync.ActionHandler;
+import appeng.container.sync.StreamCodecs;
 import appeng.container.sync.SyncCodec;
 import appeng.container.sync.SyncCodecs;
 import appeng.container.sync.SyncRegistrar;
@@ -51,6 +52,7 @@ import appeng.helpers.transfer.TransferResultFilter;
 import appeng.helpers.transfer.TransferRowOrder;
 import appeng.helpers.transfer.TransferRowWindow;
 import appeng.helpers.transfer.TransferScanner;
+import appeng.helpers.transfer.TransferTypeFilter;
 import appeng.parts.misc.PartStorageBus;
 import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.Platform;
@@ -77,6 +79,12 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
             ByteBufUtils::readUTF8String,
             UnaryOperator.identity(),
             Objects::equals);
+    private static final SyncCodec<List<TransferTypeFilter.Entry>> TYPES_CODEC = SyncCodecs.of(
+            "transferTerminalTypes",
+            TransferTypeFilter::write,
+            TransferTypeFilter::read,
+            entries -> entries == null ? null : new ArrayList<>(entries),
+            TransferTypeFilter::sameEntries);
 
     private final ITransferTerminal anchor;
     private final IAEStackInventory query;
@@ -119,6 +127,15 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
      */
     public final ActionHandler<Void> resendAction;
 
+    /** Every kind of component on the searched networks, with whether its rows are shown. */
+    public final ObjectSyncHandler<List<TransferTypeFilter.Entry>> typesSync;
+
+    /** Turns one kind of component on or off, the payload is {@code 1} or {@code 0} followed by its key. */
+    public final ActionHandler<String> toggleTypeAction;
+
+    /** Puts every kind of component back to its default. */
+    public final ActionHandler<Void> resetTypesAction;
+
     /** Settings every screen open on this terminal shares, with the handler that shows each. */
     private final Map<Settings, ConfigEnumSyncHandler<?>> sharedSettings = new EnumMap<>(Settings.class);
 
@@ -127,6 +144,9 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
 
     /** The searched stack this screen last applied, the slot is shared by every screen too. */
     private IAEStack<?> appliedQuery;
+
+    /** The revision of the terminal's kinds of component this screen last applied, they are shared too. */
+    private long appliedTypesRevision = -1;
 
     /** The terminal's change count at the last scan, see {@link ITransferTerminal#getChangeCount()}. */
     private long seenChangeCount;
@@ -201,6 +221,9 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         this.deniedSync = sync.booleanS2C("simulateDenied");
         this.lockedSync = sync.booleanS2C("simulateLocked");
         this.resendAction = sync.actionC2S("resend").onServerAction(this::resendWindow);
+        this.typesSync = sync.objectS2C("types", TYPES_CODEC, Collections.emptyList());
+        this.toggleTypeAction = sync.actionC2S("toggleType", StreamCodecs.string()).onServerAction(this::toggleType);
+        this.resetTypesAction = sync.actionC2S("resetTypes").onServerAction(anchor::resetTypeOverrides);
 
         this.sharedSettings.put(Settings.TRANSFER_DIRECTION, this.directionSync);
         this.sharedSettings.put(Settings.TRANSFER_CRAFTING_CARD_ONLY, this.craftingOnlySync);
@@ -303,6 +326,13 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
             }
         }
 
+        final long typesRevision = this.anchor.getTypeOverridesRevision();
+        if (typesRevision != this.appliedTypesRevision) {
+            this.appliedTypesRevision = typesRevision;
+            this.updateTypes();
+            this.queryChanged = true;
+        }
+
         final IAEStack<?> query = this.getQuery();
         if (!sameStack(query, this.appliedQuery)) {
             this.appliedQuery = query == null ? null : query.copy();
@@ -340,6 +370,7 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
                 : this.visibleGrids(grid, grid.getAllRecursiveGridConnections(PartStorageBus.class, true));
         this.scanned = TransferScanner.scan(this.grids, AEApi.instance().registries().transferInspectors());
         this.uninspected = TransferScanner.scanUninspected(this.grids, this.scanned);
+        this.updateTypes();
         this.configNames.clear();
         this.fingerprint = TransferScanner.fingerprint(this.grids);
         this.seenChangeCount = this.anchor.getChangeCount();
@@ -506,10 +537,34 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
                 .passesToggles(row.description, isYes(this.craftingOnlySync), isYes(this.hideUnfilteredSync))) {
             return false;
         }
+        if (!TransferTypeFilter.isShown(row, this.anchor.getTypeOverrides())) {
+            return false;
+        }
 
         final String text = this.searchTextSync.get();
         return text.isEmpty() || TransferNameFilter
                 .matches(this.configNames.computeIfAbsent(row, ContainerTransferTerminal::readConfigNames), text);
+    }
+
+    private void updateTypes() {
+        this.typesSync.set(TransferTypeFilter.entries(this.scanned, this.anchor.getTypeOverrides()));
+    }
+
+    /**
+     * Only kinds of component the drop-down lists are accepted, so a client cannot fill the terminal's saved data with
+     * made-up keys.
+     */
+    private void toggleType(final String payload) {
+        if (payload == null || payload.length() < 2) {
+            return;
+        }
+        final String key = payload.substring(1);
+        for (final TransferTypeFilter.Entry entry : this.typesSync.get()) {
+            if (entry.key.equals(key)) {
+                this.anchor.setTypeShown(key, payload.charAt(0) == '1');
+                return;
+            }
+        }
     }
 
     private static List<String> readConfigNames(final TransferComponentInfo row) {

@@ -1,5 +1,7 @@
 package appeng.api.parts;
 
+import java.util.Map;
+
 import appeng.api.networking.security.IActionHost;
 import appeng.api.util.IConfigurableObject;
 import appeng.tile.inventory.IAEStackInventory;
@@ -26,4 +28,25 @@ public interface ITransferTerminal extends IActionHost, IConfigurableObject {
     String getSearchText();
 
     void setSearchText(String text);
+
+    /**
+     * @return the kinds of component the player turned on or off, by key, every other kind follows its default
+     */
+    Map<String, Boolean> getTypeOverrides();
+
+    /**
+     * Turns rows of one kind of component on or off.
+     */
+    void setTypeShown(String key, boolean shown);
+
+    /**
+     * Puts every kind of component back to its default.
+     */
+    void resetTypeOverrides();
+
+    /**
+     * @return a number that grows each time {@link #getTypeOverrides()} changes, so each open screen can tell for
+     *         itself whether it has seen the change
+     */
+    long getTypeOverridesRevision();
 }

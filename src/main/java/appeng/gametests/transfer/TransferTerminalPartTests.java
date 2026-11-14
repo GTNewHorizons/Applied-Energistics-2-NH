@@ -1,6 +1,7 @@
 package appeng.gametests.transfer;
 
 import static appeng.gametests.AEGameTestHelpers.assertActive;
+import static appeng.gametests.AEGameTestHelpers.cell1k;
 import static appeng.gametests.transfer.TransferTestHelpers.TEMPLATE;
 import static appeng.gametests.transfer.TransferTestHelpers.iron;
 import static appeng.gametests.transfer.TransferTestHelpers.place;
@@ -29,6 +30,7 @@ import appeng.api.storage.data.IAEStack;
 import appeng.container.implementations.ContainerTransferTerminal;
 import appeng.core.AppEng;
 import appeng.helpers.transfer.TransferRowWindow;
+import appeng.helpers.transfer.TransferTypeFilter;
 import appeng.parts.automation.PartExportBus;
 import appeng.parts.reporting.PartTransferTerminal;
 import appeng.tile.networking.TileCableBus;
@@ -102,6 +104,8 @@ public class TransferTerminalPartTests {
         terminal.getConfigManager().putSetting(Settings.TRANSFER_NETWORK_ONLY, YesNo.YES);
         terminal.getQueryInventory().putAEStackInSlot(0, iron());
         terminal.setSearchText("ingot");
+        terminal.setTypeShown("appliedenergistics2:tile.BlockDrive@0", true);
+        terminal.setTypeShown("appliedenergistics2:item.ItemMultiPart@220", false);
 
         NBTTagCompound data = new NBTTagCompound();
         terminal.writeToNBT(data);
@@ -129,7 +133,113 @@ public class TransferTerminalPartTests {
                 iron().isSameType((Object) loaded.getQueryInventory().getAEStackInSlot(0)),
                 "Searched stack should be kept");
         helper.assertEquals("ingot", loaded.getSearchText(), "Search text should be kept");
+        helper.assertEquals(
+                Boolean.TRUE,
+                loaded.getTypeOverrides().get("appliedenergistics2:tile.BlockDrive@0"),
+                "A kind turned on should be kept");
+        helper.assertEquals(
+                Boolean.FALSE,
+                loaded.getTypeOverrides().get("appliedenergistics2:item.ItemMultiPart@220"),
+                "A kind turned off should be kept");
+        helper.assertEquals(2, loaded.getTypeOverrides().size(), "Nothing else is turned on or off");
         helper.succeed();
+    }
+
+    /**
+     * @return the drop-down entry of the only kind of component that starts hidden, the drive
+     */
+    private static TransferTypeFilter.Entry hiddenKind(GameTestHelper helper, ContainerTransferTerminal container) {
+        TransferTypeFilter.Entry hidden = null;
+        for (TransferTypeFilter.Entry entry : container.typesSync.get()) {
+            if (!entry.shown) {
+                helper.assertNull(hidden, "Only the drive starts hidden");
+                hidden = entry;
+            }
+        }
+        helper.assertNotNull(hidden, "The drive should be in the drop-down");
+        return hidden;
+    }
+
+    private static boolean listsKind(ContainerTransferTerminal container, String key) {
+        for (TransferComponentInfo row : container.getFilteredRows()) {
+            if (key.equals(TransferTypeFilter.keyOf(row.selfRep))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String kindOfRowOnSide(GameTestHelper helper, ContainerTransferTerminal container,
+            ForgeDirection side) {
+        for (TransferComponentInfo row : container.getFilteredRows()) {
+            if (row.side == (byte) side.ordinal()) {
+                return TransferTypeFilter.keyOf(row.selfRep);
+            }
+        }
+        throw new AssertionError("No row for the part on side " + side);
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void drivesAreHiddenUntilTheirKindIsTurnedOn(GameTestHelper helper) {
+        PartTransferTerminal terminal = terminal(helper);
+
+        helper.startSequence()
+                .thenWaitUntil(
+                        "wait for the terminal to join the network",
+                        60,
+                        () -> assertActive(helper, terminal, "Terminal should become active"))
+                .thenExecute("turn kinds of component on and off", () -> {
+                    ContainerTransferTerminal container = new ContainerTransferTerminal(
+                            helper.spawnFakePlayer("transfer_terminal").inventory,
+                            terminal);
+                    container.detectAndSendChanges();
+                    String drive = hiddenKind(helper, container).key;
+                    String bus = kindOfRowOnSide(helper, container, ForgeDirection.EAST);
+                    helper.assertFalse(listsKind(container, drive), "Drives start hidden");
+
+                    terminal.setTypeShown(drive, true);
+                    container.detectAndSendChanges();
+                    helper.assertTrue(listsKind(container, drive), "A drive is listed once turned on");
+
+                    terminal.setTypeShown(bus, false);
+                    container.detectAndSendChanges();
+                    helper.assertFalse(listsKind(container, bus), "A kind turned off is not listed");
+                    helper.assertTrue(listsKind(container, drive), "Other kinds stay listed");
+
+                    terminal.resetTypeOverrides();
+                    container.detectAndSendChanges();
+                    helper.assertFalse(listsKind(container, drive), "Resetting hides drives again");
+                    helper.assertTrue(listsKind(container, bus), "Resetting shows every other kind again");
+                }).thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void simulatingListsEveryKindOfComponent(GameTestHelper helper) {
+        PartTransferTerminal terminal = terminal(helper);
+        helper.setSlot("drive", 0, cell1k());
+
+        helper.startSequence()
+                .thenWaitUntil(
+                        "wait for the terminal to join the network",
+                        60,
+                        () -> assertActive(helper, terminal, "Terminal should become active"))
+                .thenExecute("simulate with the storage bus turned off", () -> {
+                    ContainerTransferTerminal container = new ContainerTransferTerminal(
+                            helper.spawnFakePlayer("transfer_terminal").inventory,
+                            terminal);
+                    container.detectAndSendChanges();
+                    String drive = hiddenKind(helper, container).key;
+                    String bus = kindOfRowOnSide(helper, container, ForgeDirection.EAST);
+                    terminal.setTypeShown(bus, false);
+
+                    terminal.getQueryInventory().putAEStackInSlot(0, iron());
+                    terminal.getConfigManager().putSetting(Settings.TRANSFER_SIMULATE, YesNo.YES);
+                    container.detectAndSendChanges();
+
+                    helper.assertTrue(container.simulatingSync.get(), "The insert should be simulated");
+                    helper.assertTrue(listsKind(container, drive), "The hidden drive is listed while simulating");
+                    helper.assertTrue(listsKind(container, bus), "The turned off bus is listed while simulating");
+                }).thenSucceed();
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 100)

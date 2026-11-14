@@ -1,5 +1,9 @@
 package appeng.parts.reporting;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -32,11 +36,14 @@ public class PartTransferTerminal extends AbstractPartDisplay
     private static final CableBusTextures FRONT_COLORED_ICON = CableBusTextures.PartTransferTerm_Colored;
     private static final String QUERY_TAG = "transferQuery";
     private static final String SEARCH_TAG = "transferSearch";
+    private static final String TYPES_TAG = "transferTypes";
 
     private final IConfigManager settings = new ConfigManager(this);
     private final IAEStackInventory query = new IAEStackInventory(this, 1);
     private String searchText = "";
     private long changeCount;
+    private final Map<String, Boolean> typeOverrides = new HashMap<>();
+    private long typeOverridesRevision;
 
     public PartTransferTerminal(final ItemStack is) {
         super(is);
@@ -65,6 +72,13 @@ public class PartTransferTerminal extends AbstractPartDisplay
         this.settings.readFromNBT(data);
         this.query.readFromNBT(data, QUERY_TAG);
         this.searchText = data.getString(SEARCH_TAG);
+
+        this.typeOverrides.clear();
+        final NBTTagCompound types = data.getCompoundTag(TYPES_TAG);
+        for (final Object key : types.func_150296_c()) {
+            this.typeOverrides.put((String) key, types.getBoolean((String) key));
+        }
+        this.typeOverridesRevision++;
     }
 
     @Override
@@ -76,6 +90,16 @@ public class PartTransferTerminal extends AbstractPartDisplay
             data.removeTag(SEARCH_TAG);
         } else {
             data.setString(SEARCH_TAG, this.searchText);
+        }
+
+        if (this.typeOverrides.isEmpty()) {
+            data.removeTag(TYPES_TAG);
+        } else {
+            final NBTTagCompound types = new NBTTagCompound();
+            for (final Map.Entry<String, Boolean> entry : this.typeOverrides.entrySet()) {
+                types.setBoolean(entry.getKey(), entry.getValue());
+            }
+            data.setTag(TYPES_TAG, types);
         }
     }
 
@@ -126,6 +150,33 @@ public class PartTransferTerminal extends AbstractPartDisplay
             this.searchText = value;
             this.save();
         }
+    }
+
+    @Override
+    public Map<String, Boolean> getTypeOverrides() {
+        return Collections.unmodifiableMap(this.typeOverrides);
+    }
+
+    @Override
+    public void setTypeShown(final String key, final boolean shown) {
+        if (key != null && !Boolean.valueOf(shown).equals(this.typeOverrides.put(key, shown))) {
+            this.typeOverridesRevision++;
+            this.save();
+        }
+    }
+
+    @Override
+    public void resetTypeOverrides() {
+        if (!this.typeOverrides.isEmpty()) {
+            this.typeOverrides.clear();
+            this.typeOverridesRevision++;
+            this.save();
+        }
+    }
+
+    @Override
+    public long getTypeOverridesRevision() {
+        return this.typeOverridesRevision;
     }
 
     @Override

@@ -317,6 +317,8 @@ public enum ButtonToolTips implements Localization {
     TransferTermNetworkOnlyNo,
     TransferTermReset,
     TransferTermResetDesc,
+    TransferTermTypes,
+    TransferTermTypesDesc,
     TransferTermSimulate,
     TransferTermSimulateYes,
     TransferTermSimulateNo,

@@ -54,6 +54,14 @@ abstract class CellStorageInspector<T extends IGridHost> implements ITransferIns
 
     protected abstract BaseActionSource source(T host);
 
+    /**
+     * @return whether the terminal leaves these out until the player turns them on, see
+     *         {@link TransferDescription#hiddenByDefault}
+     */
+    protected boolean hiddenByDefault() {
+        return false;
+    }
+
     @Override
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public TransferDescription inspect(final T host) {
@@ -98,8 +106,8 @@ abstract class CellStorageInspector<T extends IGridHost> implements ITransferIns
             builder.oreFilter(String.join("|", oreFilters));
         }
 
-        return builder.sticky(sticky).matcher(new CellMatcher(type -> this.handlers(host, type), this.source(host)))
-                .build();
+        return builder.sticky(sticky).hiddenByDefault(this.hiddenByDefault())
+                .matcher(new CellMatcher(type -> this.handlers(host, type), this.source(host))).build();
     }
 
     /**

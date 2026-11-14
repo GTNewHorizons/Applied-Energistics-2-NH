@@ -665,6 +665,12 @@ public class GuiImgButton extends GuiButton implements ITooltip {
                     ActionItems.TRANSFER_RESET_FILTERS,
                     ButtonToolTips.TransferTermReset,
                     ButtonToolTips.TransferTermResetDesc);
+            this.registerApp(
+                    130,
+                    Settings.ACTIONS,
+                    ActionItems.TRANSFER_COMPONENT_TYPES,
+                    ButtonToolTips.TransferTermTypes,
+                    ButtonToolTips.TransferTermTypesDesc);
 
             this.registerApp(
                     16 * 11 + 2,
