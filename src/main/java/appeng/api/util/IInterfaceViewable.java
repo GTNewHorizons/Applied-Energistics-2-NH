@@ -7,6 +7,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.IChatComponent;
 
+import org.jetbrains.annotations.Nullable;
+
+import appeng.api.crafting.IPatternTarget;
 import appeng.api.networking.IGridHost;
 import appeng.api.storage.data.IAEStackType;
 import appeng.helpers.IPriorityHost;
@@ -110,6 +113,14 @@ public interface IInterfaceViewable extends IGridHost {
      * "Target" Display representation
      */
     default ItemStack getDisplayRep() {
+        return null;
+    }
+
+    /**
+     * Returns the machine this provider pushes patterns into, or null if unknown; call it on the server thread.
+     */
+    @Nullable
+    default IPatternTarget getPatternTarget() {
         return null;
     }
 }

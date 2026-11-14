@@ -11,6 +11,7 @@
 package appeng.server;
 
 import appeng.server.subcommands.ChunkLogger;
+import appeng.server.subcommands.PatternTargets;
 import appeng.server.subcommands.Profile;
 import appeng.server.subcommands.Supporters;
 import appeng.server.subcommands.ToggleDebugPathfinding;
@@ -24,7 +25,8 @@ public enum Commands {
     profile(2, new Profile()),
     toggleFullAccess(2, new ToggleFullAccess()),
     toggleDebugPaths(2, new ToggleDebugPathfinding()),
-    toggleDebugTiming(2, new ToggleDebugTiming());
+    toggleDebugTiming(2, new ToggleDebugTiming()),
+    patternTargets(2, new PatternTargets());
 
     public final int level;
     public final ISubCommand command;
