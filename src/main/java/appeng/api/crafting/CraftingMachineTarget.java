@@ -1,16 +1,14 @@
-package appeng.crafting.target;
+package appeng.api.crafting;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import appeng.api.crafting.IPatternTarget;
-import appeng.api.crafting.PatternMatch;
 import appeng.api.networking.crafting.ICraftingPatternDetails;
 
 /**
- * Pattern target for an adjacent {@link appeng.api.implementations.tiles.ICraftingMachine}, such as a Molecular
- * Assembler.
+ * Pattern target of anything that runs crafting table patterns, such as a Molecular Assembler; AE2 registers its
+ * matcher.
  */
 public enum CraftingMachineTarget implements IPatternTarget {
 
