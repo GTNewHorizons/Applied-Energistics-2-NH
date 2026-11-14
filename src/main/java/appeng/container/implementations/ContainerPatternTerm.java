@@ -17,7 +17,9 @@ import static appeng.util.Platform.isServer;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -37,8 +39,10 @@ import appeng.api.config.Actionable;
 import appeng.api.config.SecurityPermissions;
 import appeng.api.crafting.PatternMatch;
 import appeng.api.implementations.ICraftingPatternItem;
+import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.crafting.ICraftingPatternDetails;
+import appeng.api.networking.security.ISecurityGrid;
 import appeng.api.networking.security.MachineSource;
 import appeng.api.parts.IPatternTerminal;
 import appeng.api.storage.IMEMonitor;
@@ -484,9 +488,20 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
             return;
         }
 
+        final EntityPlayer player = this.getPlayerInv().player;
+        final Map<IGrid, Boolean> canBuild = new HashMap<>();
         final List<PatternTargetQuery.Entry> shown = new ArrayList<>();
         for (PatternTargetQuery.Entry entry : PatternTargetQuery.run(node.getGrid(), details).entries) {
-            if (entry.freeSlots > 0 && entry.match != PatternMatch.NO_MATCH) {
+            if (entry.freeSlots <= 0 || entry.match == PatternMatch.NO_MATCH) {
+                continue;
+            }
+            // A grid behind a Pattern Repeater can deny BUILD; a row there would only fail on click.
+            final IGridNode providerNode = entry.provider.getGridNode(ForgeDirection.UNKNOWN);
+            final IGrid providerGrid = providerNode == null ? null : providerNode.getGrid();
+            if (providerGrid != null && canBuild.computeIfAbsent(
+                    providerGrid,
+                    g -> g.<ISecurityGrid>getCache(ISecurityGrid.class)
+                            .hasPermission(player, SecurityPermissions.BUILD))) {
                 shown.add(entry);
             }
         }
