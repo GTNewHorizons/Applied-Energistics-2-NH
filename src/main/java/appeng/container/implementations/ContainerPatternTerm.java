@@ -109,9 +109,11 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
     public final ActionHandler<Integer> doubleAction;
     public final ActionHandler<PatternTargetList> patternTargetsAction;
     public final ActionHandler<Integer> sendToTargetAction;
+    public final ActionHandler<Integer> extractConflictAction;
 
     private ItemStack lastTargetPattern;
     private List<PatternTargetQuery.Entry> lastTargets = Collections.emptyList();
+    private List<PatternTargetQuery.Conflict> lastConflicts = Collections.emptyList();
     private PatternTargetList clientTargets = PatternTargetList.EMPTY;
 
     public ContainerPatternTerm(final InventoryPlayer ip, final ITerminalHost monitorable) {
@@ -222,6 +224,8 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
                 .onClientAction(list -> this.clientTargets = list);
         this.sendToTargetAction = sync.actionC2S("sendToTarget", StreamCodecs.intValue())
                 .onServerAction(this::sendPatternToTarget);
+        this.extractConflictAction = sync.actionC2S("extractConflict", StreamCodecs.intValue())
+                .onServerAction(this::extractConflict);
 
         this.updateOrderOfOutputSlots();
     }
@@ -467,6 +471,7 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
         }
         this.lastTargetPattern = pattern == null ? null : pattern.copy();
         this.lastTargets = Collections.emptyList();
+        this.lastConflicts = Collections.emptyList();
 
         final IGridNode node = this.getNetworkNode();
         final ICraftingPatternDetails details = pattern != null
@@ -474,7 +479,8 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
                         ? patternItem.getPatternForItem(pattern, this.getPlayerInv().player.worldObj)
                         : null;
         if (details == null || node == null || node.getGrid() == null) {
-            this.patternTargetsAction.send(new PatternTargetList(pattern != null, Collections.emptyList()));
+            this.patternTargetsAction
+                    .send(new PatternTargetList(pattern != null, Collections.emptyList(), Collections.emptyList()));
             return;
         }
 
@@ -505,14 +511,58 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
                             entry.match,
                             entry.freeSlots));
         }
-        this.patternTargetsAction.send(new PatternTargetList(true, entries));
+
+        this.lastConflicts = PatternTargetQuery.findConflicts(node.getGrid(), details);
+        final List<PatternTargetList.Conflict> conflicts = new ArrayList<>(this.lastConflicts.size());
+        for (int i = 0; i < this.lastConflicts.size(); i++) {
+            final PatternTargetQuery.Conflict conflict = this.lastConflicts.get(i);
+            final IInterfaceViewable provider = conflict.provider;
+            final ItemStack displayRep = provider.getDisplayRep();
+            final DimensionalCoord location = provider.getLocation();
+            conflicts.add(
+                    new PatternTargetList.Conflict(
+                            i,
+                            displayRep != null ? displayRep : provider.getSelfRep(),
+                            provider.getRawName(),
+                            location.x,
+                            location.y,
+                            location.z,
+                            location.getDimension(),
+                            conflict.sameRecipe));
+        }
+        this.patternTargetsAction.send(new PatternTargetList(true, entries, conflicts));
+    }
+
+    private void extractConflict(int index) {
+        final IGridNode node = this.getNetworkNode();
+        if (node == null || node.getGrid() == null
+                || index < 0
+                || index >= this.lastConflicts.size()
+                || !this.hasAccess(SecurityPermissions.BUILD, true)) {
+            return;
+        }
+
+        final EntityPlayer player = this.getPlayerInv().player;
+        final ItemStack extracted = PatternTargetQuery
+                .extractPattern(this.lastConflicts.get(index), node.getGrid(), player);
+        if (extracted == null) {
+            return;
+        }
+        if (!player.inventory.addItemStackToInventory(extracted)) {
+            player.entityDropItem(extracted, 0);
+        }
+        // The encoded pattern did not change, so the lists must be rebuilt by hand to drop the extracted one.
+        this.lastTargetPattern = null;
     }
 
     private void sendPatternToTarget(int index) {
         final ItemStack pattern = this.patternSlotOUT.getStack();
         final IGridNode node = this.getNetworkNode();
         // The index points into the list built for lastTargetPattern, so a changed pattern makes it meaningless.
-        if (pattern == null || node == null || node.getGrid() == null || index < 0 || index >= this.lastTargets.size()
+        if (pattern == null || node == null
+                || node.getGrid() == null
+                || index < 0
+                || index >= this.lastTargets.size()
                 || !ItemStack.areItemStacksEqual(pattern, this.lastTargetPattern)
                 || !this.hasAccess(SecurityPermissions.BUILD, true)) {
             return;

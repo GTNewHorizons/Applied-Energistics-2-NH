@@ -21,12 +21,16 @@ import appeng.api.crafting.IPatternTargetMatcher;
 import appeng.api.crafting.PatternMatch;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
+import appeng.api.networking.crafting.ICraftingGrid;
+import appeng.api.networking.crafting.ICraftingMedium;
 import appeng.api.networking.crafting.ICraftingPatternDetails;
 import appeng.api.networking.security.ISecurityGrid;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.util.IInterfaceViewable;
 import appeng.core.AELog;
+import appeng.helpers.DualityInterface;
+import appeng.me.cache.CraftingGridCache;
 import appeng.parts.misc.PartPatternRepeater;
 
 /**
@@ -184,28 +188,13 @@ public final class PatternTargetQuery {
     }
 
     /**
-     * Puts one pattern into the first free slot of a provider reachable from the grid; returns false if the provider
-     * is gone, full or the player lacks BUILD on its grid.
+     * Puts one pattern into the first free slot of a provider reachable from the grid; returns false if the provider is
+     * gone, full or the player lacks BUILD on its grid.
      */
     public static boolean insertPattern(IInterfaceViewable provider, IGrid grid, EntityPlayer player,
             ItemStack pattern) {
-        // The provider was picked when the list was built, so it may have been broken or unlinked since.
-        final TileEntity tile = provider.getTileEntity();
-        if (tile == null || tile.isInvalid()
-                || tile.getWorldObj().getTileEntity(tile.xCoord, tile.yCoord, tile.zCoord) != tile) {
-            return false;
-        }
-        final IGridNode node = provider.getGridNode(ForgeDirection.UNKNOWN);
-        if (node == null || !node.isActive() || !collectReachableGrids(grid).contains(node.getGrid())) {
-            return false;
-        }
-        final ISecurityGrid security = node.getGrid().getCache(ISecurityGrid.class);
-        if (!security.hasPermission(player, SecurityPermissions.BUILD)) {
-            return false;
-        }
-
         final IInventory patterns = provider.getPatterns();
-        if (patterns == null) {
+        if (!canModify(provider, grid, player) || patterns == null) {
             return false;
         }
         final int slots = Math.min(provider.numSlots(), patterns.getSizeInventory());
@@ -218,6 +207,126 @@ public final class PatternTargetQuery {
             }
         }
         return false;
+    }
+
+    /**
+     * Lists the patterns on the grid and on grids behind Pattern Repeaters that make the same primary output.
+     */
+    public static List<Conflict> findConflicts(IGrid grid, ICraftingPatternDetails pattern) {
+        final IAEStack<?> output = primaryOutput(pattern);
+        if (output == null) {
+            return Collections.emptyList();
+        }
+
+        final List<Conflict> conflicts = new ArrayList<>();
+        for (IGrid currentGrid : collectReachableGrids(grid)) {
+            if (!(currentGrid.getCache(ICraftingGrid.class) instanceof CraftingGridCache craftingGrid)) {
+                continue;
+            }
+            final List<ICraftingPatternDetails> existing = craftingGrid.getCraftingMultiPatterns().get(output);
+            if (existing == null) {
+                continue;
+            }
+            for (ICraftingPatternDetails details : existing) {
+                // A Pattern Repeater re-offers patterns of another grid; that grid is walked too, so skipping the
+                // repeater here keeps each pattern once.
+                for (ICraftingMedium medium : craftingGrid.getMediums(details)) {
+                    final Object host = medium instanceof DualityInterface duality ? duality.getHost() : medium;
+                    final IInterfaceViewable provider = host instanceof IInterfaceViewable viewable ? viewable : null;
+                    if (provider != null) {
+                        addConflict(conflicts, provider, details, sameRecipe(details, pattern));
+                    }
+                }
+            }
+        }
+        return conflicts;
+    }
+
+    /**
+     * Takes the conflicting pattern out of its provider; returns null if it moved, or the player lacks BUILD.
+     */
+    public static ItemStack extractPattern(Conflict conflict, IGrid grid, EntityPlayer player) {
+        final IInventory patterns = conflict.provider.getPatterns();
+        if (!canModify(conflict.provider, grid, player) || patterns == null
+                || conflict.slot >= patterns.getSizeInventory()
+                || !ItemStack.areItemStacksEqual(patterns.getStackInSlot(conflict.slot), conflict.pattern)) {
+            return null;
+        }
+        final ItemStack removed = patterns.getStackInSlot(conflict.slot);
+        patterns.setInventorySlotContents(conflict.slot, null);
+        return removed;
+    }
+
+    private static void addConflict(List<Conflict> conflicts, IInterfaceViewable provider,
+            ICraftingPatternDetails details, boolean sameRecipe) {
+        final IInventory patterns = provider.getPatterns();
+        if (patterns == null) {
+            return;
+        }
+        final int slots = Math.min(provider.numSlots(), patterns.getSizeInventory());
+        for (int i = 0; i < slots; i++) {
+            final ItemStack stack = patterns.getStackInSlot(i);
+            if (stack != null && ItemStack.areItemStacksEqual(stack, details.getPattern())) {
+                for (Conflict known : conflicts) {
+                    if (known.provider == provider && known.slot == i) {
+                        return;
+                    }
+                }
+                conflicts.add(new Conflict(provider, i, stack.copy(), sameRecipe));
+                return;
+            }
+        }
+    }
+
+    private static IAEStack<?> primaryOutput(ICraftingPatternDetails pattern) {
+        for (IAEStack<?> output : pattern.getCondensedAEOutputs()) {
+            if (output != null) {
+                return output;
+            }
+        }
+        return null;
+    }
+
+    private static boolean sameRecipe(ICraftingPatternDetails a, ICraftingPatternDetails b) {
+        return a.isCraftable() == b.isCraftable() && sameStacks(a.getCondensedAEInputs(), b.getCondensedAEInputs())
+                && sameStacks(a.getCondensedAEOutputs(), b.getCondensedAEOutputs());
+    }
+
+    // Condensed arrays have no fixed order, so each stack is matched against any unused one of the other side.
+    private static boolean sameStacks(IAEStack<?>[] a, IAEStack<?>[] b) {
+        if (a.length != b.length) {
+            return false;
+        }
+        final boolean[] used = new boolean[b.length];
+        for (IAEStack<?> stack : a) {
+            boolean found = false;
+            for (int i = 0; i < b.length; i++) {
+                if (!used[i] && stack != null && stack.equals(b[i]) && stack.getStackSize() == b[i].getStackSize()) {
+                    used[i] = true;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // The provider was picked when the list was built, so it may have been broken or unlinked since.
+    private static boolean canModify(IInterfaceViewable provider, IGrid grid, EntityPlayer player) {
+        final TileEntity tile = provider.getTileEntity();
+        if (tile == null || tile.isInvalid()
+                || tile.getWorldObj().getTileEntity(tile.xCoord, tile.yCoord, tile.zCoord) != tile) {
+            return false;
+        }
+        final IGridNode node = provider.getGridNode(ForgeDirection.UNKNOWN);
+        if (node == null || !node.isActive() || !collectReachableGrids(grid).contains(node.getGrid())) {
+            return false;
+        }
+        final ISecurityGrid security = node.getGrid().getCache(ISecurityGrid.class);
+        return security.hasPermission(player, SecurityPermissions.BUILD);
     }
 
     // Same walk as ContainerInterfaceTerminal#collectReachableGrids.
@@ -243,5 +352,20 @@ public final class PatternTargetQuery {
 
     private enum StackTypeMismatch {
         INSTANCE
+    }
+
+    public static final class Conflict {
+
+        public final IInterfaceViewable provider;
+        public final int slot;
+        public final ItemStack pattern;
+        public final boolean sameRecipe;
+
+        private Conflict(IInterfaceViewable provider, int slot, ItemStack pattern, boolean sameRecipe) {
+            this.provider = provider;
+            this.slot = slot;
+            this.pattern = pattern;
+            this.sameRecipe = sameRecipe;
+        }
     }
 }
