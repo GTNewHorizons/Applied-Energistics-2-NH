@@ -660,7 +660,7 @@ public class GuiImgButton extends GuiButton implements ITooltip {
                     ButtonToolTips.TransferTermSimulate,
                     ButtonToolTips.TransferTermSimulateNo);
             this.registerApp(
-                    215,
+                    6,
                     Settings.ACTIONS,
                     ActionItems.TRANSFER_RESET_FILTERS,
                     ButtonToolTips.TransferTermReset,
