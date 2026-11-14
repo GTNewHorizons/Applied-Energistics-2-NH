@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
@@ -1310,13 +1311,26 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
             this.info = info;
             this.description = info.description;
 
-            final String representation = info.selfRep == null ? "" : info.selfRep.getDisplayName();
+            final String representation = info.selfRep == null ? "" : safeName(info.selfRep::getDisplayName);
             this.baseName = info.customName.isEmpty() ? representation : info.customName;
             this.displayName = info.nameSuffixJson == null ? this.baseName
                     : this.baseName + " " + resolveSuffix(info.nameSuffixJson);
 
             for (final TransferDescription.ConfigEntry entry : info.description.config) {
-                this.configNames.add(entry.stack.getDisplayName());
+                this.configNames.add(safeName(entry.stack::getDisplayName));
+            }
+        }
+
+        /**
+         * Rows are built while their packet is handled, where an item failing to name itself would take the client
+         * down. Such an item is shown without a name instead.
+         */
+        private static String safeName(final Supplier<String> name) {
+            try {
+                final String value = name.get();
+                return value == null ? "" : value;
+            } catch (final RuntimeException | LinkageError e) {
+                return "";
             }
         }
 
