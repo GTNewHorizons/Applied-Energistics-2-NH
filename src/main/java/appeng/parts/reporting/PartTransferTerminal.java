@@ -38,6 +38,9 @@ public class PartTransferTerminal extends AbstractPartDisplay
     private static final String SEARCH_TAG = "transferSearch";
     private static final String TYPES_TAG = "transferTypes";
 
+    /** Longest search text the terminal keeps. */
+    public static final int MAX_SEARCH_LENGTH = 256;
+
     private final IConfigManager settings = new ConfigManager(this);
     private final IAEStackInventory query = new IAEStackInventory(this, 1);
     private String searchText = "";
@@ -145,7 +148,11 @@ public class PartTransferTerminal extends AbstractPartDisplay
 
     @Override
     public void setSearchText(final String text) {
-        final String value = text == null ? "" : text;
+        // The text comes from the client and is saved with the part, so its length is capped.
+        String value = text == null ? "" : text;
+        if (value.length() > MAX_SEARCH_LENGTH) {
+            value = value.substring(0, MAX_SEARCH_LENGTH);
+        }
         if (!value.equals(this.searchText)) {
             this.searchText = value;
             this.save();

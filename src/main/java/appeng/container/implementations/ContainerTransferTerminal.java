@@ -541,9 +541,12 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
             return false;
         }
 
+        // A client may send no text at all, which is the same as an empty search.
         final String text = this.searchTextSync.get();
-        return text.isEmpty() || TransferNameFilter
-                .matches(this.configNames.computeIfAbsent(row, ContainerTransferTerminal::readConfigNames), text);
+        return text == null || text.isEmpty()
+                || TransferNameFilter.matches(
+                        this.configNames.computeIfAbsent(row, ContainerTransferTerminal::readConfigNames),
+                        text);
     }
 
     private void updateTypes() {

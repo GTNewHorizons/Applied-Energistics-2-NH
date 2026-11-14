@@ -56,6 +56,7 @@ import appeng.helpers.transfer.ConfigStripWindow;
 import appeng.helpers.transfer.TransferNameFilter;
 import appeng.helpers.transfer.TransferRowWindow;
 import appeng.helpers.transfer.TransferTypeFilter;
+import appeng.parts.reporting.PartTransferTerminal;
 import appeng.util.Platform;
 import appeng.util.ReadableNumberConverter;
 
@@ -248,6 +249,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                 GuiTransferTerminal.this.refreshRows();
             }
         };
+        this.searchField.setMaxStringLength(PartTransferTerminal.MAX_SEARCH_LENGTH);
         this.searchField.x = this.guiLeft + SEARCH_X;
         this.searchField.y = this.guiTop + SEARCH_Y;
         this.searchField.setText(previousSearch);

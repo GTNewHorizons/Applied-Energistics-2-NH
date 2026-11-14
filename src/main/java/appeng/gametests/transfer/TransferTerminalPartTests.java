@@ -95,6 +95,51 @@ public class TransferTerminalPartTests {
                 }).thenSucceed();
     }
 
+    @GameTest(template = TEMPLATE, timeoutTicks = 100)
+    public static void aMissingSearchTextFromTheClientSearchesNothing(GameTestHelper helper) {
+        PartTransferTerminal terminal = terminal(helper);
+
+        helper.startSequence()
+                .thenWaitUntil(
+                        "wait for the terminal to join the network",
+                        60,
+                        () -> assertActive(helper, terminal, "Terminal should become active"))
+                .thenExecute("receive no search text and filter the rows", () -> {
+                    ContainerTransferTerminal container = new ContainerTransferTerminal(
+                            helper.spawnFakePlayer("transfer_terminal").inventory,
+                            terminal);
+                    container.detectAndSendChanges();
+                    int rows = container.getFilteredRows().size();
+                    helper.assertTrue(rows > 0, "The template has components to list");
+
+                    // A client can send the search text as absent, which reads back as null.
+                    container.searchTextSync.set(null);
+                    terminal.getConfigManager().putSetting(Settings.TRANSFER_DIRECTION, TransferDirection.IMPORT);
+                    container.detectAndSendChanges();
+                    terminal.getConfigManager().putSetting(Settings.TRANSFER_DIRECTION, TransferDirection.BOTH);
+                    container.detectAndSendChanges();
+
+                    helper.assertEquals(rows, container.getFilteredRows().size(), "No search text keeps every row");
+                }).thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 20)
+    public static void savedSearchTextIsCapped(GameTestHelper helper) {
+        PartTransferTerminal terminal = terminal(helper);
+        StringBuilder text = new StringBuilder();
+        for (int i = 0; i < PartTransferTerminal.MAX_SEARCH_LENGTH * 4; i++) {
+            text.append('a');
+        }
+
+        terminal.setSearchText(text.toString());
+
+        helper.assertEquals(
+                PartTransferTerminal.MAX_SEARCH_LENGTH,
+                terminal.getSearchText().length(),
+                "A search text sent by the client is cut to the longest the terminal keeps");
+        helper.succeed();
+    }
+
     @GameTest(template = TEMPLATE, timeoutTicks = 20)
     public static void filtersSurviveSavingAndLoading(GameTestHelper helper) {
         PartTransferTerminal terminal = terminal(helper);
