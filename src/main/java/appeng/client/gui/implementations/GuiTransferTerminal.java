@@ -859,7 +859,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
                     LIST_RIGHT,
                     rowTop + ROW_HEIGHT - 1,
                     ColorUtils.craftingDiagnosticTerminalRowHover.getColor());
-            tooltip.addAll(row.getTooltip());
+            tooltip.addAll(row.getTooltip(this.iconLines(row)));
         }
 
         this.highlightButton.yPosition = rowTop + HIGHLIGHT_Y;
@@ -983,6 +983,34 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
             }
         }
         return rightEdge;
+    }
+
+    /**
+     * The row's cards and settings in words, the same text their icons show on hover. Icons that do not fit on a narrow
+     * row are left out, so this is the only place that always lists them all.
+     */
+    private List<String> iconLines(final Row row) {
+        final List<String> lines = new ArrayList<>();
+        if (!row.description.upgrades.isEmpty()) {
+            lines.add(GuiText.TransferTermCards.getLocal());
+            for (final ItemStack upgrade : row.description.upgrades) {
+                lines.add(EnumChatFormatting.GRAY + "  " + upgrade.stackSize + "x " + upgrade.getDisplayName());
+            }
+        }
+        if (!row.description.settings.isEmpty()) {
+            lines.add(GuiText.TransferTermSettings.getLocal());
+            for (final TransferDescription.SettingEntry entry : row.description.settings) {
+                final String message = this.settingButton(entry).getMessage();
+                if (message == null) {
+                    continue;
+                }
+                final String[] parts = message.split("\n");
+                lines.add(
+                        EnumChatFormatting.GRAY + "  "
+                                + (parts.length > 1 && !parts[1].isEmpty() ? parts[0] + ": " + parts[1] : parts[0]));
+            }
+        }
+        return lines;
     }
 
     private boolean isOverCell(final int relX, final int relY, final int x, final int y) {
@@ -1310,7 +1338,10 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
             return -1;
         }
 
-        private List<String> getTooltip() {
+        /**
+         * @param iconLines the row's cards and settings in words
+         */
+        private List<String> getTooltip(final List<String> iconLines) {
             final List<String> lines = new ArrayList<>();
             lines.add(this.displayName);
             lines.add(
@@ -1339,6 +1370,7 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
             if (this.description.generic) {
                 lines.add(EnumChatFormatting.GRAY + GuiText.TransferTermNoDetails.getLocal());
             }
+            lines.addAll(iconLines);
             this.addSimulationLines(lines);
             return lines;
         }

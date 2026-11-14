@@ -234,6 +234,10 @@ public enum GuiText implements Localization {
 
     TransferTermCellTypes,
 
+    TransferTermCards,
+
+    TransferTermSettings,
+
     TransferTermOreFilter,
 
     TransferTermFuzzySlot,
