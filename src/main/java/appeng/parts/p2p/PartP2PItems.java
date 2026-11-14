@@ -34,43 +34,46 @@ import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.networking.ticking.TickRateModulation;
 import appeng.api.networking.ticking.TickingRequest;
 import appeng.core.settings.TickRates;
+import appeng.hooks.TickHandler;
 import appeng.integration.IntegrationRegistry;
 import appeng.integration.IntegrationType;
 import appeng.integration.abstraction.IBuildCraftTransport;
-import appeng.me.GridAccessException;
-import appeng.me.cache.helpers.TunnelCollection;
-import appeng.tile.inventory.AppEngNullInventory;
 import appeng.transformer.annotations.Integration.Interface;
 import appeng.transformer.annotations.Integration.Method;
 import appeng.util.Platform;
+import appeng.util.inv.IInventoryWrapper;
 import appeng.util.inv.WrapperBCPipe;
 import appeng.util.inv.WrapperChainedInventory;
 import appeng.util.inv.WrapperMCISidedInventory;
+import appeng.util.inv.WrapperP2PInventory;
 import buildcraft.api.transport.IPipeConnection;
 import buildcraft.api.transport.IPipeTile.PipeType;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 @Interface(iface = "buildcraft.api.transport.IPipeConnection", iname = IntegrationType.BuildCraftTransport)
-public class PartP2PItems extends PartP2PTunnelNormal<PartP2PItems>
+public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
         implements IPipeConnection, ISidedInventory, IGridTickable {
 
     private final LinkedList<IInventory> which = new LinkedList<>();
     private int oldSize = 0;
     private boolean requested;
     private IInventory cachedInv;
+    private boolean sizeCheckQueued;
 
     public PartP2PItems(final ItemStack is) {
         super(is);
     }
 
     @Override
+    protected P2PTransportPolicy getTransportPolicy() {
+        return P2PTransportPolicy.ONE_WAY_PUSH;
+    }
+
+    @Override
     public void onNeighborChanged() {
         this.cachedInv = null;
-        final PartP2PItems input = this.getInput();
-        if (input != null && this.isOutput()) {
-            input.onTunnelNetworkChange();
-        }
+        super.onNeighborChanged();
     }
 
     private IInventory getDestination() {
@@ -81,20 +84,24 @@ public class PartP2PItems extends PartP2PTunnelNormal<PartP2PItems>
         }
 
         final List<IInventory> outs = new LinkedList<>();
-        final TunnelCollection<PartP2PItems> itemTunnels;
 
-        try {
-            itemTunnels = this.getOutputs();
-        } catch (final GridAccessException e) {
-            return new AppEngNullInventory();
-        }
+        final Set<PartP2PItems> insertTargets = new HashSet<>(getInsertTargets());
+        final Set<PartP2PItems> extractTargets = new HashSet<>(getExtractTargets());
+        final Set<PartP2PItems> targets = new HashSet<>(insertTargets);
+        targets.addAll(extractTargets);
 
-        for (final PartP2PItems t : itemTunnels) {
+        for (final PartP2PItems t : targets) {
+            final boolean canInsert = insertTargets.contains(t);
+            final boolean canExtract = extractTargets.contains(t);
+            if (!canInsert && !canExtract) {
+                continue;
+            }
             if (t.loopsBackTo(this, new HashSet<>())) {
                 continue;
             }
-            final IInventory inv = t.getOutputInv();
-            if (inv != null) {
+            final IInventory outputInv = t.getOutputInv();
+            if (outputInv != null) {
+                final IInventory inv = new WrapperP2PInventory(outputInv, canInsert, canExtract);
                 if (Platform.getRandomInt() % 2 == 0) {
                     outs.add(inv);
                 } else {
@@ -110,10 +117,7 @@ public class PartP2PItems extends PartP2PTunnelNormal<PartP2PItems>
         IInventory output = null;
 
         if (this.getProxy().isActive()) {
-            final TileEntity te = this.getTile().getWorldObj().getTileEntity(
-                    this.getTile().xCoord + this.getSide().offsetX,
-                    this.getTile().yCoord + this.getSide().offsetY,
-                    this.getTile().zCoord + this.getSide().offsetZ);
+            final TileEntity te = this.getFacingTileEntity();
 
             if (this.which.contains(this)) {
                 return null;
@@ -170,40 +174,42 @@ public class PartP2PItems extends PartP2PTunnelNormal<PartP2PItems>
         return wasReq ? TickRateModulation.FASTER : TickRateModulation.SLOWER;
     }
 
+    private void refreshView() {
+        this.cachedInv = null;
+        if (!this.sizeCheckQueued) {
+            this.sizeCheckQueued = true;
+            TickHandler.INSTANCE.addCallable(null, world -> {
+                this.sizeCheckQueued = false;
+                if (this.getHost() != null && !this.getTile().isInvalid()
+                        && this.getHost().getPart(this.getSide()) == this) {
+                    this.checkSize();
+                }
+                return null;
+            });
+        }
+    }
+
+    private void checkSize() {
+        final int olderSize = this.oldSize;
+        this.oldSize = this.getDestination().getSizeInventory();
+        if (olderSize != this.oldSize) {
+            this.getHost().notifyNeighbors();
+        }
+    }
+
     @MENetworkEventSubscribe
     public void changeStateA(final MENetworkBootingStatusChange bs) {
-        if (!this.isOutput()) {
-            this.cachedInv = null;
-            final int olderSize = this.oldSize;
-            this.oldSize = this.getDestination().getSizeInventory();
-            if (olderSize != this.oldSize) {
-                this.getHost().notifyNeighbors();
-            }
-        }
+        refreshView();
     }
 
     @MENetworkEventSubscribe
     public void changeStateB(final MENetworkChannelsChanged bs) {
-        if (!this.isOutput()) {
-            this.cachedInv = null;
-            final int olderSize = this.oldSize;
-            this.oldSize = this.getDestination().getSizeInventory();
-            if (olderSize != this.oldSize) {
-                this.getHost().notifyNeighbors();
-            }
-        }
+        refreshView();
     }
 
     @MENetworkEventSubscribe
     public void changeStateC(final MENetworkPowerStatusChange bs) {
-        if (!this.isOutput()) {
-            this.cachedInv = null;
-            final int olderSize = this.oldSize;
-            this.oldSize = this.getDestination().getSizeInventory();
-            if (olderSize != this.oldSize) {
-                this.getHost().notifyNeighbors();
-            }
-        }
+        refreshView();
     }
 
     @Override
@@ -214,19 +220,13 @@ public class PartP2PItems extends PartP2PTunnelNormal<PartP2PItems>
 
     @Override
     public void onTunnelNetworkChange() {
-        if (!this.isOutput()) {
-            this.cachedInv = null;
-            final int olderSize = this.oldSize;
-            this.oldSize = this.getDestination().getSizeInventory();
-            if (olderSize != this.oldSize) {
-                this.getHost().notifyNeighbors();
-            }
-        } else {
-            final PartP2PItems input = this.getInput();
-            if (input != null) {
-                input.getHost().notifyNeighbors();
-            }
-        }
+        super.onTunnelNetworkChange();
+        refreshView();
+    }
+
+    @Override
+    protected void onRouteTargetsChanged() {
+        refreshView();
     }
 
     @Override
@@ -295,7 +295,7 @@ public class PartP2PItems extends PartP2PTunnelNormal<PartP2PItems>
     public void closeInventory() {}
 
     @Override
-    public boolean isItemValidForSlot(final int i, final net.minecraft.item.ItemStack itemstack) {
+    public boolean isItemValidForSlot(final int i, final ItemStack itemstack) {
         return this.getDestination().isItemValidForSlot(i, itemstack);
     }
 
@@ -306,7 +306,8 @@ public class PartP2PItems extends PartP2PTunnelNormal<PartP2PItems>
 
     @Override
     public boolean canExtractItem(final int i, final ItemStack itemstack, final int j) {
-        return false;
+        IInventory inv = this.getDestination();
+        return !(inv instanceof IInventoryWrapper wrapper) || wrapper.canRemoveItemFromSlot(i, itemstack);
     }
 
     public float getPowerDrainPerTick() {
@@ -330,14 +331,15 @@ public class PartP2PItems extends PartP2PTunnelNormal<PartP2PItems>
             }
             if (!visited.contains(next)) {
                 visited.add(next);
-                try {
-                    for (final PartP2PItems t : next.getOutputs()) {
-                        if (t.loopsBackTo(tunnel, visited)) {
-                            return true;
-                        }
+                for (final PartP2PItems t : next.getInsertTargets()) {
+                    if (t.loopsBackTo(tunnel, visited)) {
+                        return true;
                     }
-                } catch (final GridAccessException ignored) {
-                    // :P
+                }
+                for (final PartP2PItems t : next.getExtractTargets()) {
+                    if (t.loopsBackTo(tunnel, visited)) {
+                        return true;
+                    }
                 }
             }
         }
