@@ -8,15 +8,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
+import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraftforge.common.util.ForgeDirection;
 
 import appeng.api.AEApi;
+import appeng.api.config.SecurityPermissions;
 import appeng.api.crafting.IPatternTarget;
 import appeng.api.crafting.IPatternTargetMatcher;
 import appeng.api.crafting.PatternMatch;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.crafting.ICraftingPatternDetails;
+import appeng.api.networking.security.ISecurityGrid;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.util.IInterfaceViewable;
@@ -175,6 +181,43 @@ public final class PatternTargetQuery {
             }
         }
         return free;
+    }
+
+    /**
+     * Puts one pattern into the first free slot of a provider reachable from the grid; returns false if the provider
+     * is gone, full or the player lacks BUILD on its grid.
+     */
+    public static boolean insertPattern(IInterfaceViewable provider, IGrid grid, EntityPlayer player,
+            ItemStack pattern) {
+        // The provider was picked when the list was built, so it may have been broken or unlinked since.
+        final TileEntity tile = provider.getTileEntity();
+        if (tile == null || tile.isInvalid()
+                || tile.getWorldObj().getTileEntity(tile.xCoord, tile.yCoord, tile.zCoord) != tile) {
+            return false;
+        }
+        final IGridNode node = provider.getGridNode(ForgeDirection.UNKNOWN);
+        if (node == null || !node.isActive() || !collectReachableGrids(grid).contains(node.getGrid())) {
+            return false;
+        }
+        final ISecurityGrid security = node.getGrid().getCache(ISecurityGrid.class);
+        if (!security.hasPermission(player, SecurityPermissions.BUILD)) {
+            return false;
+        }
+
+        final IInventory patterns = provider.getPatterns();
+        if (patterns == null) {
+            return false;
+        }
+        final int slots = Math.min(provider.numSlots(), patterns.getSizeInventory());
+        for (int i = 0; i < slots; i++) {
+            if (patterns.getStackInSlot(i) == null && patterns.isItemValidForSlot(i, pattern)) {
+                final ItemStack single = pattern.copy();
+                single.stackSize = 1;
+                patterns.setInventorySlotContents(i, single);
+                return true;
+            }
+        }
+        return false;
     }
 
     // Same walk as ContainerInterfaceTerminal#collectReachableGrids.

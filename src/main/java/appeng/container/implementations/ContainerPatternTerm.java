@@ -15,6 +15,10 @@ import static appeng.parts.reporting.PartPatternTerminal.*;
 import static appeng.util.IterationCounter.fetchNewId;
 import static appeng.util.Platform.isServer;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -30,6 +34,11 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 import appeng.api.AEApi;
 import appeng.api.config.Actionable;
+import appeng.api.config.SecurityPermissions;
+import appeng.api.crafting.PatternMatch;
+import appeng.api.implementations.ICraftingPatternItem;
+import appeng.api.networking.IGridNode;
+import appeng.api.networking.crafting.ICraftingPatternDetails;
 import appeng.api.networking.security.MachineSource;
 import appeng.api.parts.IPatternTerminal;
 import appeng.api.storage.IMEMonitor;
@@ -38,6 +47,8 @@ import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IItemList;
+import appeng.api.util.DimensionalCoord;
+import appeng.api.util.IInterfaceViewable;
 import appeng.container.ContainerNull;
 import appeng.container.ContainerOpenContext;
 import appeng.container.PrimaryGui;
@@ -53,6 +64,8 @@ import appeng.container.sync.handlers.AEStackInventorySyncHandler;
 import appeng.container.sync.handlers.BooleanSyncHandler;
 import appeng.core.sync.GuiBridge;
 import appeng.core.sync.packets.PacketPatternSlot;
+import appeng.crafting.target.PatternTargetList;
+import appeng.crafting.target.PatternTargetQuery;
 import appeng.helpers.IContainerCraftingPacket;
 import appeng.items.contents.WirelessPatternTerminalGuiObject;
 import appeng.items.storage.ItemViewCell;
@@ -94,6 +107,12 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
     public final ActionHandler<Boolean> encodeAndMoveToInventoryAction;
     public final ActionHandler<Void> clearAction;
     public final ActionHandler<Integer> doubleAction;
+    public final ActionHandler<PatternTargetList> patternTargetsAction;
+    public final ActionHandler<Integer> sendToTargetAction;
+
+    private ItemStack lastTargetPattern;
+    private List<PatternTargetQuery.Entry> lastTargets = Collections.emptyList();
+    private PatternTargetList clientTargets = PatternTargetList.EMPTY;
 
     public ContainerPatternTerm(final InventoryPlayer ip, final ITerminalHost monitorable) {
         this(ip, monitorable, true);
@@ -199,6 +218,10 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
                 .onServerAction(this::encodeAndMoveToInventory);
         this.clearAction = sync.actionC2S("clear").onServerAction(this::clear);
         this.doubleAction = sync.actionC2S("double", StreamCodecs.intValue()).onServerAction(this::doubleStacks);
+        this.patternTargetsAction = sync.actionS2C("patternTargets", PatternTargetList.CODEC)
+                .onClientAction(list -> this.clientTargets = list);
+        this.sendToTargetAction = sync.actionC2S("sendToTarget", StreamCodecs.intValue())
+                .onServerAction(this::sendPatternToTarget);
 
         this.updateOrderOfOutputSlots();
     }
@@ -422,9 +445,86 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
                 }
                 this.isFirstUpdate = false;
             }
+
+            this.updatePatternTargets();
         }
 
         super.detectAndSendChanges();
+    }
+
+    /**
+     * Returns the providers the server last sent for the pattern in the output slot; client side only.
+     */
+    public PatternTargetList getClientTargets() {
+        return this.clientTargets;
+    }
+
+    private void updatePatternTargets() {
+        final ItemStack pattern = this.patternSlotOUT.getStack();
+        // The query walks every provider of the network, so it runs only when the encoded pattern changes.
+        if (ItemStack.areItemStacksEqual(pattern, this.lastTargetPattern)) {
+            return;
+        }
+        this.lastTargetPattern = pattern == null ? null : pattern.copy();
+        this.lastTargets = Collections.emptyList();
+
+        final IGridNode node = this.getNetworkNode();
+        final ICraftingPatternDetails details = pattern != null
+                && pattern.getItem() instanceof ICraftingPatternItem patternItem
+                        ? patternItem.getPatternForItem(pattern, this.getPlayerInv().player.worldObj)
+                        : null;
+        if (details == null || node == null || node.getGrid() == null) {
+            this.patternTargetsAction.send(new PatternTargetList(pattern != null, Collections.emptyList()));
+            return;
+        }
+
+        final List<PatternTargetQuery.Entry> shown = new ArrayList<>();
+        for (PatternTargetQuery.Entry entry : PatternTargetQuery.run(node.getGrid(), details).entries) {
+            if (entry.freeSlots > 0 && entry.match != PatternMatch.NO_MATCH) {
+                shown.add(entry);
+            }
+        }
+        this.lastTargets = shown;
+
+        final List<PatternTargetList.Entry> entries = new ArrayList<>(shown.size());
+        for (int i = 0; i < shown.size(); i++) {
+            final PatternTargetQuery.Entry entry = shown.get(i);
+            final IInterfaceViewable provider = entry.provider;
+            final ItemStack displayRep = provider.getDisplayRep();
+            final ItemStack icon = displayRep != null ? displayRep : provider.getSelfRep();
+            final DimensionalCoord location = provider.getLocation();
+            entries.add(
+                    new PatternTargetList.Entry(
+                            i,
+                            icon,
+                            provider.getRawName(),
+                            location.x,
+                            location.y,
+                            location.z,
+                            location.getDimension(),
+                            entry.match,
+                            entry.freeSlots));
+        }
+        this.patternTargetsAction.send(new PatternTargetList(true, entries));
+    }
+
+    private void sendPatternToTarget(int index) {
+        final ItemStack pattern = this.patternSlotOUT.getStack();
+        final IGridNode node = this.getNetworkNode();
+        // The index points into the list built for lastTargetPattern, so a changed pattern makes it meaningless.
+        if (pattern == null || node == null || node.getGrid() == null || index < 0 || index >= this.lastTargets.size()
+                || !ItemStack.areItemStacksEqual(pattern, this.lastTargetPattern)
+                || !this.hasAccess(SecurityPermissions.BUILD, true)) {
+            return;
+        }
+
+        if (PatternTargetQuery.insertPattern(
+                this.lastTargets.get(index).provider,
+                node.getGrid(),
+                this.getPlayerInv().player,
+                pattern)) {
+            this.patternSlotOUT.decrStackSize(1);
+        }
     }
 
     @Override
