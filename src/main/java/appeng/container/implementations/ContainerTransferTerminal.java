@@ -31,6 +31,7 @@ import appeng.api.storage.data.IAEStack;
 import appeng.api.util.IConfigManager;
 import appeng.container.AEBaseContainer;
 import appeng.container.interfaces.IVirtualSlotSource;
+import appeng.container.sync.ActionHandler;
 import appeng.container.sync.SyncCodec;
 import appeng.container.sync.SyncCodecs;
 import appeng.container.sync.SyncRegistrar;
@@ -112,6 +113,12 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
     /** Whether the network refused the simulated insert because its storage is being reshuffled. */
     public final BooleanSyncHandler lockedSync;
 
+    /**
+     * Raised by the client each time the screen is shown. Rows that arrive while another screen covers this one are
+     * dropped, and unchanged rows are never sent twice, so the current window has to be sent again.
+     */
+    public final ActionHandler<Void> resendAction;
+
     /** Settings every screen open on this terminal shares, with the handler that shows each. */
     private final Map<Settings, ConfigEnumSyncHandler<?>> sharedSettings = new EnumMap<>(Settings.class);
 
@@ -188,6 +195,7 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         this.leftoverSync = sync.longS2C("simulateLeftover");
         this.deniedSync = sync.booleanS2C("simulateDenied");
         this.lockedSync = sync.booleanS2C("simulateLocked");
+        this.resendAction = sync.actionC2S("resend").onServerAction(this::resendWindow);
 
         this.sharedSettings.put(Settings.TRANSFER_DIRECTION, this.directionSync);
         this.sharedSettings.put(Settings.TRANSFER_CRAFTING_CARD_ONLY, this.craftingOnlySync);
@@ -500,6 +508,15 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         } catch (final RuntimeException | LinkageError e) {
             return "";
         }
+    }
+
+    /**
+     * Sends the current window on the next tick even if it did not change, or the empty window of an offline terminal.
+     */
+    private void resendWindow() {
+        this.lastSent = null;
+        this.windowChanged = true;
+        this.wasOffline = false;
     }
 
     private void sendWindow() {

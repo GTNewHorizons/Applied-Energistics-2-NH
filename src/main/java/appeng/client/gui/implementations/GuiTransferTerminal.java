@@ -238,6 +238,10 @@ public class GuiTransferTerminal extends AEBaseGui implements IDropToFillTextFie
 
         this.repositionSlots();
         this.refreshRows();
+
+        // Called each time the screen is shown, also on coming back from a screen opened over this one, which may have
+        // dropped rows the server sent meanwhile.
+        this.container.resendAction.send();
     }
 
     /**
