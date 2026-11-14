@@ -1,0 +1,3 @@
+shapeless=
+    ae2:ItemPart.InterfaceTerminal ae2:ItemPart.StorageBus ae2:ItemMaterial.LogicProcessor
+    -> ae2:ItemPart.TransferTerminal

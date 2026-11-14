@@ -10,7 +10,12 @@ import static net.minecraftforge.common.util.ForgeDirection.NORTH;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.inventory.Container;
+import net.minecraft.inventory.InventoryCrafting;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.crafting.CraftingManager;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -46,6 +51,34 @@ public class TransferTerminalPartTests {
     @GameTest(template = TEMPLATE, timeoutTicks = 20)
     public static void terminalCanBePlacedOnACable(GameTestHelper helper) {
         helper.assertNotNull(terminal(helper), "Terminal part should be placed");
+        helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, timeoutTicks = 20)
+    public static void terminalIsCraftedOnACraftingTable(GameTestHelper helper) {
+        InventoryCrafting grid = new InventoryCrafting(new Container() {
+
+            @Override
+            public boolean canInteractWith(EntityPlayer player) {
+                return true;
+            }
+        }, 3, 3);
+        grid.setInventorySlotContents(
+                0,
+                AEApi.instance().definitions().parts().interfaceTerminal().maybeStack(1).get());
+        grid.setInventorySlotContents(4, AEApi.instance().definitions().parts().storageBus().maybeStack(1).get());
+        grid.setInventorySlotContents(
+                8,
+                AEApi.instance().definitions().materials().logicProcessor().maybeStack(1).get());
+
+        ItemStack crafted = CraftingManager.getInstance().findMatchingRecipe(grid, helper.getWorld());
+
+        helper.assertNotNull(crafted, "Interface Terminal, Storage Bus and Logic Processor should craft something");
+        helper.assertTrue(
+                ItemStack.areItemStacksEqual(
+                        AEApi.instance().definitions().parts().transferTerminal().maybeStack(1).get(),
+                        crafted),
+                "They should craft one Transfer Terminal");
         helper.succeed();
     }
 
