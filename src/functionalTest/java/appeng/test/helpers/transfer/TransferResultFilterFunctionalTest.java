@@ -69,6 +69,37 @@ public class TransferResultFilterFunctionalTest {
     }
 
     @Test
+    public void aThrowingMatcherOnlyLosesItsOwnRow() {
+        final TransferMatcher throwsOnMatch = (stack, direction) -> { throw new IllegalStateException("broken"); };
+        final TransferMatcher failsToLink = (stack, direction) -> {
+            throw new NoSuchMethodError("built against another version");
+        };
+        final TransferMatcher throwsOnSticky = new TransferMatcher() {
+
+            @Override
+            public boolean canTransfer(final IAEStack<?> stack, final TransferDirection direction) {
+                return true;
+            }
+
+            @Override
+            public boolean capturesAsSticky(final IAEStack<?> stack) {
+                throw new IllegalStateException("broken");
+            }
+        };
+        final List<TransferComponentInfo> rows = Arrays.asList(
+                row("broken", throwsOnMatch),
+                row("unlinked", failsToLink),
+                row("broken sticky", throwsOnSticky),
+                row("working", only(TransferDirection.EXPORT)));
+
+        final List<TransferComponentInfo> result = TransferResultFilter
+                .apply(rows, IRON, TransferDirection.BOTH, ignored -> true);
+
+        assertEquals(1, result.size());
+        assertEquals("working", result.get(0).customName);
+    }
+
+    @Test
     public void exportPutsWhitelistedStorageAheadOfUnfilteredAtEqualPriority() {
         final TransferMatcher listed = new TransferMatcher() {
 

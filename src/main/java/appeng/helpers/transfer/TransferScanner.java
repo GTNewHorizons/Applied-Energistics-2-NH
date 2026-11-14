@@ -72,17 +72,24 @@ public final class TransferScanner {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
+    /**
+     * A component or inspector from another mod may throw anywhere while its row is built, or fail to link against a
+     * version of a mod it was not built for. That only loses its own row.
+     */
     private static void addRow(final List<TransferComponentInfo> rows, final Set<String> seen,
             final ITransferInspector<?> inspector, final IGridNode node, final int tier) {
-        final IGridHost machine = node.getMachine();
-        final TransferDescription inspected;
         try {
-            inspected = ((ITransferInspector<IGridHost>) inspector).inspect(machine);
-        } catch (final RuntimeException e) {
-            // A broken inspector from another mod must not take the whole terminal down.
-            return;
+            buildRow(rows, seen, inspector, node, tier);
+        } catch (final RuntimeException | LinkageError e) {
+            // Skip the broken component.
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void buildRow(final List<TransferComponentInfo> rows, final Set<String> seen,
+            final ITransferInspector<?> inspector, final IGridNode node, final int tier) {
+        final IGridHost machine = node.getMachine();
+        final TransferDescription inspected = ((ITransferInspector<IGridHost>) inspector).inspect(machine);
 
         if (inspected == null) {
             return;

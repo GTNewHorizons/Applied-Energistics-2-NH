@@ -37,13 +37,32 @@ public final class TransferResultFilter {
 
             if (query == null) {
                 result.add(row);
-            } else if (matches(row.description.matcher, query, direction)) {
-                result.add(row.withQuery(query));
+            } else {
+                final TransferComponentInfo matched = matchedRow(row, query, direction);
+                if (matched != null) {
+                    result.add(matched);
+                }
             }
         }
 
         result.sort(TransferRowOrder.comparator(query != null, direction));
         return result;
+    }
+
+    /**
+     * Matchers from other mods may throw, or fail to link against a version of a mod they were not built for. Such a
+     * row is treated as not matching.
+     *
+     * @return the row updated for the query, or null if it does not match
+     */
+    @Nullable
+    private static TransferComponentInfo matchedRow(final TransferComponentInfo row, final IAEStack<?> query,
+            final TransferDirection direction) {
+        try {
+            return matches(row.description.matcher, query, direction) ? row.withQuery(query) : null;
+        } catch (final RuntimeException | LinkageError e) {
+            return null;
+        }
     }
 
     /**

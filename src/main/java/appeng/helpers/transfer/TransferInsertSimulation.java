@@ -110,7 +110,7 @@ public final class TransferInsertSimulation {
                     () -> InjectTrace.run(
                             trace,
                             () -> (IAEStack<?>) monitor.injectItems(query.copy(), Actionable.SIMULATE, src)));
-        } catch (final RuntimeException e) {
+        } catch (final RuntimeException | LinkageError e) {
             // Storage from another mod may throw while simulating, which must not take the terminal down.
             return Result.NONE;
         }
@@ -178,7 +178,7 @@ public final class TransferInsertSimulation {
                 for (final IMEInventoryHandler<?> handler : description.liveHandlers.apply(type)) {
                     rowByHandler.putIfAbsent(handler, index);
                 }
-            } catch (final RuntimeException e) {
+            } catch (final RuntimeException | LinkageError e) {
                 // A component from another mod failing to list its handlers only loses its own row.
             }
         }
@@ -190,7 +190,13 @@ public final class TransferInsertSimulation {
         if (description.slotOf == null || entry.getAccepted() <= 0) {
             return;
         }
-        final int slot = description.slotOf.applyAsInt(entry.handler);
+        int slot;
+        try {
+            slot = description.slotOf.applyAsInt(entry.handler);
+        } catch (final RuntimeException | LinkageError e) {
+            // A component from another mod failing to name the slot only loses the slot detail.
+            slot = -1;
+        }
         if (slot < 0) {
             return;
         }
