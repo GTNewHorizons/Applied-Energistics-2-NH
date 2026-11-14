@@ -68,7 +68,7 @@ public enum Settings {
     PLACE_BLOCK(EnumSet.of(YesNo.YES, YesNo.NO)),
 
     SCHEDULING_MODE(EnumSet.allOf(SchedulingMode.class)),
-    SAVE_SEARCH(EnumSet.of(YesNo.YES, YesNo.NO)),
+    SAVE_SEARCH(EnumSet.allOf(SaveSearchMode.class)),
     CRAFTING_STATUS(EnumSet.allOf(CraftingStatus.class)),
 
     INSERTION_MODE(EnumSet.allOf(InsertionMode.class)),

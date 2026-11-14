@@ -165,6 +165,7 @@ public enum ButtonToolTips implements Localization {
     SaveSearchString,
     SaveSearchStringYes,
     SaveSearchStringNo,
+    SaveSearchStringSelect,
     CraftingStatus,
     CraftingStatusDesc,
     ToggleMolecularAssemblers,

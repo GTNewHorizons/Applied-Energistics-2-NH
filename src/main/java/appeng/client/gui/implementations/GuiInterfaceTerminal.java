@@ -53,6 +53,7 @@ import org.lwjgl.opengl.GL12;
 
 import appeng.api.AEApi;
 import appeng.api.config.ActionItems;
+import appeng.api.config.SaveSearchMode;
 import appeng.api.config.Settings;
 import appeng.api.config.StringOrder;
 import appeng.api.config.TerminalStyle;
@@ -212,7 +213,8 @@ public class GuiInterfaceTerminal extends AEBaseGui
                 0,
                 0,
                 Settings.SAVE_SEARCH,
-                AEConfig.instance.preserveSearchBar ? YesNo.YES : YesNo.NO);
+                AEConfig.instance.selectSearchBarText ? SaveSearchMode.SELECT
+                        : AEConfig.instance.preserveSearchBar ? SaveSearchMode.YES : SaveSearchMode.NO);
         guiButtonAssemblersOnly = new GuiImgButton(0, 0, Settings.ACTIONS, null);
         guiButtonHideFull = new GuiImgButton(0, 0, Settings.ACTIONS, null);
         guiButtonShowHidden = new GuiImgButton(0, 0, Settings.ACTIONS, null);
@@ -485,7 +487,8 @@ public class GuiInterfaceTerminal extends AEBaseGui
                     AEConfig.instance.settings.putSetting(iBtn.getSetting(), next);
                     initGui();
                 } else if (btn == searchStringSave) {
-                    AEConfig.instance.preserveSearchBar = next == YesNo.YES;
+                    AEConfig.instance.preserveSearchBar = next != SaveSearchMode.NO;
+                    AEConfig.instance.selectSearchBarText = next == SaveSearchMode.SELECT;
                 } else if (btn == guiButtonSectionOrder) {
                     AEConfig.instance.settings.putSetting(iBtn.getSetting(), next);
                     masterList.changeSectionComparator(((StringOrder) next).comparator);
@@ -515,6 +518,11 @@ public class GuiInterfaceTerminal extends AEBaseGui
         }
         if (searchFieldNames.getText().isEmpty() && setString) {
             searchFieldNames.setText(searchFieldNamesText);
+        }
+        if (AEConfig.instance.selectSearchBarText) {
+            searchFieldInputs.selectAll();
+            searchFieldOutputs.selectAll();
+            searchFieldNames.selectAll();
         }
     }
 

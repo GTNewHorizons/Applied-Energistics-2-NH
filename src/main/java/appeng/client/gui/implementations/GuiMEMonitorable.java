@@ -40,6 +40,7 @@ import appeng.api.config.ActionItems;
 import appeng.api.config.CraftingStatus;
 import appeng.api.config.PinSectionOrder;
 import appeng.api.config.PinsRows;
+import appeng.api.config.SaveSearchMode;
 import appeng.api.config.SearchBoxFocusPriority;
 import appeng.api.config.SearchBoxMode;
 import appeng.api.config.Settings;
@@ -302,7 +303,8 @@ public class GuiMEMonitorable extends AEBaseGui
         } else if (btn == this.searchBoxSettings) {
             AEConfig.instance.settings.putSetting(iBtn.getSetting(), next);
         } else if (btn == this.searchStringSave) {
-            AEConfig.instance.preserveSearchBar = next == YesNo.YES;
+            AEConfig.instance.preserveSearchBar = next != SaveSearchMode.NO;
+            AEConfig.instance.selectSearchBarText = next == SaveSearchMode.SELECT;
         } else {
             try {
                 NetworkHandler.instance.sendToServer(new PacketValueConfig(iBtn.getSetting().name(), next.name()));
@@ -481,7 +483,8 @@ public class GuiMEMonitorable extends AEBaseGui
                         this.guiLeft - 18,
                         offset,
                         Settings.SAVE_SEARCH,
-                        AEConfig.instance.preserveSearchBar ? YesNo.YES : YesNo.NO));
+                        AEConfig.instance.selectSearchBarText ? SaveSearchMode.SELECT
+                                : AEConfig.instance.preserveSearchBar ? SaveSearchMode.YES : SaveSearchMode.NO));
         offset += 20;
 
         if (!(this instanceof GuiMEPortableCell)) {
@@ -545,6 +548,10 @@ public class GuiMEMonitorable extends AEBaseGui
             repo.setSearchString(mem);
         }
         this.searchField.setCursorPositionEnd();
+        if (AEConfig.instance.selectSearchBarText && AEConfig.instance.preserveSearchBar
+                && !this.searchField.getText().isEmpty()) {
+            this.searchField.selectAll();
+        }
 
         this.setScrollBar();
 
