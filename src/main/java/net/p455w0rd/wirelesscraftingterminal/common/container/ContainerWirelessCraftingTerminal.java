@@ -5,10 +5,7 @@ import java.util.List;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.CraftingManager;
 import net.minecraft.world.World;
 import net.p455w0rd.wirelesscraftingterminal.client.gui.WCTPrimaryGui;
 import net.p455w0rd.wirelesscraftingterminal.common.container.slot.SlotArmor;
@@ -28,39 +25,25 @@ import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
 
 import appeng.api.AEApi;
 import appeng.api.features.IWirelessTermHandler;
-import appeng.container.ContainerNull;
 import appeng.container.PrimaryGui;
-import appeng.container.implementations.ContainerMEMonitorable;
+import appeng.container.implementations.ContainerCraftingTerm;
 import appeng.container.slot.AppEngSlot;
-import appeng.container.slot.SlotCraftingMatrix;
-import appeng.container.slot.SlotCraftingTerm;
 import appeng.container.slot.SlotRestrictedInput;
-import appeng.helpers.IContainerCraftingPacket;
 import appeng.helpers.InventoryAction;
-import appeng.tile.inventory.AppEngInternalInventory;
-import appeng.tile.inventory.IAEAppEngInventory;
-import appeng.tile.inventory.InvOperation;
 
-public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
-        implements IAEAppEngInventory, IContainerCraftingPacket {
-
-    private static final int CRAFTING_SLOT_X_POS = 80;
+public class ContainerWirelessCraftingTerminal extends ContainerCraftingTerm {
 
     private final WTCGuiObject host;
     public final WCTInventoryBooster boosterInventory;
     public final WCTInventoryMagnet magnetInventory;
     public final WCTInventoryTrash trashInventory;
-    private final AppEngInternalInventory output = new AppEngInternalInventory(this, 1);
-    private final SlotCraftingMatrix[] craftMatrixSlots = new SlotCraftingMatrix[9];
-    private final SlotCraftingTerm outputSlot;
     public final SlotTrash trashSlot;
 
     public ContainerWirelessCraftingTerminal(final InventoryPlayer inventoryPlayer, final WTCGuiObject host) {
-        super(inventoryPlayer, host, false);
+        super(inventoryPlayer, host, 80, -76, 174, -58);
         final EntityPlayer player = inventoryPlayer.player;
         this.host = host;
         final ItemStack terminal = host.getItemStack();
-        final IInventory crafting = host.getInventoryByName("crafting");
 
         this.boosterInventory = new WCTInventoryBooster(terminal);
         this.magnetInventory = new WCTInventoryMagnet(terminal);
@@ -70,38 +53,16 @@ public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
             this.addSlotToContainer(new SlotBooster(this.boosterInventory, 0, 134, -20));
         }
 
-        this.bindPlayerInventory(inventoryPlayer, 0, 0);
-
         for (int i = 0; i < 4; i++) {
             this.addSlotToContainer(
-                    new SlotArmor(player, inventoryPlayer, inventoryPlayer.getSizeInventory() - 1 - i, 8, i * 18 - 76, i));
+                    new SlotArmor(
+                            player,
+                            inventoryPlayer,
+                            inventoryPlayer.getSizeInventory() - 1 - i,
+                            8,
+                            i * 18 - 76,
+                            i));
         }
-
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                final int index = j + i * 3;
-                this.craftMatrixSlots[index] = new SlotCraftingMatrix(
-                        this,
-                        crafting,
-                        index,
-                        CRAFTING_SLOT_X_POS + j * 18,
-                        i * 18 - 76);
-                this.addSlotToContainer(this.craftMatrixSlots[index]);
-            }
-        }
-
-        this.outputSlot = new SlotCraftingTerm(
-                player,
-                this.getActionSource(),
-                this.getPowerSource(),
-                host,
-                crafting,
-                crafting,
-                this.output,
-                174,
-                -58,
-                this);
-        this.addSlotToContainer(this.outputSlot);
 
         this.addSlotToContainer(new SlotMagnet(this.magnetInventory, 152, -20));
 
@@ -115,8 +76,6 @@ public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
                 slot.setStackLimit(1);
             }
         }
-
-        this.onCraftMatrixChanged(crafting);
     }
 
     public WTCGuiObject getHost() {
@@ -150,17 +109,6 @@ public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
     }
 
     @Override
-    public void onCraftMatrixChanged(final IInventory inventory) {
-        final InventoryCrafting ic = new InventoryCrafting(new ContainerNull(), 3, 3);
-        for (int x = 0; x < 9; x++) {
-            ic.setInventorySlotContents(x, this.craftMatrixSlots[x].getStack());
-        }
-
-        this.outputSlot.putStack(
-                CraftingManager.getInstance().findMatchingRecipe(ic, this.getPlayerInv().player.worldObj));
-    }
-
-    @Override
     public @NonNull List<AppEngSlot> getValidDestinationSlots(final boolean isPlayerSideSlot,
             final @NonNull ItemStack stackInSlot) {
         final List<AppEngSlot> list = super.getValidDestinationSlots(isPlayerSideSlot, stackInSlot);
@@ -171,25 +119,5 @@ public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
     @Override
     public PrimaryGui createPrimaryGui() {
         return new WCTPrimaryGui(this.host.getPrimaryGuiIcon(), this.getTargetSlotIndex());
-    }
-
-    @Override
-    public void saveChanges() {}
-
-    @Override
-    public void onChangeInventory(final IInventory inv, final int slot, final InvOperation mc,
-            final ItemStack removedStack, final ItemStack newStack) {}
-
-    @Override
-    public @Nullable IInventory getInventoryByName(final String name) {
-        if (name.equals("player")) {
-            return this.getInventoryPlayer();
-        }
-        return this.host.getInventoryByName(name);
-    }
-
-    @Override
-    public boolean useRealItems() {
-        return true;
     }
 }
