@@ -43,7 +43,8 @@ public class NotEnoughEnergistics {
 
     @SidedProxy(
             clientSide = "com.github.vfyjxf.nee.proxy.ClientProxy",
-            serverSide = "com.github.vfyjxf.nee.proxy.ServerProxy")
+            serverSide = "com.github.vfyjxf.nee.proxy.ServerProxy",
+            modId = NotEnoughEnergistics.MODID)
     public static CommonProxy proxy;
 
     @Mod.Instance(MODID)

@@ -38,7 +38,7 @@ public class WirelessCraftingTerminal {
 	@Instance(Reference.MODID)
 	public static WirelessCraftingTerminal INSTANCE;
 
-	@SidedProxy(clientSide = Reference.CLIENT_PROXY_CLASS, serverSide = Reference.SERVER_PROXY_CLASS)
+	@SidedProxy(clientSide = Reference.CLIENT_PROXY_CLASS, serverSide = Reference.SERVER_PROXY_CLASS, modId = Reference.MODID)
 	public static CommonProxy proxy;
 
 	@EventHandler
