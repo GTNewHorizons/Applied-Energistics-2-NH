@@ -4,43 +4,44 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
 public enum ItemEnum {
-	BOOSTER_CARD("infinityBoosterCard", new ItemInfinityBooster().setUnlocalizedName("infinityBoosterCard")),
-	BOOSTER_ICON("infinityBoosterIcon", new ItemInfinityBooster().hasEffect(true)),
-	WIRELESS_CRAFTING_TERMINAL("wirelessCraftingTerminal", new ItemWirelessCraftingTerminal()),
-	MAGNET_CARD("magnetCard", new ItemMagnet().setUnlocalizedName("magnetCard")),
-	WCT_BOOSTER_BG_ICON("boosterBG", new ItemBoosterBGIcon());
 
-	private final String internalName;
-	private Item item;
-	public static final ItemEnum[] VALUES = ItemEnum.values();
+    BOOSTER_CARD("infinityBoosterCard", new ItemInfinityBooster().setUnlocalizedName("infinityBoosterCard")),
+    BOOSTER_ICON("infinityBoosterIcon", new ItemInfinityBooster().hasEffect(true)),
+    WIRELESS_CRAFTING_TERMINAL("wirelessCraftingTerminal", new ItemWirelessCraftingTerminal()),
+    MAGNET_CARD("magnetCard", new ItemMagnet().setUnlocalizedName("magnetCard")),
+    WCT_BOOSTER_BG_ICON("boosterBG", new ItemBoosterBGIcon());
 
-	private ItemEnum(final String internalName, final Item item) {
-		this.internalName = internalName;
+    private final String internalName;
+    private Item item;
+    public static final ItemEnum[] VALUES = ItemEnum.values();
 
-		this.item = item;
-	}
+    private ItemEnum(final String internalName, final Item item) {
+        this.internalName = internalName;
 
-	public ItemStack getDMGStack(final int damageValue) {
-		return this.getDMGStack(damageValue, 1);
-	}
+        this.item = item;
+    }
 
-	public ItemStack getDMGStack(final int damageValue, final int size) {
-		return new ItemStack(this.item, size, damageValue);
-	}
+    public ItemStack getDMGStack(final int damageValue) {
+        return this.getDMGStack(damageValue, 1);
+    }
 
-	public String getInternalName() {
-		return this.internalName;
-	}
+    public ItemStack getDMGStack(final int damageValue, final int size) {
+        return new ItemStack(this.item, size, damageValue);
+    }
 
-	public Item getItem() {
-		return this.item;
-	}
+    public String getInternalName() {
+        return this.internalName;
+    }
 
-	public ItemStack getStack() {
-		return this.getStack(1);
-	}
+    public Item getItem() {
+        return this.item;
+    }
 
-	public ItemStack getStack(final int size) {
-		return new ItemStack(this.item, size);
-	}
+    public ItemStack getStack() {
+        return this.getStack(1);
+    }
+
+    public ItemStack getStack(final int size) {
+        return new ItemStack(this.item, size);
+    }
 }

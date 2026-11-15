@@ -1,38 +1,31 @@
 package net.p455w0rd.wirelesscraftingterminal.api;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 public abstract class IWCTItems {
-	/**
-	 * WirelessCraftingTerminal
-	 */
-	@Nonnull
-	public IWCTItemDescription WirelessCraftingTerminal;
-	
-	/**
-	 * Infinity Booster Card
-	 */
-	@Nonnull
-	public IWCTItemDescription InfinityBoosterCard;
-	
-	/**
-	 * Used for the creat6ive tab
-	 * TODO: remove unneeded item and just
-	 * add the icon properly
-	 */
-	@Nonnull
-	public IWCTItemDescription WCTDummyIcon;
-	
-	/**
-	 * Item used solely for infinity booster
-	 * card slot background icon
-	 */
-	@Nonnull
-	public IWCTItemDescription WCTBoosterBGIcon;
-	
-	/**
-	 * Magnet Card
-	 */
-	@Nonnull
-	public IWCTItemDescription MagnetCard;
+
+    /**
+     * WirelessCraftingTerminal
+     */
+    public @NonNull IWCTItemDescription WirelessCraftingTerminal;
+
+    /**
+     * Infinity Booster Card
+     */
+    public @NonNull IWCTItemDescription InfinityBoosterCard;
+
+    /**
+     * Used for the creat6ive tab TODO: remove unneeded item and just add the icon properly
+     */
+    public @NonNull IWCTItemDescription WCTDummyIcon;
+
+    /**
+     * Item used solely for infinity booster card slot background icon
+     */
+    public @NonNull IWCTItemDescription WCTBoosterBGIcon;
+
+    /**
+     * Magnet Card
+     */
+    public @NonNull IWCTItemDescription MagnetCard;
 }

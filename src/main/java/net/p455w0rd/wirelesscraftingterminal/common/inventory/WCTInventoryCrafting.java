@@ -1,208 +1,64 @@
 package net.p455w0rd.wirelesscraftingterminal.common.inventory;
 
-import appeng.api.storage.IMEInventory;
-import appeng.me.storage.MEIInventoryWrapper;
-import appeng.tile.inventory.AppEngInternalInventory;
-import appeng.tile.inventory.IAEAppEngInventory;
-import appeng.tile.inventory.InvOperation;
-import appeng.util.Platform;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.Container;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.p455w0rd.wirelesscraftingterminal.api.IWirelessCraftingTerminalItem;
+import net.minecraftforge.common.util.Constants.NBT;
+
+import org.jspecify.annotations.Nullable;
+
+import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
+
+import appeng.tile.inventory.AppEngInternalInventory;
+import appeng.tile.inventory.IAEAppEngInventory;
 
 public class WCTInventoryCrafting extends AppEngInternalInventory {
 
-	private ItemStack[] stackList;
-	private int inventoryWidth;
-	private Container eventHandler;
-	private final ItemStack invItem;
-	private IAEAppEngInventory te;
-	private final int size;
-	private boolean enableClientEvents = false;
+    private static final String NBT_KEY = "CraftingMatrix";
 
-	public WCTInventoryCrafting(Container container, int rows, int cols, ItemStack is) {
-		super((IAEAppEngInventory) container, rows * cols);
-		size = rows * cols;
-		this.stackList = new ItemStack[size];
-		this.eventHandler = container;
-		this.inventoryWidth = rows;
-		this.invItem = is;
-		this.setTileEntity((IAEAppEngInventory) container);
-	}
+    public WCTInventoryCrafting(final @Nullable IAEAppEngInventory host) {
+        super(host, 9);
+    }
 
-	@Override
-	public int getSizeInventory() {
-		return this.stackList.length;
-	}
+    /**
+     * Reads the grid without firing inventory events, so that the NBT is not written back while it is being read.
+     */
+    public void readFromTerminal(final ItemStack terminal) {
+        for (int i = 0; i < this.inv.length; i++) {
+            this.inv[i] = null;
+        }
 
-	@Override
-	public ItemStack getStackInSlot(int slot) {
-		return slot >= this.getSizeInventory() ? null : this.stackList[slot];
-	}
+        final NBTTagList tagList = ItemStackNBT.getTagList(terminal, NBT_KEY, NBT.TAG_COMPOUND);
+        if (tagList == null) {
+            return;
+        }
 
-	public ItemStack getStackInRowAndColumn(int row, int col) {
-		if (row >= 0 && row < this.inventoryWidth) {
-			int k = row + col * this.inventoryWidth;
-			return this.getStackInSlot(k);
-		} else {
-			return null;
-		}
-	}
+        for (int i = 0; i < tagList.tagCount(); i++) {
+            final NBTTagCompound tag = tagList.getCompoundTagAt(i);
+            final int slot = tag.getByte("Slot");
+            if (slot >= 0 && slot < this.inv.length) {
+                this.inv[slot] = ItemStack.loadItemStackFromNBT(tag);
+            }
+        }
+    }
 
-	public String getInventoryName() {
-		return "crafting";
-	}
+    public void writeToTerminal(final ItemStack terminal) {
+        final NBTTagList tagList = new NBTTagList();
+        for (int i = 0; i < this.inv.length; i++) {
+            final ItemStack stack = this.inv[i];
+            if (stack == null) {
+                continue;
+            }
+            if (stack.stackSize <= 0) {
+                this.inv[i] = null;
+                continue;
+            }
 
-	public boolean hasCustomInventoryName() {
-		return true;
-	}
-
-	public ItemStack getStackInSlotOnClosing(int slot) {
-		if (this.stackList[slot] != null) {
-			ItemStack itemstack = this.stackList[slot];
-			this.stackList[slot] = null;
-			return itemstack;
-		} else {
-			return null;
-		}
-	}
-
-	@Override
-	public ItemStack decrStackSize(final int slot, final int qty) {
-		if (this.stackList[slot] != null) {
-			final ItemStack split = this.getStackInSlot(slot);
-			ItemStack ns = null;
-
-			if (qty >= split.stackSize) {
-				ns = this.stackList[slot];
-				this.stackList[slot] = null;
-			} else {
-				ns = split.splitStack(qty);
-			}
-
-			if (this.getTileEntity() != null && this.eventsEnabled()) {
-				this.getTileEntity().onChangeInventory(this, slot, InvOperation.decreaseStackSize, ns, null);
-			}
-
-			this.markDirty();
-			return ns;
-		}
-
-		return null;
-	}
-
-	@Override
-	protected boolean eventsEnabled() {
-		return Platform.isServer() || this.isEnableClientEvents();
-	}
-
-	private boolean isEnableClientEvents() {
-		return this.enableClientEvents;
-	}
-
-	public void setEnableClientEvents(final boolean enableClientEvents) {
-		this.enableClientEvents = enableClientEvents;
-	}
-
-	@Override
-	public boolean isEmpty() {
-		for (int x = 0; x < this.size; x++) {
-			if (this.getStackInSlot(x) != null) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	@SuppressWarnings("rawtypes")
-	@Override
-	public IMEInventory getMEInventory() {
-		return new MEIInventoryWrapper(this, null);
-	}
-
-	private IAEAppEngInventory getTileEntity() {
-		return this.te;
-	}
-
-	@Override
-	public void setTileEntity(final IAEAppEngInventory te) {
-		this.te = te;
-	}
-
-	/*
-	 * @Override public ItemStack decrStackSize(int slot, int amount) { if
-	 * (this.stackList[slot] != null) { ItemStack itemstack; if
-	 * (this.stackList[slot].stackSize <= amount) { itemstack =
-	 * this.stackList[slot]; this.stackList[slot] = null;
-	 * this.eventHandler.onCraftMatrixChanged(this); return itemstack; } else {
-	 * itemstack = this.stackList[slot].splitStack(amount);
-	 * 
-	 * if (this.stackList[slot].stackSize == 0) { this.stackList[slot] = null; }
-	 * 
-	 * this.eventHandler.onCraftMatrixChanged(this); return itemstack; } } else
-	 * { return getStackInSlot(slot); } }
-	 */
-	public void setInventorySlotContents(int slot, ItemStack stack) {
-		this.stackList[slot] = stack;
-		this.eventHandler.onCraftMatrixChanged(this);
-		if (stack != null && stack.stackSize > getInventoryStackLimit()) {
-			stack.stackSize = getInventoryStackLimit();
-		}
-		markDirty();
-	}
-
-	public int getInventoryStackLimit() {
-		return 64;
-	}
-
-	@Override
-	public void markDirty(final int slotIndex) {
-		if (this.getTileEntity() != null && this.eventsEnabled()) {
-			this.getTileEntity().onChangeInventory(this, slotIndex, InvOperation.markDirty, null, null);
-		}
-	}
-
-	public void markDirty() {
-		if (this.getTileEntity() != null && this.eventsEnabled()) {
-			this.getTileEntity().onChangeInventory(this, -1, InvOperation.markDirty, null, null);
-		}
-		for (int i = 0; i < getSizeInventory(); ++i) {
-			if (getStackInSlot(i) != null && getStackInSlot(i).stackSize == 0) {
-				stackList[i] = null;
-			}
-		}
-		writeNBT(invItem.getTagCompound());
-	}
-
-	public boolean isUseableByPlayer(EntityPlayer player) {
-		return true;
-	}
-
-	public void openInventory() {
-	}
-
-	public void closeInventory() {
-	}
-
-	public boolean isItemValidForSlot(int slot, ItemStack stack) {
-		return !(stack.getItem() instanceof IWirelessCraftingTerminalItem);
-	}
-
-	public void writeNBT(NBTTagCompound nbtTagCompound) {
-		// Write the ItemStacks in the inventory to NBT
-		NBTTagList tagList = new NBTTagList();
-		for (int currentIndex = 0; currentIndex < stackList.length; ++currentIndex) {
-			if (stackList[currentIndex] != null) {
-				NBTTagCompound tagCompound = new NBTTagCompound();
-				tagCompound.setByte("Slot", (byte) currentIndex);
-				stackList[currentIndex].writeToNBT(tagCompound);
-				tagList.appendTag(tagCompound);
-			}
-		}
-		nbtTagCompound.setTag("CraftingMatrix", tagList);
-	}
-
+            final NBTTagCompound tag = new NBTTagCompound();
+            tag.setByte("Slot", (byte) i);
+            stack.writeToNBT(tag);
+            tagList.appendTag(tag);
+        }
+        ItemStackNBT.setTagList(terminal, NBT_KEY, tagList);
+    }
 }

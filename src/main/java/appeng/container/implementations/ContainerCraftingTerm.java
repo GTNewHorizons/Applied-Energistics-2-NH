@@ -35,6 +35,11 @@ public class ContainerCraftingTerm extends ContainerMEMonitorable
     private final SlotCraftingTerm outputSlot;
 
     public ContainerCraftingTerm(final InventoryPlayer ip, final ITerminalHost monitorable) {
+        this(ip, monitorable, 37, -72, 131, -72 + 18);
+    }
+
+    protected ContainerCraftingTerm(final InventoryPlayer ip, final ITerminalHost monitorable, final int gridX,
+            final int gridY, final int outputX, final int outputY) {
         super(ip, monitorable, false);
         this.ct = (ICraftingTerminal) monitorable;
 
@@ -47,8 +52,8 @@ public class ContainerCraftingTerm extends ContainerMEMonitorable
                                 this,
                                 crafting,
                                 x + y * 3,
-                                37 + x * 18,
-                                -72 + y * 18));
+                                gridX + x * 18,
+                                gridY + y * 18));
             }
         }
 
@@ -61,8 +66,8 @@ public class ContainerCraftingTerm extends ContainerMEMonitorable
                         crafting,
                         crafting,
                         this.output,
-                        131,
-                        -72 + 18,
+                        outputX,
+                        outputY,
                         this));
 
         this.onCraftMatrixChanged(crafting);

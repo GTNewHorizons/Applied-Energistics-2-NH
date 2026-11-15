@@ -27,7 +27,10 @@ import cpw.mods.fml.common.SidedProxy;
 
 public abstract class CommonHelper {
 
-    @SidedProxy(clientSide = "appeng.client.ClientHelper", serverSide = "appeng.server.ServerHelper")
+    @SidedProxy(
+            clientSide = "appeng.client.ClientHelper",
+            serverSide = "appeng.server.ServerHelper",
+            modId = AppEng.MOD_ID)
     public static CommonHelper proxy;
 
     public abstract void init();

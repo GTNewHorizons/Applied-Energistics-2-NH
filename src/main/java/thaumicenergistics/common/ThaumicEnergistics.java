@@ -69,7 +69,8 @@ public class ThaumicEnergistics {
     // Says where the client and server 'proxy' code is loaded.
     @SidedProxy(
             clientSide = "thaumicenergistics.client.ClientProxy",
-            serverSide = "thaumicenergistics.common.CommonProxy")
+            serverSide = "thaumicenergistics.common.CommonProxy",
+            modId = ThaumicEnergistics.MOD_ID)
     public static CommonProxy proxy;
 
     /**

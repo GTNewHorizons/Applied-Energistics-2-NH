@@ -1,95 +1,87 @@
 package net.p455w0rd.wirelesscraftingterminal.common;
 
-import appeng.api.AEApi;
-import appeng.api.implementations.guiobjects.IPortableCell;
-import cpw.mods.fml.common.network.IGuiHandler;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
-import net.p455w0rd.wirelesscraftingterminal.api.IWirelessCraftingTermHandler;
-import net.p455w0rd.wirelesscraftingterminal.client.gui.GuiCraftAmount;
-import net.p455w0rd.wirelesscraftingterminal.client.gui.GuiCraftConfirm;
-import net.p455w0rd.wirelesscraftingterminal.client.gui.GuiCraftingStatus;
+import net.minecraftforge.common.util.ForgeDirection;
 import net.p455w0rd.wirelesscraftingterminal.client.gui.GuiMagnet;
 import net.p455w0rd.wirelesscraftingterminal.client.gui.GuiWirelessCraftingTerminal;
-import net.p455w0rd.wirelesscraftingterminal.common.container.ContainerCraftAmount;
-import net.p455w0rd.wirelesscraftingterminal.common.container.ContainerCraftConfirm;
-import net.p455w0rd.wirelesscraftingterminal.common.container.ContainerCraftingStatus;
 import net.p455w0rd.wirelesscraftingterminal.common.container.ContainerMagnet;
 import net.p455w0rd.wirelesscraftingterminal.common.container.ContainerWirelessCraftingTerminal;
 import net.p455w0rd.wirelesscraftingterminal.common.utils.RandomUtils;
-import net.p455w0rd.wirelesscraftingterminal.helpers.WirelessTerminalGuiObject;
+import net.p455w0rd.wirelesscraftingterminal.helpers.WTCGuiObject;
 import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
+
+import org.jspecify.annotations.Nullable;
+
+import appeng.container.ContainerOpenContext;
+import appeng.util.Platform;
+import cpw.mods.fml.common.network.IGuiHandler;
 
 public class WCTGuiHandler implements IGuiHandler {
 
-	public void registerRenderers() {
-	}
+    public void registerRenderers() {}
 
-	@Override
-	public Object getServerGuiElement(int guiId, EntityPlayer player, World world, int x, int y, int z) {
-		final IWirelessCraftingTermHandler wh = (IWirelessCraftingTermHandler) AEApi.instance().registries().wireless().getWirelessTerminalHandler(RandomUtils.getWirelessTerm(player.inventory));
-		if (wh != null) {
-			final WirelessTerminalGuiObject obj = new WirelessTerminalGuiObject(wh, RandomUtils.getWirelessTerm(player.inventory), player, world, x, y, z);
-			if (obj != null) {
-				final IPortableCell terminal = obj;
+    /**
+     * For {@link Reference#GUI_WCT}, x is the inventory slot index of the terminal, in the same way as AE2 item GUIs.
+     */
+    @Override
+    public @Nullable Object getServerGuiElement(int guiId, EntityPlayer player, World world, int x, int y, int z) {
+        if (guiId == Reference.GUI_WCT) {
+            final WTCGuiObject obj = createGuiObject(player, world, x);
+            if (obj == null) {
+                return null;
+            }
 
-				if (guiId == Reference.GUI_WCT) {
-					return new ContainerWirelessCraftingTerminal(player, player.inventory);
-				}
+            final ContainerWirelessCraftingTerminal container = new ContainerWirelessCraftingTerminal(
+                    player.inventory,
+                    obj);
+            final ContainerOpenContext context = new ContainerOpenContext(obj);
+            context.setWorld(world);
+            context.setX(x);
+            context.setY(y);
+            context.setZ(z);
+            context.setSide(ForgeDirection.UNKNOWN);
+            container.setOpenContext(context);
+            return container;
+        }
+        if (guiId == Reference.GUI_MAGNET) {
+            return new ContainerMagnet(player, player.inventory);
+        }
 
-				if (guiId == Reference.GUI_CRAFTING_STATUS) {
-					return new ContainerCraftingStatus(player.inventory, terminal);
-				}
+        return null;
+    }
 
-				if (guiId == Reference.GUI_CRAFT_AMOUNT) {
-					return new ContainerCraftAmount(player.inventory, terminal);
-				}
+    @Override
+    public @Nullable Object getClientGuiElement(int guiId, EntityPlayer player, World world, int x, int y, int z) {
+        if (guiId == Reference.GUI_WCT) {
+            final WTCGuiObject obj = createGuiObject(player, world, x);
+            if (obj == null) {
+                return null;
+            }
+            return new GuiWirelessCraftingTerminal(player.inventory, obj);
+        }
+        if (guiId == Reference.GUI_MAGNET) {
+            return new GuiMagnet(new ContainerMagnet(player, player.inventory));
+        }
 
-				if (guiId == Reference.GUI_CRAFT_CONFIRM) {
-					return new ContainerCraftConfirm(player.inventory, terminal);
-				}
-			}
-		}
-		if (guiId == Reference.GUI_MAGNET) {
-			return new ContainerMagnet(player, player.inventory);
-		}
+        return null;
+    }
 
-		return null;
-	}
+    private static @Nullable WTCGuiObject createGuiObject(EntityPlayer player, World world, int slotIndex) {
+        final ItemStack terminal = Platform.getItemFromPlayerInventoryBySlotIndex(player, slotIndex);
+        if (!RandomUtils.isWirelessCraftingTerminal(terminal)) {
+            return null;
+        }
+        return ContainerWirelessCraftingTerminal.getGuiObject(terminal, player, world, slotIndex);
+    }
 
-	@Override
-	public Object getClientGuiElement(int guiId, EntityPlayer player, World world, int x, int y, int z) {
-		final IWirelessCraftingTermHandler wh = (IWirelessCraftingTermHandler) AEApi.instance().registries().wireless().getWirelessTerminalHandler(RandomUtils.getWirelessTerm(player.inventory));
-		if (wh != null) {
-			final WirelessTerminalGuiObject obj = new WirelessTerminalGuiObject(wh, RandomUtils.getWirelessTerm(player.inventory), player, world, x, y, z);
-			if (obj != null) {
-				final IPortableCell terminal = obj;
+    public static void openTerminalGui(final EntityPlayer player, final int slotIndex) {
+        player.openGui(WirelessCraftingTerminal.INSTANCE, Reference.GUI_WCT, player.worldObj, slotIndex, 0, 0);
+    }
 
-				if (guiId == Reference.GUI_WCT) {
-					return new GuiWirelessCraftingTerminal(new ContainerWirelessCraftingTerminal(player, player.inventory));
-				}
-
-				if (guiId == Reference.GUI_CRAFTING_STATUS) {
-					return new GuiCraftingStatus(player.inventory, terminal);
-				}
-
-				if (guiId == Reference.GUI_CRAFT_AMOUNT) {
-					return new GuiCraftAmount(player.inventory, terminal);
-				}
-
-				if (guiId == Reference.GUI_CRAFT_CONFIRM) {
-					return new GuiCraftConfirm(player.inventory, terminal);
-				}
-			}
-		}
-		if (guiId == Reference.GUI_MAGNET) {
-			return new GuiMagnet(new ContainerMagnet(player, player.inventory));
-		}
-
-		return null;
-	}
-
-	public static void launchGui(final int ID, final EntityPlayer player, final World world, final int x, final int y, final int z) {
-		player.openGui(WirelessCraftingTerminal.INSTANCE, ID, world, x, y, z);
-	}
+    public static void launchGui(final int ID, final EntityPlayer player, final World world, final int x, final int y,
+            final int z) {
+        player.openGui(WirelessCraftingTerminal.INSTANCE, ID, world, x, y, z);
+    }
 }

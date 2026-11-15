@@ -1,5 +1,7 @@
 package appeng.util;
 
+import java.util.function.Predicate;
+
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.IInventory;
@@ -7,8 +9,13 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.server.S09PacketHeldItemChange;
 import net.minecraft.network.play.server.S2FPacketSetSlot;
 
+import org.jspecify.annotations.Nullable;
+
 import appeng.api.AEApi;
 import baubles.api.BaublesApi;
+import cpw.mods.fml.common.Optional;
+import it.unimi.dsi.fastutil.ints.IntObjectImmutablePair;
+import it.unimi.dsi.fastutil.ints.IntObjectPair;
 
 /**
  * A collection of utility functions for manipulating player inventories.
@@ -123,20 +130,45 @@ public class PlayerInventoryUtil {
      * @param player the player to check
      * @return the wireless terminal ItemStack, or null if not found
      */
-    public static ItemStack getFirstWirelessTerminal(EntityPlayer player) {
-        // Check bauble slots
+    public static @Nullable ItemStack getFirstWirelessTerminal(EntityPlayer player) {
+        final IntObjectPair<ItemStack> terminal = findWirelessTerminal(player);
+        return terminal != null ? terminal.second() : null;
+    }
+
+    /**
+     * Finds the first wireless terminal in the player's inventory.
+     *
+     * @param player the player to check
+     * @return the slot index and the wireless terminal ItemStack, or null if not found
+     */
+    public static @Nullable IntObjectPair<ItemStack> findWirelessTerminal(EntityPlayer player) {
+        return findWirelessTerminal(player, AEApi.instance().registries().wireless()::isWirelessTerminal);
+    }
+
+    /**
+     * Finds the first terminal accepted by the filter. The bauble slots are checked before the hotbar and the main
+     * inventory (slots 0-35).
+     *
+     * @param player the player to check
+     * @param filter selects the terminals to find
+     * @return the slot index and the terminal ItemStack, or null if not found. The slot index can be passed to
+     *         {@link Platform#getItemFromPlayerInventoryBySlotIndex}. A terminal in the bauble slots uses
+     *         {@link Platform#baublesSlotsOffset} plus its bauble slot index.
+     */
+    public static @Nullable IntObjectPair<ItemStack> findWirelessTerminal(EntityPlayer player,
+            Predicate<ItemStack> filter) {
         if (Platform.isBaublesLoaded) {
-            ItemStack terminal = getWirelessTerminalFromBaubles(player);
+            final IntObjectPair<ItemStack> terminal = findWirelessTerminalInBaubles(player, filter);
             if (terminal != null) {
                 return terminal;
             }
         }
 
-        // Check hotbar and main inventory (slots 0-35)
-        for (int i = 0; i < player.inventory.mainInventory.length; i++) {
-            ItemStack stack = player.inventory.mainInventory[i];
-            if (stack != null && AEApi.instance().registries().wireless().isWirelessTerminal(stack)) {
-                return stack;
+        final ItemStack[] mainInventory = player.inventory.mainInventory;
+        for (int i = 0; i < mainInventory.length; i++) {
+            final ItemStack stack = mainInventory[i];
+            if (stack != null && filter.test(stack)) {
+                return new IntObjectImmutablePair<>(i, stack);
             }
         }
 
@@ -158,20 +190,15 @@ public class PlayerInventoryUtil {
         return -1;
     }
 
-    /**
-     * Finds the first wireless terminal in the player's bauble slots.
-     *
-     * @param player the player to check
-     * @return the wireless terminal ItemStack, or null if not found
-     */
-    @cpw.mods.fml.common.Optional.Method(modid = "Baubles|Expanded")
-    public static ItemStack getWirelessTerminalFromBaubles(EntityPlayer player) {
-        IInventory baubles = BaublesApi.getBaubles(player);
+    @Optional.Method(modid = "Baubles|Expanded")
+    private static @Nullable IntObjectPair<ItemStack> findWirelessTerminalInBaubles(EntityPlayer player,
+            Predicate<ItemStack> filter) {
+        final IInventory baubles = BaublesApi.getBaubles(player);
         if (baubles != null) {
             for (int i = 0; i < baubles.getSizeInventory(); i++) {
-                ItemStack stack = baubles.getStackInSlot(i);
-                if (stack != null && AEApi.instance().registries().wireless().isWirelessTerminal(stack)) {
-                    return stack;
+                final ItemStack stack = baubles.getStackInSlot(i);
+                if (stack != null && filter.test(stack)) {
+                    return new IntObjectImmutablePair<>(Platform.baublesSlotsOffset + i, stack);
                 }
             }
         }

@@ -2180,7 +2180,7 @@ public class Platform {
 
     public static void setPlayerInventorySlotByIndex(final EntityPlayer p, final int slotIndex, final ItemStack is) {
         if (isBaublesLoaded && slotIndex >= baublesSlotsOffset) {
-            BaublesApi.getBaubles(p).setInventorySlotContents(slotIndex, is);
+            BaublesApi.getBaubles(p).setInventorySlotContents(slotIndex - baublesSlotsOffset, is);
         } else p.inventory.setInventorySlotContents(slotIndex, is);
     }
 

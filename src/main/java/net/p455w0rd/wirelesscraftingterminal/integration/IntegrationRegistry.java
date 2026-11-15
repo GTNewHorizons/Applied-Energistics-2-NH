@@ -3,84 +3,84 @@ package net.p455w0rd.wirelesscraftingterminal.integration;
 import java.util.Collection;
 import java.util.LinkedList;
 
-import javax.annotation.Nonnull;
+import org.jspecify.annotations.NonNull;
 
 import cpw.mods.fml.relauncher.FMLLaunchHandler;
 import cpw.mods.fml.relauncher.Side;
 
 public enum IntegrationRegistry {
-	INSTANCE;
 
-	private static final String PACKAGE_PREFIX = "net.p455w0rd.wirelesscraftingterminal.integration.modules.";
+    INSTANCE;
 
-	private final Collection<IntegrationNode> modules = new LinkedList<IntegrationNode>();
+    private static final String PACKAGE_PREFIX = "net.p455w0rd.wirelesscraftingterminal.integration.modules.";
 
-	public void add(final IntegrationType type) {
-		if (type.side == IntegrationSide.CLIENT && FMLLaunchHandler.side() == Side.SERVER) {
-			return;
-		}
+    private final Collection<IntegrationNode> modules = new LinkedList<IntegrationNode>();
 
-		if (type.side == IntegrationSide.SERVER && FMLLaunchHandler.side() == Side.CLIENT) {
-			return;
-		}
+    public void add(final IntegrationType type) {
+        if (type.side == IntegrationSide.CLIENT && FMLLaunchHandler.side() == Side.SERVER) {
+            return;
+        }
 
-		this.modules.add(new IntegrationNode(type.dspName, type.modID, type, PACKAGE_PREFIX + type.name()));
-	}
+        if (type.side == IntegrationSide.SERVER && FMLLaunchHandler.side() == Side.CLIENT) {
+            return;
+        }
 
-	public void init() {
-		for (final IntegrationType type : IntegrationType.values())
-		{
-			IntegrationRegistry.INSTANCE.add(type);
-		}
-		
-		for (final IntegrationNode node : this.modules) {
-			node.call(IntegrationStage.PRE_INIT);
-		}
+        this.modules.add(new IntegrationNode(type.dspName, type.modID, type, PACKAGE_PREFIX + type.name()));
+    }
 
-		for (final IntegrationNode node : this.modules) {
-			node.call(IntegrationStage.INIT);
-		}
-	}
+    public void init() {
+        for (final IntegrationType type : IntegrationType.values()) {
+            IntegrationRegistry.INSTANCE.add(type);
+        }
 
-	public void postInit() {
-		for (final IntegrationNode node : this.modules) {
-			node.call(IntegrationStage.POST_INIT);
-		}
-	}
+        for (final IntegrationNode node : this.modules) {
+            node.call(IntegrationStage.PRE_INIT);
+        }
 
-	public String getStatus() {
-		final StringBuilder builder = new StringBuilder(this.modules.size() * 3);
+        for (final IntegrationNode node : this.modules) {
+            node.call(IntegrationStage.INIT);
+        }
+    }
 
-		for (final IntegrationNode node : this.modules) {
-			if (builder.length() != 0) {
-				builder.append(", ");
-			}
+    public void postInit() {
+        for (final IntegrationNode node : this.modules) {
+            node.call(IntegrationStage.POST_INIT);
+        }
+    }
 
-			final String integrationState = node.getShortName() + ":" + (node.getState() == IntegrationStage.FAILED ? "OFF" : "ON");
-			builder.append(integrationState);
-		}
+    public String getStatus() {
+        final StringBuilder builder = new StringBuilder(this.modules.size() * 3);
 
-		return builder.toString();
-	}
+        for (final IntegrationNode node : this.modules) {
+            if (builder.length() != 0) {
+                builder.append(", ");
+            }
 
-	public boolean isEnabled(final IntegrationType name) {
-		for (final IntegrationNode node : this.modules) {
-			if (node.getShortName() == name) {
-				return node.isActive();
-			}
-		}
-		return false;
-	}
+            final String integrationState = node.getShortName() + ":"
+                    + (node.getState() == IntegrationStage.FAILED ? "OFF" : "ON");
+            builder.append(integrationState);
+        }
 
-	@Nonnull
-	public Object getInstance(final IntegrationType name) {
-		for (final IntegrationNode node : this.modules) {
-			if (node.getShortName() == name && node.isActive()) {
-				return node.getInstance();
-			}
-		}
+        return builder.toString();
+    }
 
-		throw new IllegalStateException("integration with " + name.name() + " is disabled.");
-	}
+    public boolean isEnabled(final IntegrationType name) {
+        for (final IntegrationNode node : this.modules) {
+            if (node.getShortName() == name) {
+                return node.isActive();
+            }
+        }
+        return false;
+    }
+
+    public @NonNull Object getInstance(final IntegrationType name) {
+        for (final IntegrationNode node : this.modules) {
+            if (node.getShortName() == name && node.isActive()) {
+                return node.getInstance();
+            }
+        }
+
+        throw new IllegalStateException("integration with " + name.name() + " is disabled.");
+    }
 
 }

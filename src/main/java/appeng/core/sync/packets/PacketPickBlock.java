@@ -5,7 +5,6 @@ import java.util.List;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.play.server.S09PacketHeldItemChange;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -29,11 +28,10 @@ import appeng.core.sync.GuiBridge;
 import appeng.core.sync.network.INetworkInfo;
 import appeng.util.Platform;
 import appeng.util.PlayerInventoryUtil;
-import baubles.api.BaublesApi;
-import cpw.mods.fml.common.Optional;
 import cpw.mods.fml.common.network.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import it.unimi.dsi.fastutil.ints.IntObjectPair;
 
 public class PacketPickBlock extends AppEngPacket {
 
@@ -126,12 +124,14 @@ public class PacketPickBlock extends AppEngPacket {
         }
 
         // Ensure the player has a wireless terminal with access to an AE2 network.
-        ItemStack wirelessTerminal = PlayerInventoryUtil.getFirstWirelessTerminal(sender);
-        if (wirelessTerminal == null) {
+        final IntObjectPair<ItemStack> terminal = PlayerInventoryUtil.findWirelessTerminal(sender);
+        if (terminal == null) {
             movePickBlockItemStack(sender, pickBlockSlot);
             sender.addChatMessage(PlayerMessages.PickBlockTerminalNotFound.toChat());
             return;
         }
+        final int terminalSlot = terminal.firstInt();
+        final ItemStack wirelessTerminal = terminal.second();
         var wirelessGrid = getWirelessGrid(wirelessTerminal, sender);
         if (wirelessGrid == null) {
             movePickBlockItemStack(sender, pickBlockSlot);
@@ -155,7 +155,7 @@ public class PacketPickBlock extends AppEngPacket {
 
         if (pickBlockItemStack == null
                 && isMissingFromStorage(wirelessInventory.getStorageList().findPrecise(targetAeItemStack))
-                && openCraftAmountGui(sender, wirelessTerminal, targetAeItemStack, wirelessGrid)) {
+                && openCraftAmountGui(sender, wirelessTerminal, terminalSlot, targetAeItemStack, wirelessGrid)) {
             return;
         }
 
@@ -237,15 +237,10 @@ public class PacketPickBlock extends AppEngPacket {
         return wirelessGridCache.getItemInventory();
     }
 
-    private boolean openCraftAmountGui(EntityPlayerMP player, ItemStack wirelessTerminal, IAEItemStack itemToCraft,
-            IGrid wirelessGrid) {
+    private boolean openCraftAmountGui(EntityPlayerMP player, ItemStack wirelessTerminal, int terminalSlot,
+            IAEItemStack itemToCraft, IGrid wirelessGrid) {
         ICraftingGrid craftingGrid = wirelessGrid.getCache(ICraftingGrid.class);
         if (craftingGrid == null || craftingGrid.getCraftingFor(itemToCraft, null, -1, player.worldObj).isEmpty()) {
-            return false;
-        }
-
-        int terminalSlot = getInventorySlot(player, wirelessTerminal);
-        if (terminalSlot < 0) {
             return false;
         }
 
@@ -272,35 +267,6 @@ public class PacketPickBlock extends AppEngPacket {
 
     static boolean isMissingFromStorage(IAEItemStack stored) {
         return stored == null || stored.getStackSize() <= 0;
-    }
-
-    private int getInventorySlot(EntityPlayerMP player, ItemStack item) {
-        // Match getFirstWirelessTerminal: equipped terminals take priority over inventory terminals.
-        if (Platform.isBaublesLoaded) {
-            int slot = getBaublesSlot(player, item);
-            if (slot >= 0) return slot;
-        }
-        for (int slot = 0; slot < player.inventory.mainInventory.length; slot++) {
-            if (player.inventory.mainInventory[slot] == item) {
-                return slot;
-            }
-        }
-
-        return -1;
-    }
-
-    @Optional.Method(modid = "Baubles|Expanded")
-    private int getBaublesSlot(EntityPlayerMP player, ItemStack item) {
-        return findSlot(BaublesApi.getBaubles(player), item, Platform.baublesSlotsOffset);
-    }
-
-    static int findSlot(IInventory inventory, ItemStack item, int offset) {
-        if (inventory != null && item != null) {
-            for (int slot = 0; slot < inventory.getSizeInventory(); slot++) {
-                if (inventory.getStackInSlot(slot) == item) return offset + slot;
-            }
-        }
-        return -1;
     }
 
     /**

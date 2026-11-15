@@ -1,27 +1,23 @@
 package net.p455w0rd.wirelesscraftingterminal.integration.modules;
 
-import net.p455w0rd.wirelesscraftingterminal.helpers.Reflected;
 import net.p455w0rd.wirelesscraftingterminal.integration.IIntegrationModule;
 import net.p455w0rd.wirelesscraftingterminal.integration.IntegrationHelper;
 
-public class RFItem implements IIntegrationModule
-{
-	@Reflected
-	public static RFItem instance;
+import appeng.helpers.Reflected;
 
-	@Reflected
-	public RFItem()
-	{
-		IntegrationHelper.testClassExistence( this, cofh.api.energy.IEnergyContainerItem.class );
-	}
+public class RFItem implements IIntegrationModule {
 
-	@Override
-	public void init()
-	{
-	}
+    @Reflected
+    public static RFItem instance;
 
-	@Override
-	public void postInit()
-	{
-	}
+    @Reflected
+    public RFItem() {
+        IntegrationHelper.testClassExistence(this, cofh.api.energy.IEnergyContainerItem.class);
+    }
+
+    @Override
+    public void init() {}
+
+    @Override
+    public void postInit() {}
 }

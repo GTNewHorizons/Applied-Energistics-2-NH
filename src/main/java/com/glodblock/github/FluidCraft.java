@@ -39,7 +39,8 @@ public class FluidCraft {
 
     @SidedProxy(
             clientSide = "com.glodblock.github.proxy.ClientProxy",
-            serverSide = "com.glodblock.github.proxy.CommonProxy")
+            serverSide = "com.glodblock.github.proxy.CommonProxy",
+            modId = FluidCraft.MODID)
     public static CommonProxy proxy;
 
     @Mod.EventHandler
