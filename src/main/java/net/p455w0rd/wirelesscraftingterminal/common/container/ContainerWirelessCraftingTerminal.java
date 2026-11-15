@@ -3,6 +3,7 @@ package net.p455w0rd.wirelesscraftingterminal.common.container;
 import java.util.List;
 
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.InventoryCrafting;
@@ -35,6 +36,7 @@ import appeng.container.slot.SlotCraftingMatrix;
 import appeng.container.slot.SlotCraftingTerm;
 import appeng.container.slot.SlotRestrictedInput;
 import appeng.helpers.IContainerCraftingPacket;
+import appeng.helpers.InventoryAction;
 import appeng.tile.inventory.AppEngInternalInventory;
 import appeng.tile.inventory.IAEAppEngInventory;
 import appeng.tile.inventory.InvOperation;
@@ -120,6 +122,16 @@ public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
 
     public WTCGuiObject getHost() {
         return this.host;
+    }
+
+    @Override
+    public void doAction(final EntityPlayerMP player, final InventoryAction action, final int slot, final long id) {
+        // The terminal may have been dropped or moved before the packet arrives.
+        this.checkItem(this.host);
+        if (!this.isValidContainer()) {
+            return;
+        }
+        super.doAction(player, action, slot, id);
     }
 
     public static @Nullable WTCGuiObject getGuiObject(final @Nullable ItemStack it, final EntityPlayer player,
