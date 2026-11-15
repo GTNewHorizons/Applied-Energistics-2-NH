@@ -8,19 +8,24 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.ForgeDirection;
+import net.minecraftforge.event.world.WorldEvent;
 
 import com.projecturanus.betterp2p.client.ClientCache;
 import com.projecturanus.betterp2p.item.ItemAdvancedMemoryCard;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.network.FMLNetworkEvent.ClientDisconnectionFromServerEvent;
 import kotlin.Pair;
 
 public class RenderHandler {
 
     @SubscribeEvent
     public void renderOverlays(RenderWorldLastEvent event) {
-        EntityPlayer player = Minecraft.getMinecraft().thePlayer;
+        if (ConnectionHighlighter.render(event)) return;
+        Minecraft mc = Minecraft.getMinecraft();
+        EntityPlayer player = mc.thePlayer;
+        if (player == null || mc.theWorld == null) return;
         if (player.getHeldItem() != null && player.getHeldItem().getItem() == ItemAdvancedMemoryCard.INSTANCE) {
             int playerDimension = player.dimension;
             boolean isCurrentDimension = ClientCache.INSTANCE.getOverlayDimension() == playerDimension;
@@ -46,6 +51,16 @@ public class RenderHandler {
                 }
             }
         }
+    }
+
+    @SubscribeEvent
+    public void onWorldUnload(WorldEvent.Unload event) {
+        if (event.world.isRemote) ConnectionHighlighter.clear();
+    }
+
+    @SubscribeEvent
+    public void onDisconnect(ClientDisconnectionFromServerEvent event) {
+        ConnectionHighlighter.clear();
     }
 
     public static void register() {
