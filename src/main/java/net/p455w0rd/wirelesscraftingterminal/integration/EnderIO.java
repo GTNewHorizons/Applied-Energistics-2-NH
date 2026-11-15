@@ -8,7 +8,7 @@ import cpw.mods.fml.common.Loader;
 import crazypants.enderio.enchantment.EnchantmentSoulBound;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.item.ItemStack;
-import p455w0rdslib.util.ReflectionUtils;
+import net.p455w0rd.wirelesscraftingterminal.common.utils.ReflectionUtils;
 
 /**
  * @author p455w0rd
