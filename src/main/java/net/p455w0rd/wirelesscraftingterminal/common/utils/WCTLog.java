@@ -9,14 +9,6 @@ public class WCTLog {
 	public static final Logger log = LogManager.getLogger("Wireless Crafting Terminal");
 
 	/**
-	 * Displays the section header.
-	 */
-	public static long beginSection(final String section) {
-		log.info(String.format("-=-=-=-=-=-=-=[START] %s=-=-=-=-=-=-=-", section));
-		return System.currentTimeMillis();
-	}
-
-	/**
 	 * Logs a debug statement.
 	 * 
 	 * @param format
@@ -24,13 +16,6 @@ public class WCTLog {
 	 */
 	public static void debug(final String format, final Object... data) {
 		log.debug(String.format(format, data));
-	}
-
-	/**
-	 * Displays the section footer.
-	 */
-	public static void endSection(final String section, final long sectionStartTime) {
-		log.info(String.format("-=-=-=-=-=-=-=[FINISH] %s in %dms=-=-=-=-=-=-=-", section, (System.currentTimeMillis() - sectionStartTime)));
 	}
 
 	/**
