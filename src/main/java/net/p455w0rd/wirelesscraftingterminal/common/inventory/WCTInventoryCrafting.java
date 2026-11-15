@@ -4,7 +4,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.common.util.Constants.NBT;
-import net.p455w0rd.wirelesscraftingterminal.api.IWirelessCraftingTerminalItem;
 
 import org.jspecify.annotations.Nullable;
 
@@ -19,11 +18,6 @@ public class WCTInventoryCrafting extends AppEngInternalInventory {
 
     public WCTInventoryCrafting(final @Nullable IAEAppEngInventory host) {
         super(host, 9);
-    }
-
-    @Override
-    public boolean isItemValidForSlot(final int slot, final ItemStack stack) {
-        return !(stack.getItem() instanceof IWirelessCraftingTerminalItem);
     }
 
     /**
