@@ -42,6 +42,8 @@ public class GuiPatternTargetPanel {
     private static final int COMPACT_WIDTH = 150;
     private static final float COMPACT_SCALE = 0.8F;
     private static final int BUTTON_GAP = 2;
+    // The terminal draws up to two 18 px button columns to its left.
+    private static final int BESIDE_BUTTONS_GAP = 40;
     private static final int SCREEN_MARGIN = 2;
     private static final int PADDING = 6;
     private static final int HEADER_HEIGHT = 24;
@@ -123,44 +125,20 @@ public class GuiPatternTargetPanel {
     }
 
     /**
-     * Places the panel against the terminal's left edge below its button column, as wide as the screen allows, as
-     * tall as its content and clear of the given screen rectangles {x, y, w, h}, such as NEI's buttons.
+     * Places the panel left of the terminal, under its button column or beside it, as tall as its content and clear of
+     * the given screen rectangles {x, y, w, h}, such as NEI's buttons.
      */
     public void layout(int guiLeft, int guiTop, int guiHeight, int buttonsBottom, List<int[]> blocked) {
-        final FontRenderer font = this.gui.getFontRenderer();
-        this.width = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, guiLeft - SCREEN_MARGIN));
-        this.x = -this.width;
-        this.compact = this.width < COMPACT_WIDTH;
-
-        int top = buttonsBottom + BUTTON_GAP;
-        int bottom = guiHeight;
-        final int screenLeft = guiLeft + this.x;
-        for (int[] rect : blocked) {
-            if (rect[0] >= screenLeft + this.width || rect[0] + rect[2] <= screenLeft) {
-                continue;
-            }
-            final int rectTop = rect[1] - guiTop;
-            final int rectBottom = rectTop + rect[3];
-            if (rectTop + rect[3] / 2 < guiHeight / 2) {
-                top = Math.max(top, rectBottom + 2);
-            } else {
-                bottom = Math.min(bottom, rectTop - 2);
-            }
+        this.place(guiLeft, guiTop, guiHeight, buttonsBottom + BUTTON_GAP, 0, blocked);
+        int availableHeight = this.height;
+        int conflictHeight = this.conflictHeight();
+        // A tall button column, as on wireless terminals, can leave no room under it; then the panel goes beside it.
+        if (availableHeight < HEADER_HEIGHT + CARD_HEIGHT + 2 + PADDING + conflictHeight) {
+            this.place(guiLeft, guiTop, guiHeight, 0, BESIDE_BUTTONS_GAP, blocked);
+            availableHeight = this.height;
+            conflictHeight = this.conflictHeight();
         }
-        this.y = top;
-        final int availableHeight = Math.max(HEADER_HEIGHT + CARD_HEIGHT + 2 + PADDING, bottom - top);
-
-        final int conflictCount = this.list.conflicts.size();
-        final int conflictRows = Math.min(CONFLICT_ROWS, conflictCount);
-        this.conflictTitle = conflictRows == 0 ? Collections.emptyList()
-                : listLines(
-                        font,
-                        GuiText.PatternTargetsConflictTitle.getLocal(),
-                        (int) ((this.width - 2 * PADDING - 10) / this.textScale()));
-        final int conflictHeight = conflictRows == 0 ? 0
-                : 4 + this.conflictTitle.size() * LINE_HEIGHT
-                        + conflictRows * CARD_HEIGHT
-                        + (conflictCount > CONFLICT_ROWS ? LINE_HEIGHT : 0);
+        availableHeight = Math.max(HEADER_HEIGHT + CARD_HEIGHT + 2 + PADDING, availableHeight);
 
         this.listTop = this.y + HEADER_HEIGHT;
         final int maxListHeight = availableHeight - HEADER_HEIGHT - conflictHeight - PADDING;
@@ -179,6 +157,46 @@ public class GuiPatternTargetPanel {
         this.scrollbar.setWidth(12);
         this.scrollbar.setHeight(this.listHeight - 2);
         this.scrollbar.setRange(0, Math.max(0, this.entries.size() - this.visibleCards), 1);
+    }
+
+    // Sets x, width and y, and the room down to the terminal's bottom or the first blocked rectangle in height.
+    private void place(int guiLeft, int guiTop, int guiHeight, int startTop, int gap, List<int[]> blocked) {
+        this.width = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, guiLeft - gap - SCREEN_MARGIN));
+        this.x = -gap - this.width;
+        this.compact = this.width < COMPACT_WIDTH;
+
+        int top = startTop;
+        int bottom = guiHeight;
+        final int screenLeft = guiLeft + this.x;
+        for (int[] rect : blocked) {
+            if (rect[0] >= screenLeft + this.width || rect[0] + rect[2] <= screenLeft) {
+                continue;
+            }
+            final int rectTop = rect[1] - guiTop;
+            final int rectBottom = rectTop + rect[3];
+            if (rectTop + rect[3] / 2 < guiHeight / 2) {
+                top = Math.max(top, rectBottom + 2);
+            } else {
+                bottom = Math.min(bottom, rectTop - 2);
+            }
+        }
+        this.y = top;
+        this.height = bottom - top;
+    }
+
+    // Wraps the conflict title to the current width and returns the height of the whole conflict block.
+    private int conflictHeight() {
+        final int conflictCount = this.list.conflicts.size();
+        final int conflictRows = Math.min(CONFLICT_ROWS, conflictCount);
+        this.conflictTitle = conflictRows == 0 ? Collections.emptyList()
+                : listLines(
+                        this.gui.getFontRenderer(),
+                        GuiText.PatternTargetsConflictTitle.getLocal(),
+                        (int) ((this.width - 2 * PADDING - 10) / this.textScale()));
+        return conflictRows == 0 ? 0
+                : 4 + this.conflictTitle.size() * LINE_HEIGHT
+                        + conflictRows * CARD_HEIGHT
+                        + (conflictCount > CONFLICT_ROWS ? LINE_HEIGHT : 0);
     }
 
     public void draw(int mouseX, int mouseY) {
