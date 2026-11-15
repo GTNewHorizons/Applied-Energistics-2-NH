@@ -29,6 +29,7 @@ import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
 import net.p455w0rd.wirelesscraftingterminal.api.networking.security.WCTPlayerSource;
 import net.p455w0rd.wirelesscraftingterminal.common.utils.RandomUtils;
+import net.p455w0rd.wirelesscraftingterminal.common.utils.WCTLog;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.WCTPacket;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.network.NetworkHandler;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketConfigSync;
@@ -139,10 +140,20 @@ public class CommonProxy {
 
 	@SubscribeEvent
 	public void pickupEvent(EntityItemPickupEvent e) {
-		EntityPlayer player = e.entityPlayer;
-		if (player == null) {
+		final EntityPlayer player = e.entityPlayer;
+		// Fake players such as OpenComputers robots may not have a proper inventory.
+		if (player == null || player.inventory == null || player.inventory.player == null) {
 			return;
 		}
+		try {
+			handlePickup(e, player);
+		}
+		catch (Exception ex) {
+			WCTLog.log.error("Failed to handle the item pickup with the magnet card", ex);
+		}
+	}
+
+	private void handlePickup(EntityItemPickupEvent e, EntityPlayer player) {
 		EntityItem itemEntity = e.item;
 		ItemStack stack = itemEntity.getEntityItem();
 		InventoryPlayer playerInv = player.inventory;
