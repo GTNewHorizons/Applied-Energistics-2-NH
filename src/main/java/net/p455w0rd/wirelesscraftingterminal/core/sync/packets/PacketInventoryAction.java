@@ -11,15 +11,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.inventory.Container;
-import net.p455w0rd.wirelesscraftingterminal.common.WCTGuiHandler;
-import net.p455w0rd.wirelesscraftingterminal.common.container.ContainerCraftAmount;
-import net.p455w0rd.wirelesscraftingterminal.common.container.ContainerOpenContext;
 import net.p455w0rd.wirelesscraftingterminal.common.container.ContainerWirelessCraftingTerminal;
-import net.p455w0rd.wirelesscraftingterminal.common.container.WCTBaseContainer;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.WCTPacket;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.network.INetworkInfo;
-import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
 
 public class PacketInventoryAction extends WCTPacket
 {
@@ -99,68 +93,13 @@ public class PacketInventoryAction extends WCTPacket
 		this.configureWrite( data );
 	}
 
-	@SuppressWarnings("unused")
 	@Override
 	public void serverPacketData( final INetworkInfo manager, final WCTPacket packet, final EntityPlayer player )
 	{
 		final EntityPlayerMP sender = (EntityPlayerMP) player;
-		Container baseContainer = sender.openContainer;
-		ContainerOpenContext context = null;
 		if( sender.openContainer instanceof ContainerWirelessCraftingTerminal ) {
-			baseContainer = (ContainerWirelessCraftingTerminal) sender.openContainer;
-			context = ((ContainerWirelessCraftingTerminal) baseContainer).getOpenContext();
+			((ContainerWirelessCraftingTerminal) sender.openContainer).doAction( sender, this.action, this.slot, this.id );
 		}
-		
-		if( sender.openContainer instanceof WCTBaseContainer ) {
-			baseContainer = (WCTBaseContainer) sender.openContainer;
-			context = ((WCTBaseContainer) baseContainer).getOpenContext();
-		}
-
-			if( this.action == InventoryAction.AUTO_CRAFT )
-			{
-				//if( context != null )
-				//{
-					//final TileEntity te = context.getTile();
-					
-					int x = (int)player.posX;
-					int y = (int)player.posY;
-					int z = (int)player.posZ;
-					
-					WCTGuiHandler.launchGui(Reference.GUI_CRAFT_AMOUNT, player, player.worldObj, x, y, z);
-
-					if( sender.openContainer instanceof ContainerCraftAmount )
-					{
-						final ContainerCraftAmount cca = (ContainerCraftAmount) sender.openContainer;
-						
-						if (baseContainer instanceof ContainerWirelessCraftingTerminal) {
-							if( ((ContainerWirelessCraftingTerminal) baseContainer).getTargetStack() != null )
-							{
-								cca.getCraftingItem().putStack( ((ContainerWirelessCraftingTerminal) baseContainer).getTargetStack().getItemStack() );
-								cca.setItemToCraft( ((ContainerWirelessCraftingTerminal) baseContainer).getTargetStack() );
-							}
-						}
-						
-						if (baseContainer instanceof WCTBaseContainer) {
-							if( ((WCTBaseContainer) baseContainer).getTargetStack() != null )
-							{
-								cca.getCraftingItem().putStack( ((WCTBaseContainer) baseContainer).getTargetStack().getItemStack() );
-								cca.setItemToCraft( ((WCTBaseContainer) baseContainer).getTargetStack() );
-							}
-						}
-
-						cca.detectAndSendChanges();
-					}
-				//}
-			}
-			else
-			{
-				if (baseContainer instanceof ContainerWirelessCraftingTerminal) {
-					((ContainerWirelessCraftingTerminal) baseContainer).doAction( sender, this.action, this.slot, this.id );
-				}
-				if (baseContainer instanceof WCTBaseContainer) {
-					((WCTBaseContainer) baseContainer).doAction( sender, this.action, this.slot, this.id );
-				}
-			}
 	}
 
 	@Override

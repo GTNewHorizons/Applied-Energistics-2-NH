@@ -1,5 +1,6 @@
 package net.p455w0rd.wirelesscraftingterminal.common.container.slot;
 
+import appeng.container.slot.AppEngSlot;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.player.EntityPlayer;

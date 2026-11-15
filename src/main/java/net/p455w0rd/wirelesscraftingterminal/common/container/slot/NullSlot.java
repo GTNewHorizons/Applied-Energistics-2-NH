@@ -1,5 +1,6 @@
 package net.p455w0rd.wirelesscraftingterminal.common.container.slot;
 
+import appeng.container.slot.AppEngSlot;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;

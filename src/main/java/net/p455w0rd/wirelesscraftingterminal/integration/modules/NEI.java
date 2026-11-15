@@ -6,7 +6,6 @@ import java.util.List;
 
 import appeng.api.AEApi;
 import appeng.api.storage.data.IAEItemStack;
-import appeng.integration.modules.NEIHelpers.NEIAEShapelessRecipeHandler;
 import appeng.util.Platform;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.api.API;
@@ -25,15 +24,14 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.p455w0rd.wirelesscraftingterminal.client.gui.GuiWirelessCraftingTerminal;
 import net.p455w0rd.wirelesscraftingterminal.common.container.ContainerWirelessCraftingTerminal;
-import net.p455w0rd.wirelesscraftingterminal.common.container.slot.SlotCraftingMatrix;
-import net.p455w0rd.wirelesscraftingterminal.common.container.slot.SlotFakeCraftingMatrix;
+import appeng.container.slot.SlotCraftingMatrix;
+import appeng.container.slot.SlotFakeCraftingMatrix;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.network.NetworkHandler;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketNEIRecipe;
-import net.p455w0rd.wirelesscraftingterminal.helpers.Reflected;
+import appeng.helpers.Reflected;
 import net.p455w0rd.wirelesscraftingterminal.integration.IIntegrationModule;
 import net.p455w0rd.wirelesscraftingterminal.integration.IntegrationHelper;
 import net.p455w0rd.wirelesscraftingterminal.integration.abstraction.INEI;
-import net.p455w0rd.wirelesscraftingterminal.integration.modules.NEIHelpers.NEIAEShapedRecipeHandler;
 
 public class NEI implements INEI, IContainerTooltipHandler, IIntegrationModule {
 	@Reflected
@@ -61,8 +59,6 @@ public class NEI implements INEI, IContainerTooltipHandler, IIntegrationModule {
 		
 		API.registerGuiOverlay(net.p455w0rd.wirelesscraftingterminal.client.gui.GuiWirelessCraftingTerminal.class, "crafting", new WCTSlotPositioner());
 		API.registerGuiOverlayHandler(net.p455w0rd.wirelesscraftingterminal.client.gui.GuiWirelessCraftingTerminal.class, new WCTOverlayHandler(), "crafting");
-		API.registerRecipeHandler(new NEIAEShapedRecipeHandler());
-		API.registerRecipeHandler( new NEIAEShapelessRecipeHandler() );
 		
 		/*
 		final Method registerGuiOverlay = this.apiClass.getDeclaredMethod("registerGuiOverlay", Class.class, String.class, IStackPositioner.class);

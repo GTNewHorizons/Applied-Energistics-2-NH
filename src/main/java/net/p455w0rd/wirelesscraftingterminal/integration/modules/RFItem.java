@@ -1,6 +1,6 @@
 package net.p455w0rd.wirelesscraftingterminal.integration.modules;
 
-import net.p455w0rd.wirelesscraftingterminal.helpers.Reflected;
+import appeng.helpers.Reflected;
 import net.p455w0rd.wirelesscraftingterminal.integration.IIntegrationModule;
 import net.p455w0rd.wirelesscraftingterminal.integration.IntegrationHelper;
 
