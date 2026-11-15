@@ -10,7 +10,6 @@ import net.p455w0rd.wirelesscraftingterminal.items.ItemEnum;
 
 import org.jspecify.annotations.Nullable;
 
-import com.glodblock.github.common.item.ItemWirelessUltraTerminal;
 import com.glodblock.github.common.terminal.TerminalIds;
 import com.glodblock.github.inventory.InventoryHandler;
 import com.glodblock.github.inventory.gui.GuiType;
@@ -69,7 +68,6 @@ public final class UltraTerminalLoader implements Runnable {
 
         final ItemStack patternPart = stackOf(AEApi.instance().definitions().parts().patternTerminalEx());
         final ItemStack wirelessPattern = ItemAndBlockHolder.WIRELESS_PATTERN_TERM.stack();
-        // standalone pattern terminal items keep using their nbt mode, the ultra terminal passes the mode of this type
         registry.register(
                 new AbstractUltraTerminalType(
                         TerminalIds.AE2FC_PATTERN,
@@ -81,8 +79,7 @@ public final class UltraTerminalLoader implements Runnable {
                     @Override
                     public IGuiItemObject createGuiObject(final IWirelessTermHandler handler, final ItemStack terminal,
                             final EntityPlayer player, final World world, final int x, final int y, final int z) {
-                        final int mode = ItemWirelessUltraTerminal.isUltraTerminal(terminal) ? 1 : y;
-                        return new WirelessPatternTerminalGuiObject(handler, terminal, player, world, x, mode, z);
+                        return new WirelessPatternTerminalGuiObject(handler, terminal, player, world, x, y, z, false);
                     }
                 });
         if (patternPart != null) {
@@ -98,8 +95,15 @@ public final class UltraTerminalLoader implements Runnable {
                         public IGuiItemObject createGuiObject(final IWirelessTermHandler handler,
                                 final ItemStack terminal, final EntityPlayer player, final World world, final int x,
                                 final int y, final int z) {
-                            final int mode = ItemWirelessUltraTerminal.isUltraTerminal(terminal) ? 2 : y;
-                            return new WirelessPatternTerminalGuiObject(handler, terminal, player, world, x, mode, z);
+                            return new WirelessPatternTerminalGuiObject(
+                                    handler,
+                                    terminal,
+                                    player,
+                                    world,
+                                    x,
+                                    y,
+                                    z,
+                                    true);
                         }
                     });
         }

@@ -8,7 +8,6 @@ import net.minecraft.entity.boss.EntityWither;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.stats.Achievement;
@@ -173,10 +172,9 @@ public class CommonProxy {
     }
 
     private void handlePickup(EntityItemPickupEvent e, EntityPlayer player) {
-        EntityItem itemEntity = e.item;
+        final EntityItem itemEntity = e.item;
+        final World world = player.getEntityWorld();
         ItemStack stack = itemEntity.getEntityItem();
-        InventoryPlayer playerInv = player.inventory;
-        World world = player.getEntityWorld();
         if (world.isRemote) {
             return;
         }
@@ -185,85 +183,82 @@ public class CommonProxy {
                 AchievementHandler.triggerAch(boosterAch, player);
             }
         }
-        IntObjectPair<ItemStack> termItemPair = RandomUtils.getWirelessTermWithSlot(playerInv);
+        IntObjectPair<ItemStack> termItemPair = PlayerInventoryUtil
+                .findWirelessTerminal(player, i -> getInstalledMagnet(i) != null);
         if (termItemPair != null) {
-            ItemStack WCTStack = termItemPair.second();
-            if (RandomUtils.isMagnetInstalled(playerInv)) {
-                ItemStack magnetStack = RandomUtils.getMagnet(playerInv);
-                if (magnetStack.getItem() instanceof ItemMagnet) {
-                    ItemMagnet magnet = (ItemMagnet) magnetStack.getItem();
+            final ItemStack wirelessTerm = termItemPair.second();
+            final ItemStack magnetItem = getInstalledMagnet(wirelessTerm);
+            if (magnetItem != null && magnetItem.getItem() instanceof ItemMagnet magnet) {
+                magnet.obj = ContainerWirelessCraftingTerminal
+                        .getGuiObject(wirelessTerm, player, world, termItemPair.firstInt());
+                if (magnet.obj == null) {
+                    return;
+                }
+                magnet.civ = magnet.obj;
+                magnet.powerSrc = magnet.civ;
+                magnet.monitor = magnet.civ.getItemInventory();
+                magnet.cellInv = magnet.monitor;
+                magnet.mySrc = new WCTPlayerSource(player, magnet.obj);
 
-                    magnet.obj = ContainerWirelessCraftingTerminal
-                            .getGuiObject(WCTStack, player, world, termItemPair.firstInt());
-                    if (magnet.obj == null) {
-                        return;
-                    }
-                    magnet.civ = magnet.obj;
-                    magnet.powerSrc = magnet.civ;
-                    magnet.monitor = magnet.civ.getItemInventory();
-                    magnet.cellInv = magnet.monitor;
-                    magnet.mySrc = new WCTPlayerSource(player, magnet.obj);
-
-                    boolean ignoreRange = (magnet.isBoosterInstalled(WCTStack) && Reference.WCT_BOOSTER_ENABLED);
-                    boolean hasAxxess = magnet.hasNetworkAccess(SecurityPermissions.INJECT, true, player, WCTStack);
-                    if ((ignoreRange && hasAxxess) || (magnet.obj.rangeCheck() && hasAxxess)) {
-                        if (magnet.isActivated(magnetStack)) {
-                            List<ItemStack> filteredList = magnet.getFilteredItems(magnetStack);
-                            IAEItemStack ais = AEApi.instance().storage().createItemStack(stack);
-                            if (magnet.getMode(magnetStack)) { // whitelisting
-                                if (filteredList != null && magnet.isItemFiltered(stack, filteredList)
-                                        && filteredList.size() > 0) {
-                                    if (magnet.doInject(ais, stack.stackSize, player, itemEntity, stack, world)) {
-                                        stack = null;
-                                        itemEntity.setDead();
-                                        e.setCanceled(true);
-                                    }
-                                    // Platform.poweredInsert(magnet.powerSrc, magnet.cellInv, ais, magnet.mySrc);
-                                } else {
-                                    if (magnetStack.getItemDamage() == 1) {
-                                        if (player.inventory.addItemStackToInventory(stack)) {
-                                            player.onItemPickup(itemEntity, stack.stackSize);
-                                            world.playSoundAtEntity(
-                                                    player,
-                                                    "random.pop",
-                                                    0.15F,
-                                                    ((world.rand.nextFloat() - world.rand.nextFloat()) * 0.7F + 1.0F)
-                                                            * 2.0F);
-                                        }
-                                    } else {
-                                        magnet.doVanillaPickup(itemEntity, player, stack, world, stack.stackSize);
-                                    }
+                boolean ignoreRange = (magnet.isBoosterInstalled(wirelessTerm) && Reference.WCT_BOOSTER_ENABLED);
+                boolean hasAxxess = magnet.hasNetworkAccess(SecurityPermissions.INJECT, true, player, wirelessTerm);
+                if ((ignoreRange && hasAxxess) || (magnet.obj.rangeCheck() && hasAxxess)) {
+                    if (magnet.isActivated(magnetItem)) {
+                        List<ItemStack> filteredList = magnet.getFilteredItems(magnetItem);
+                        IAEItemStack ais = AEApi.instance().storage().createItemStack(stack);
+                        if (magnet.getMode(magnetItem)) { // whitelisting
+                            if (filteredList != null && magnet.isItemFiltered(stack, filteredList)
+                                    && !filteredList.isEmpty()) {
+                                if (magnet.doInject(ais, stack.stackSize, player, itemEntity, stack, world)) {
+                                    stack = null;
+                                    itemEntity.setDead();
+                                    e.setCanceled(true);
                                 }
-                            } else { // blacklisting
-                                if (!magnet.isItemFiltered(stack, filteredList) || filteredList == null
-                                        || filteredList.size() <= 0) {
-                                    if (magnet.doInject(ais, stack.stackSize, player, itemEntity, stack, world)) {
-                                        stack = null;
-                                        itemEntity.setDead();
-                                        e.setCanceled(true);
-                                    } else {
-                                        player.inventory.addItemStackToInventory(stack);
+                                // Platform.poweredInsert(magnet.powerSrc, magnet.cellInv, ais, magnet.mySrc);
+                            } else {
+                                if (magnetItem.getItemDamage() == 1) {
+                                    if (player.inventory.addItemStackToInventory(stack)) {
+                                        player.onItemPickup(itemEntity, stack.stackSize);
+                                        world.playSoundAtEntity(
+                                                player,
+                                                "random.pop",
+                                                0.15F,
+                                                ((world.rand.nextFloat() - world.rand.nextFloat()) * 0.7F + 1.0F)
+                                                        * 2.0F);
                                     }
                                 } else {
-                                    if (magnetStack.getItemDamage() == 1) {
-                                        if (player.inventory.addItemStackToInventory(stack)) {
-                                            player.onItemPickup(itemEntity, stack.stackSize);
-                                            world.playSoundAtEntity(
-                                                    player,
-                                                    "random.pop",
-                                                    0.15F,
-                                                    ((world.rand.nextFloat() - world.rand.nextFloat()) * 0.7F + 1.0F)
-                                                            * 2.0F);
-                                        }
-                                    } else {
-                                        magnet.doVanillaPickup(itemEntity, player, stack, world, stack.stackSize);
+                                    magnet.doVanillaPickup(itemEntity, player, stack, world, stack.stackSize);
+                                }
+                            }
+                        } else { // blacklisting
+                            if (!magnet.isItemFiltered(stack, filteredList) || filteredList == null
+                                    || filteredList.size() <= 0) {
+                                if (magnet.doInject(ais, stack.stackSize, player, itemEntity, stack, world)) {
+                                    stack = null;
+                                    itemEntity.setDead();
+                                    e.setCanceled(true);
+                                } else {
+                                    player.inventory.addItemStackToInventory(stack);
+                                }
+                            } else {
+                                if (magnetItem.getItemDamage() == 1) {
+                                    if (player.inventory.addItemStackToInventory(stack)) {
+                                        player.onItemPickup(itemEntity, stack.stackSize);
+                                        world.playSoundAtEntity(
+                                                player,
+                                                "random.pop",
+                                                0.15F,
+                                                ((world.rand.nextFloat() - world.rand.nextFloat()) * 0.7F + 1.0F)
+                                                        * 2.0F);
                                     }
+                                } else {
+                                    magnet.doVanillaPickup(itemEntity, player, stack, world, stack.stackSize);
                                 }
                             }
                         }
-                    } else {
-                        magnet.doVanillaPickup(itemEntity, player, stack, world, stack.stackSize);
                     }
+                } else {
+                    magnet.doVanillaPickup(itemEntity, player, stack, world, stack.stackSize);
                 }
             }
         }

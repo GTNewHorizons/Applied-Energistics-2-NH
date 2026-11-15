@@ -4,18 +4,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.inventory.InventoryCrafting;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTBase;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.oredict.ShapelessOreRecipe;
 
 import org.jspecify.annotations.Nullable;
 
+import com.glodblock.github.common.item.ItemBaseWirelessTerminal;
 import com.glodblock.github.common.item.ItemWirelessUltraTerminal;
+
+import appeng.api.implementations.items.IAEItemPowerStorage;
+import appeng.util.Platform;
 
 /**
  * Combines the terminals of the crafting grid into one ultra terminal, the result contains exactly the terminals that
  * were combined.
  */
 public class UltraTerminalRecipe extends ShapelessOreRecipe {
+
+    private static final String POWER_KEY = "internalCurrentPower";
 
     private final boolean keepUltraTerminalData;
 
@@ -47,7 +57,39 @@ public class UltraTerminalRecipe extends ShapelessOreRecipe {
             result = super.getCraftingResult(inventory);
         }
         if (result != null) {
-            ItemWirelessUltraTerminal.absorb(result, this.keepUltraTerminalData, copyTerminals(inventory));
+            final ItemStack[] terminals = copyTerminals(inventory);
+            final NBTTagCompound target = Platform.openNbtData(result);
+            final Item item = result.getItem();
+            if (item == null) return null;
+            for (final ItemStack terminal : terminals) {
+                final NBTTagCompound source = terminal == null ? null : terminal.getTagCompound();
+                if (source == null) {
+                    continue;
+                }
+                for (final String key : source.func_150296_c()) {
+                    final NBTBase value = source.getTag(key);
+                    if (!target.hasKey(key)) {
+                        target.setTag(key, value.copy());
+                        continue;
+                    }
+                    if (POWER_KEY.equals(key)) {
+                        final double capacity = ((IAEItemPowerStorage) item).getAEMaxPower(result);
+                        target.setDouble(
+                                key,
+                                Math.min(capacity, Math.max(target.getDouble(key), source.getDouble(key))));
+                        continue;
+                    }
+                    if (ItemBaseWirelessTerminal.infinityBoosterCard.equals(key)
+                            || ItemBaseWirelessTerminal.infinityEnergyCard.equals(key)) {
+                        target.setBoolean(key, target.getBoolean(key) || source.getBoolean(key));
+                        continue;
+                    }
+                    if (value.getId() == Constants.NBT.TAG_STRING && target.getString(key).isEmpty()) {
+                        target.setString(key, source.getString(key));
+                    }
+                }
+            }
+            ItemWirelessUltraTerminal.absorb(result, this.keepUltraTerminalData, terminals);
         }
         return result;
     }

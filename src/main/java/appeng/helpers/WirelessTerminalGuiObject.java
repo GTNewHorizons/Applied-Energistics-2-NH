@@ -259,10 +259,6 @@ public class WirelessTerminalGuiObject implements IPortableCell, IActionHost, II
         return GuiText.WirelessTerminal;
     }
 
-    public int getMode() {
-        return this.getItemStack().getTagCompound().getInteger("mode");
-    }
-
     public void writeInventory() {}
 
     public void readInventory() {}
