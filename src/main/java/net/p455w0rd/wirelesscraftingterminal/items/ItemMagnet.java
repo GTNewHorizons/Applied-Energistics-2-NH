@@ -176,19 +176,22 @@ public class ItemMagnet extends Item {
 
 	@Override
 	public ItemStack onItemRightClick(ItemStack item, World world, EntityPlayer player) {
-		if (!world.isRemote) {
-			if (player.isSneaking()) {
+		if (player.isSneaking()) {
+			// The mode is synced to the client with the item, so switching it on the client would show the message twice.
+			if (!world.isRemote) {
 				switchMagnetMode(item, player);
 			}
-			else {
-				if (!RandomUtils.isMagnetInitialized(item)) {
-					NetworkHandler.instance.sendToServer(new PacketMagnetFilter(0, true));
-				}
-				int x = (int) player.posX;
-				int y = (int) player.posY;
-				int z = (int) player.posZ;
-				WCTGuiHandler.launchGui(Reference.GUI_MAGNET, player, world, x, y, z);
+		}
+		else if (world.isRemote) {
+			if (!RandomUtils.isMagnetInitialized(item)) {
+				NetworkHandler.instance.sendToServer(new PacketMagnetFilter(0, true));
 			}
+		}
+		else {
+			int x = (int) player.posX;
+			int y = (int) player.posY;
+			int z = (int) player.posZ;
+			WCTGuiHandler.launchGui(Reference.GUI_MAGNET, player, world, x, y, z);
 		}
 		return item;
 	}
