@@ -41,23 +41,24 @@ public class KeybindHandler {
 	@SubscribeEvent
 	public void onKeyInput(KeyInputEvent event) {
 		EntityClientPlayerMP p = (EntityClientPlayerMP) Minecraft.getMinecraft().thePlayer;
-		if (p.openContainer == null) {
+		if (p == null) {
 			return;
 		}
-		if (p.openContainer != null && p.openContainer instanceof ContainerPlayer) {
-			if (openTerminal.isPressed()) {
-				ItemStack is = RandomUtils.getWirelessTerm(p.inventory);
-				if (is == null) {
-					return;
-				}
-				IWirelessCraftingTerminalItem wirelessTerm = (IWirelessCraftingTerminalItem) is.getItem();
-				if (wirelessTerm != null && wirelessTerm.isWirelessCraftingEnabled(is)) {
-					if (!FMLClientHandler.instance().isGUIOpen(GuiWirelessCraftingTerminal.class)) {
-						NetworkHandler.instance.sendToServer(new PacketOpenGui(Reference.GUI_WCT));
-					}
+		if (openTerminal.isPressed()) {
+			ItemStack is = RandomUtils.getWirelessTerm(p.inventory);
+			if (is == null) {
+				return;
+			}
+			IWirelessCraftingTerminalItem wirelessTerm = (IWirelessCraftingTerminalItem) is.getItem();
+			if (wirelessTerm != null && wirelessTerm.isWirelessCraftingEnabled(is)) {
+				if (!FMLClientHandler.instance().isGUIOpen(GuiWirelessCraftingTerminal.class)) {
+					NetworkHandler.instance.sendToServer(new PacketOpenGui(Reference.GUI_WCT));
 				}
 			}
-			else if (openMagnetFilter.isPressed()) {
+			return;
+		}
+		if (p.openContainer instanceof ContainerPlayer) {
+			if (openMagnetFilter.isPressed()) {
 				ItemStack magnetItem = RandomUtils.getMagnet(p.inventory);
 				//ensure player has a Wireless Crafting Terminal (with Magnet Card Installed) or Magnet Card in their inventory
 				//and that they have manually right=clicked it to initialize it
