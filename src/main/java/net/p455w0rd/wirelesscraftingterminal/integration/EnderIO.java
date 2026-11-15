@@ -29,7 +29,7 @@ public class EnderIO {
 				MethodHandle GET_ID = ReflectionUtils.findFieldGetter(crazypants.enderio.enchantment.EnchantmentSoulBound.class, "id");
 				int soulboundId = (int) GET_ID.invoke(soulbound);
 				//int soulboundId = crazypants.enderio.config.Config.enchantmentSoulBoundId;
-				Map<Short, Short> enchants = EnchantmentHelper.getEnchantments(stack);
+				Map<Integer, Integer> enchants = EnchantmentHelper.getEnchantments(stack);
 				if (enchants != null) {
 					Iterator i = enchants.keySet().iterator();
 					while (i.hasNext()) {
