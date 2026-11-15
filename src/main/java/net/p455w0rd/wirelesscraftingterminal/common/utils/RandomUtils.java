@@ -2,46 +2,16 @@ package net.p455w0rd.wirelesscraftingterminal.common.utils;
 
 import org.jspecify.annotations.Nullable;
 
-import cpw.mods.fml.relauncher.Side;
 import it.unimi.dsi.fastutil.ints.IntObjectImmutablePair;
 import it.unimi.dsi.fastutil.ints.IntObjectPair;
-import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.EnumChatFormatting;
 import net.p455w0rd.wirelesscraftingterminal.api.IWirelessCraftingTerminalItem;
 import net.p455w0rd.wirelesscraftingterminal.items.ItemMagnet;
 
 public class RandomUtils {
-
-	@SideOnly(Side.CLIENT)
-	public static String color(String color) {
-		switch (color) {
-		case "white":
-			return EnumChatFormatting.WHITE.toString();
-		case "black":
-			return EnumChatFormatting.BLACK.toString();
-		case "green":
-			return EnumChatFormatting.GREEN.toString();
-		case "red":
-			return EnumChatFormatting.RED.toString();
-		case "yellow":
-			return EnumChatFormatting.YELLOW.toString();
-		case "aqua":
-			return EnumChatFormatting.AQUA.toString();
-		case "blue":
-			return EnumChatFormatting.BLUE.toString();
-		case "italics":
-			return EnumChatFormatting.ITALIC.toString();
-		case "bold":
-			return EnumChatFormatting.BOLD.toString();
-		default:
-		case "gray":
-			return EnumChatFormatting.GRAY.toString();
-		}
-	}
 
 	public static @Nullable ItemStack getWirelessTerm(InventoryPlayer playerInv) {
 		final IntObjectPair<ItemStack> wirelessTerm = getWirelessTermWithSlot(playerInv);
@@ -127,57 +97,6 @@ public class RandomUtils {
 			}
 		}
 		return false;
-	}
-	
-	public static boolean readBoolean(ItemStack is, String key) {
-		if (is == null) {
-			return false;
-		}
-		NBTTagCompound tag = getTag(is);
-		return (tag.hasKey(key) ? tag.getBoolean(key) : false);
-	}
-	
-	public static int readInt(ItemStack is, String key) {
-		if (is == null) {
-			return 0;
-		}
-		NBTTagCompound tag = getTag(is);
-		return (tag.hasKey(key) ? tag.getInteger(key) : -1);
-	}
-	
-	public static void writeInt(ItemStack is, String key, int value) {
-		if (is == null) {
-			return;
-		}
-		NBTTagCompound tag = getTag(is);
-		tag.setInteger(key, value);
-	}
-	
-	public static void writeBoolean(ItemStack is, String key, boolean value) {
-		if (is == null) {
-			return;
-		}
-		NBTTagCompound tag = getTag(is);
-		tag.setBoolean(key, value);
-	}
-	
-	public static void delKey(ItemStack is, String key) {
-		if (is == null) {
-			return;
-		}
-		NBTTagCompound tag = getTag(is);
-		tag.removeTag(key);
-	}
-	
-	public static NBTTagCompound getTag(ItemStack is) {
-		if (!is.hasTagCompound()) {
-			is.setTagCompound(new NBTTagCompound());
-		}
-		return is.getTagCompound();
-	}
-	
-	public static ItemStack readStack(NBTTagCompound nbtTC, String key) {
-		return (nbtTC.hasKey(key) ? ItemStack.loadItemStackFromNBT(nbtTC) : null);
 	}
 	
 	public static void removeTimerTags(ItemStack is) {

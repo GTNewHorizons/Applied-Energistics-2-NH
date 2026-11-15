@@ -12,7 +12,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.p455w0rd.wirelesscraftingterminal.common.utils.RandomUtils;
+import net.minecraft.util.EnumChatFormatting;
 import net.p455w0rd.wirelesscraftingterminal.handlers.LocaleHandler;
 import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
 
@@ -46,8 +46,8 @@ public class ItemInfinityBooster extends Item {
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void addInformation(ItemStack is, EntityPlayer player, List list, boolean par4) {
-		String shift = LocaleHandler.PressShift.getLocal().replace("Shift", color("yellow") + "" + color("bold") + "" + color("italics") + "Shift" + color("gray"));
-		list.add(color("aqua") + "==============================");
+		String shift = LocaleHandler.PressShift.getLocal().replace("Shift", EnumChatFormatting.YELLOW + "" + EnumChatFormatting.BOLD + "" + EnumChatFormatting.ITALIC + "Shift" + EnumChatFormatting.GRAY);
+		list.add(EnumChatFormatting.AQUA + "==============================");
 		if (isShiftKeyDown()) {
 			String info = LocaleHandler.InfinityBoosterDesc.getLocal();
 			for (String line : Splitter.on("\n").split(WordUtils.wrap(info, 37, "\n", false))) {
@@ -56,7 +56,7 @@ public class ItemInfinityBooster extends Item {
 			list.add("");
 			String onlyWorks = LocaleHandler.OnlyWorks.getLocal();
 			for (String line : Splitter.on("\n").split(WordUtils.wrap(onlyWorks, 27, "\n", false))) {
-				list.add(color("white") + "" + color("bold") + "" + color("italics") + line.trim());
+				list.add(EnumChatFormatting.WHITE + "" + EnumChatFormatting.BOLD + "" + EnumChatFormatting.ITALIC + line.trim());
 			}
 		}
 		else {
@@ -65,11 +65,6 @@ public class ItemInfinityBooster extends Item {
 		super.addInformation(is, player, list, par4);
 	}
 	
-	@SideOnly(Side.CLIENT)
-	private String color(String color) {
-		return RandomUtils.color(color);
-	}
-
 	@SideOnly(Side.CLIENT)
 	public static boolean isShiftKeyDown() {
 		return Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT);
