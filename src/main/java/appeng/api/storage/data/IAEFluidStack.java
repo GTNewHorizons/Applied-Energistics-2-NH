@@ -16,6 +16,10 @@ package appeng.api.storage.data;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 
+import org.jspecify.annotations.NonNull;
+
+import appeng.api.stacks.AEFluidKey;
+
 /**
  * An alternate version of FluidStack for AE to keep tabs on things easier, and to support larger storage. stackSizes of
  * getFluidStack will be capped.
@@ -57,4 +61,8 @@ public interface IAEFluidStack extends IAEStack<IAEFluidStack> {
      * @return fluid definition
      */
     Fluid getFluid();
+
+    @NonNull
+    @Override
+    AEFluidKey getKey();
 }

@@ -28,6 +28,7 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import appeng.api.config.FuzzyMode;
+import appeng.api.stacks.AEKey;
 import appeng.api.storage.StorageChannel;
 import appeng.core.AELog;
 import cpw.mods.fml.relauncher.Side;
@@ -361,4 +362,10 @@ public interface IAEStack<StackType extends IAEStack> {
     int getAmountPerUnit();
 
     IAEStackType<StackType> getStackType();
+
+    /**
+     * @return the identity of this stack without amount or crafting state.
+     */
+    @NonNull
+    AEKey getKey();
 }
