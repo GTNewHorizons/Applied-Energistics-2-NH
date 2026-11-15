@@ -2,6 +2,7 @@ package net.p455w0rd.wirelesscraftingterminal.items;
 
 import java.util.List;
 
+import org.jspecify.annotations.Nullable;
 import org.lwjgl.input.Keyboard;
 
 import com.google.common.base.Optional;
@@ -167,11 +168,8 @@ public class ItemWirelessCraftingTerminal extends AERootPoweredItem
 	}
 
 	@Override
-	public boolean canHandle(final ItemStack is) {
-		if (is.getUnlocalizedName().equals("item.wirelessCraftingTerminal")) {
-			return true;
-		}
-		return false;
+	public boolean canHandle(final @Nullable ItemStack is) {
+		return is != null && is.getItem() instanceof IWirelessCraftingTerminalItem;
 	}
 
 	@Override
