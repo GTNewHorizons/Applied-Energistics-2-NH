@@ -332,6 +332,7 @@ public class GuiPatternTerm extends GuiMEMonitorable {
                 this.guiLeft,
                 this.guiTop,
                 this.ySize,
+                this.height,
                 this.leftButtonsBottom(),
                 IntegrationRegistry.INSTANCE.isEnabled(IntegrationType.NEI) ? NEIWidgetBounds.controls()
                         : Collections.emptyList());

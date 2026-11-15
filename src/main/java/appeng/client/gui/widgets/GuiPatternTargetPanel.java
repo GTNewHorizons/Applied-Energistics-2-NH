@@ -128,13 +128,14 @@ public class GuiPatternTargetPanel {
      * Places the panel left of the terminal, under its button column or beside it, as tall as its content and clear of
      * the given screen rectangles {x, y, w, h}, such as NEI's buttons.
      */
-    public void layout(int guiLeft, int guiTop, int guiHeight, int buttonsBottom, List<int[]> blocked) {
-        this.place(guiLeft, guiTop, guiHeight, buttonsBottom + BUTTON_GAP, 0, blocked);
+    public void layout(int guiLeft, int guiTop, int guiHeight, int screenHeight, int buttonsBottom,
+            List<int[]> blocked) {
+        this.place(guiLeft, guiTop, guiHeight, screenHeight, buttonsBottom + BUTTON_GAP, 0, blocked);
         int availableHeight = this.height;
         int conflictHeight = this.conflictHeight();
         // A tall button column, as on wireless terminals, can leave no room under it; then the panel goes beside it.
         if (availableHeight < HEADER_HEIGHT + CARD_HEIGHT + 2 + PADDING + conflictHeight) {
-            this.place(guiLeft, guiTop, guiHeight, 0, BESIDE_BUTTONS_GAP, blocked);
+            this.place(guiLeft, guiTop, guiHeight, screenHeight, 0, BESIDE_BUTTONS_GAP, blocked);
             availableHeight = this.height;
             conflictHeight = this.conflictHeight();
         }
@@ -159,14 +160,15 @@ public class GuiPatternTargetPanel {
         this.scrollbar.setRange(0, Math.max(0, this.entries.size() - this.visibleCards), 1);
     }
 
-    // Sets x, width and y, and the room down to the terminal's bottom or the first blocked rectangle in height.
-    private void place(int guiLeft, int guiTop, int guiHeight, int startTop, int gap, List<int[]> blocked) {
+    // Sets x, width and y, and the room down to the screen's bottom or the first blocked rectangle in height.
+    private void place(int guiLeft, int guiTop, int guiHeight, int screenHeight, int startTop, int gap,
+            List<int[]> blocked) {
         this.width = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, guiLeft - gap - SCREEN_MARGIN));
         this.x = -gap - this.width;
         this.compact = this.width < COMPACT_WIDTH;
 
         int top = startTop;
-        int bottom = guiHeight;
+        int bottom = screenHeight - guiTop - SCREEN_MARGIN;
         final int screenLeft = guiLeft + this.x;
         for (int[] rect : blocked) {
             if (rect[0] >= screenLeft + this.width || rect[0] + rect[2] <= screenLeft) {
