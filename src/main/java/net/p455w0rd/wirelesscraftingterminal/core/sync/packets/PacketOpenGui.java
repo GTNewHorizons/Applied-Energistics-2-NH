@@ -31,16 +31,13 @@ public class PacketOpenGui extends WCTPacket {
 
 	@Override
 	public void serverPacketData(final INetworkInfo manager, final WCTPacket packet, final EntityPlayer player) {
-		if (!(player.openContainer instanceof ContainerPlayer)) {
-			return;
-		}
 		if (this.whichGui == Reference.GUI_WCT) {
 			final IntObjectPair<ItemStack> terminal = RandomUtils.getWirelessTermWithSlot(player.inventory);
 			if (terminal != null) {
 				WCTGuiHandler.openTerminalGui(player, terminal.firstInt());
 			}
 		}
-		else {
+		else if (player.openContainer instanceof ContainerPlayer) {
 			WCTGuiHandler.launchGui(this.whichGui, player, player.worldObj, (int) player.posX, (int) player.posY, (int) player.posZ);
 		}
 	}
