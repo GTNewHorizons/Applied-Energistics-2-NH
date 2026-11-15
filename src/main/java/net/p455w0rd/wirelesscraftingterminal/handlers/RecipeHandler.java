@@ -3,6 +3,7 @@ package net.p455w0rd.wirelesscraftingterminal.handlers;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -62,6 +63,9 @@ public class RecipeHandler {
 
 	@SuppressWarnings("unchecked")
 	public static void loadRecipes(boolean mtChanged) {
+		if (Loader.isModLoaded("dreamcraft")) {
+			return;
+		}
 		if (Reference.WCT_MINETWEAKER_OVERRIDE && !mtChanged) {
 			return;
 		}

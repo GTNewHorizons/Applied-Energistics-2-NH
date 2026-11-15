@@ -1,5 +1,6 @@
 package net.p455w0rd.wirelesscraftingterminal.core.sync.packets;
 
+import cpw.mods.fml.common.Loader;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import net.minecraft.entity.player.EntityPlayer;
@@ -49,18 +50,20 @@ public class PacketConfigSync extends WCTPacket {
 
 	@Override
 	public void clientPacketData(final INetworkInfo network, final WCTPacket packet, final EntityPlayer player) {
-		if (oldMT != this.mineTweakerOverride) {
-			mtChanged = true;
-		}
 		Reference.WCT_MAX_POWER = this.wirelessTermMaxPower;
-		Reference.WCT_EASYMODE_ENABLED = this.easyMode;
 		Reference.WCT_BOOSTER_ENABLED = this.boosterEnabled;
 		Reference.WCT_BOOSTER_DROPCHANCE = this.boosterDropChance;
-		Reference.WCT_MINETWEAKER_OVERRIDE = this.mineTweakerOverride;
 		ConfigHandler.removeBooster();
 		ConfigHandler.removeBoosterIcon();
-		RecipeHandler.loadRecipes(mtChanged);
-		mtChanged = false;
+		if (!Loader.isModLoaded("dreamcraft")) {
+			if (oldMT != this.mineTweakerOverride) {
+				mtChanged = true;
+			}
+			Reference.WCT_EASYMODE_ENABLED = this.easyMode;
+			Reference.WCT_MINETWEAKER_OVERRIDE = this.mineTweakerOverride;
+			RecipeHandler.loadRecipes(mtChanged);
+			mtChanged = false;
+		}
 	}
 	
 }
