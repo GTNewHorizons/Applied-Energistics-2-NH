@@ -7,6 +7,7 @@ import org.jspecify.annotations.Nullable;
 
 import appeng.api.crafting.CraftingMachineTarget;
 import appeng.api.crafting.IPatternTargetMatcher;
+import appeng.api.crafting.NotReadyTarget;
 import appeng.api.features.IPatternTargetRegistry;
 
 public class PatternTargetRegistry implements IPatternTargetRegistry {
@@ -15,6 +16,7 @@ public class PatternTargetRegistry implements IPatternTargetRegistry {
 
     public PatternTargetRegistry() {
         this.registerMatcher(CraftingMachineTarget.class, CraftingMachineTarget::match);
+        this.registerMatcher(NotReadyTarget.class, NotReadyTarget::match);
     }
 
     @Override

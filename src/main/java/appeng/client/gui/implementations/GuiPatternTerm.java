@@ -12,6 +12,7 @@ package appeng.client.gui.implementations;
 
 import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 
+import java.util.Collections;
 import java.util.List;
 
 import net.minecraft.client.gui.GuiButton;
@@ -53,7 +54,9 @@ import appeng.core.localization.GuiText;
 import appeng.core.sync.GuiBridge;
 import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketSwitchGuis;
-import appeng.crafting.target.PatternTargetList;
+import appeng.integration.IntegrationRegistry;
+import appeng.integration.IntegrationType;
+import appeng.integration.modules.NEIHelpers.NEIWidgetBounds;
 
 public class GuiPatternTerm extends GuiMEMonitorable {
 
@@ -82,7 +85,20 @@ public class GuiPatternTerm extends GuiMEMonitorable {
     private boolean craftingMode;
     @NonNull
     private IAEItemStack blankPatternView = IPatternTerminal.createBlankPattern().setStackSize(0);
-    private final GuiPatternTargetPanel targetPanel = new GuiPatternTargetPanel(this);
+    private final GuiPatternTargetPanel targetPanel = new GuiPatternTargetPanel(
+            this,
+            new GuiPatternTargetPanel.Actions() {
+
+                @Override
+                public void sendToTarget(int index) {
+                    GuiPatternTerm.this.container.sendToTargetAction.send(index);
+                }
+
+                @Override
+                public void extractConflict(int index) {
+                    GuiPatternTerm.this.container.extractConflictAction.send(index);
+                }
+            });
 
     public GuiPatternTerm(final InventoryPlayer inventoryPlayer, final ITerminalHost te,
             final ContainerPatternTerm containerPatternTerm) {
@@ -98,14 +114,8 @@ public class GuiPatternTerm extends GuiMEMonitorable {
 
     @Override
     protected void mouseClicked(final int xCoord, final int yCoord, final int btn) {
-        final int panelX = xCoord - this.guiLeft;
-        final int panelY = yCoord - this.guiTop;
-        if (this.targetPanel.contains(panelX, panelY)) {
-            final PatternTargetList.Entry target = this.targetPanel.getEntryAt(panelX, panelY);
-            if (btn == 0 && target != null) {
-                this.container.sendToTargetAction.send(target.index);
-            }
-            // The panel lies outside the GUI, where a click would otherwise drop the held item.
+        // The panel lies outside the GUI, where a click would otherwise drop the held item.
+        if (this.targetPanel.mouseClicked(xCoord - this.guiLeft, yCoord - this.guiTop, btn)) {
             return;
         }
 
@@ -317,13 +327,46 @@ public class GuiPatternTerm extends GuiMEMonitorable {
 
     private void drawTargetPanel(final int mouseX, final int mouseY) {
         this.targetPanel.setList(this.container.getClientTargets());
-        // The view cell column takes the first 33 pixels to the right of the terminal.
-        this.targetPanel.setBounds(this.xSize + 35, 0, this.ySize);
+        this.targetPanel.setPatternIcon(this.container.getEncodedPattern());
+        this.targetPanel.layout(
+                this.guiLeft,
+                this.guiTop,
+                this.ySize,
+                this.leftButtonsBottom(),
+                IntegrationRegistry.INSTANCE.isEnabled(IntegrationType.NEI) ? NEIWidgetBounds.controls()
+                        : Collections.emptyList());
         this.targetPanel.draw(mouseX, mouseY);
-        final PatternTargetList.Entry hovered = this.targetPanel.getEntryAt(mouseX, mouseY);
-        if (hovered != null) {
-            this.drawHoveringText(this.targetPanel.getTooltip(hovered), mouseX, mouseY, this.fontRendererObj);
+        final List<String> tooltip = this.targetPanel.getTooltip(mouseX, mouseY);
+        if (tooltip != null) {
+            this.drawHoveringText(tooltip, mouseX, mouseY, this.fontRendererObj);
         }
+    }
+
+    // Addons add their own buttons to the left column, so its height is read from the buttons themselves.
+    private int leftButtonsBottom() {
+        int bottom = 0;
+        for (final GuiButton button : this.buttonList) {
+            if (button.visible && button.xPosition + button.width <= this.guiLeft) {
+                bottom = Math.max(bottom, button.yPosition + button.height - this.guiTop);
+            }
+        }
+        return bottom;
+    }
+
+    @Override
+    protected void mouseClickMove(final int x, final int y, final int c, final long d) {
+        if (this.targetPanel.mouseDragged(y - this.guiTop)) {
+            return;
+        }
+        super.mouseClickMove(x, y, c, d);
+    }
+
+    @Override
+    protected void mouseMovedOrUp(final int mouseX, final int mouseY, final int state) {
+        if (state >= 0) {
+            this.targetPanel.mouseReleased();
+        }
+        super.mouseMovedOrUp(mouseX, mouseY, state);
     }
 
     @Override

@@ -433,9 +433,22 @@ public enum GuiText implements Localization {
     PatternTargetsTitle,
     PatternTargetsMatch,
     PatternTargetsUnknown,
+    PatternTargetsNotReady,
     PatternTargetsNone,
     PatternTargetsFreeSlots,
-    PatternTargetsClick;
+    PatternTargetsCardFromInventory,
+    PatternTargetsCardFromNetwork,
+    PatternTargetsClick,
+    PatternTargetsFree,
+    PatternTargetsNeedsCard,
+    PatternTargetsConflictTitle,
+    PatternTargetsSameRecipe,
+    PatternTargetsOtherRecipe,
+    PatternTargetsExtract,
+    PatternTargetsExtractTooltip,
+    PatternTargetsMore,
+    PatternTargetsHasSame,
+    PatternTargetsHasSameTooltip;
 
     private final String root;
 

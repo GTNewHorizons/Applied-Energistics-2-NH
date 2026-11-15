@@ -18,8 +18,10 @@ import static appeng.util.Platform.isServer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -118,6 +120,7 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
     private ItemStack lastTargetPattern;
     private List<PatternTargetQuery.Entry> lastTargets = Collections.emptyList();
     private List<PatternTargetQuery.Conflict> lastConflicts = Collections.emptyList();
+    private List<Integer> lastTargetCards = Collections.emptyList();
     private PatternTargetList clientTargets = PatternTargetList.EMPTY;
 
     public ContainerPatternTerm(final InventoryPlayer ip, final ITerminalHost monitorable) {
@@ -467,6 +470,13 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
         return this.clientTargets;
     }
 
+    /**
+     * Returns the encoded pattern in the output slot, or null.
+     */
+    public ItemStack getEncodedPattern() {
+        return this.patternSlotOUT.getStack();
+    }
+
     private void updatePatternTargets() {
         final ItemStack pattern = this.patternSlotOUT.getStack();
         // The query walks every provider of the network, so it runs only when the encoded pattern changes.
@@ -475,6 +485,7 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
         }
         this.lastTargetPattern = pattern == null ? null : pattern.copy();
         this.lastTargets = Collections.emptyList();
+        this.lastTargetCards = Collections.emptyList();
         this.lastConflicts = Collections.emptyList();
 
         final IGridNode node = this.getNetworkNode();
@@ -489,11 +500,28 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
         }
 
         final EntityPlayer player = this.getPlayerInv().player;
+        final ItemStack card = capacityCard();
         final Map<IGrid, Boolean> canBuild = new HashMap<>();
         final List<PatternTargetQuery.Entry> shown = new ArrayList<>();
+        final List<Integer> cardSources = new ArrayList<>();
+        int availableCard = -1;
         for (PatternTargetQuery.Entry entry : PatternTargetQuery.run(node.getGrid(), details).entries) {
-            if (entry.freeSlots <= 0 || entry.match == PatternMatch.NO_MATCH) {
+            if (entry.match == PatternMatch.NO_MATCH) {
                 continue;
+            }
+            int cardSource = PatternTargetList.Entry.CARD_NONE;
+            if (entry.freeSlots <= 0) {
+                if (card == null || PatternTargetQuery.findCapacityCardSlot(entry.provider, card) < 0) {
+                    continue;
+                }
+                // Looked up once, and only when a full interface could take a card.
+                if (availableCard < 0) {
+                    availableCard = this.findCapacityCardSource(card);
+                }
+                if (availableCard == PatternTargetList.Entry.CARD_NONE) {
+                    continue;
+                }
+                cardSource = availableCard;
             }
             // A grid behind a Pattern Repeater can deny BUILD; a row there would only fail on click.
             final IGridNode providerNode = entry.provider.getGridNode(ForgeDirection.UNKNOWN);
@@ -503,9 +531,19 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
                     g -> g.<ISecurityGrid>getCache(ISecurityGrid.class)
                             .hasPermission(player, SecurityPermissions.BUILD))) {
                 shown.add(entry);
+                cardSources.add(cardSource);
             }
         }
         this.lastTargets = shown;
+        this.lastTargetCards = cardSources;
+
+        this.lastConflicts = PatternTargetQuery.findConflicts(node.getGrid(), details);
+        final Set<IInterfaceViewable> withSamePattern = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (PatternTargetQuery.Conflict conflict : this.lastConflicts) {
+            if (conflict.sameRecipe) {
+                withSamePattern.add(conflict.provider);
+            }
+        }
 
         final List<PatternTargetList.Entry> entries = new ArrayList<>(shown.size());
         for (int i = 0; i < shown.size(); i++) {
@@ -524,10 +562,11 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
                             location.z,
                             location.getDimension(),
                             entry.match,
-                            entry.freeSlots));
+                            entry.freeSlots,
+                            cardSources.get(i),
+                            withSamePattern.contains(provider)));
         }
 
-        this.lastConflicts = PatternTargetQuery.findConflicts(node.getGrid(), details);
         final List<PatternTargetList.Conflict> conflicts = new ArrayList<>(this.lastConflicts.size());
         for (int i = 0; i < this.lastConflicts.size(); i++) {
             final PatternTargetQuery.Conflict conflict = this.lastConflicts.get(i);
@@ -583,13 +622,77 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
             return;
         }
 
-        if (PatternTargetQuery.insertPattern(
-                this.lastTargets.get(index).provider,
-                node.getGrid(),
-                this.getPlayerInv().player,
-                pattern)) {
+        final IInterfaceViewable provider = this.lastTargets.get(index).provider;
+        final EntityPlayer player = this.getPlayerInv().player;
+        if (this.lastTargetCards.get(index) != PatternTargetList.Entry.CARD_NONE) {
+            if (!this.installCapacityCard(provider, node.getGrid(), player)) {
+                return;
+            }
+            // The card changed the interface's free slots even if the pattern below fails to fit.
+            this.lastTargetPattern = null;
+        }
+        if (PatternTargetQuery.insertPattern(provider, node.getGrid(), player, pattern)) {
             this.patternSlotOUT.decrStackSize(1);
         }
+    }
+
+    private static ItemStack capacityCard() {
+        return AEApi.instance().definitions().materials().cardPatternCapacity().maybeStack(1).orNull();
+    }
+
+    private static boolean isCapacityCard(ItemStack stack, ItemStack card) {
+        return stack != null && stack.getItem() == card.getItem() && stack.getItemDamage() == card.getItemDamage();
+    }
+
+    private int findCapacityCardSource(ItemStack card) {
+        final InventoryPlayer inventory = this.getPlayerInv();
+        for (int i = 0; i < inventory.getSizeInventory(); i++) {
+            if (isCapacityCard(inventory.getStackInSlot(i), card)) {
+                return PatternTargetList.Entry.CARD_FROM_INVENTORY;
+            }
+        }
+        final IMEMonitor<IAEItemStack> monitor = this.getItemMonitor();
+        if (monitor != null && this.hasAccess(SecurityPermissions.EXTRACT, true)) {
+            final IAEItemStack simulated = monitor
+                    .extractItems(AEItemStack.create(card), Actionable.SIMULATE, this.getActionSource());
+            if (simulated != null && simulated.getStackSize() > 0) {
+                return PatternTargetList.Entry.CARD_FROM_NETWORK;
+            }
+        }
+        return PatternTargetList.Entry.CARD_NONE;
+    }
+
+    private boolean installCapacityCard(IInterfaceViewable provider, IGrid grid, EntityPlayer player) {
+        final ItemStack card = capacityCard();
+        // Checked before the card leaves the player or the network, so a refused click takes nothing.
+        if (card == null || !PatternTargetQuery.canModify(provider, grid, player)) {
+            return false;
+        }
+        final int slot = PatternTargetQuery.findCapacityCardSlot(provider, card);
+        if (slot < 0) {
+            return false;
+        }
+
+        final InventoryPlayer inventory = this.getPlayerInv();
+        for (int i = 0; i < inventory.getSizeInventory(); i++) {
+            if (isCapacityCard(inventory.getStackInSlot(i), card)) {
+                inventory.decrStackSize(i, 1);
+                PatternTargetQuery.installCapacityCard(provider, slot, card);
+                return true;
+            }
+        }
+
+        final IMEMonitor<IAEItemStack> monitor = this.getItemMonitor();
+        if (monitor == null || !this.hasAccess(SecurityPermissions.EXTRACT, true)) {
+            return false;
+        }
+        final IAEItemStack extracted = Platform
+                .poweredExtraction(this.getPowerSource(), monitor, AEItemStack.create(card), this.getActionSource());
+        if (extracted == null || extracted.getStackSize() <= 0) {
+            return false;
+        }
+        PatternTargetQuery.installCapacityCard(provider, slot, card);
+        return true;
     }
 
     @Override
