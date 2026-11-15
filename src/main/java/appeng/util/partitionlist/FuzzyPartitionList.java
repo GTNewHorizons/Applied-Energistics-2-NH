@@ -8,28 +8,25 @@
  * Applied Energistics 2. If not, see <http://www.gnu.org/licenses/lgpl>.
  */
 
-package appeng.util.prioitylist;
-
-import java.util.Collection;
+package appeng.util.partitionlist;
 
 import appeng.api.config.FuzzyMode;
-import appeng.api.storage.data.IAEStack;
-import appeng.api.storage.data.IItemList;
+import appeng.api.stacks.AEKey;
+import appeng.api.stacks.KeyCounter;
 
-public class FuzzyPriorityList<T extends IAEStack<T>> implements IPartitionList<T> {
+public class FuzzyPartitionList implements IPartitionList {
 
-    private final IItemList<T> list;
+    private final KeyCounter list;
     private final FuzzyMode mode;
 
-    public FuzzyPriorityList(final IItemList<T> in, final FuzzyMode mode) {
+    public FuzzyPartitionList(final KeyCounter in, final FuzzyMode mode) {
         this.list = in;
         this.mode = mode;
     }
 
     @Override
-    public boolean isListed(final T input) {
-        final Collection<T> out = this.list.findFuzzy(input, this.mode);
-        return out != null && !out.isEmpty();
+    public boolean isListed(final AEKey input) {
+        return this.list.containsFuzzy(input, this.mode);
     }
 
     @Override
@@ -38,7 +35,7 @@ public class FuzzyPriorityList<T extends IAEStack<T>> implements IPartitionList<
     }
 
     @Override
-    public Iterable<T> getItems() {
-        return this.list;
+    public Iterable<AEKey> getKeys() {
+        return this.list.keySet();
     }
 }
