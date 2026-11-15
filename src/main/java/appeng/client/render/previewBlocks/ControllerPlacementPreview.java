@@ -13,6 +13,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 import org.lwjgl.opengl.GL11;
 
+import appeng.api.util.AEColor;
 import appeng.block.networking.BlockController;
 import appeng.core.AEConfig;
 import appeng.core.localization.GuiText;
@@ -33,59 +34,111 @@ public class ControllerPlacementPreview {
         return INSTANCE;
     }
 
+    private static final int KINDS = 2;
+
     private boolean active;
     private int posX;
     private int posY;
     private int posZ;
 
-    private boolean hasQueried;
-    private int queriedX;
-    private int queriedY;
-    private int queriedZ;
-    private int ticksSinceQuery;
+    // cable target, set each tick by ViewHelper while the stock cable preview is valid
+    private boolean cableActive;
+    private int cableX;
+    private int cableY;
+    private int cableZ;
 
-    private boolean hasResult;
-    private int resultX;
-    private int resultY;
-    private int resultZ;
-    private boolean resultConflict;
+    private final boolean[] hasQueried = new boolean[KINDS];
+    private final int[] queriedX = new int[KINDS];
+    private final int[] queriedY = new int[KINDS];
+    private final int[] queriedZ = new int[KINDS];
+    private final int[] queriedColor = new int[KINDS];
+    private final int[] ticksSinceQuery = new int[KINDS];
 
-    public void setResult(int x, int y, int z, boolean conflict) {
-        this.hasResult = true;
-        this.resultX = x;
-        this.resultY = y;
-        this.resultZ = z;
-        this.resultConflict = conflict;
+    private final boolean[] hasResult = new boolean[KINDS];
+    private final int[] resultX = new int[KINDS];
+    private final int[] resultY = new int[KINDS];
+    private final int[] resultZ = new int[KINDS];
+    private final boolean[] resultConflict = new boolean[KINDS];
+
+    public void setResult(int x, int y, int z, byte kind, boolean conflict) {
+        if (kind < 0 || kind >= KINDS) return;
+        this.hasResult[kind] = true;
+        this.resultX[kind] = x;
+        this.resultY[kind] = y;
+        this.resultZ[kind] = z;
+        this.resultConflict[kind] = conflict;
+    }
+
+    private boolean hasConflict(byte kind, int x, int y, int z) {
+        return this.hasResult[kind] && this.resultX[kind] == x
+                && this.resultY[kind] == y
+                && this.resultZ[kind] == z
+                && this.resultConflict[kind];
     }
 
     private boolean isConflict() {
-        return this.active && this.hasResult
-                && this.resultX == this.posX
-                && this.resultY == this.posY
-                && this.resultZ == this.posZ
-                && this.resultConflict;
+        return this.active
+                && this.hasConflict(PacketControllerPlacementQuery.KIND_CONTROLLER, this.posX, this.posY, this.posZ);
+    }
+
+    private boolean isCableConflict() {
+        return this.cableActive
+                && this.hasConflict(PacketControllerPlacementQuery.KIND_CABLE, this.cableX, this.cableY, this.cableZ);
+    }
+
+    /**
+     * Sends a throttled query (on position/color change and every {@link #REQUERY_TICKS} ticks) and marks the cable
+     * target as active for this tick.
+     *
+     * @return whether the cable placement at the position is known to conflict
+     */
+    public boolean queryCable(int x, int y, int z, AEColor color) {
+        this.cableActive = true;
+        this.cableX = x;
+        this.cableY = y;
+        this.cableZ = z;
+        this.query(PacketControllerPlacementQuery.KIND_CABLE, x, y, z, color.ordinal());
+        return this.isCableConflict();
+    }
+
+    private void query(byte kind, int x, int y, int z, int color) {
+        this.ticksSinceQuery[kind]++;
+        final boolean changed = !this.hasQueried[kind] || this.queriedX[kind] != x
+                || this.queriedY[kind] != y
+                || this.queriedZ[kind] != z
+                || this.queriedColor[kind] != color;
+        if (changed || this.ticksSinceQuery[kind] >= REQUERY_TICKS) {
+            this.hasQueried[kind] = true;
+            this.queriedX[kind] = x;
+            this.queriedY[kind] = y;
+            this.queriedZ[kind] = z;
+            this.queriedColor[kind] = color;
+            this.ticksSinceQuery[kind] = 0;
+            NetworkHandler.instance.sendToServer(new PacketControllerPlacementQuery(x, y, z, kind, color));
+        }
     }
 
     public void onClientTick() {
         this.active = false;
+        this.cableActive = false;
 
         final Minecraft mc = Minecraft.getMinecraft();
         final EntityPlayer player = mc.thePlayer;
         final World world = mc.theWorld;
         if (player == null || world == null) {
-            this.hasQueried = false;
+            this.hasQueried[PacketControllerPlacementQuery.KIND_CONTROLLER] = false;
             return;
         }
 
         final ItemStack held = player.getHeldItem();
         if (held == null || !(Block.getBlockFromItem(held.getItem()) instanceof BlockController)) {
-            this.hasQueried = false;
+            this.hasQueried[PacketControllerPlacementQuery.KIND_CONTROLLER] = false;
             return;
         }
 
         final MovingObjectPosition mop = mc.objectMouseOver;
         if (mop == null || mop.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK) {
-            this.hasQueried = false;
+            this.hasQueried[PacketControllerPlacementQuery.KIND_CONTROLLER] = false;
             return;
         }
 
@@ -105,16 +158,7 @@ public class ControllerPlacementPreview {
         this.posY = y;
         this.posZ = z;
 
-        this.ticksSinceQuery++;
-        final boolean changed = !this.hasQueried || this.queriedX != x || this.queriedY != y || this.queriedZ != z;
-        if (changed || this.ticksSinceQuery >= REQUERY_TICKS) {
-            this.hasQueried = true;
-            this.queriedX = x;
-            this.queriedY = y;
-            this.queriedZ = z;
-            this.ticksSinceQuery = 0;
-            NetworkHandler.instance.sendToServer(new PacketControllerPlacementQuery(x, y, z));
-        }
+        this.query(PacketControllerPlacementQuery.KIND_CONTROLLER, x, y, z, 0);
     }
 
     public void onRenderWorldLast(float partialTicks) {
@@ -195,10 +239,19 @@ public class ControllerPlacementPreview {
     @SubscribeEvent
     public void onRenderOverlay(RenderGameOverlayEvent.Post event) {
         if (event.type != RenderGameOverlayEvent.ElementType.CROSSHAIRS) return;
-        if (!AEConfig.instance.previewBlocks || !this.isConflict()) return;
+        if (!AEConfig.instance.previewBlocks) return;
+
+        final GuiText warning;
+        if (this.isConflict()) {
+            warning = GuiText.ControllerPlacementConflict;
+        } else if (this.isCableConflict()) {
+            warning = GuiText.CablePlacementConflict;
+        } else {
+            return;
+        }
 
         final FontRenderer font = Minecraft.getMinecraft().fontRenderer;
-        final String text = GuiText.ControllerPlacementConflict.getLocal();
+        final String text = warning.getLocal();
         final int cx = event.resolution.getScaledWidth() / 2;
         final int cy = event.resolution.getScaledHeight() / 2;
         font.drawStringWithShadow(text, cx - font.getStringWidth(text) / 2, cy + 12, WARNING_COLOR);

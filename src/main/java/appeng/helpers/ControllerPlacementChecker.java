@@ -12,6 +12,9 @@ import appeng.api.networking.IGridHost;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.pathing.ControllerState;
 import appeng.api.networking.pathing.IPathingGrid;
+import appeng.api.parts.IPart;
+import appeng.api.parts.IPartHost;
+import appeng.api.util.AEColor;
 import appeng.me.cache.PathGridCache;
 import appeng.tile.networking.TileController;
 
@@ -22,35 +25,81 @@ public final class ControllerPlacementChecker {
 
     private ControllerPlacementChecker() {}
 
-    public static boolean wouldConflict(World w, int x, int y, int z) {
+    public static boolean wouldControllerConflict(World w, int x, int y, int z) {
         try {
-            return check(w, x, y, z);
+            return checkController(w, x, y, z);
         } catch (Exception e) {
             return false;
         }
     }
 
-    private static boolean check(World w, int x, int y, int z) {
+    /**
+     * Whether placing a cable of the given color at the position would join two or more distinct networks that each
+     * have a controller.
+     */
+    public static boolean wouldCableConflict(World w, int x, int y, int z, AEColor cableColor) {
+        try {
+            final Set<IGrid> grids = new HashSet<>();
+
+            if (w.blockExists(x, y, z) && w.getTileEntity(x, y, z) instanceof IPartHost host) {
+                addGrid(grids, host.getPart(ForgeDirection.UNKNOWN));
+                for (ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
+                    addGrid(grids, host.getPart(dir));
+                }
+            }
+
+            for (ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
+                final IGridNode node = getNeighborNode(w, x, y, z, dir);
+                if (node == null) continue;
+                // same rule as GridNode.canConnect: from.getColor().matches(this.getColor())
+                if (!cableColor.matches(node.getGridBlock().getGridColor())) continue;
+                grids.add(node.getGrid());
+            }
+
+            int controlled = 0;
+            for (IGrid grid : grids) {
+                if (grid.getCache(IPathingGrid.class) instanceof PathGridCache pgc && !pgc.getControllers().isEmpty()) {
+                    controlled++;
+                }
+            }
+            return controlled >= 2;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static void addGrid(Set<IGrid> grids, IPart part) {
+        if (part == null) return;
+        final IGridNode node = part.getGridNode();
+        if (node != null && node.getGrid() != null) grids.add(node.getGrid());
+    }
+
+    /**
+     * Returns the neighbor's node facing the position if it is loaded, has a grid and is connectable from that side.
+     */
+    private static IGridNode getNeighborNode(World w, int x, int y, int z, ForgeDirection dir) {
+        final int nx = x + dir.offsetX, ny = y + dir.offsetY, nz = z + dir.offsetZ;
+        final TileEntity te = w.blockExists(nx, ny, nz) ? w.getTileEntity(nx, ny, nz) : null;
+        if (!(te instanceof IGridHost host)) return null;
+
+        final ForgeDirection opposite = dir.getOpposite();
+        final IGridNode node = host.getGridNode(opposite);
+        if (node == null || node.getGrid() == null) return null;
+        if (!node.getGridBlock().getConnectableSides().contains(opposite)) return null;
+        return node;
+    }
+
+    private static boolean checkController(World w, int x, int y, int z) {
         final Set<IGrid> grids = new HashSet<>();
         final Set<TileController> adjacentControllers = new HashSet<>();
 
         for (ForgeDirection dir : ForgeDirection.VALID_DIRECTIONS) {
-            final TileEntity te = w.blockExists(x + dir.offsetX, y + dir.offsetY, z + dir.offsetZ)
-                    ? w.getTileEntity(x + dir.offsetX, y + dir.offsetY, z + dir.offsetZ)
-                    : null;
-            if (te == null) continue;
-            if (te instanceof TileController tc) {
+            final int nx = x + dir.offsetX, ny = y + dir.offsetY, nz = z + dir.offsetZ;
+            if (w.blockExists(nx, ny, nz) && w.getTileEntity(nx, ny, nz) instanceof TileController tc) {
                 adjacentControllers.add(tc);
             }
-            if (!(te instanceof IGridHost host)) continue;
-
-            final ForgeDirection opposite = dir.getOpposite();
-            final IGridNode node = host.getGridNode(opposite);
-            if (node == null) continue;
-            final IGrid grid = node.getGrid();
-            if (grid == null) continue;
-            if (!node.getGridBlock().getConnectableSides().contains(opposite)) continue;
-            grids.add(grid);
+            final IGridNode node = getNeighborNode(w, x, y, z, dir);
+            if (node != null) grids.add(node.getGrid());
         }
 
         final Set<PathGridCache> controlled = new HashSet<>();

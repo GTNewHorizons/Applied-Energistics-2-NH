@@ -16,6 +16,7 @@ public enum GuiText implements Localization {
 
     Chest,
     ControllerPlacementConflict,
+    CablePlacementConflict,
     StoredEnergy,
     Of,
     Condenser,

@@ -13,6 +13,7 @@ public class PacketControllerPlacementResult extends AppEngPacket {
     private final int x;
     private final int y;
     private final int z;
+    private final byte kind;
     private final boolean conflict;
 
     // automatic.
@@ -20,17 +21,20 @@ public class PacketControllerPlacementResult extends AppEngPacket {
         this.x = stream.readInt();
         this.y = stream.readInt();
         this.z = stream.readInt();
+        this.kind = stream.readByte();
         this.conflict = stream.readBoolean();
     }
 
     // api
-    public PacketControllerPlacementResult(final int x, final int y, final int z, final boolean conflict) {
+    public PacketControllerPlacementResult(final int x, final int y, final int z, final byte kind,
+            final boolean conflict) {
         final ByteBuf data = Unpooled.buffer();
 
         data.writeInt(this.getPacketID());
         data.writeInt(this.x = x);
         data.writeInt(this.y = y);
         data.writeInt(this.z = z);
+        data.writeByte(this.kind = kind);
         data.writeBoolean(this.conflict = conflict);
 
         this.configureWrite(data);
@@ -38,6 +42,6 @@ public class PacketControllerPlacementResult extends AppEngPacket {
 
     @Override
     public void clientPacketData(final INetworkInfo network, final AppEngPacket packet, final EntityPlayer player) {
-        ControllerPlacementPreview.getInstance().setResult(this.x, this.y, this.z, this.conflict);
+        ControllerPlacementPreview.getInstance().setResult(this.x, this.y, this.z, this.kind, this.conflict);
     }
 }

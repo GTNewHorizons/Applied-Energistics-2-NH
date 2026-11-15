@@ -23,7 +23,7 @@ public class ItemBlockController extends AEBaseItemBlock {
             final int y, final int z, final int side, final float hitX, final float hitY, final float hitZ,
             final int metadata) {
         if (!w.isRemote && AEConfig.instance.preventConflictingControllerPlacement
-                && ControllerPlacementChecker.wouldConflict(w, x, y, z)) {
+                && ControllerPlacementChecker.wouldControllerConflict(w, x, y, z)) {
             final ChatComponentTranslation msg = new ChatComponentTranslation(
                     "chat.appliedenergistics2.ControllerPlacementConflict");
             msg.getChatStyle().setColor(EnumChatFormatting.RED);

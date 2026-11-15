@@ -1320,4 +1320,6 @@ key.wireless_mode_switch.desc=Wireless Mode Switch
 nei.options.keys.gui.pattern_view=View Pattern
 
 chat.appliedenergistics2.ControllerPlacementConflict=Cannot place controller: this network already has a controller.
+chat.appliedenergistics2.CablePlacementConflict=Cannot place cable: it would connect networks with different controllers.
 gui.appliedenergistics2.ControllerPlacementConflict=This network already has a controller!
+gui.appliedenergistics2.CablePlacementConflict=This cable would connect networks with different controllers!
