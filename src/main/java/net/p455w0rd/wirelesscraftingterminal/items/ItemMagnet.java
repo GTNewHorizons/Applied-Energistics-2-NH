@@ -33,7 +33,7 @@ import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraftforge.oredict.OreDictionary;
 import net.p455w0rd.wirelesscraftingterminal.api.IWirelessCraftingTerminalItem;
@@ -199,15 +199,15 @@ public class ItemMagnet extends Item {
 	public void switchMagnetMode(ItemStack item, EntityPlayer player) {
 		if (item.getItemDamage() == 0) {
 			item.setItemDamage(1);
-			player.addChatMessage(new ChatComponentText(LocaleHandler.MagnetMode2.getLocal()));
+			player.addChatMessage(new ChatComponentTranslation(LocaleHandler.MagnetMode2.getUnlocalized()));
 		}
 		else if (item.getItemDamage() == 1) {
 			item.setItemDamage(2);
-			player.addChatMessage(new ChatComponentText(LocaleHandler.MagnetMode3.getLocal()));
+			player.addChatMessage(new ChatComponentTranslation(LocaleHandler.MagnetMode3.getUnlocalized()));
 		}
 		else {
 			item.setItemDamage(0);
-			player.addChatMessage(new ChatComponentText(LocaleHandler.MagnetMode1.getLocal()));
+			player.addChatMessage(new ChatComponentTranslation(LocaleHandler.MagnetMode1.getUnlocalized()));
 		}
 	}
 
