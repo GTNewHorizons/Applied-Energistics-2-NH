@@ -51,8 +51,6 @@ config.ae2wct.EasyModeDesc=Enable Easy Mode (Easier Recipes+Infinity Booster Rec
 config.ae2wct.BoosterDropChance=Chance that Wither will drop Infinity Booster Card (in %-100=always drop)
 config.ae2wct.DisableBoosterDrop=Enabled Booster Card drops in hard mode (true=enabled)
 config.ae2wct.MineTweakerOverride=Enable MineTweaker Override (true=disables all recipes)
-config.ae2wct.DoVersionCheck=Check for updates
-config.ae2wct.ClickString=["Click here to go to download page [",{"text":"Download","color":"green","hoverEvent":{"action":"show_text","value":{"text":"Click this to download the latest version","color":"green"}},"clickEvent":{"action":"open_url","value":"http://minecraft.curseforge.com/projects/wireless-crafting-terminal"}},"]"]
 
 //Achievements
 achievement.wctAchievement=Digital Crafting Over WiFi
