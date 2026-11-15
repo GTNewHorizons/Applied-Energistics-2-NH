@@ -2,16 +2,15 @@ package net.p455w0rd.wirelesscraftingterminal.api;
 
 import java.lang.reflect.Method;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public abstract class WCTApi {
 
     protected static WCTApi api = null;
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    @Nullable
-    public static WCTApi instance() {
+    public static @Nullable WCTApi instance() {
         // Have we already retrieved the api?
         if (WCTApi.api == null) {
             try {
@@ -33,10 +32,8 @@ public abstract class WCTApi {
         return WCTApi.api;
     }
 
-    @Nonnull
-    public abstract IWCTInteractionHelper interact();
+    public abstract @NonNull IWCTInteractionHelper interact();
 
-    @Nonnull
-    public abstract IWCTItems items();
+    public abstract @NonNull IWCTItems items();
 
 }

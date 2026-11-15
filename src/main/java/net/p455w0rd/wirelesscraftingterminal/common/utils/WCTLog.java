@@ -1,9 +1,8 @@
 package net.p455w0rd.wirelesscraftingterminal.common.utils;
 
-import javax.annotation.Nonnull;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jspecify.annotations.NonNull;
 
 public class WCTLog {
 
@@ -49,7 +48,7 @@ public class WCTLog {
         log.warn(String.format(format, data));
     }
 
-    public static void integration(@Nonnull final Throwable exception) {
+    public static void integration(final @NonNull Throwable exception) {
         log.debug(exception);
     }
 }
