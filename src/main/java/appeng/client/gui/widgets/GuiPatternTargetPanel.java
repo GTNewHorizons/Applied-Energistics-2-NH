@@ -7,6 +7,7 @@ import java.util.List;
 
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.item.ItemStack;
 
@@ -34,6 +35,8 @@ public class GuiPatternTargetPanel {
         void sendToTarget(int index);
 
         void extractConflict(int index);
+
+        void highlight(int x, int y, int z, int dim, String name);
     }
 
     private static final int MAX_WIDTH = 200;
@@ -266,6 +269,7 @@ public class GuiPatternTargetPanel {
                 lines.add(GuiText.PatternTargetsHasSameTooltip.getLocal());
             }
             lines.add(GuiText.PatternTargetsClick.getLocal());
+            lines.add(GuiText.HoldShiftClick_HIGHLIGHT_INTERFACE.getLocal());
             return lines;
         }
         final int conflict = this.conflictAt(mouseX, mouseY);
@@ -279,6 +283,8 @@ public class GuiPatternTargetPanel {
                             : GuiText.PatternTargetsOtherRecipe.getLocal());
             if (this.isOverExtractButton(conflict, mouseX, mouseY)) {
                 lines.add(GuiText.PatternTargetsExtractTooltip.getLocal());
+            } else {
+                lines.add(GuiText.HoldShiftClick_HIGHLIGHT_INTERFACE.getLocal());
             }
             return lines;
         }
@@ -302,12 +308,21 @@ public class GuiPatternTargetPanel {
         }
         final PatternTargetList.Entry entry = this.entryAt(mouseX, mouseY);
         if (entry != null) {
-            this.actions.sendToTarget(entry.index);
+            if (GuiScreen.isShiftKeyDown()) {
+                this.actions.highlight(entry.x, entry.y, entry.z, entry.dim, displayName(entry));
+            } else {
+                this.actions.sendToTarget(entry.index);
+            }
             return true;
         }
         final int conflict = this.conflictAt(mouseX, mouseY);
-        if (conflict >= 0 && this.isOverExtractButton(conflict, mouseX, mouseY)) {
-            this.actions.extractConflict(this.list.conflicts.get(conflict).index);
+        if (conflict >= 0) {
+            final PatternTargetList.Conflict c = this.list.conflicts.get(conflict);
+            if (this.isOverExtractButton(conflict, mouseX, mouseY)) {
+                this.actions.extractConflict(c.index);
+            } else if (GuiScreen.isShiftKeyDown()) {
+                this.actions.highlight(c.x, c.y, c.z, c.dim, displayName(c));
+            }
         }
         return true;
     }

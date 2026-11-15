@@ -39,18 +39,21 @@ import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
+import appeng.api.util.DimensionalCoord;
 import appeng.client.gui.slots.VirtualMEPatternSlot;
 import appeng.client.gui.slots.VirtualMEPhantomSlot;
 import appeng.client.gui.slots.VirtualMESlot;
 import appeng.client.gui.widgets.GuiImgButton;
 import appeng.client.gui.widgets.GuiPatternTargetPanel;
 import appeng.client.gui.widgets.GuiTabButton;
+import appeng.client.render.highlighter.BlockPosHighlighter;
 import appeng.container.implementations.ContainerPatternTerm;
 import appeng.container.slot.AppEngSlot;
 import appeng.container.slot.SlotRestrictedInput;
 import appeng.core.localization.ButtonToolTips;
 import appeng.core.localization.ColorUtils;
 import appeng.core.localization.GuiText;
+import appeng.core.localization.PlayerMessages;
 import appeng.core.sync.GuiBridge;
 import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketSwitchGuis;
@@ -97,6 +100,18 @@ public class GuiPatternTerm extends GuiMEMonitorable {
                 @Override
                 public void extractConflict(int index) {
                     GuiPatternTerm.this.container.extractConflictAction.send(index);
+                }
+
+                @Override
+                public void highlight(int x, int y, int z, int dim, String name) {
+                    BlockPosHighlighter.highlightBlocks(
+                            GuiPatternTerm.this.mc.thePlayer,
+                            Collections.singletonList(new DimensionalCoord(x, y, z, dim)),
+                            name,
+                            PlayerMessages.MachineHighlighted.getUnlocalized(),
+                            PlayerMessages.MachineInOtherDim.getUnlocalized());
+                    // Same as the Interface Terminal: the outline is drawn in the world, behind the closed GUI.
+                    GuiPatternTerm.this.closeGui();
                 }
             });
 
