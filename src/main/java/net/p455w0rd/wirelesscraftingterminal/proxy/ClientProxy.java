@@ -1,29 +1,30 @@
 package net.p455w0rd.wirelesscraftingterminal.proxy;
 
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.Loader;
 import net.minecraft.item.ItemStack;
 import net.p455w0rd.wirelesscraftingterminal.handlers.KeybindHandler;
 import net.p455w0rd.wirelesscraftingterminal.items.ItemEnum;
 
+import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.Loader;
+
 public class ClientProxy extends CommonProxy {
 
-	public ClientProxy() {
-		KeybindHandler.registerKeybinds(); // whyyyy??? #SELFSLAP
-		FMLCommonHandler.instance().bus().register(new KeybindHandler());
-	}
+    public ClientProxy() {
+        KeybindHandler.registerKeybinds(); // whyyyy??? #SELFSLAP
+        FMLCommonHandler.instance().bus().register(new KeybindHandler());
+    }
 
-	@Override
-	public void removeItemsFromNEI() {
-		if (Loader.isModLoaded("NotEnoughItems")) {
-			codechicken.nei.api.API.hideItem(new ItemStack(ItemEnum.WCT_BOOSTER_BG_ICON.getItem(), 1));
-			return;
-		}
-	}
+    @Override
+    public void removeItemsFromNEI() {
+        if (Loader.isModLoaded("NotEnoughItems")) {
+            codechicken.nei.api.API.hideItem(new ItemStack(ItemEnum.WCT_BOOSTER_BG_ICON.getItem(), 1));
+            return;
+        }
+    }
 
-	@Override
-	public void registerRenderers() {
-		// No renderers...yet =]
-	}
+    @Override
+    public void registerRenderers() {
+        // No renderers...yet =]
+    }
 
 }
