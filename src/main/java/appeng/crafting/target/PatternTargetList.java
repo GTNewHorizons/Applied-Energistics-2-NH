@@ -35,6 +35,8 @@ public final class PatternTargetList {
                     buf.writeInt(entry.dim);
                     buf.writeByte(entry.match.ordinal());
                     buf.writeInt(entry.freeSlots);
+                    buf.writeByte(entry.cardSource);
+                    buf.writeBoolean(entry.hasSamePattern);
                 }
                 buf.writeInt(list.conflicts.size());
                 for (Conflict conflict : list.conflicts) {
@@ -62,7 +64,9 @@ public final class PatternTargetList {
                                     buf.readInt(),
                                     buf.readInt(),
                                     PatternMatch.values()[buf.readByte()],
-                                    buf.readInt()));
+                                    buf.readInt(),
+                                    buf.readByte(),
+                                    buf.readBoolean()));
                 }
                 final int conflictCount = buf.readInt();
                 final List<Conflict> conflicts = new ArrayList<>(conflictCount);
@@ -93,6 +97,10 @@ public final class PatternTargetList {
 
     public static final class Entry {
 
+        public static final int CARD_NONE = 0;
+        public static final int CARD_FROM_INVENTORY = 1;
+        public static final int CARD_FROM_NETWORK = 2;
+
         /** Position in the server's list, sent back when the player picks this provider. */
         public final int index;
         public final ItemStack icon;
@@ -103,9 +111,13 @@ public final class PatternTargetList {
         public final int dim;
         public final PatternMatch match;
         public final int freeSlots;
+        /** Where a Pattern Capacity Card comes from when the interface is full; CARD_NONE if it has room. */
+        public final int cardSource;
+        /** True when this provider already holds a pattern with the same inputs and outputs. */
+        public final boolean hasSamePattern;
 
         public Entry(int index, ItemStack icon, String rawName, int x, int y, int z, int dim, PatternMatch match,
-                int freeSlots) {
+                int freeSlots, int cardSource, boolean hasSamePattern) {
             this.index = index;
             this.icon = icon;
             this.rawName = rawName;
@@ -115,6 +127,8 @@ public final class PatternTargetList {
             this.dim = dim;
             this.match = match;
             this.freeSlots = freeSlots;
+            this.cardSource = cardSource;
+            this.hasSamePattern = hasSamePattern;
         }
     }
 

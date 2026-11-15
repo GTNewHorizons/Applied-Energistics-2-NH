@@ -30,6 +30,7 @@ import appeng.api.storage.data.IAEStackType;
 import appeng.api.util.IInterfaceViewable;
 import appeng.core.AELog;
 import appeng.helpers.DualityInterface;
+import appeng.helpers.IInterfaceHost;
 import appeng.me.cache.CraftingGridCache;
 import appeng.parts.misc.PartPatternRepeater;
 
@@ -314,8 +315,36 @@ public final class PatternTargetQuery {
         return true;
     }
 
-    // The provider was picked when the list was built, so it may have been broken or unlinked since.
-    private static boolean canModify(IInterfaceViewable provider, IGrid grid, EntityPlayer player) {
+    /**
+     * Returns the free upgrade slot of an ME interface that takes this Pattern Capacity Card, or -1.
+     */
+    public static int findCapacityCardSlot(IInterfaceViewable provider, ItemStack card) {
+        if (!(provider instanceof IInterfaceHost host)) {
+            return -1;
+        }
+        final IInventory upgrades = host.getInterfaceDuality().getUpgrades();
+        for (int i = 0; i < upgrades.getSizeInventory(); i++) {
+            if (upgrades.getStackInSlot(i) == null && upgrades.isItemValidForSlot(i, card)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Puts one Pattern Capacity Card into the given upgrade slot found by {@link #findCapacityCardSlot}.
+     */
+    public static void installCapacityCard(IInterfaceViewable provider, int slot, ItemStack card) {
+        final ItemStack single = card.copy();
+        single.stackSize = 1;
+        ((IInterfaceHost) provider).getInterfaceDuality().getUpgrades().setInventorySlotContents(slot, single);
+    }
+
+    /**
+     * Returns whether the provider is still in place, reachable from the grid and open to the player's BUILD.
+     */
+    public static boolean canModify(IInterfaceViewable provider, IGrid grid, EntityPlayer player) {
+        // The provider was picked when the list was built, so it may have been broken or unlinked since.
         final TileEntity tile = provider.getTileEntity();
         if (tile == null || tile.isInvalid()
                 || tile.getWorldObj().getTileEntity(tile.xCoord, tile.yCoord, tile.zCoord) != tile) {

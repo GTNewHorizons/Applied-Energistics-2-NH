@@ -6,5 +6,6 @@ package appeng.api.crafting;
 public enum PatternMatch {
     MATCH,
     NO_MATCH,
-    UNKNOWN
+    UNKNOWN,
+    NOT_READY
 }

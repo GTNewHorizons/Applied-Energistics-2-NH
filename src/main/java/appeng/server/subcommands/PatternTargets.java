@@ -58,6 +58,7 @@ public class PatternTargets implements ISubCommand {
             case MATCH -> "commands.ae2.PatternTargetsMatch";
             case NO_MATCH -> "commands.ae2.PatternTargetsNoMatch";
             case UNKNOWN -> "commands.ae2.PatternTargetsUnknown";
+            case NOT_READY -> "commands.ae2.PatternTargetsNotReady";
         };
     }
 
@@ -139,7 +140,7 @@ public class PatternTargets implements ISubCommand {
             switch (entry.match) {
                 case MATCH -> matches++;
                 case NO_MATCH -> noMatches++;
-                case UNKNOWN -> unknown++;
+                case UNKNOWN, NOT_READY -> unknown++;
             }
             if (list) {
                 final DimensionalCoord location = entry.provider.getLocation();
