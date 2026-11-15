@@ -26,6 +26,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.StatCollector;
@@ -227,29 +228,29 @@ public class ItemWirelessCraftingTerminal extends AERootPoweredItem implements I
 	@SideOnly(Side.CLIENT)
 	@Override
 	public void addCheckedInformation(ItemStack is, EntityPlayer player, List list, boolean displayMore) {
-		String shift = LocaleHandler.PressShift.getLocal().replace("Shift", color("yellow") + "" + color("bold") + "" + color("italics") + "Shift" + color("gray"));
+		String shift = LocaleHandler.PressShift.getLocal().replace("Shift", EnumChatFormatting.YELLOW + "" + EnumChatFormatting.BOLD + "" + EnumChatFormatting.ITALIC + "Shift" + EnumChatFormatting.GRAY);
 		final NBTTagCompound tag = ensureTagCompound(is);
 
 		String encKey = tag.getString("key");
-		String pctTxtColor = color("white") + "";
+		String pctTxtColor = EnumChatFormatting.WHITE + "";
 		double aeCurrPower = getAECurrentPower(is);
 		double aeCurrPowerPct = (int) Math.floor(aeCurrPower / Reference.WCT_MAX_POWER * 1e4) / 1e2;
 		if ((int) aeCurrPowerPct >= 75) {
-			pctTxtColor = color("green") + "";
+			pctTxtColor = EnumChatFormatting.GREEN + "";
 		}
 		if ((int) aeCurrPowerPct <= 5) {
-			pctTxtColor = color("red") + "";
+			pctTxtColor = EnumChatFormatting.RED + "";
 		}
-		list.add(color("aqua") + "==============================");
+		list.add(EnumChatFormatting.AQUA + "==============================");
 		list.add(StatCollector.translateToLocal("gui.appliedenergistics2.StoredEnergy") + ": " + pctTxtColor + (int) aeCurrPower + " AE - " + aeCurrPowerPct + "%");
 		if (isShiftKeyDown()) {
-			String linked = color("red") + StatCollector.translateToLocal("gui.appliedenergistics2.Unlinked");
+			String linked = EnumChatFormatting.RED + StatCollector.translateToLocal("gui.appliedenergistics2.Unlinked");
 			if (encKey != null && !encKey.isEmpty()) {
-				linked = color("blue") + StatCollector.translateToLocal("gui.appliedenergistics2.Linked");
+				linked = EnumChatFormatting.BLUE + StatCollector.translateToLocal("gui.appliedenergistics2.Linked");
 			}
 			list.add(LocaleHandler.LinkStatus.getLocal() + ": " + linked);
-			String boosterStatus = (checkForBooster(is) ? color("green") + "" + LocaleHandler.Installed.getLocal() : color("red") + "" + LocaleHandler.NotInstalled.getLocal());
-			String magnetStatus = (isMagnetInstalled(is) ? color("green") + "" + LocaleHandler.Installed.getLocal() : color("red") + "" + LocaleHandler.NotInstalled.getLocal());
+			String boosterStatus = (checkForBooster(is) ? EnumChatFormatting.GREEN + "" + LocaleHandler.Installed.getLocal() : EnumChatFormatting.RED + "" + LocaleHandler.NotInstalled.getLocal());
+			String magnetStatus = (isMagnetInstalled(is) ? EnumChatFormatting.GREEN + "" + LocaleHandler.Installed.getLocal() : EnumChatFormatting.RED + "" + LocaleHandler.NotInstalled.getLocal());
 			if (Reference.WCT_BOOSTER_ENABLED) {
 				list.add(getItemName("infinityBoosterCard") + ": " + boosterStatus);
 			}
@@ -258,11 +259,6 @@ public class ItemWirelessCraftingTerminal extends AERootPoweredItem implements I
 		else {
 			list.add(shift);
 		}
-	}
-
-	@SideOnly(Side.CLIENT)
-	private String color(String color) {
-		return RandomUtils.color(color);
 	}
 
 	@SideOnly(Side.CLIENT)

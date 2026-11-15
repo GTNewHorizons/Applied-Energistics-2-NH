@@ -8,6 +8,7 @@ import org.apache.commons.lang3.text.WordUtils;
 import org.lwjgl.input.Keyboard;
 
 import com.google.common.base.Splitter;
+import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
 
 import appeng.api.config.SecurityPermissions;
 import appeng.api.implementations.guiobjects.IPortableCell;
@@ -28,6 +29,7 @@ import net.minecraft.entity.item.EntityXPOrb;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.AxisAlignedBB;
@@ -97,8 +99,8 @@ public class ItemMagnet extends Item {
 	@Override
 	@SideOnly(Side.CLIENT)
 	public void addInformation(ItemStack is, EntityPlayer player, List list, boolean par4) {
-		list.add(color("aqua") + "==============================");
-		String shift = LocaleHandler.PressShift.getLocal().replace("Shift", color("yellow") + color("bold") + color("italics") + "Shift" + color("gray"));
+		list.add(EnumChatFormatting.AQUA + "==============================");
+		String shift = LocaleHandler.PressShift.getLocal().replace("Shift", EnumChatFormatting.YELLOW + "" + EnumChatFormatting.BOLD + EnumChatFormatting.ITALIC + "Shift" + EnumChatFormatting.GRAY);
 		if (isShiftKeyDown()) {
 			ItemStack itemStack = getItemStack();
 
@@ -108,47 +110,47 @@ public class ItemMagnet extends Item {
 			}
 
 			list.add("");
-			list.add(color("italics") + "" + LocaleHandler.MagnetDesc2.getLocal());
+			list.add(EnumChatFormatting.ITALIC + "" + LocaleHandler.MagnetDesc2.getLocal());
 
 			if (isActivated(itemStack)) {
 				String boundKey = Keyboard.getKeyName(KeybindHandler.openMagnetFilter.getKeyCode());
 				if (!boundKey.equals("NONE")) {
-					list.add(color("italics") + LocaleHandler.OrPress.getLocal() + " " + color("yellow") + color("bold") + "[" + boundKey + "]");
+					list.add(EnumChatFormatting.ITALIC + LocaleHandler.OrPress.getLocal() + " " + EnumChatFormatting.YELLOW + EnumChatFormatting.BOLD + "[" + boundKey + "]");
 				}
 				String boundKey2 = Keyboard.getKeyName(KeybindHandler.changeMagnetMode.getKeyCode());
 				if (!boundKey2.equals("NONE")) {
-					list.add(color("italics") + LocaleHandler.Press.getLocal() + " " + color("yellow") + color("bold") + "[" + boundKey2 + "] " + color("gray") + color("italics") + LocaleHandler.ToSwitchMode.getLocal());
+					list.add(EnumChatFormatting.ITALIC + LocaleHandler.Press.getLocal() + " " + EnumChatFormatting.YELLOW + EnumChatFormatting.BOLD + "[" + boundKey2 + "] " + EnumChatFormatting.GRAY + EnumChatFormatting.ITALIC + LocaleHandler.ToSwitchMode.getLocal());
 				}
 			}
 
 			list.add("");
-			list.add(LocaleHandler.Status.getLocal() + ": " + (isActivated(is) ? color("green") + LocaleHandler.Active.getLocal() : color("red") + LocaleHandler.Inactive.getLocal()));
+			list.add(LocaleHandler.Status.getLocal() + ": " + (isActivated(is) ? EnumChatFormatting.GREEN + LocaleHandler.Active.getLocal() : EnumChatFormatting.RED + LocaleHandler.Inactive.getLocal()));
 			if (is.getItemDamage() == 1) {
-				list.add(color("white") + "  " + LocaleHandler.MagnetActiveDesc1.getLocal());
+				list.add(EnumChatFormatting.WHITE + "  " + LocaleHandler.MagnetActiveDesc1.getLocal());
 			}
 			else if (is.getItemDamage() == 2) {
-				list.add(color("white") + "  " + LocaleHandler.MagnetActiveDesc2.getLocal());
+				list.add(EnumChatFormatting.WHITE + "  " + LocaleHandler.MagnetActiveDesc2.getLocal());
 			}
 
 			String white = LocaleHandler.Whitelisting.getLocal();
 			String black = LocaleHandler.Blacklisting.getLocal();
 
-			list.add(LocaleHandler.FilterMode.getLocal() + ": " + color("white") + (getMode(is) ? white : black));
+			list.add(LocaleHandler.FilterMode.getLocal() + ": " + EnumChatFormatting.WHITE + (getMode(is) ? white : black));
 			String not = LocaleHandler.Not.getLocal();
 			String ignoring = LocaleHandler.Ignoring.getLocal();
 			String nbtData = LocaleHandler.NBTData.getLocal();
 			String metaData = LocaleHandler.MetaData.getLocal();
 			String usingOreDict = LocaleHandler.Using.getLocal() + " " + LocaleHandler.OreDict.getLocal();
 
-			list.add((!doesMagnetUseOreDict() ? " " + not : color("green")) + " " + usingOreDict);
-			list.add((!doesMagnetIgnoreNBT() ? " " + not : color("green")) + " " + ignoring + " " + nbtData);
-			list.add((!doesMagnetIgnoreMeta() ? " " + not : color("green")) + " " + ignoring + " " + metaData);
+			list.add((!doesMagnetUseOreDict() ? " " + not : EnumChatFormatting.GREEN) + " " + usingOreDict);
+			list.add((!doesMagnetIgnoreNBT() ? " " + not : EnumChatFormatting.GREEN) + " " + ignoring + " " + nbtData);
+			list.add((!doesMagnetIgnoreMeta() ? " " + not : EnumChatFormatting.GREEN) + " " + ignoring + " " + metaData);
 
 			List<ItemStack> filteredItems = getFilteredItems(itemStack);
 
 			if (filteredItems != null) {
 				list.add("");
-				list.add(color("gray") + LocaleHandler.FilteredItems.getLocal() + ":");
+				list.add(EnumChatFormatting.GRAY + LocaleHandler.FilteredItems.getLocal() + ":");
 				for (int i = 0; i < filteredItems.size(); i++) {
 					list.add("  " + filteredItems.get(i).getDisplayName());
 				}
@@ -157,18 +159,13 @@ public class ItemMagnet extends Item {
 			list.add("");
 			String onlyWorks = LocaleHandler.OnlyWorks.getLocal();
 			for (String line : Splitter.on("\n").split(WordUtils.wrap(onlyWorks, 27, "\n", false))) {
-				list.add(color("white") + color("bold") + color("italics") + line.trim());
+				list.add(EnumChatFormatting.WHITE + "" + EnumChatFormatting.BOLD + EnumChatFormatting.ITALIC + line.trim());
 			}
 
 		}
 		else {
 			list.add(shift);
 		}
-	}
-
-	@SideOnly(Side.CLIENT)
-	private String color(String color) {
-		return RandomUtils.color(color);
 	}
 
 	@SideOnly(Side.CLIENT)
@@ -284,15 +281,18 @@ public class ItemMagnet extends Item {
 	}
 
 	private boolean doesMagnetIgnoreNBT() {
-		return RandomUtils.readBoolean(getItemStack(), "IgnoreNBT");
+		final ItemStack is = getItemStack();
+		return is != null && ItemStackNBT.getBoolean(is, "IgnoreNBT");
 	}
 
 	private boolean doesMagnetIgnoreMeta() {
-		return RandomUtils.readBoolean(getItemStack(), "IgnoreMeta");
+		final ItemStack is = getItemStack();
+		return is != null && ItemStackNBT.getBoolean(is, "IgnoreMeta");
 	}
 
 	private boolean doesMagnetUseOreDict() {
-		return RandomUtils.readBoolean(getItemStack(), "UseOreDict");
+		final ItemStack is = getItemStack();
+		return is != null && ItemStackNBT.getBoolean(is, "UseOreDict");
 	}
 
 	private boolean areOresEqual(ItemStack is1, ItemStack is2) {
