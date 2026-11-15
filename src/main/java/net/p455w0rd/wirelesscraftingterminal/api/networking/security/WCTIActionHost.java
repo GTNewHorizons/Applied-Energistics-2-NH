@@ -15,5 +15,4 @@ public interface WCTIActionHost extends IGridHost
 	 * by.
 	 */
 	IGridNode getActionableNode();
-	IGridNode getActionableNode(boolean ignoreRange);
 }

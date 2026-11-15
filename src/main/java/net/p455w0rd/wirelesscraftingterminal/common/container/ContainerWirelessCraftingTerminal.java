@@ -44,8 +44,7 @@ import appeng.tile.inventory.InvOperation;
 public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
         implements IAEAppEngInventory, IContainerCraftingPacket {
 
-    public static final int CRAFTING_SLOT_X_POS = 80;
-    public static final int CRAFTING_SLOT_Y_POS = 83;
+    private static final int CRAFTING_SLOT_X_POS = 80;
 
     private final WTCGuiObject host;
     public final WCTInventoryBooster boosterInventory;
@@ -183,7 +182,7 @@ public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
 
     @Override
     public @Nullable IInventory getInventoryByName(final String name) {
-        if (name.equals("player") || name.equals("container.inventory")) {
+        if (name.equals("player")) {
             return this.getInventoryPlayer();
         }
         return this.host.getInventoryByName(name);
