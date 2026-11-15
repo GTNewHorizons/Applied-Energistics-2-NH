@@ -134,7 +134,7 @@ public class ItemWirelessCraftingTerminal extends AERootPoweredItem
 	@Override
 	public ItemStack onItemRightClick(final ItemStack itemStack, final World world, final EntityPlayer player) {
 		if (!world.isRemote) {
-			WCTGuiHandler.launchGui(Reference.GUI_WCT, player, world, (int) player.posX, (int) player.posY, (int) player.posZ);
+			WCTGuiHandler.openTerminalGui(player, player.inventory.currentItem);
 		}
 		return itemStack;
 	}

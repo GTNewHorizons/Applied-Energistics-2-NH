@@ -2,11 +2,15 @@ package net.p455w0rd.wirelesscraftingterminal.core.sync.packets;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import it.unimi.dsi.fastutil.ints.IntObjectPair;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.ContainerPlayer;
+import net.minecraft.item.ItemStack;
 import net.p455w0rd.wirelesscraftingterminal.common.WCTGuiHandler;
+import net.p455w0rd.wirelesscraftingterminal.common.utils.RandomUtils;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.WCTPacket;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.network.INetworkInfo;
+import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
 
 public class PacketOpenGui extends WCTPacket {
 
@@ -27,7 +31,16 @@ public class PacketOpenGui extends WCTPacket {
 
 	@Override
 	public void serverPacketData(final INetworkInfo manager, final WCTPacket packet, final EntityPlayer player) {
-		if (player.openContainer instanceof ContainerPlayer) {
+		if (!(player.openContainer instanceof ContainerPlayer)) {
+			return;
+		}
+		if (this.whichGui == Reference.GUI_WCT) {
+			final IntObjectPair<ItemStack> terminal = RandomUtils.getWirelessTermWithSlot(player.inventory);
+			if (terminal != null) {
+				WCTGuiHandler.openTerminalGui(player, terminal.firstInt());
+			}
+		}
+		else {
 			WCTGuiHandler.launchGui(this.whichGui, player, player.worldObj, (int) player.posX, (int) player.posY, (int) player.posZ);
 		}
 	}

@@ -15,17 +15,20 @@ import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
 import org.jspecify.annotations.Nullable;
 
 import appeng.container.ContainerOpenContext;
+import appeng.util.Platform;
 import cpw.mods.fml.common.network.IGuiHandler;
-import it.unimi.dsi.fastutil.ints.IntObjectPair;
 
 public class WCTGuiHandler implements IGuiHandler {
 
     public void registerRenderers() {}
 
+    /**
+     * For {@link Reference#GUI_WCT}, x is the inventory slot index of the terminal, in the same way as AE2 item GUIs.
+     */
     @Override
     public @Nullable Object getServerGuiElement(int guiId, EntityPlayer player, World world, int x, int y, int z) {
         if (guiId == Reference.GUI_WCT) {
-            final WTCGuiObject obj = createGuiObject(player, world, x, y, z);
+            final WTCGuiObject obj = createGuiObject(player, world, x);
             if (obj == null) {
                 return null;
             }
@@ -52,7 +55,7 @@ public class WCTGuiHandler implements IGuiHandler {
     @Override
     public @Nullable Object getClientGuiElement(int guiId, EntityPlayer player, World world, int x, int y, int z) {
         if (guiId == Reference.GUI_WCT) {
-            final WTCGuiObject obj = createGuiObject(player, world, x, y, z);
+            final WTCGuiObject obj = createGuiObject(player, world, x);
             if (obj == null) {
                 return null;
             }
@@ -65,13 +68,16 @@ public class WCTGuiHandler implements IGuiHandler {
         return null;
     }
 
-    private static @Nullable WTCGuiObject createGuiObject(EntityPlayer player, World world, int x, int y, int z) {
-        final IntObjectPair<ItemStack> termItem = RandomUtils.getWirelessTermWithSlot(player.inventory);
-        if (termItem == null) {
+    private static @Nullable WTCGuiObject createGuiObject(EntityPlayer player, World world, int slotIndex) {
+        final ItemStack terminal = Platform.getItemFromPlayerInventoryBySlotIndex(player, slotIndex);
+        if (!RandomUtils.isWirelessCraftingTerminal(terminal)) {
             return null;
         }
-        return ContainerWirelessCraftingTerminal
-                .getGuiObject(termItem.second(), player, world, x, y, z, termItem.firstInt());
+        return ContainerWirelessCraftingTerminal.getGuiObject(terminal, player, world, slotIndex);
+    }
+
+    public static void openTerminalGui(final EntityPlayer player, final int slotIndex) {
+        player.openGui(WirelessCraftingTerminal.INSTANCE, Reference.GUI_WCT, player.worldObj, slotIndex, 0, 0);
     }
 
     public static void launchGui(final int ID, final EntityPlayer player, final World world, final int x, final int y,

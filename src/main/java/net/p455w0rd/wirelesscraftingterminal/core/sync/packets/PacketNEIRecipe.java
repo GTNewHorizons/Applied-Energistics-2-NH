@@ -37,12 +37,9 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.oredict.OreDictionary;
-import net.p455w0rd.wirelesscraftingterminal.common.utils.RandomUtils;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.WCTPacket;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.network.INetworkInfo;
 import net.p455w0rd.wirelesscraftingterminal.common.container.ContainerWirelessCraftingTerminal;
-import net.p455w0rd.wirelesscraftingterminal.helpers.WTCGuiObject;
-import it.unimi.dsi.fastutil.ints.IntObjectPair;
 
 public class PacketNEIRecipe extends WCTPacket {
 
@@ -94,23 +91,8 @@ public class PacketNEIRecipe extends WCTPacket {
 			final IContainerCraftingPacket cct = (IContainerCraftingPacket) con;
 			IGridNode node = cct.getNetworkNode();
 
-			if (node == null) {
-				final IntObjectPair<ItemStack> termItem = RandomUtils.getWirelessTermWithSlot(player.inventory);
-				if (termItem == null) {
-					return;
-				}
-				final WTCGuiObject obj = ContainerWirelessCraftingTerminal.getGuiObject(
-						termItem.second(),
-						player,
-						player.worldObj,
-						(int) player.posX,
-						(int) player.posY,
-						(int) player.posZ,
-						termItem.firstInt());
-				if (obj == null) {
-					return;
-				}
-				node = obj.getActionableNode(true);
+			if (node == null && con instanceof ContainerWirelessCraftingTerminal wct) {
+				node = wct.getHost().getActionableNode(true);
 			}
 			if (node != null) {
 				final IGrid grid = node.getGrid();

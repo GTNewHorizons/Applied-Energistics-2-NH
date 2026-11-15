@@ -14,20 +14,18 @@ import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.items.contents.WirelessCraftingTerminalGuiObject;
 
-/**
- * GUI object of the wireless crafting terminal. It remembers the inventory slot that holds the terminal so that the
- * AE2 containers can track the terminal item.
- */
 public class WTCGuiObject extends WirelessCraftingTerminalGuiObject implements WCTIActionHost {
 
-    private final int slotIndex;
     // Created lazily because the super constructor calls readInventory() before the fields are initialized.
     private @Nullable WCTInventoryCrafting craftingGrid;
 
+    /**
+     * @param slotIndex the inventory slot index of the terminal. Like AE2 item GUIs, it is passed as x so that
+     *                  {@link #getInventorySlot()} returns it.
+     */
     public WTCGuiObject(final IWirelessTermHandler wh, final ItemStack is, final EntityPlayer ep, final World w,
-            final int x, final int y, final int z, final int slotIndex) {
-        super(wh, is, ep, w, x, y, z);
-        this.slotIndex = slotIndex;
+            final int slotIndex) {
+        super(wh, is, ep, w, slotIndex, 0, 0);
     }
 
     private WCTInventoryCrafting getCraftingGrid() {
@@ -67,10 +65,5 @@ public class WTCGuiObject extends WirelessCraftingTerminalGuiObject implements W
             return grid.getPivot();
         }
         return null;
-    }
-
-    @Override
-    public int getInventorySlot() {
-        return this.slotIndex;
     }
 }
