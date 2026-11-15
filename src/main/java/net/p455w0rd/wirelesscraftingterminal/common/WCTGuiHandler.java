@@ -12,7 +12,13 @@ import net.p455w0rd.wirelesscraftingterminal.common.utils.RandomUtils;
 import net.p455w0rd.wirelesscraftingterminal.helpers.WTCGuiObject;
 import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.jspecify.annotations.Nullable;
+
+import com.glodblock.github.client.UltraTerminalButtons;
+import com.glodblock.github.common.item.ItemWirelessUltraTerminal;
+import com.glodblock.github.common.terminal.TerminalIds;
+import com.glodblock.github.util.Util;
 
 import appeng.container.ContainerOpenContext;
 import appeng.util.Platform;
@@ -59,6 +65,7 @@ public class WCTGuiHandler implements IGuiHandler {
             if (obj == null) {
                 return null;
             }
+            attachUltraTerminalButtons(player, obj);
             return new GuiWirelessCraftingTerminal(player.inventory, obj);
         }
         if (guiId == Reference.GUI_MAGNET) {
@@ -73,7 +80,25 @@ public class WCTGuiHandler implements IGuiHandler {
         if (!RandomUtils.isWirelessCraftingTerminal(terminal)) {
             return null;
         }
+        if (terminal.getItem() instanceof ItemWirelessUltraTerminal) {
+            ItemWirelessUltraTerminal.setModeId(terminal, TerminalIds.WCT_CRAFTING);
+        }
         return ContainerWirelessCraftingTerminal.getGuiObject(terminal, player, world, slotIndex);
+    }
+
+    /**
+     * Adds the ultra terminal switch button to the gui of another terminal. The magnet and restock buttons are left
+     * out, they belong to the ultra terminal itself.
+     */
+    private static void attachUltraTerminalButtons(final EntityPlayer player, final WTCGuiObject term) {
+        if (term.getItemStack().getItem() instanceof ItemWirelessUltraTerminal) {
+            // the hosted item already created its own buttons, including the utility ones
+            return;
+        }
+        final ImmutablePair<Integer, ItemStack> ultraTerminal = Util.getUltraWirelessTerm(player);
+        if (ultraTerminal != null) {
+            term.setDataObject(new UltraTerminalButtons(ultraTerminal.getRight(), false));
+        }
     }
 
     public static void openTerminalGui(final EntityPlayer player, final int slotIndex) {

@@ -29,7 +29,8 @@ public class RandomUtils {
     }
 
     public static boolean isWirelessCraftingTerminal(@Nullable ItemStack is) {
-        return is != null && is.getItem() instanceof IWirelessCraftingTerminalItem;
+        return is != null && is.getItem() instanceof IWirelessCraftingTerminalItem terminal
+                && terminal.isWirelessCraftingEnabled(is);
     }
 
     public static ItemStack getMagnet(InventoryPlayer playerInv) {

@@ -5,9 +5,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.p455w0rd.wirelesscraftingterminal.common.WCTGuiHandler;
-import net.p455w0rd.wirelesscraftingterminal.helpers.WTCGuiObject;
+import net.p455w0rd.wirelesscraftingterminal.common.container.ContainerWirelessCraftingTerminal;
 import net.p455w0rd.wirelesscraftingterminal.items.ItemEnum;
-import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
 
 import org.jspecify.annotations.Nullable;
 
@@ -164,7 +163,7 @@ public final class UltraTerminalLoader implements Runnable {
                             LANG_KEY + "wct",
                             wctStack,
                             (player, terminal, slotIndex, terminalSlotIndex) -> WCTGuiHandler
-                                    .launchGui(Reference.GUI_ULTRA_WCT, player, player.worldObj, slotIndex, 0, 0)) {
+                                    .openTerminalGui(player, slotIndex)) {
 
                         @Nullable
                         @Override
@@ -173,7 +172,7 @@ public final class UltraTerminalLoader implements Runnable {
                                 final int y, final int z) {
                             // the gui opening channel adds the item gui offset to the slot
                             final int slot = x >= Platform.itemGuiSlotOffset ? x - Platform.itemGuiSlotOffset : x;
-                            return new WTCGuiObject(handler, terminal, player, world, x, y, z, slot);
+                            return ContainerWirelessCraftingTerminal.getGuiObject(terminal, player, world, slot);
                         }
                     });
         }
