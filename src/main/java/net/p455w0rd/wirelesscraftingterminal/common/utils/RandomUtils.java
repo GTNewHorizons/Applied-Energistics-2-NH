@@ -2,7 +2,7 @@ package net.p455w0rd.wirelesscraftingterminal.common.utils;
 
 import org.jspecify.annotations.Nullable;
 
-import it.unimi.dsi.fastutil.ints.IntObjectImmutablePair;
+import appeng.util.PlayerInventoryUtil;
 import it.unimi.dsi.fastutil.ints.IntObjectPair;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
@@ -19,24 +19,16 @@ public class RandomUtils {
 	}
 
 	/**
-	 * Finds the wireless crafting terminal of the player. A held terminal takes precedence over the other inventory
-	 * slots.
+	 * Finds the wireless crafting terminal of the player in the same order as AE2 wireless terminals.
 	 *
 	 * @return the inventory slot index and the terminal, or null if the player has no terminal
 	 */
 	public static @Nullable IntObjectPair<ItemStack> getWirelessTermWithSlot(InventoryPlayer playerInv) {
-		final ItemStack heldItem = playerInv.player != null ? playerInv.player.getHeldItem() : null;
-		if (heldItem != null && heldItem.getItem() instanceof IWirelessCraftingTerminalItem) {
-			return new IntObjectImmutablePair<>(playerInv.currentItem, heldItem);
-		}
-		final int invSize = playerInv.getSizeInventory();
-		for (int i = 0; i < invSize; ++i) {
-			final ItemStack item = playerInv.getStackInSlot(i);
-			if (item != null && item.getItem() instanceof IWirelessCraftingTerminalItem) {
-				return new IntObjectImmutablePair<>(i, item);
-			}
-		}
-		return null;
+		return PlayerInventoryUtil.findWirelessTerminal(playerInv.player, RandomUtils::isWirelessCraftingTerminal);
+	}
+
+	public static boolean isWirelessCraftingTerminal(@Nullable ItemStack is) {
+		return is != null && is.getItem() instanceof IWirelessCraftingTerminalItem;
 	}
 
 	public static ItemStack getMagnet(InventoryPlayer playerInv) {

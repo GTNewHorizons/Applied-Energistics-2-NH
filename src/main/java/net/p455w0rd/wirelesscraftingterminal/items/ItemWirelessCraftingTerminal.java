@@ -14,14 +14,19 @@ import appeng.api.config.SortDir;
 import appeng.api.config.SortOrder;
 import appeng.api.config.ViewItems;
 import appeng.api.util.IConfigManager;
+import appeng.core.AppEng;
 import appeng.items.tools.powered.powersink.AERootPoweredItem;
 import appeng.util.ConfigManager;
 import appeng.util.IConfigManagerHost;
 import appeng.util.Platform;
+import baubles.api.BaubleType;
+import baubles.api.IBauble;
+import baubles.api.expanded.IBaubleExpanded;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.Item;
@@ -38,7 +43,12 @@ import net.p455w0rd.wirelesscraftingterminal.handlers.LocaleHandler;
 import net.p455w0rd.wirelesscraftingterminal.integration.EnderIO;
 import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
 
-public class ItemWirelessCraftingTerminal extends AERootPoweredItem implements IWirelessCraftingTerminalItem {
+@cpw.mods.fml.common.Optional.InterfaceList({
+		@cpw.mods.fml.common.Optional.Interface(iface = "baubles.api.IBauble", modid = "Baubles"),
+		@cpw.mods.fml.common.Optional.Interface(iface = "baubles.api.expanded.IBaubleExpanded", modid = "Baubles|Expanded")
+})
+public class ItemWirelessCraftingTerminal extends AERootPoweredItem
+		implements IWirelessCraftingTerminalItem, IBauble, IBaubleExpanded {
 
 	public static final String LINK_KEY_STRING = "key";
 	public static double GLOBAL_POWER_MULTIPLIER = PowerMultiplier.CONFIG.multiplier;
@@ -433,6 +443,42 @@ public class ItemWirelessCraftingTerminal extends AERootPoweredItem implements I
 	@Override
 	public int getMaxEnergyStored(ItemStack container) {
 		return (int) PowerUnits.AE.convertTo(PowerUnits.RF, getAEMaxPower(container));
+	}
+
+	@Override
+	@cpw.mods.fml.common.Optional.Method(modid = "Baubles|Expanded")
+	public String[] getBaubleTypes(final ItemStack itemStack) {
+		return new String[] { AppEng.BAUBLESLOT };
+	}
+
+	@Override
+	@cpw.mods.fml.common.Optional.Method(modid = "Baubles")
+	public BaubleType getBaubleType(final ItemStack itemStack) {
+		return BaubleType.RING;
+	}
+
+	@Override
+	@cpw.mods.fml.common.Optional.Method(modid = "Baubles")
+	public void onWornTick(final ItemStack itemStack, final EntityLivingBase player) {}
+
+	@Override
+	@cpw.mods.fml.common.Optional.Method(modid = "Baubles")
+	public void onEquipped(final ItemStack itemStack, final EntityLivingBase player) {}
+
+	@Override
+	@cpw.mods.fml.common.Optional.Method(modid = "Baubles")
+	public void onUnequipped(final ItemStack itemStack, final EntityLivingBase player) {}
+
+	@Override
+	@cpw.mods.fml.common.Optional.Method(modid = "Baubles")
+	public boolean canEquip(final ItemStack itemStack, final EntityLivingBase player) {
+		return true;
+	}
+
+	@Override
+	@cpw.mods.fml.common.Optional.Method(modid = "Baubles")
+	public boolean canUnequip(final ItemStack itemStack, final EntityLivingBase player) {
+		return true;
 	}
 
 }
