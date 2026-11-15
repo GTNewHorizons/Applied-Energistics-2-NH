@@ -62,5 +62,23 @@
          "appliedenergistics2",
          "Thaumcraft"
         ]
+    },
+    {
+        "modid":"ae2wct",
+        "name":"AE2 Wireless Crafting Terminal",
+        "description":"Adds a wireless version of the AE2 Crafting Terminal",
+        "version":"${modVersion}",
+        "mcversion":"${minecraftVersion}",
+        "url":"https://github.com/GTNewHorizons/Applied-Energistics-2-NH",
+        "updateUrl":"",
+        "authorList":[
+         "TheRealp455w0rd"
+        ],
+        "credits":"TheRealp455w0rd",
+        "logoFile":"",
+        "screenshots":[],
+        "dependencies":[
+         "appliedenergistics2"
+        ]
     }
 ]
