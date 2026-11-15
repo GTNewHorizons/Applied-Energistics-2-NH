@@ -8,20 +8,12 @@ import java.util.Map;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderException;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketConfigSync;
-import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketCraftRequest;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketEmptyTrash;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketInventoryAction;
-import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketMEInventoryUpdate;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketMagnetFilter;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketNEIRecipe;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketOpenGui;
-import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketPartialItem;
-import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketSetJobBytes;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketSetMagnet;
-import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketSwapSlots;
-import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketSwitchGuis;
-import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketUpdateCPUInfo;
-import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketValueConfig;
 
 public class WCTPacketHandlerBase {
 	private static final Map<Class<? extends WCTPacket>, PacketTypes> REVERSE_LOOKUP = new HashMap<Class<? extends WCTPacket>, WCTPacketHandlerBase.PacketTypes>();
@@ -29,19 +21,7 @@ public class WCTPacketHandlerBase {
 	public enum PacketTypes {
 		PACKET_INVENTORY_ACTION(PacketInventoryAction.class),
 
-		PACKET_ME_INVENTORY_UPDATE(PacketMEInventoryUpdate.class),
-
-		PACKET_VALUE_CONFIG(PacketValueConfig.class),
-
-		PACKET_SWITCH_GUIS(PacketSwitchGuis.class),
-
-		PACKET_SWAP_SLOTS(PacketSwapSlots.class),
-
 		PACKET_RECIPE_NEI(PacketNEIRecipe.class),
-
-		PACKET_PARTIAL_ITEM(PacketPartialItem.class),
-
-		PACKET_CRAFTING_REQUEST(PacketCraftRequest.class),
 
 		PACKET_MAGNETFILTER_MODE(PacketMagnetFilter.class),
 
@@ -50,12 +30,8 @@ public class WCTPacketHandlerBase {
 		PACKET_SWITCHMAGNETMODE(PacketSetMagnet.class),
 		
 		PACKET_EMPTY_TRASH(PacketEmptyTrash.class),
-		
-		PACKET_SYNC_CONFIGS(PacketConfigSync.class),
-		
-		PACKET_SET_JOB(PacketSetJobBytes.class),
-		
-		PACKET_UPDATECPUINFO(PacketUpdateCPUInfo.class);
+
+		PACKET_SYNC_CONFIGS(PacketConfigSync.class);
 
 		private final Class<? extends WCTPacket> packetClass;
 		private final Constructor<? extends WCTPacket> packetConstructor;

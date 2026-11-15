@@ -22,8 +22,5 @@ public class Reference {
 	// Gui IDs
 	private static int ae2wctGuiIndex = 0;
 	public static final int GUI_WCT = ++ae2wctGuiIndex;
-	public static final int GUI_CRAFTING_STATUS = ++ae2wctGuiIndex;
-	public static final int GUI_CRAFT_AMOUNT = ++ae2wctGuiIndex;
-	public static final int GUI_CRAFT_CONFIRM = ++ae2wctGuiIndex;
 	public static final int GUI_MAGNET = ++ae2wctGuiIndex;
 }

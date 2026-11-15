@@ -4,7 +4,7 @@ import java.lang.reflect.Field;
 
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.ModAPIManager;
-import net.p455w0rd.wirelesscraftingterminal.api.exceptions.ModNotInstalled;
+import appeng.api.exceptions.ModNotInstalled;
 import net.p455w0rd.wirelesscraftingterminal.common.utils.WCTLog;
 
 
