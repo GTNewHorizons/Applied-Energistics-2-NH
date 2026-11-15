@@ -19,9 +19,7 @@ import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.stats.Achievement;
 import net.minecraft.world.World;
@@ -29,7 +27,6 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.entity.living.LivingDropsEvent;
 import net.minecraftforge.event.entity.player.EntityItemPickupEvent;
-import net.p455w0rd.wirelesscraftingterminal.api.IWirelessCraftingTerminalItem;
 import net.p455w0rd.wirelesscraftingterminal.api.networking.security.WCTPlayerSource;
 import net.p455w0rd.wirelesscraftingterminal.common.utils.RandomUtils;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.WCTPacket;
@@ -71,47 +68,15 @@ public class CommonProxy {
 
 	@SubscribeEvent
 	public void tickEvent(TickEvent.PlayerTickEvent e) {
-		ItemStack wirelessTerm = null;
-		EntityPlayer player = e.player;
-		IInventory playerInv;
-		if (player instanceof EntityPlayerMP) {
-			playerInv = player.inventory.player.inventory;
-		}
-		else {
-			playerInv = player.inventory;
-		}
-		int invSize = playerInv.getSizeInventory();
-		if (invSize <= 0) {
+		final ItemStack wirelessTerm = RandomUtils.getWirelessTerm(e.player.inventory);
+		if (wirelessTerm == null || !wirelessTerm.hasTagCompound()) {
 			return;
 		}
-		for (int i = 0; i < invSize; ++i) {
-			ItemStack item = playerInv.getStackInSlot(i);
-			if (item == null) {
-				continue;
-			}
-			if (item.getItem() instanceof IWirelessCraftingTerminalItem) {
-				wirelessTerm = item;
-			}
-			if (wirelessTerm == null) {
-				continue;
-			}
-			if (wirelessTerm.hasTagCompound()) {
-				NBTTagCompound nbtTC = wirelessTerm.getTagCompound();
-				NBTTagList tagList = nbtTC.getTagList("MagnetSlot", 10);
-				if (tagList != null) {
-					NBTTagCompound magCompound = tagList.getCompoundTagAt(0);
-					if (magCompound != null) {
-						ItemStack magnetItem = ItemStack.loadItemStackFromNBT(magCompound);
-						if (magnetItem != null) {
-							((ItemMagnet) magnetItem.getItem()).setItemStack(magnetItem);
-							if (magnetItem.getItem() instanceof ItemMagnet) {
-								((ItemMagnet) magnetItem.getItem()).doMagnet(magnetItem, e.player.worldObj, e.player, wirelessTerm);
-								continue;
-							}
-						}
-					}
-				}
-			}
+		final NBTTagList tagList = wirelessTerm.getTagCompound().getTagList("MagnetSlot", 10);
+		final ItemStack magnetItem = ItemStack.loadItemStackFromNBT(tagList.getCompoundTagAt(0));
+		if (magnetItem != null && magnetItem.getItem() instanceof ItemMagnet magnet) {
+			magnet.setItemStack(magnetItem);
+			magnet.doMagnet(magnetItem, e.player.worldObj, e.player, wirelessTerm);
 		}
 	}
 
