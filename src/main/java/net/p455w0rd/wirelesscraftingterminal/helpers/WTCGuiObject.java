@@ -10,8 +10,6 @@ import net.p455w0rd.wirelesscraftingterminal.common.inventory.WCTInventoryCrafti
 import org.jspecify.annotations.Nullable;
 
 import appeng.api.features.IWirelessTermHandler;
-import appeng.api.networking.IGrid;
-import appeng.api.networking.IGridNode;
 import appeng.items.contents.WirelessCraftingTerminalGuiObject;
 
 public class WTCGuiObject extends WirelessCraftingTerminalGuiObject implements WCTIActionHost {
@@ -49,20 +47,6 @@ public class WTCGuiObject extends WirelessCraftingTerminalGuiObject implements W
     public @Nullable IInventory getInventoryByName(final String name) {
         if (name.equals("crafting")) {
             return this.getCraftingGrid();
-        }
-        return null;
-    }
-
-    @Override
-    public @Nullable IGridNode getActionableNode(final boolean ignoreRange) {
-        final IGridNode node = this.getActionableNode();
-        if (node != null) {
-            return node;
-        }
-
-        final IGrid grid = this.getGrid();
-        if (ignoreRange && grid != null) {
-            return grid.getPivot();
         }
         return null;
     }

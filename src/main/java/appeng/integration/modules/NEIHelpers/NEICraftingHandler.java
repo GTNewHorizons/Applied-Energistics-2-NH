@@ -23,13 +23,12 @@ import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 
-import appeng.client.gui.implementations.GuiCraftingTerm;
-import appeng.client.gui.implementations.GuiPatternTerm;
 import appeng.container.slot.SlotCraftingMatrix;
 import appeng.container.slot.SlotFakeCraftingMatrix;
 import appeng.core.AELog;
 import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketNEIRecipe;
+import appeng.helpers.IContainerCraftingPacket;
 import appeng.util.Platform;
 import codechicken.nei.PositionedStack;
 import codechicken.nei.api.IOverlayHandler;
@@ -44,7 +43,7 @@ public class NEICraftingHandler implements IOverlayHandler {
             final boolean shift) {
         try {
             final List<PositionedStack> ingredients = recipe.getIngredientStacks(recipeIndex);
-            if (gui instanceof GuiCraftingTerm || gui instanceof GuiPatternTerm) {
+            if (gui.inventorySlots instanceof IContainerCraftingPacket) {
                 PacketNEIRecipe packet = new PacketNEIRecipe(packIngredients(gui, ingredients, false));
                 if (packet.size() >= 32 * 1024) {
                     AELog.warn(
