@@ -57,20 +57,10 @@ public class GuiPatternTargetPanel {
     private static final int CONFLICT_ROWS = 3;
     private static final int LINE_HEIGHT = 10;
     private static final int BUTTON_HEIGHT = 11;
+    private static final int BUTTON_INSET = 2;
 
     private static final String FRAME_TEXTURE = "guis/craftAmt.png";
     private static final String LIST_TEXTURE = "guis/cpu_selector.png";
-
-    private static final int STRIPE_MATCH = 0xFF2E9E2E;
-    private static final int STRIPE_UNKNOWN = 0xFFC8A000;
-    private static final int STRIPE_NOT_READY = 0xFF8B8B8B;
-    private static final int STRIPE_CONFLICT = 0xFFD08A1E;
-    private static final int STRIPE_CONFLICT_OTHER = 0xFFB02020;
-    private static final int TEXT_MATCH = 0x2E7D32;
-    private static final int TEXT_UNKNOWN = 0x8A6D00;
-    private static final int TEXT_DIM = 0x606060;
-    private static final int TEXT_HAS_SAME = 0xB07000;
-    private static final int TEXT_CONFLICT = 0x9A1010;
 
     private final AEBaseGui gui;
     private final Actions actions;
@@ -455,7 +445,7 @@ public class GuiPatternTargetPanel {
         int roomColor = statusTextColor(entry.match);
         if (entry.hasSamePattern) {
             room = GuiText.PatternTargetsHasSame.getLocal();
-            roomColor = TEXT_HAS_SAME;
+            roomColor = ColorUtils.patternTargetTextHasSame.getColor();
         } else if (entry.cardSource != PatternTargetList.Entry.CARD_NONE) {
             room = GuiText.PatternTargetsNeedsCard.getLocal();
         } else {
@@ -485,7 +475,7 @@ public class GuiPatternTargetPanel {
                     this.x + PADDING,
                     lineY,
                     this.width - 2 * PADDING,
-                    TEXT_CONFLICT);
+                    ColorUtils.patternTargetTextConflict.getColor());
             lineY += LINE_HEIGHT;
         }
 
@@ -504,15 +494,16 @@ public class GuiPatternTargetPanel {
                     cardY + 1,
                     cardX + 3,
                     cardY + CARD_HEIGHT - 1,
-                    conflict.sameRecipe ? STRIPE_CONFLICT : STRIPE_CONFLICT_OTHER);
+                    conflict.sameRecipe ? ColorUtils.patternTargetStripeConflict.getColor()
+                            : ColorUtils.patternTargetStripeConflictOther.getColor());
             if (conflict.icon != null) {
                 this.gui.drawItem(cardX + 5, cardY + 3, conflict.icon);
             }
 
             // The name gets the whole first line; the button shares the second line with the recipe note.
             final int textX = cardX + 24;
-            final int buttonX = cardX + cardWidth - buttonWidth - 3;
-            final int buttonY = cardY + CARD_HEIGHT - BUTTON_HEIGHT - 1;
+            final int buttonX = cardX + cardWidth - buttonWidth - BUTTON_INSET;
+            final int buttonY = cardY + CARD_HEIGHT - BUTTON_HEIGHT - BUTTON_INSET;
             this.drawText(
                     font,
                     displayName(conflict),
@@ -524,7 +515,13 @@ public class GuiPatternTargetPanel {
                 // A narrow panel leaves the recipe note to the stripe colour and the tooltip.
                 final String recipe = conflict.sameRecipe ? GuiText.PatternTargetsSameRecipe.getLocal()
                         : GuiText.PatternTargetsOtherRecipe.getLocal();
-                this.drawText(font, recipe, textX, cardY + 13, buttonX - 2 - textX, TEXT_DIM);
+                this.drawText(
+                        font,
+                        recipe,
+                        textX,
+                        cardY + 13,
+                        buttonX - 2 - textX,
+                        ColorUtils.patternTargetTextDim.getColor());
             }
 
             final boolean buttonHover = this.isOver(mouseX, mouseY, buttonX, buttonY, buttonWidth, BUTTON_HEIGHT);
@@ -544,7 +541,7 @@ public class GuiPatternTargetPanel {
                     cardX,
                     this.conflictCardY(CONFLICT_ROWS) + 1,
                     cardWidth,
-                    TEXT_DIM);
+                    ColorUtils.patternTargetTextDim.getColor());
         }
     }
 
@@ -666,8 +663,8 @@ public class GuiPatternTargetPanel {
 
     private boolean isOverExtractButton(int conflict, int mouseX, int mouseY) {
         final int buttonWidth = this.extractButtonWidth(this.gui.getFontRenderer());
-        final int buttonX = this.x + this.width - PADDING - buttonWidth - 3;
-        final int buttonY = this.conflictCardY(conflict) + CARD_HEIGHT - BUTTON_HEIGHT - 1;
+        final int buttonX = this.x + this.width - PADDING - buttonWidth - BUTTON_INSET;
+        final int buttonY = this.conflictCardY(conflict) + CARD_HEIGHT - BUTTON_HEIGHT - BUTTON_INSET;
         return this.isOver(mouseX, mouseY, buttonX, buttonY, buttonWidth, BUTTON_HEIGHT);
     }
 
@@ -702,17 +699,17 @@ public class GuiPatternTargetPanel {
 
     private static int stripeColor(PatternMatch match) {
         return switch (match) {
-            case MATCH -> STRIPE_MATCH;
-            case UNKNOWN -> STRIPE_UNKNOWN;
-            case NOT_READY, NO_MATCH -> STRIPE_NOT_READY;
+            case MATCH -> ColorUtils.patternTargetStripeMatch.getColor();
+            case UNKNOWN -> ColorUtils.patternTargetStripeUnknown.getColor();
+            case NOT_READY, NO_MATCH -> ColorUtils.patternTargetStripeNotReady.getColor();
         };
     }
 
     private static int statusTextColor(PatternMatch match) {
         return switch (match) {
-            case MATCH -> TEXT_MATCH;
-            case UNKNOWN -> TEXT_UNKNOWN;
-            case NOT_READY, NO_MATCH -> TEXT_DIM;
+            case MATCH -> ColorUtils.patternTargetTextMatch.getColor();
+            case UNKNOWN -> ColorUtils.patternTargetTextUnknown.getColor();
+            case NOT_READY, NO_MATCH -> ColorUtils.patternTargetTextDim.getColor();
         };
     }
 
