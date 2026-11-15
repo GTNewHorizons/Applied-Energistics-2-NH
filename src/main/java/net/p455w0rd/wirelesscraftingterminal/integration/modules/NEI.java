@@ -12,7 +12,6 @@ import codechicken.nei.api.API;
 import codechicken.nei.api.IOverlayHandler;
 import codechicken.nei.api.IStackPositioner;
 import codechicken.nei.guihook.GuiContainerManager;
-import codechicken.nei.guihook.IContainerTooltipHandler;
 import codechicken.nei.recipe.IRecipeHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
@@ -33,7 +32,7 @@ import net.p455w0rd.wirelesscraftingterminal.integration.IIntegrationModule;
 import net.p455w0rd.wirelesscraftingterminal.integration.IntegrationHelper;
 import net.p455w0rd.wirelesscraftingterminal.integration.abstraction.INEI;
 
-public class NEI implements INEI, IContainerTooltipHandler, IIntegrationModule {
+public class NEI implements INEI, IIntegrationModule {
 	@Reflected
 	public static NEI instance;
 
@@ -52,9 +51,6 @@ public class NEI implements INEI, IContainerTooltipHandler, IIntegrationModule {
 
 	@Override
 	public void init() throws Throwable {
-		// large stack tooltips
-		GuiContainerManager.addTooltipHandler( this );
-
 		// wireless crafting terminal...
 		
 		API.registerGuiOverlay(net.p455w0rd.wirelesscraftingterminal.client.gui.GuiWirelessCraftingTerminal.class, "crafting", new WCTSlotPositioner());
@@ -116,28 +112,6 @@ public class NEI implements INEI, IContainerTooltipHandler, IIntegrationModule {
 		} catch (final Throwable t) {
 			throw new IllegalStateException("Invalid version of NEI, please update", t);
 		}
-	}
-
-	@Override
-	public List<String> handleTooltip(final GuiContainer arg0, final int arg1, final int arg2,
-			final List<String> current) {
-		return current;
-	}
-
-	@Override
-	public List<String> handleItemDisplayName(final GuiContainer arg0, final ItemStack arg1,
-			final List<String> current) {
-		return current;
-	}
-
-	@Override
-	public List<String> handleItemTooltip(final GuiContainer guiScreen, final ItemStack stack, final int mouseX,
-			final int mouseY, final List<String> currentToolTip) {
-		if (guiScreen instanceof GuiWirelessCraftingTerminal) {
-			return ((GuiWirelessCraftingTerminal) guiScreen).handleItemTooltip(stack, mouseX, mouseY, currentToolTip);
-		}
-
-		return currentToolTip;
 	}
 
 	static final int NEI_REGULAR_SLOT_OFFSET_X = 25;

@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import appeng.api.AEApi;
 import appeng.api.config.Actionable;
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.SecurityPermissions;
@@ -36,14 +35,14 @@ import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.oredict.OreDictionary;
-import net.p455w0rd.wirelesscraftingterminal.api.IWirelessCraftingTermHandler;
 import net.p455w0rd.wirelesscraftingterminal.common.utils.RandomUtils;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.WCTPacket;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.network.INetworkInfo;
-import appeng.helpers.WirelessTerminalGuiObject;
+import net.p455w0rd.wirelesscraftingterminal.common.container.ContainerWirelessCraftingTerminal;
+import net.p455w0rd.wirelesscraftingterminal.helpers.WTCGuiObject;
+import it.unimi.dsi.fastutil.ints.IntObjectPair;
 
 public class PacketNEIRecipe extends WCTPacket {
 
@@ -83,17 +82,6 @@ public class PacketNEIRecipe extends WCTPacket {
 		configureWrite(data);
 	}
 
-	private WirelessTerminalGuiObject getGuiObject(final ItemStack it, final EntityPlayer player, final World w, final int x, final int y, final int z) {
-		if (it != null) {
-			final IWirelessCraftingTermHandler wh = (IWirelessCraftingTermHandler) AEApi.instance().registries().wireless().getWirelessTerminalHandler(it);
-			if (wh != null) {
-				return new WirelessTerminalGuiObject(wh, it, player, w, x, y, z);
-			}
-		}
-
-		return null;
-	}
-
 	@SuppressWarnings({
 			"rawtypes", "unchecked"
 	})
@@ -107,7 +95,21 @@ public class PacketNEIRecipe extends WCTPacket {
 			IGridNode node = cct.getNetworkNode();
 
 			if (node == null) {
-				WirelessTerminalGuiObject obj = getGuiObject(RandomUtils.getWirelessTerm(player.inventory), player, player.worldObj, (int) player.posX, (int) player.posY, (int) player.posZ);
+				final IntObjectPair<ItemStack> termItem = RandomUtils.getWirelessTermWithSlot(player.inventory);
+				if (termItem == null) {
+					return;
+				}
+				final WTCGuiObject obj = ContainerWirelessCraftingTerminal.getGuiObject(
+						termItem.second(),
+						player,
+						player.worldObj,
+						(int) player.posX,
+						(int) player.posY,
+						(int) player.posZ,
+						termItem.firstInt());
+				if (obj == null) {
+					return;
+				}
 				node = obj.getActionableNode(true);
 			}
 			if (node != null) {

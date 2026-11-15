@@ -9,7 +9,6 @@ import org.lwjgl.input.Keyboard;
 
 import com.google.common.base.Splitter;
 
-import appeng.api.AEApi;
 import appeng.api.config.SecurityPermissions;
 import appeng.api.implementations.guiobjects.IPortableCell;
 import appeng.api.networking.IGrid;
@@ -35,7 +34,6 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.world.World;
 import net.minecraftforge.oredict.OreDictionary;
-import net.p455w0rd.wirelesscraftingterminal.api.IWirelessCraftingTermHandler;
 import net.p455w0rd.wirelesscraftingterminal.api.IWirelessCraftingTerminalItem;
 import net.p455w0rd.wirelesscraftingterminal.common.WCTGuiHandler;
 import net.p455w0rd.wirelesscraftingterminal.common.utils.RandomUtils;
@@ -43,7 +41,7 @@ import net.p455w0rd.wirelesscraftingterminal.core.sync.network.NetworkHandler;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketMagnetFilter;
 import net.p455w0rd.wirelesscraftingterminal.handlers.KeybindHandler;
 import net.p455w0rd.wirelesscraftingterminal.handlers.LocaleHandler;
-import appeng.helpers.WirelessTerminalGuiObject;
+import net.p455w0rd.wirelesscraftingterminal.helpers.WTCGuiObject;
 import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
 
 /**
@@ -56,7 +54,7 @@ import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
 public class ItemMagnet extends Item {
 
 	private int distanceFromPlayer;
-	public WirelessTerminalGuiObject obj;
+	public WTCGuiObject obj;
 	public IPortableCell civ;
 	public IEnergySource powerSrc;
 	public IMEMonitor<IAEItemStack> monitor;
@@ -358,7 +356,7 @@ public class ItemMagnet extends Item {
 		if (player.capabilities.isCreativeMode) {
 			return true;
 		}
-		final IGrid g = obj.getTargetGrid();
+		final IGrid g = obj.getGrid();
 		if (g != null) {
 			if (requirePower) {
 				final IEnergyGrid eg = g.getCache(IEnergyGrid.class);
@@ -438,17 +436,6 @@ public class ItemMagnet extends Item {
 			}
 		}
 		return true;
-	}
-
-	public WirelessTerminalGuiObject getGuiObject(final ItemStack it, final EntityPlayer player, final World w, final int x, final int y, final int z) {
-		if (it != null) {
-			final IWirelessCraftingTermHandler wh = (IWirelessCraftingTermHandler) AEApi.instance().registries().wireless().getWirelessTerminalHandler(it);
-			if (wh != null) {
-				return new WirelessTerminalGuiObject(wh, it, player, w, x, y, z);
-			}
-		}
-
-		return null;
 	}
 
 	public static <T extends Entity> List<T> getEntitiesInRange(Class<T> entityType, World world, int x, int y, int z, int distance) {

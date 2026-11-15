@@ -1,6 +1,10 @@
 package net.p455w0rd.wirelesscraftingterminal.common.utils;
 
+import org.jspecify.annotations.Nullable;
+
 import cpw.mods.fml.relauncher.Side;
+import it.unimi.dsi.fastutil.ints.IntObjectImmutablePair;
+import it.unimi.dsi.fastutil.ints.IntObjectPair;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
@@ -39,26 +43,30 @@ public class RandomUtils {
 		}
 	}
 
-	public static ItemStack getWirelessTerm(InventoryPlayer playerInv) {
-		if (playerInv.player != null && playerInv.player.getHeldItem() != null && playerInv.player.getHeldItem().getItem() instanceof IWirelessCraftingTerminalItem) {
-			return playerInv.player.getHeldItem();
+	public static @Nullable ItemStack getWirelessTerm(InventoryPlayer playerInv) {
+		final IntObjectPair<ItemStack> wirelessTerm = getWirelessTermWithSlot(playerInv);
+		return wirelessTerm == null ? null : wirelessTerm.second();
+	}
+
+	/**
+	 * Finds the wireless crafting terminal of the player. A held terminal takes precedence over the other inventory
+	 * slots.
+	 *
+	 * @return the inventory slot index and the terminal, or null if the player has no terminal
+	 */
+	public static @Nullable IntObjectPair<ItemStack> getWirelessTermWithSlot(InventoryPlayer playerInv) {
+		final ItemStack heldItem = playerInv.player != null ? playerInv.player.getHeldItem() : null;
+		if (heldItem != null && heldItem.getItem() instanceof IWirelessCraftingTerminalItem) {
+			return new IntObjectImmutablePair<>(playerInv.currentItem, heldItem);
 		}
-		ItemStack wirelessTerm = null;
-		int invSize = playerInv.getSizeInventory();
-		if (invSize <= 0) {
-			return null;
-		}
+		final int invSize = playerInv.getSizeInventory();
 		for (int i = 0; i < invSize; ++i) {
-			ItemStack item = playerInv.getStackInSlot(i);
-			if (item == null) {
-				continue;
-			}
-			if (item.getItem() instanceof IWirelessCraftingTerminalItem) {
-				wirelessTerm = item;
-				break;
+			final ItemStack item = playerInv.getStackInSlot(i);
+			if (item != null && item.getItem() instanceof IWirelessCraftingTerminalItem) {
+				return new IntObjectImmutablePair<>(i, item);
 			}
 		}
-		return wirelessTerm;
+		return null;
 	}
 
 	public static ItemStack getMagnet(InventoryPlayer playerInv) {

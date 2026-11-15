@@ -18,7 +18,6 @@ import appeng.items.tools.powered.powersink.AERootPoweredItem;
 import appeng.util.ConfigManager;
 import appeng.util.IConfigManagerHost;
 import appeng.util.Platform;
-import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.creativetab.CreativeTabs;
@@ -32,7 +31,7 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import net.p455w0rd.wirelesscraftingterminal.api.IWirelessCraftingTerminalItem;
-import net.p455w0rd.wirelesscraftingterminal.api.WCTApi;
+import net.p455w0rd.wirelesscraftingterminal.common.WCTGuiHandler;
 import net.p455w0rd.wirelesscraftingterminal.common.utils.RandomUtils;
 import net.p455w0rd.wirelesscraftingterminal.handlers.LocaleHandler;
 import net.p455w0rd.wirelesscraftingterminal.integration.EnderIO;
@@ -123,9 +122,8 @@ public class ItemWirelessCraftingTerminal extends AERootPoweredItem implements I
 
 	@Override
 	public ItemStack onItemRightClick(final ItemStack itemStack, final World world, final EntityPlayer player) {
-		if (FMLCommonHandler.instance().getSide() == Side.CLIENT) {
-			// Open the gui
-			WCTApi.instance().interact().openWirelessCraftingTerminalGui(player);
+		if (!world.isRemote) {
+			WCTGuiHandler.launchGui(Reference.GUI_WCT, player, world, (int) player.posX, (int) player.posY, (int) player.posZ);
 		}
 		return itemStack;
 	}
@@ -163,6 +161,11 @@ public class ItemWirelessCraftingTerminal extends AERootPoweredItem implements I
 			return true;
 		}
 		return false;
+	}
+
+	@Override
+	public boolean hasInfinityRange(final ItemStack is) {
+		return this.checkForBooster(is);
 	}
 
 	@Override
