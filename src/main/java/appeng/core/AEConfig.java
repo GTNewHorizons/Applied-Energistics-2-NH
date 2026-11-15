@@ -88,6 +88,7 @@ public final class AEConfig extends Configuration implements IConfigurableObject
     public boolean enableEffects = true;
     public boolean useColoredCraftingStatus;
     public boolean previewBlocks;
+    public boolean preventConflictingControllerPlacement = false;
     public int previewLineWidth;
     public boolean preserveSearchBar = true;
     public boolean showOnlyInterfacesWithFreeSlotsInInterfaceTerminal = false;
@@ -316,6 +317,13 @@ public final class AEConfig extends Configuration implements IConfigurableObject
         this.itemFlowTrackingWindowMinutes = this
                 .get("Features.ItemFlowTracking", "itemFlowTrackingWindowMinutes", this.itemFlowTrackingWindowMinutes)
                 .getInt(this.itemFlowTrackingWindowMinutes);
+
+        this.preventConflictingControllerPlacement = this.get(
+                "general",
+                "preventConflictingControllerPlacement",
+                false,
+                "If true, the server refuses to place an ME Controller that would cause a controller conflict in an existing network.")
+                .getBoolean(false);
 
         this.clientSync();
 

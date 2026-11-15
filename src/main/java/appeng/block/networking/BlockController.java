@@ -49,6 +49,11 @@ public class BlockController extends AEBaseTileBlock {
     }
 
     @Override
+    public Class<? extends appeng.block.AEBaseItemBlock> getItemBlockClass() {
+        return ItemBlockController.class;
+    }
+
+    @Override
     public void onNeighborBlockChange(final World w, final int x, final int y, final int z, final Block neighborBlock) {
         final TileController tc = this.getTileEntity(w, x, y, z);
         if (tc != null) {

@@ -24,6 +24,8 @@ import appeng.core.sync.packets.PacketCompassResponse;
 import appeng.core.sync.packets.PacketCompressedNBT;
 import appeng.core.sync.packets.PacketConfigButton;
 import appeng.core.sync.packets.PacketContainerSync;
+import appeng.core.sync.packets.PacketControllerPlacementQuery;
+import appeng.core.sync.packets.PacketControllerPlacementResult;
 import appeng.core.sync.packets.PacketCraftRequest;
 import appeng.core.sync.packets.PacketCraftingCPUTableUpdate;
 import appeng.core.sync.packets.PacketCraftingCompleteNotification;
@@ -164,7 +166,9 @@ public class AppEngPacketHandlerBase {
         PACKET_SUPER_WIRELESS_TOOL_COMMAND(PacketWirelessToolCommand.class),
         PACKET_CRAFTING_DIAGNOSTIC_RESET(PacketCraftingDiagnosticReset.class),
         PACKET_HIGHLIGHT_ITEM_FLOW(PacketHighlightItemFlow.class),
-        PACKET_FLOW_RATES(PacketFlowRates.class);
+        PACKET_FLOW_RATES(PacketFlowRates.class),
+        PACKET_CONTROLLER_PLACEMENT_QUERY(PacketControllerPlacementQuery.class),
+        PACKET_CONTROLLER_PLACEMENT_RESULT(PacketControllerPlacementResult.class);
 
         private final Class<? extends AppEngPacket> packetClass;
         private final Constructor<? extends AppEngPacket> packetConstructor;
