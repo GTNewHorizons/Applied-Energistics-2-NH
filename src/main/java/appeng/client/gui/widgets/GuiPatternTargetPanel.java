@@ -258,6 +258,10 @@ public class GuiPatternTargetPanel {
             lines.add(displayName(entry));
             lines.add(statusLabel(entry.match));
             lines.add(GuiText.GuiDimensionalCoord.getLocal(entry.x, entry.y, entry.z, entry.dim));
+            if (entry.match == PatternMatch.NOT_READY) {
+                lines.add(GuiText.HoldShiftClick_HIGHLIGHT_INTERFACE.getLocal());
+                return lines;
+            }
             if (entry.cardSource == PatternTargetList.Entry.CARD_FROM_INVENTORY) {
                 lines.add(GuiText.PatternTargetsCardFromInventory.getLocal());
             } else if (entry.cardSource == PatternTargetList.Entry.CARD_FROM_NETWORK) {
@@ -310,7 +314,7 @@ public class GuiPatternTargetPanel {
         if (entry != null) {
             if (GuiScreen.isShiftKeyDown()) {
                 this.actions.highlight(entry.x, entry.y, entry.z, entry.dim, displayName(entry));
-            } else {
+            } else if (entry.match != PatternMatch.NOT_READY) {
                 this.actions.sendToTarget(entry.index);
             }
             return true;

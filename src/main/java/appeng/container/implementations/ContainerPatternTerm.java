@@ -617,6 +617,7 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
                 || node.getGrid() == null
                 || index < 0
                 || index >= this.lastTargets.size()
+                || this.lastTargets.get(index).match == PatternMatch.NOT_READY
                 || !ItemStack.areItemStacksEqual(pattern, this.lastTargetPattern)
                 || !this.hasAccess(SecurityPermissions.BUILD, true)) {
             return;
