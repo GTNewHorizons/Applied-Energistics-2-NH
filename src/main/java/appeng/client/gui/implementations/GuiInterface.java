@@ -50,12 +50,14 @@ import appeng.core.sync.packets.PacketConfigButton;
 import appeng.core.sync.packets.PacketInventoryAction;
 import appeng.core.sync.packets.PacketSwitchGuis;
 import appeng.core.sync.packets.PacketValueConfig;
+import appeng.helpers.ICustomNameObject;
 import appeng.helpers.IInterfaceHost;
 import appeng.helpers.InventoryAction;
 
 public class GuiInterface extends GuiUpgradeable {
 
     private GuiTabButton priority;
+    private GuiSimpleImgButton rename;
     private GuiImgButton BlockMode;
     private GuiImgButton SmartBlockMode;
     private GuiImgButton fuzzyMode;
@@ -68,7 +70,11 @@ public class GuiInterface extends GuiUpgradeable {
     private GuiImgButton lockCraftingMode;
 
     public GuiInterface(final InventoryPlayer inventoryPlayer, final IInterfaceHost te) {
-        super(new ContainerInterface(inventoryPlayer, te));
+        this(new ContainerInterface(inventoryPlayer, te));
+    }
+
+    protected GuiInterface(final ContainerInterface container) {
+        super(container);
         this.ySize = 211;
     }
 
@@ -90,6 +96,14 @@ public class GuiInterface extends GuiUpgradeable {
         this.buttonList.add(this.SmartBlockMode);
 
         offset += 18;
+
+        this.rename = new GuiSimpleImgButton(
+                this.guiLeft - 36,
+                this.guiTop + offset,
+                70,
+                ButtonToolTips.RenameInterfaceButton.getLocal());
+        this.rename.setVisibility(this.bc instanceof ICustomNameObject);
+        this.buttonList.add(this.rename);
 
         this.interfaceMode = new GuiToggleButton(
                 this.guiLeft - 18,
@@ -316,6 +330,10 @@ public class GuiInterface extends GuiUpgradeable {
 
         if (btn == this.priority) {
             NetworkHandler.instance.sendToServer(new PacketSwitchGuis(GuiBridge.GUI_PRIORITY));
+        }
+
+        if (btn == this.rename) {
+            NetworkHandler.instance.sendToServer(new PacketSwitchGuis(GuiBridge.GUI_RENAMER));
         }
 
         if (btn == this.interfaceMode) {

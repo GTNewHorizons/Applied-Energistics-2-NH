@@ -6,6 +6,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import appeng.container.AEBaseContainer;
+import appeng.container.ContainerOpenContext;
 import appeng.container.PrimaryGui;
 import appeng.container.interfaces.IContainerSubGui;
 import appeng.core.sync.AppEngPacket;
@@ -45,6 +46,16 @@ public class PacketRemoteRename extends AppEngPacket {
     public void serverPacketData(final INetworkInfo manager, final AppEngPacket packet, final EntityPlayer player) {
         final Container c = player.openContainer;
         if (c instanceof AEBaseContainer bc && player.dimension == this.dim) {
+            if (bc.hasRemoteInterfaceOrigin()) {
+                final ContainerOpenContext context = bc.getOpenContext();
+                final TileEntity target = context != null ? context.getTile() : null;
+                if (target == null || target.xCoord != this.x
+                        || target.yCoord != this.y
+                        || target.zCoord != this.z
+                        || context.getSide().ordinal() != this.side
+                        || !bc.canInteractWith(player))
+                    return;
+            }
             TileEntity te = player.worldObj.getTileEntity(this.x, this.y, this.z);
 
             if (te instanceof ICustomNameObject) {
