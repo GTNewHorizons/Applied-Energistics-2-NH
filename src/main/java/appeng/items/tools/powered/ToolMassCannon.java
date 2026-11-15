@@ -47,6 +47,7 @@ import appeng.api.implementations.items.IStorageCell;
 import appeng.api.networking.security.PlayerSource;
 import appeng.api.storage.ICellInventory;
 import appeng.api.storage.IMEInventory;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IItemList;
@@ -68,7 +69,6 @@ import appeng.items.contents.CellUpgrades;
 import appeng.items.misc.ItemPaintBall;
 import appeng.items.tools.powered.powersink.AEBasePoweredItem;
 import appeng.me.storage.CellInventoryHandler;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.tile.misc.TilePaint;
 import appeng.util.IterationCounter;
 import appeng.util.Platform;
@@ -442,7 +442,7 @@ public class ToolMassCannon extends AEBasePoweredItem implements IStorageCell {
     }
 
     @Override
-    public IAEStackInventory getConfigAEInventory(ItemStack is) {
+    public KeyConfigInventory getConfigAEInventory(ItemStack is) {
         return new CellConfig(is);
     }
 

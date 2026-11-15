@@ -12,14 +12,14 @@ import net.minecraft.util.StatCollector;
 import appeng.api.AEApi;
 import appeng.api.config.FuzzyMode;
 import appeng.api.implementations.items.IStorageCell;
+import appeng.api.stacks.AEKey;
 import appeng.api.storage.ICellInventory;
 import appeng.api.storage.IMEInventoryHandler;
-import appeng.api.storage.data.IAEStack;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.core.localization.GuiText;
 import appeng.items.contents.CellConfig;
 import appeng.items.contents.CellUpgrades;
 import appeng.me.storage.CellInventoryHandler;
-import appeng.tile.inventory.IAEStackInventory;
 
 public abstract class AEBaseInfiniteCell extends AEBaseItem implements IStorageCell {
 
@@ -40,7 +40,7 @@ public abstract class AEBaseInfiniteCell extends AEBaseItem implements IStorageC
                 int usedFilters = 0;
                 ArrayList<String> filtersTexts = new ArrayList<>();
                 for (int i = 0; i < cellInventory.getConfigAEInventory().getSizeInventory(); ++i) {
-                    final IAEStack<?> s = cellInventory.getConfigAEInventory().getAEStackInSlot(i);
+                    final AEKey s = cellInventory.getConfigAEInventory().getKey(i);
                     if (s != null) {
                         usedFilters++;
                         filtersTexts.add(s.getDisplayName());
@@ -91,7 +91,7 @@ public abstract class AEBaseInfiniteCell extends AEBaseItem implements IStorageC
     }
 
     @Override
-    public IAEStackInventory getConfigAEInventory(ItemStack is) {
+    public KeyConfigInventory getConfigAEInventory(ItemStack is) {
         return new CellConfig(is);
     }
 

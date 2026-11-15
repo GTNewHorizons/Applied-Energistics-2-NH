@@ -29,8 +29,10 @@ import appeng.api.config.FuzzyMode;
 import appeng.api.config.Settings;
 import appeng.api.config.Upgrades;
 import appeng.api.implementations.tiles.ICellWorkbench;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.ICellWorkbenchItem;
 import appeng.api.storage.IMEInventory;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
@@ -40,11 +42,10 @@ import appeng.container.slot.SlotRestrictedInput;
 import appeng.container.sync.ActionHandler;
 import appeng.container.sync.SyncDirection;
 import appeng.container.sync.SyncRegistrar;
-import appeng.container.sync.handlers.AEStackInventorySyncHandler;
 import appeng.container.sync.handlers.ConfigEnumSyncHandler;
+import appeng.container.sync.handlers.GenericStackSlotsSyncHandler;
 import appeng.helpers.ICellRestriction;
 import appeng.tile.inventory.AppEngNullInventory;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.IterationCounter;
 import appeng.util.Platform;
 import appeng.util.inv.IUpgradeInventory;
@@ -58,7 +59,7 @@ public class ContainerCellWorkbench extends ContainerUpgradeable {
     private int lastUpgrades = 0;
 
     public final ConfigEnumSyncHandler<CopyMode> copyModeSync;
-    public final AEStackInventorySyncHandler configSync;
+    public final GenericStackSlotsSyncHandler<ConfigInventory> configSync;
     public final ActionHandler<Void> clearAction;
     public final ActionHandler<Void> partitionAction;
 
@@ -68,7 +69,7 @@ public class ContainerCellWorkbench extends ContainerUpgradeable {
 
         SyncRegistrar sync = this.syncRegistrar();
         this.copyModeSync = sync.configEnum("copyMode", Settings.COPY_MODE, CopyMode.class, te.getConfigManager());
-        this.configSync = sync.aeStackInventory("config", te.getAEInventoryByName(StorageName.CONFIG))
+        this.configSync = sync.genericStackSlots("config", te.getAEInventoryByName(StorageName.CONFIG))
                 .setDiffCheckInterval(2, SyncDirection.SERVER_TO_CLIENT);
 
         this.clearAction = sync.actionC2S("clear").onServerAction(this::clear);
@@ -180,9 +181,9 @@ public class ContainerCellWorkbench extends ContainerUpgradeable {
     }
 
     private void clear() {
-        final IAEStackInventory inv = this.workBench.getAEInventoryByName(StorageName.NONE);
+        final KeyConfigInventory inv = this.workBench.getConfig();
         for (int x = 0; x < inv.getSizeInventory(); x++) {
-            inv.putAEStackInSlot(x, null);
+            inv.setKey(x, null);
         }
         this.setFuzzy(FuzzyMode.IGNORE_ALL);
         this.workBench.setCellRestriction(null, new ICellRestriction.CellRestrictionData((byte) 0, 0));
@@ -200,7 +201,7 @@ public class ContainerCellWorkbench extends ContainerUpgradeable {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private void partition() {
-        final IAEStackInventory inv = this.workBench.getAEInventoryByName(StorageName.NONE);
+        final KeyConfigInventory inv = this.workBench.getConfig();
         final ItemStack is = this.getUpgradeable().getInventoryByName("cell").getStackInSlot(0);
 
         if (!(is != null && is.getItem() instanceof ICellWorkbenchItem wi)) return;
@@ -216,10 +217,9 @@ public class ContainerCellWorkbench extends ContainerUpgradeable {
         for (int x = 0; x < inv.getSizeInventory(); x++) {
             if (i.hasNext()) {
                 final IAEStack<?> g = (IAEStack<?>) i.next();
-                g.setStackSize(1);
-                inv.putAEStackInSlot(x, g);
+                inv.setKey(x, g.getKey());
             } else {
-                inv.putAEStackInSlot(x, null);
+                inv.setKey(x, null);
             }
         }
 
@@ -232,8 +232,8 @@ public class ContainerCellWorkbench extends ContainerUpgradeable {
         return this.workBench.getStackType();
     }
 
-    public IAEStackInventory getConfig() {
-        return this.workBench.getAEInventoryByName(StorageName.NONE);
+    public KeyConfigInventory getConfig() {
+        return this.workBench.getConfig();
     }
 
     public class WorkbenchUpgradeInventory implements IInventory, IUpgradeInventory {

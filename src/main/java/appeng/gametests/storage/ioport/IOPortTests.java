@@ -42,9 +42,9 @@ import appeng.api.config.Upgrades;
 import appeng.api.storage.ICellInventory;
 import appeng.api.storage.ICellInventoryHandler;
 import appeng.api.storage.IMEInventoryHandler;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.core.AppEng;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.tile.storage.TileDrive;
 import appeng.tile.storage.TileIOPort;
 
@@ -971,8 +971,8 @@ public class IOPortTests {
         ICellInventory<IAEItemStack> cellInventory = cellHandler.getCellInv();
         helper.assertNotNull(cellInventory, "Item cell inventory should expose cell details");
 
-        IAEStackInventory config = cellInventory.getConfigAEInventory();
-        config.putAEStackInSlot(0, itemStack(block, 1));
+        KeyConfigInventory config = cellInventory.getConfigAEInventory();
+        config.setKey(0, itemStack(block, 1).getKey());
     }
 
     private static void removePowerAndChannel(GameTestHelper helper) {

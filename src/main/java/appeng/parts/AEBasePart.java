@@ -53,6 +53,8 @@ import appeng.api.parts.IPartHost;
 import appeng.api.parts.IPartRenderHelper;
 import appeng.api.parts.ISimplifiedBundle;
 import appeng.api.parts.PartItemStack;
+import appeng.api.storage.ConfigInventory;
+import appeng.api.storage.IConfigInventoryHost;
 import appeng.api.storage.ITerminalPins;
 import appeng.api.storage.ITerminalTypeFilterProvider;
 import appeng.api.storage.StorageName;
@@ -73,8 +75,6 @@ import appeng.me.helpers.IGridProxyable;
 import appeng.parts.automation.UpgradeInventory;
 import appeng.parts.networking.PartCable;
 import appeng.tile.inventory.AppEngInternalAEInventory;
-import appeng.tile.inventory.IAEStackInventory;
-import appeng.tile.inventory.IIAEStackInventory;
 import appeng.util.AEStackTypeFilter;
 import appeng.util.Platform;
 import appeng.util.SettingsFrom;
@@ -152,6 +152,14 @@ public abstract class AEBasePart implements IPart, IGridProxyable, IActionHost, 
     @Override
     public TileEntity getTile() {
         return this.tile;
+    }
+
+    /**
+     * @return whether this part is on the client side, judged by its world when it has one
+     */
+    public boolean isClientSide() {
+        final World world = this.tile == null ? null : this.tile.getWorldObj();
+        return world == null ? Platform.isClient() : world.isRemote;
     }
 
     @Override
@@ -349,8 +357,8 @@ public abstract class AEBasePart implements IPart, IGridProxyable, IActionHost, 
             pHost.setPriority(compound.getInteger("priority"));
         }
 
-        if (this instanceof IIAEStackInventory iiaeStackInventory) {
-            IAEStackInventory inv = iiaeStackInventory.getAEInventoryByName(StorageName.CONFIG);
+        if (this instanceof IConfigInventoryHost configHost) {
+            ConfigInventory inv = configHost.getAEInventoryByName(StorageName.CONFIG);
             if (inv != null) {
                 inv.readFromNBT(compound, "config");
             }
@@ -395,8 +403,8 @@ public abstract class AEBasePart implements IPart, IGridProxyable, IActionHost, 
             output.setInteger("priority", pHost.getPriority());
         }
 
-        if (this instanceof IIAEStackInventory iiaeStackInventory) {
-            IAEStackInventory inv = iiaeStackInventory.getAEInventoryByName(StorageName.CONFIG);
+        if (this instanceof IConfigInventoryHost configHost) {
+            ConfigInventory inv = configHost.getAEInventoryByName(StorageName.CONFIG);
             if (inv != null) {
                 inv.writeToNBT(output, "config");
             }

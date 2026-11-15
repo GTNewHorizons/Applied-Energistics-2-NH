@@ -85,6 +85,13 @@ public class AEBaseTile extends TileEntity implements IOrientable, ICommonTile, 
         return this;
     }
 
+    /**
+     * @return whether this tile is on the client side, judged by its world when it has one
+     */
+    public boolean isClientSide() {
+        return this.worldObj == null ? Platform.isClient() : this.worldObj.isRemote;
+    }
+
     @Nullable
     protected ItemStack getItemFromTile(final Object obj) {
         final IStackSrc src = ITEM_STACKS.get(obj.getClass());

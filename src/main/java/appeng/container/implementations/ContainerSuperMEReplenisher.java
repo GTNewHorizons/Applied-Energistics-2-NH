@@ -10,6 +10,8 @@ import net.minecraft.item.ItemStack;
 
 import appeng.api.config.SecurityPermissions;
 import appeng.api.implementations.items.IStorageCell;
+import appeng.api.stacks.GenericStack;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
 import appeng.container.AEBaseContainer;
@@ -20,12 +22,11 @@ import appeng.container.sync.ActionHandler;
 import appeng.container.sync.StreamCodecs;
 import appeng.container.sync.SyncCodecs;
 import appeng.container.sync.SyncRegistrar;
-import appeng.container.sync.handlers.AEStackInventorySyncHandler;
+import appeng.container.sync.handlers.GenericStackSlotsSyncHandler;
 import appeng.container.sync.handlers.IntSyncHandler;
 import appeng.container.sync.handlers.LongSyncHandler;
 import appeng.container.sync.handlers.ObjectSyncHandler;
 import appeng.tile.inventory.AppEngInternalInventory;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.tile.misc.TileSuperMEReplenisher;
 import appeng.util.Platform;
 import appeng.util.item.IAEStackList;
@@ -80,7 +81,7 @@ public class ContainerSuperMEReplenisher extends AEBaseContainer implements IVir
 
     public final ActionHandler<Integer> slotReset;
 
-    public final AEStackInventorySyncHandler config;
+    public final GenericStackSlotsSyncHandler<ConfigInventory> config;
     public final ObjectSyncHandler<Stored> storedData;
 
     public boolean needUpdate = false;
@@ -101,7 +102,7 @@ public class ContainerSuperMEReplenisher extends AEBaseContainer implements IVir
 
         this.slotReset = sync.actionC2S("reset", StreamCodecs.intValue()).onServerAction(this::resetSlot);
 
-        this.config = sync.aeStackInventory("config", this.getConfig());
+        this.config = sync.genericStackSlots("config", this.getConfig());
 
         this.storedData = sync.object(
                 "storedData",
@@ -132,7 +133,7 @@ public class ContainerSuperMEReplenisher extends AEBaseContainer implements IVir
     }
 
     private void resetSlot(final int slot) {
-        this.tile.getAEInventoryByName(StorageName.CONFIG).putAEStackInSlot(slot, null);
+        this.tile.getAEInventoryByName(StorageName.CONFIG).setStack(slot, null);
     }
 
     @Override
@@ -174,11 +175,11 @@ public class ContainerSuperMEReplenisher extends AEBaseContainer implements IVir
 
     @Override
     public void updateVirtualSlot(StorageName invName, int slotId, IAEStack<?> aes) {
-        final IAEStackInventory config = this.tile.getAEInventoryByName(invName);
-        config.putAEStackInSlot(slotId, aes);
+        final ConfigInventory config = this.tile.getAEInventoryByName(invName);
+        config.setStack(slotId, GenericStack.fromAEStack(aes));
     }
 
-    public IAEStackInventory getConfig() {
+    public ConfigInventory getConfig() {
         return this.tile.getAEInventoryByName(StorageName.CONFIG);
     }
 

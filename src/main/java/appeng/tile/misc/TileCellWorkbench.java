@@ -26,7 +26,9 @@ import appeng.api.config.Upgrades;
 import appeng.api.implementations.items.IStorageCell;
 import appeng.api.implementations.items.IUpgradeModule;
 import appeng.api.implementations.tiles.ICellWorkbench;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.ICellWorkbenchItem;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.util.IConfigManager;
@@ -36,7 +38,6 @@ import appeng.tile.AEBaseTile;
 import appeng.tile.TileEvent;
 import appeng.tile.events.TileEventType;
 import appeng.tile.inventory.AppEngInternalInventory;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.tile.inventory.InvOperation;
 import appeng.util.ConfigManager;
 import appeng.util.Platform;
@@ -44,11 +45,11 @@ import appeng.util.Platform;
 public class TileCellWorkbench extends AEBaseTile implements ICellWorkbench, IPrimaryGuiIconProvider {
 
     private final AppEngInternalInventory cell = new AppEngInternalInventory(this, 1);
-    private final IAEStackInventory config = new IAEStackInventory(this, 63);
+    private final KeyConfigInventory config = new KeyConfigInventory(this, 63);
     private final ConfigManager manager = new ConfigManager(this);
 
     private IInventory cacheUpgrades = null;
-    private IAEStackInventory cacheConfig = null;
+    private @Nullable KeyConfigInventory cacheConfig = null;
     private boolean locked = false;
     private long cellRestrictAmount;
     private byte cellRestrictTypes;
@@ -176,17 +177,17 @@ public class TileCellWorkbench extends AEBaseTile implements ICellWorkbench, IPr
             if (this.updateStackTypeFromCell()) {
                 if (this.type != this.oldCellType) {
                     for (int x = 0; x < this.config.getSizeInventory(); x++) {
-                        this.config.putAEStackInSlot(x, null);
+                        this.config.setKey(x, null);
                     }
                 }
                 this.oldCellType = this.type;
             }
 
-            final IAEStackInventory configInventory = this.getCellConfigInventory();
+            final KeyConfigInventory configInventory = this.getCellConfigInventory();
             if (configInventory != null) {
                 boolean cellHasConfig = false;
                 for (int x = 0; x < configInventory.getSizeInventory(); x++) {
-                    if (configInventory.getAEStackInSlot(x) != null) {
+                    if (configInventory.getKey(x) != null) {
                         cellHasConfig = true;
                         break;
                     }
@@ -194,18 +195,16 @@ public class TileCellWorkbench extends AEBaseTile implements ICellWorkbench, IPr
 
                 if (cellHasConfig) {
                     for (int x = 0; x < this.config.getSizeInventory(); x++) {
-                        this.config.putAEStackInSlot(x, configInventory.getAEStackInSlot(x));
+                        this.config.setKey(x, configInventory.getKey(x));
                     }
                 } else {
                     for (int x = 0; x < this.config.getSizeInventory(); x++) {
-                        configInventory.putAEStackInSlot(x, this.config.getAEStackInSlot(x));
+                        configInventory.setKey(x, this.config.getKey(x));
                     }
-
-                    configInventory.markDirty();
                 }
             } else if (this.manager.getSetting(Settings.COPY_MODE) == CopyMode.CLEAR_ON_REMOVE) {
                 for (int x = 0; x < this.config.getSizeInventory(); x++) {
-                    this.config.putAEStackInSlot(x, null);
+                    this.config.setKey(x, null);
                 }
 
                 this.markDirty();
@@ -217,7 +216,7 @@ public class TileCellWorkbench extends AEBaseTile implements ICellWorkbench, IPr
         }
     }
 
-    private IAEStackInventory getCellConfigInventory() {
+    private @Nullable KeyConfigInventory getCellConfigInventory() {
         if (this.cacheConfig == null) {
             final ICellWorkbenchItem cell = this.getCell();
             if (cell == null) {
@@ -229,7 +228,7 @@ public class TileCellWorkbench extends AEBaseTile implements ICellWorkbench, IPr
                 return null;
             }
 
-            final IAEStackInventory inv = cell.getConfigAEInventory(is);
+            final KeyConfigInventory inv = cell.getConfigAEInventory(is);
             if (inv == null) {
                 return null;
             }
@@ -320,21 +319,25 @@ public class TileCellWorkbench extends AEBaseTile implements ICellWorkbench, IPr
     }
 
     @Override
-    public void saveAEStackInv() {
-        if (!this.locked) {
-            final IAEStackInventory c = this.getCellConfigInventory();
-            if (c != null) {
-                for (int x = 0; x < this.config.getSizeInventory(); x++) {
-                    c.putAEStackInSlot(x, this.config.getAEStackInSlot(x));
-                }
+    public void onChangeConfigInventory(ConfigInventory inv, int slot) {
+        if (this.isClientSide()) {
+            return;
+        }
 
-                c.markDirty();
+        if (!this.locked) {
+            final KeyConfigInventory c = this.getCellConfigInventory();
+            if (c != null && slot < c.getSizeInventory()) {
+                c.setKey(slot, this.config.getKey(slot));
             }
         }
     }
 
+    public KeyConfigInventory getConfig() {
+        return this.config;
+    }
+
     @Override
-    public IAEStackInventory getAEInventoryByName(StorageName name) {
+    public ConfigInventory getAEInventoryByName(StorageName name) {
         return this.config;
     }
 

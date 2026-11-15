@@ -18,6 +18,9 @@ import appeng.api.networking.events.MENetworkPowerStatusChange;
 import appeng.api.parts.IPartCollisionHelper;
 import appeng.api.parts.IPartHost;
 import appeng.api.parts.IPartRenderHelper;
+import appeng.api.storage.ConfigInventory;
+import appeng.api.storage.IConfigInventoryHost;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.util.IConfigManager;
@@ -26,18 +29,16 @@ import appeng.core.sync.GuiBridge;
 import appeng.helpers.IPrimaryGuiIconProvider;
 import appeng.helpers.IPriorityHost;
 import appeng.parts.PartBasicState;
-import appeng.tile.inventory.IAEStackInventory;
-import appeng.tile.inventory.IIAEStackInventory;
 import appeng.tile.inventory.InvOperation;
 import appeng.util.Platform;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 public abstract class PartBaseFormationPlane extends PartUpgradeable
-        implements IPriorityHost, IPrimaryGuiIconProvider, IIAEStackInventory {
+        implements IPriorityHost, IPrimaryGuiIconProvider, IConfigInventoryHost {
 
     protected int priority = 0;
-    protected final IAEStackInventory Config = new IAEStackInventory(this, 63);
+    protected final KeyConfigInventory Config = new KeyConfigInventory(this, 63);
     protected boolean wasActive = false;
     protected boolean blocked = false;
 
@@ -278,13 +279,21 @@ public abstract class PartBaseFormationPlane extends PartUpgradeable
     }
 
     @Override
-    public void saveAEStackInv() {
+    public void onChangeConfigInventory(ConfigInventory inv, int slot) {
+        if (this.isClientSide()) {
+            return;
+        }
+
         this.updateHandler();
         this.saveChanges();
     }
 
+    public KeyConfigInventory getConfig() {
+        return this.Config;
+    }
+
     @Override
-    public IAEStackInventory getAEInventoryByName(StorageName name) {
+    public ConfigInventory getAEInventoryByName(StorageName name) {
         if (name == StorageName.CONFIG) {
             return this.Config;
         }
