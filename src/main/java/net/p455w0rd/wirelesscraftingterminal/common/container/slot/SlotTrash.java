@@ -30,6 +30,11 @@ public class SlotTrash extends AppEngSlot {
 	}
 
 	@Override
+	public ItemStack getDisplayStack() {
+		return itemStack;
+	}
+
+	@Override
 	public boolean getHasStack() {
 		return itemStack != null;
 	}
