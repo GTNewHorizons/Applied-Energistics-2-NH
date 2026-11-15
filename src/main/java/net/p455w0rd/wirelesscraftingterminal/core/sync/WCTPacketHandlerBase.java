@@ -9,7 +9,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderException;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketConfigSync;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketEmptyTrash;
-import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketInventoryAction;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketMagnetFilter;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketOpenGui;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketSetMagnet;
@@ -18,8 +17,6 @@ public class WCTPacketHandlerBase {
 	private static final Map<Class<? extends WCTPacket>, PacketTypes> REVERSE_LOOKUP = new HashMap<Class<? extends WCTPacket>, WCTPacketHandlerBase.PacketTypes>();
 
 	public enum PacketTypes {
-		PACKET_INVENTORY_ACTION(PacketInventoryAction.class),
-
 		PACKET_MAGNETFILTER_MODE(PacketMagnetFilter.class),
 
 		PACKET_OPENWIRELESSTERM(PacketOpenGui.class),

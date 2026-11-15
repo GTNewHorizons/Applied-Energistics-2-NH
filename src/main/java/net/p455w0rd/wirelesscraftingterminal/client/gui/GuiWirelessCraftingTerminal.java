@@ -7,10 +7,8 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.util.ResourceLocation;
 import net.p455w0rd.wirelesscraftingterminal.client.gui.widgets.GuiTrashButton;
 import net.p455w0rd.wirelesscraftingterminal.common.container.ContainerWirelessCraftingTerminal;
-import net.p455w0rd.wirelesscraftingterminal.common.container.slot.SlotTrash;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.network.NetworkHandler;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketEmptyTrash;
-import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketInventoryAction;
 import net.p455w0rd.wirelesscraftingterminal.handlers.LocaleHandler;
 import net.p455w0rd.wirelesscraftingterminal.helpers.WTCGuiObject;
 import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
@@ -24,6 +22,7 @@ import appeng.client.gui.slots.VirtualMEPinSlot;
 import appeng.client.gui.widgets.GuiImgButton;
 import appeng.container.slot.SlotCraftingMatrix;
 import appeng.core.localization.ColorUtils;
+import appeng.core.sync.packets.PacketInventoryAction;
 import appeng.helpers.InventoryAction;
 
 public class GuiWirelessCraftingTerminal extends GuiMEMonitorable {
@@ -68,7 +67,7 @@ public class GuiWirelessCraftingTerminal extends GuiMEMonitorable {
         if (btn == this.clearBtn) {
             final Slot slot = this.findSlot(SlotCraftingMatrix.class);
             if (slot != null) {
-                NetworkHandler.instance
+                appeng.core.sync.network.NetworkHandler.instance
                         .sendToServer(new PacketInventoryAction(InventoryAction.MOVE_REGION, slot.slotNumber, 0));
             }
         } else if (btn == this.trashBtn) {
