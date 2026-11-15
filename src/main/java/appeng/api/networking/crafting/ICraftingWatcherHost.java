@@ -13,9 +13,6 @@
 
 package appeng.api.networking.crafting;
 
-import static appeng.util.Platform.stackConvert;
-
-import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 
 public interface ICraftingWatcherHost {
@@ -29,18 +26,10 @@ public interface ICraftingWatcherHost {
     void updateWatcher(ICraftingWatcher newWatcher);
 
     /**
-     * @deprecated use {@link #onRequestChange(ICraftingGrid, IAEStack)}
-     */
-    @Deprecated
-    void onRequestChange(ICraftingGrid craftingGrid, IAEItemStack what);
-
-    /**
      * Called when a crafting status changes.
      *
      * @param craftingGrid current crafting grid
      * @param what         change
      */
-    default void onRequestChange(ICraftingGrid craftingGrid, IAEStack<?> what) {
-        onRequestChange(craftingGrid, stackConvert(what));
-    }
+    void onRequestChange(ICraftingGrid craftingGrid, IAEStack<?> what);
 }

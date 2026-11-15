@@ -56,13 +56,6 @@ public interface ICraftingGrid extends IGridCache {
         return ImmutableSet.of();
     }
 
-    @Deprecated
-    ImmutableMap<IAEItemStack, ImmutableList<ICraftingPatternDetails>> getCraftingPatterns();
-
-    @Deprecated
-    Future<ICraftingJob> beginCraftingJob(World world, IGrid grid, BaseActionSource actionSrc, IAEItemStack craftWhat,
-            ICraftingCallback callback);
-
     /**
      * Begin calculating a crafting job.
      *
@@ -128,9 +121,6 @@ public interface ICraftingGrid extends IGridCache {
      */
     boolean canEmitFor(IAEStack<?> what);
 
-    @Deprecated
-    boolean canEmitFor(IAEItemStack what);
-
     /**
      * is this item being crafted?
      *
@@ -138,7 +128,4 @@ public interface ICraftingGrid extends IGridCache {
      * @return true if it is being crafting
      */
     boolean isRequesting(IAEStack<?> aeStackInSlot);
-
-    @Deprecated
-    boolean isRequesting(IAEItemStack aeStackInSlot);
 }

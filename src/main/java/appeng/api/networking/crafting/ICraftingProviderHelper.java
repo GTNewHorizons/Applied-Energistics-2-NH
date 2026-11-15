@@ -13,7 +13,6 @@
 
 package appeng.api.networking.crafting;
 
-import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 
 /**
@@ -27,21 +26,7 @@ public interface ICraftingProviderHelper {
     void addCraftingOption(ICraftingMedium medium, ICraftingPatternDetails api);
 
     /**
-     * @deprecated use {@link #setEmitable(ICraftingMedium, IAEStack)}
-     */
-    @Deprecated
-    void setEmitable(IAEItemStack what);
-
-    /**
-     * @deprecated use {@link #setEmitable(ICraftingMedium, IAEStack)}
-     */
-    @Deprecated
-    void setEmitable(IAEStack<?> what);
-
-    /**
      * Set an item can Emitable
      */
-    default void setEmitable(ICraftingMedium medium, IAEStack<?> what) {
-        setEmitable(what);
-    }
+    void setEmitable(ICraftingMedium medium, IAEStack<?> what);
 }
