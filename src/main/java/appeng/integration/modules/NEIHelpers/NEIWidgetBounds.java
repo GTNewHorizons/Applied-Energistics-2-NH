@@ -35,7 +35,7 @@ public final class NEIWidgetBounds {
                 return out;
             }
             for (Widget widget : widgets()) {
-                if (widget instanceof PanelWidget<?> panel) {
+                if (widget instanceof PanelWidget<?>panel) {
                     add(out, panel.pagePrev);
                     add(out, panel.pageNext);
                     add(out, panel.pageLabel);

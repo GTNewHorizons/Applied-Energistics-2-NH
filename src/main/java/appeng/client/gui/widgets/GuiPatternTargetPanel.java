@@ -582,8 +582,8 @@ public class GuiPatternTargetPanel {
         this.stretch(trackX, trackY + trackHeight - 1, TRACK_WIDTH, 1, 77, 157, TRACK_WIDTH, 1);
     }
 
-    private void drawNineSlice(String texture, int drawX, int drawY, int drawW, int drawH, int u, int v, int uw,
-            int vh, int edge) {
+    private void drawNineSlice(String texture, int drawX, int drawY, int drawW, int drawH, int u, int v, int uw, int vh,
+            int edge) {
         this.gui.bindTexture(texture);
         final int innerW = drawW - 2 * edge;
         final int innerH = drawH - 2 * edge;
