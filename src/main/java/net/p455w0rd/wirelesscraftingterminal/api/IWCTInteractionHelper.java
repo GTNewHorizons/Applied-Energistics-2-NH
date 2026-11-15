@@ -5,7 +5,7 @@ import javax.annotation.Nonnull;
 import net.minecraft.entity.player.EntityPlayer;
 
 public interface IWCTInteractionHelper {
-	
-	void openWirelessCraftingTerminalGui( @Nonnull EntityPlayer player );
-	
+
+    void openWirelessCraftingTerminalGui(@Nonnull EntityPlayer player);
+
 }

@@ -5,63 +5,62 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.DecoderException;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketConfigSync;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketEmptyTrash;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketMagnetFilter;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketOpenGui;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketSetMagnet;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.handler.codec.DecoderException;
+
 public class WCTPacketHandlerBase {
-	private static final Map<Class<? extends WCTPacket>, PacketTypes> REVERSE_LOOKUP = new HashMap<Class<? extends WCTPacket>, WCTPacketHandlerBase.PacketTypes>();
 
-	public enum PacketTypes {
-		PACKET_MAGNETFILTER_MODE(PacketMagnetFilter.class),
+    private static final Map<Class<? extends WCTPacket>, PacketTypes> REVERSE_LOOKUP = new HashMap<Class<? extends WCTPacket>, WCTPacketHandlerBase.PacketTypes>();
 
-		PACKET_OPENWIRELESSTERM(PacketOpenGui.class),
-		
-		PACKET_SWITCHMAGNETMODE(PacketSetMagnet.class),
-		
-		PACKET_EMPTY_TRASH(PacketEmptyTrash.class),
+    public enum PacketTypes {
 
-		PACKET_SYNC_CONFIGS(PacketConfigSync.class);
+        PACKET_MAGNETFILTER_MODE(PacketMagnetFilter.class),
 
-		private final Class<? extends WCTPacket> packetClass;
-		private final Constructor<? extends WCTPacket> packetConstructor;
+        PACKET_OPENWIRELESSTERM(PacketOpenGui.class),
 
-		PacketTypes(final Class<? extends WCTPacket> c) {
-			this.packetClass = c;
+        PACKET_SWITCHMAGNETMODE(PacketSetMagnet.class),
 
-			Constructor<? extends WCTPacket> x = null;
-			try {
-				x = this.packetClass.getConstructor(ByteBuf.class);
-			}
-			catch (final NoSuchMethodException ignored) {
-			}
-			catch (final SecurityException ignored) {
-			}
-			catch (final DecoderException ignored) {
-			}
+        PACKET_EMPTY_TRASH(PacketEmptyTrash.class),
 
-			this.packetConstructor = x;
-			REVERSE_LOOKUP.put(this.packetClass, this);
+        PACKET_SYNC_CONFIGS(PacketConfigSync.class);
 
-			if (this.packetConstructor == null) {
-				throw new IllegalStateException("Invalid Packet Class " + c + ", must be constructable on DataInputStream");
-			}
-		}
+        private final Class<? extends WCTPacket> packetClass;
+        private final Constructor<? extends WCTPacket> packetConstructor;
 
-		public static PacketTypes getPacket(final int id) {
-			return (values())[id];
-		}
+        PacketTypes(final Class<? extends WCTPacket> c) {
+            this.packetClass = c;
 
-		static PacketTypes getID(final Class<? extends WCTPacket> c) {
-			return REVERSE_LOOKUP.get(c);
-		}
+            Constructor<? extends WCTPacket> x = null;
+            try {
+                x = this.packetClass.getConstructor(ByteBuf.class);
+            } catch (final NoSuchMethodException ignored) {} catch (final SecurityException ignored) {} catch (final DecoderException ignored) {}
 
-		public WCTPacket parsePacket(final ByteBuf in) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-			return this.packetConstructor.newInstance(in);
-		}
-	}
+            this.packetConstructor = x;
+            REVERSE_LOOKUP.put(this.packetClass, this);
+
+            if (this.packetConstructor == null) {
+                throw new IllegalStateException(
+                        "Invalid Packet Class " + c + ", must be constructable on DataInputStream");
+            }
+        }
+
+        public static PacketTypes getPacket(final int id) {
+            return (values())[id];
+        }
+
+        static PacketTypes getID(final Class<? extends WCTPacket> c) {
+            return REVERSE_LOOKUP.get(c);
+        }
+
+        public WCTPacket parsePacket(final ByteBuf in) throws InstantiationException, IllegalAccessException,
+                IllegalArgumentException, InvocationTargetException {
+            return this.packetConstructor.newInstance(in);
+        }
+    }
 }
