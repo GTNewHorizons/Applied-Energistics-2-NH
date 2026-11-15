@@ -37,9 +37,11 @@ import net.p455w0rd.wirelesscraftingterminal.core.sync.network.NetworkHandler;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.packets.PacketConfigSync;
 import net.p455w0rd.wirelesscraftingterminal.handlers.AchievementHandler;
 import net.p455w0rd.wirelesscraftingterminal.handlers.ConfigHandler;
+import net.p455w0rd.wirelesscraftingterminal.common.container.ContainerWirelessCraftingTerminal;
 import net.p455w0rd.wirelesscraftingterminal.items.ItemEnum;
 import net.p455w0rd.wirelesscraftingterminal.items.ItemMagnet;
 import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
+import it.unimi.dsi.fastutil.ints.IntObjectPair;
 
 public class CommonProxy {
 
@@ -188,14 +190,25 @@ public class CommonProxy {
 				AchievementHandler.triggerAch(boosterAch, player);
 			}
 		}
-		if (RandomUtils.getWirelessTerm(playerInv) != null) {
-			ItemStack WCTStack = RandomUtils.getWirelessTerm(playerInv);
+		IntObjectPair<ItemStack> termItemPair = RandomUtils.getWirelessTermWithSlot(playerInv);
+		if (termItemPair != null) {
+			ItemStack WCTStack = termItemPair.second();
 			if (RandomUtils.isMagnetInstalled(playerInv)) {
 				ItemStack magnetStack = RandomUtils.getMagnet(playerInv);
 				if (magnetStack.getItem() instanceof ItemMagnet) {
 					ItemMagnet magnet = (ItemMagnet) magnetStack.getItem();
 
-					magnet.obj = magnet.getGuiObject(WCTStack, player, world, (int) player.posX, (int) player.posY, (int) player.posZ);
+					magnet.obj = ContainerWirelessCraftingTerminal.getGuiObject(
+							WCTStack,
+							player,
+							world,
+							(int) player.posX,
+							(int) player.posY,
+							(int) player.posZ,
+							termItemPair.firstInt());
+					if (magnet.obj == null) {
+						return;
+					}
 					magnet.civ = magnet.obj;
 					magnet.powerSrc = magnet.civ;
 					magnet.monitor = magnet.civ.getItemInventory();
