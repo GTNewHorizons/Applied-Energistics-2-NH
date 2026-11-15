@@ -7,7 +7,6 @@ import appeng.api.AEApi;
 import appeng.api.config.SecurityPermissions;
 import appeng.api.storage.data.IAEItemStack;
 import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent.PlayerLoggedInEvent;
@@ -267,11 +266,6 @@ public class CommonProxy {
 	public void onPlayerCraftingEvent(final PlayerEvent.ItemCraftedEvent event) {
 		if (event.player == null || event.player.isDead || event.player instanceof FakePlayer || event.crafting == null) {
 			return;
-		}
-		if (Loader.isModLoaded("LogisticsPipes")) {
-			if (event.player instanceof logisticspipes.blocks.crafting.FakePlayer) {
-				return;
-			}
 		}
 		if (event.crafting.getItem() == ItemEnum.WIRELESS_CRAFTING_TERMINAL.getItem()) {
 			AchievementHandler.triggerAch(wctAch, event.player);
