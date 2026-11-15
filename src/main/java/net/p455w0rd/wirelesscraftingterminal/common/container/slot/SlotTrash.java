@@ -1,23 +1,26 @@
 package net.p455w0rd.wirelesscraftingterminal.common.container.slot;
 
+import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
+
 import appeng.container.slot.AppEngSlot;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.p455w0rd.wirelesscraftingterminal.common.utils.RandomUtils;
 
 public class SlotTrash extends AppEngSlot {
 
 	private final EntityPlayer entityPlayer;
+	private final ItemStack terminal;
 	private ItemStack itemStack;
 	private boolean shouldDeleteMouseStack;
 	private String name = "TrashSlot";
 
-	public SlotTrash(IInventory inv, int x, int y, EntityPlayer player) {
+	public SlotTrash(IInventory inv, int x, int y, EntityPlayer player, ItemStack terminal) {
 		super(null, 0, x, y);
 		entityPlayer = player;
+		this.terminal = terminal;
 		readNBT();
 	}
 
@@ -85,7 +88,7 @@ public class SlotTrash extends AppEngSlot {
 	}
 
 	public void readNBT() {
-		NBTTagCompound nbtTagCompound = RandomUtils.getWirelessTerm(entityPlayer.inventory).getTagCompound();
+		NBTTagCompound nbtTagCompound = ItemStackNBT.get(this.terminal);
 		NBTTagList tagList = nbtTagCompound.getTagList(this.name, 10);
 		NBTTagCompound tagCompound = tagList.getCompoundTagAt(0);
 		if (tagCompound != null) {
@@ -94,7 +97,7 @@ public class SlotTrash extends AppEngSlot {
 	}
 
 	public void writeNBT() {
-		NBTTagCompound nbtTagCompound = RandomUtils.getWirelessTerm(entityPlayer.inventory).getTagCompound();
+		NBTTagCompound nbtTagCompound = ItemStackNBT.get(this.terminal);
 		NBTTagList tagList = new NBTTagList();
 		if (itemStack != null) {
 			NBTTagCompound tagCompound = new NBTTagCompound();

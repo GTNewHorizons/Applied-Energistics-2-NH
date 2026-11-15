@@ -163,14 +163,7 @@ public class CommonProxy {
 				if (magnetStack.getItem() instanceof ItemMagnet) {
 					ItemMagnet magnet = (ItemMagnet) magnetStack.getItem();
 
-					magnet.obj = ContainerWirelessCraftingTerminal.getGuiObject(
-							WCTStack,
-							player,
-							world,
-							(int) player.posX,
-							(int) player.posY,
-							(int) player.posZ,
-							termItemPair.firstInt());
+					magnet.obj = ContainerWirelessCraftingTerminal.getGuiObject(WCTStack, player, world, termItemPair.firstInt());
 					if (magnet.obj == null) {
 						return;
 					}

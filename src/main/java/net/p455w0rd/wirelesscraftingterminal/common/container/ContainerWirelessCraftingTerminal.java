@@ -9,7 +9,6 @@ import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.CraftingManager;
 import net.minecraft.world.World;
-import net.minecraftforge.common.util.ForgeDirection;
 import net.p455w0rd.wirelesscraftingterminal.client.gui.WCTPrimaryGui;
 import net.p455w0rd.wirelesscraftingterminal.common.container.slot.SlotArmor;
 import net.p455w0rd.wirelesscraftingterminal.common.container.slot.SlotBooster;
@@ -29,7 +28,6 @@ import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
 import appeng.api.AEApi;
 import appeng.api.features.IWirelessTermHandler;
 import appeng.container.ContainerNull;
-import appeng.container.ContainerOpenContext;
 import appeng.container.PrimaryGui;
 import appeng.container.implementations.ContainerMEMonitorable;
 import appeng.container.slot.AppEngSlot;
@@ -106,7 +104,7 @@ public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
 
         this.addSlotToContainer(new SlotMagnet(this.magnetInventory, 152, -20));
 
-        this.trashSlot = new SlotTrash(this.trashInventory, 80, -20, player);
+        this.trashSlot = new SlotTrash(this.trashInventory, 80, -20, player, terminal);
         this.addSlotToContainer(this.trashSlot);
 
         for (final SlotRestrictedInput slot : this.getCellViewSlots()) {
@@ -120,8 +118,12 @@ public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
         this.onCraftMatrixChanged(crafting);
     }
 
+    public WTCGuiObject getHost() {
+        return this.host;
+    }
+
     public static @Nullable WTCGuiObject getGuiObject(final @Nullable ItemStack it, final EntityPlayer player,
-            final World w, final int x, final int y, final int z, final int slotIndex) {
+            final World w, final int slotIndex) {
         if (it == null) {
             return null;
         }
@@ -133,7 +135,7 @@ public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
 
         // AE2 reads the terminal settings from the tag in the constructor of the GUI object.
         ItemStackNBT.get(it);
-        return new WTCGuiObject(wh, it, player, w, x, y, z, slotIndex);
+        return new WTCGuiObject(wh, it, player, w, slotIndex);
     }
 
     @Override
@@ -157,12 +159,7 @@ public class ContainerWirelessCraftingTerminal extends ContainerMEMonitorable
 
     @Override
     public PrimaryGui createPrimaryGui() {
-        final ContainerOpenContext context = this.getOpenContext();
-        return new WCTPrimaryGui(
-                Reference.GUI_WCT,
-                this.host.getPrimaryGuiIcon(),
-                context != null ? context.getTile() : null,
-                context != null ? context.getSide() : ForgeDirection.UNKNOWN);
+        return new WCTPrimaryGui(this.host.getPrimaryGuiIcon(), this.getTargetSlotIndex());
     }
 
     @Override
