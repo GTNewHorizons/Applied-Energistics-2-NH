@@ -1,7 +1,8 @@
 package appeng.util.inv;
 
-import appeng.parts.p2p.PartP2PItems;
 import net.minecraftforge.common.util.ForgeDirection;
+
+import appeng.parts.p2p.PartP2PItems;
 
 public class AdaptorP2PItem extends AdaptorIInventory {
 
