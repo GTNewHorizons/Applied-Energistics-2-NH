@@ -160,4 +160,11 @@ public interface ICraftingCPU extends IBaseMonitor {
     default boolean isCraftingLinkStandalone() {
         return false;
     }
+
+    /**
+     * @return whether the running job has several outputs or a display output, other jobs can't be merged into it.
+     */
+    default boolean isRunningCompositeJob() {
+        return false;
+    }
 }
