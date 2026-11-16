@@ -44,7 +44,6 @@ import appeng.me.GridAccessException;
 import appeng.transformer.annotations.Integration.Interface;
 import appeng.transformer.annotations.Integration.Method;
 import appeng.util.Platform;
-import appeng.util.inv.GuardedInventory;
 import appeng.util.inv.IInventoryWrapper;
 import appeng.util.inv.WrapperBCPipe;
 import appeng.util.inv.WrapperMCISidedInventory;
@@ -172,12 +171,6 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
                 // The wrappers fix this layout. A double chest pair is tracked by the target instead.
                 this.boundLayout = this.readLayout(inventory).clone();
             }
-        }
-
-        if (output != null) {
-            final TileEntity self = this.getTile();
-            // Evaluated for every slot access, so only cheap checks belong here.
-            output = new GuardedInventory(output, () -> target.isValid() && !self.isInvalid());
         }
 
         return output == null ? null : new InventoryTarget(output, target);
