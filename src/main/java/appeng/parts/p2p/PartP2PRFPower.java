@@ -159,21 +159,6 @@ public final class PartP2PRFPower extends PartP2PTunnelRouted<PartP2PRFPower>
         return s;
     }
 
-    private IEnergyReceiver getOutput() {
-        if (this.isOutput()) {
-            var target = this.targetCache.get(this.getTile(), this.getSide());
-            IEnergyReceiver outputTarget = target != null && target.tile() instanceof IEnergyReceiver receiver
-                    ? receiver
-                    : null;
-            if (outputTarget == null || !outputTarget.canConnectEnergy(this.getSide().getOpposite())) {
-                return NULL_HANDLER;
-            }
-
-            return outputTarget;
-        }
-        return NULL_HANDLER;
-    }
-
     private IEnergyReceiver getReceiver() {
         var target = this.targetCache.get(this.getTile(), this.getSide());
         IEnergyReceiver receiverTarget = target != null && target.tile() instanceof IEnergyReceiver receiver ? receiver

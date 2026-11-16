@@ -32,6 +32,9 @@ public abstract class PartP2PTunnelRouted<T extends PartP2PTunnelRouted<T>> exte
     }
 
     private List<T> resolveRoute(final P2PRoute route) {
+        if (!this.getProxy().isActive()) {
+            return Collections.emptyList();
+        }
         return switch (route) {
             case OUTPUTS -> this.addOtherOutputs(new ArrayList<>());
             case INPUT -> this.addInput(new ArrayList<>(1));
@@ -43,7 +46,7 @@ public abstract class PartP2PTunnelRouted<T extends PartP2PTunnelRouted<T>> exte
     private List<T> addOtherOutputs(final List<T> into) {
         try {
             for (final T output : this.getOutputs()) {
-                if (output != this) {
+                if (output != this && output.getProxy().isActive()) {
                     into.add(output);
                 }
             }
@@ -55,7 +58,7 @@ public abstract class PartP2PTunnelRouted<T extends PartP2PTunnelRouted<T>> exte
 
     private List<T> addInput(final List<T> into) {
         final T input = this.getInput();
-        if (input != null && input != this) {
+        if (input != null && input != this && input.getProxy().isActive()) {
             into.add(input);
         }
         return into;
