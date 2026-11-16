@@ -22,9 +22,11 @@ import net.minecraftforge.common.util.ForgeDirection;
 import appeng.api.config.PowerUnits;
 import appeng.integration.IntegrationType;
 import appeng.integration.modules.helpers.NullRFHandler;
+import appeng.me.GridAccessException;
 import appeng.transformer.annotations.Integration.Interface;
 import appeng.transformer.annotations.Integration.InterfaceList;
 import appeng.util.Platform;
+import appeng.util.target.TileTargetCache;
 import appeng.util.p2p.P2PTransportPolicy;
 import cofh.api.energy.IEnergyHandler;
 import cofh.api.energy.IEnergyProvider;
@@ -43,6 +45,8 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower>
      * Default element based on the null element pattern
      */
     private static final IEnergyHandler NULL_HANDLER = new NullRFHandler();
+
+    private final TileTargetCache targetCache = new TileTargetCache();
 
     private boolean cachedReceiver = false;
     private IEnergyReceiver receiverTarget;
@@ -76,11 +80,13 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower>
         this.cachedReceiver = false;
         this.cachedProvider = false;
         super.onNeighborChanged();
+
+        this.targetCache.markStale();
     }
 
     @Override
     public int receiveEnergy(final ForgeDirection from, int maxReceive, final boolean simulate) {
-        if (!this.isActive() || this.isBusy()) {
+        if (!this.getProxy().isActive() || this.isBusy()) {
             return 0;
         }
 
@@ -164,6 +170,21 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower>
         return s;
     }
 
+    private IEnergyReceiver getOutput() {
+        if (this.isOutput()) {
+            var target = this.targetCache.get(this.getTile(), this.getSide());
+            IEnergyReceiver outputTarget = target != null && target.tile() instanceof IEnergyReceiver receiver
+                    ? receiver
+                    : null;
+            if (outputTarget == null || !outputTarget.canConnectEnergy(this.getSide().getOpposite())) {
+                return NULL_HANDLER;
+            }
+
+            return outputTarget;
+        }
+        return NULL_HANDLER;
+    }
+
     private IEnergyReceiver getReceiver() {
         if (!this.cachedReceiver) {
             final TileEntity te = this.getFacingTileEntity();
@@ -194,7 +215,7 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower>
 
     @Override
     public int getEnergyStored(final ForgeDirection from) {
-        if (!this.isActive() || this.isBusy()) {
+        if (this.isBusy() || !this.getProxy().isActive()) {
             return 0;
         }
 
@@ -211,7 +232,7 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower>
 
     @Override
     public int getMaxEnergyStored(final ForgeDirection from) {
-        if (!this.isActive() || this.isBusy()) {
+        if (this.isBusy() || !this.getProxy().isActive()) {
             return 0;
         }
 

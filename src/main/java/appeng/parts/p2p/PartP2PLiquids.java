@@ -18,7 +18,6 @@ import java.util.Stack;
 
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.IIcon;
 import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.fluids.Fluid;
@@ -27,6 +26,7 @@ import net.minecraftforge.fluids.FluidTankInfo;
 import net.minecraftforge.fluids.IFluidHandler;
 
 import appeng.me.GridAccessException;
+import appeng.util.target.TileTargetCache;
 import appeng.util.p2p.P2PRoute;
 import appeng.util.p2p.P2PTransportPolicy;
 import cpw.mods.fml.relauncher.Side;
@@ -37,7 +37,7 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
     private static final ThreadLocal<Stack<PartP2PLiquids>> DEPTH = new ThreadLocal<>();
     private static final FluidTankInfo[] ACTIVE_TANK = { new FluidTankInfo(null, 10000) };
     private static final FluidTankInfo[] INACTIVE_TANK = { new FluidTankInfo(null, 0) };
-    private IFluidHandler cachedTank;
+    private final TileTargetCache targetCache = new TileTargetCache();
     private int tmpUsed;
 
     public PartP2PLiquids(final ItemStack is) {
@@ -57,14 +57,18 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
 
     @Override
     public void onTunnelNetworkChange() {
-        this.cachedTank = null;
-        super.onTunnelNetworkChange();
+        this.targetCache.markStale();
     }
 
     @Override
     public void onNeighborChanged() {
-        this.cachedTank = null;
-        super.onNeighborChanged();
+        this.targetCache.markStale();
+        if (this.isOutput()) {
+            final PartP2PLiquids in = this.getInput();
+            if (in != null) {
+                in.onTunnelNetworkChange();
+            }
+        }
     }
 
     @Override
@@ -176,16 +180,8 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
             return null;
         }
 
-        if (this.cachedTank != null) {
-            return this.cachedTank;
-        }
-
-        final TileEntity te = this.getFacingTileEntity();
-        if (te instanceof IFluidHandler) {
-            return this.cachedTank = (IFluidHandler) te;
-        }
-
-        return null;
+        var target = this.targetCache.get(this.getTile(), this.getSide());
+        return target != null && target.tile() instanceof IFluidHandler handler ? handler : null;
     }
 
     @Override
