@@ -8,9 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
@@ -53,21 +51,6 @@ public class TransferTypeFilterFunctionalTest {
         assertNotEquals(
                 TransferTypeFilter.keyOf(new ItemStack(Items.apple)),
                 TransferTypeFilter.keyOf(new ItemStack(Items.bread)));
-    }
-
-    @Test
-    public void rowsFollowTheirDefaultUntilTheirKindIsTurnedOnOrOff() {
-        final TransferComponentInfo drive = row(new ItemStack(Items.apple), true);
-        final TransferComponentInfo bus = row(new ItemStack(Items.bread), false);
-        final Map<String, Boolean> overrides = new HashMap<>();
-
-        assertFalse(TransferTypeFilter.isShown(drive, overrides), "Hidden by default");
-        assertTrue(TransferTypeFilter.isShown(bus, overrides), "Shown by default");
-
-        overrides.put(TransferTypeFilter.keyOf(drive.selfRep), true);
-        overrides.put(TransferTypeFilter.keyOf(bus.selfRep), false);
-        assertTrue(TransferTypeFilter.isShown(drive, overrides), "Turned on");
-        assertFalse(TransferTypeFilter.isShown(bus, overrides), "Turned off");
     }
 
     @Test

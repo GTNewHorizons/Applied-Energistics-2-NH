@@ -15,8 +15,9 @@ import org.junit.Test;
 
 /**
  * GTNH loads AE2's recipes from {@code GTNHRecipes/} instead of {@code recipes/}, see {@code RecipeLoader}. The test
- * server only loads {@code recipes/}, so these follow each folder's imports the way the recipe loader does and check
- * the Transfer Terminal can be crafted either way.
+ * server only loads {@code recipes/}, which {@code TransferTerminalPartTests.terminalIsCraftedOnACraftingTable} covers,
+ * so this follows the GTNH folder's imports the way the recipe loader does and checks the Transfer Terminal can be
+ * crafted there too.
  */
 public class TransferTerminalRecipeFilesTest {
 
@@ -26,11 +27,6 @@ public class TransferTerminalRecipeFilesTest {
     @Test
     public void theGtnhRecipesCraftTheTransferTerminal() throws IOException {
         assertReaches("/assets/appliedenergistics2/GTNHRecipes/");
-    }
-
-    @Test
-    public void theDefaultRecipesCraftTheTransferTerminal() throws IOException {
-        assertReaches("/assets/appliedenergistics2/recipes/");
     }
 
     private static void assertReaches(final String root) throws IOException {

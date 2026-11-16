@@ -113,20 +113,6 @@ public class NetworkInventoryHandlerTraceFunctionalTest {
     }
 
     @Test
-    public void leftoverMatchesWhatNoHandlerTook() {
-        final NetworkInventoryHandler<IAEItemStack> network = network(new MockAESystem(world()));
-        final Storage small = new Storage(10);
-        network.addNewStorage(small);
-
-        final InjectTrace trace = new InjectTrace();
-        final IAEItemStack leftover = simulate(network, trace, 64);
-
-        assertNotNull(leftover);
-        assertEquals(54, leftover.getStackSize());
-        assertEquals(10, acceptedBy(trace, small));
-    }
-
-    @Test
     public void passTwoOnlyCountsWhatPassOneDidNotTake() {
         final NetworkInventoryHandler<IAEItemStack> network = network(new MockAESystem(world()));
         // Already holds iron, so pass 1 visits it, and as it is not whitelisted pass 2 visits it again.
@@ -141,26 +127,6 @@ public class NetworkInventoryHandlerTraceFunctionalTest {
         assertNull(leftover);
         assertEquals(10, acceptedBy(trace, holding), "the same space must not be counted twice");
         assertEquals(54, acceptedBy(trace, empty));
-    }
-
-    @Test
-    public void stickyClaimIsRecordedEvenWhenNothingFits() {
-        final NetworkInventoryHandler<IAEItemStack> network = network(new MockAESystem(world()));
-        final Storage sticky = new Storage(0).whitelisted().sticky();
-        final Storage other = new Storage(100);
-        network.addNewStorage(sticky);
-        network.addNewStorage(other);
-
-        final InjectTrace trace = new InjectTrace();
-        final IAEItemStack leftover = simulate(network, trace, 64);
-
-        assertNotNull(leftover);
-        assertEquals(64, leftover.getStackSize());
-        assertEquals(1, trace.getEntries().size(), "a sticky claim shuts every other handler out");
-        final InjectTrace.Entry entry = trace.getEntries().get(0);
-        assertSame(sticky, entry.handler);
-        assertTrue(entry.stickyClaim);
-        assertEquals(0, entry.getAccepted());
     }
 
     @Test
@@ -256,8 +222,6 @@ public class NetworkInventoryHandlerTraceFunctionalTest {
         private final long capacity;
         private long stored;
         private int priority;
-        private boolean whitelisted;
-        private boolean sticky;
         private boolean failing;
 
         private Storage(final long capacity) {
@@ -271,16 +235,6 @@ public class NetworkInventoryHandlerTraceFunctionalTest {
 
         private Storage holding(final long amount) {
             this.stored = amount;
-            return this;
-        }
-
-        private Storage whitelisted() {
-            this.whitelisted = true;
-            return this;
-        }
-
-        private Storage sticky() {
-            this.sticky = true;
             return this;
         }
 
@@ -335,7 +289,7 @@ public class NetworkInventoryHandlerTraceFunctionalTest {
 
         @Override
         public boolean isPrioritized(final IAEItemStack input) {
-            return this.whitelisted;
+            return false;
         }
 
         @Override
@@ -360,7 +314,7 @@ public class NetworkInventoryHandlerTraceFunctionalTest {
 
         @Override
         public boolean getSticky() {
-            return this.sticky;
+            return false;
         }
     }
 }

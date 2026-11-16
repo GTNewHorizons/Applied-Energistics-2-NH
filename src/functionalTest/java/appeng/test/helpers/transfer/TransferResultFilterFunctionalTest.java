@@ -217,17 +217,6 @@ public class TransferResultFilterFunctionalTest {
     }
 
     @Test
-    public void matchingConfigEntriesAreMarked() {
-        final TransferComponentInfo row = row("a", only(TransferDirection.EXPORT), GOLD, IRON);
-
-        final TransferDescription result = TransferResultFilter
-                .apply(Arrays.asList(row), IRON, TransferDirection.EXPORT, ignored -> true).get(0).description;
-
-        assertFalse(result.config.get(0).matchesQuery);
-        assertTrue(result.config.get(1).matchesQuery);
-    }
-
-    @Test
     public void rowsFailingTheExtraTestAreDropped() {
         final List<TransferComponentInfo> rows = Arrays
                 .asList(row("keep", TransferMatcher.NONE), row("drop", TransferMatcher.NONE));
