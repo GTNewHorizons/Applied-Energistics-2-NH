@@ -64,7 +64,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         implements IPipeConnection, ISidedInventory, IGridTickable, IRoutedTunnel {
 
-    /** Output only: the target wrapped into the input's destination, or null if none was. */
+    /** Output only: the target wrapped into the router's view, or null if none was. */
     private @Nullable TileTarget boundTarget;
     /**
      * Output only: the slot layout that the wrapper of {@link #boundTarget} fixed, as {@link #readLayout} returns it.
@@ -99,7 +99,7 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         }
     }
 
-    /** Whether the adjacent tile or its slot layout differs from what was wrapped into the input's destination. */
+    /** Whether the adjacent tile or its slot layout differs from what was given to the router. */
     private boolean hasTargetChanged() {
         final TileTarget target = this.resolveOutputTarget();
         if (target != this.boundTarget) return true;
