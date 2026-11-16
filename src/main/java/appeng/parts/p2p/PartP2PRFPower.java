@@ -35,7 +35,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 @InterfaceList(
         value = { @Interface(iface = "cofh.api.energy.IEnergyReceiver", iname = IntegrationType.RF),
                 @Interface(iface = "cofh.api.energy.IEnergyProvider", iname = IntegrationType.RF) })
-public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower>
+public final class PartP2PRFPower extends PartP2PTunnelRouted<PartP2PRFPower>
         implements IEnergyReceiver, IEnergyProvider {
 
     private static final ThreadLocal<Stack<PartP2PRFPower>> THREAD_STACK = new ThreadLocal<>();

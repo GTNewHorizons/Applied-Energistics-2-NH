@@ -10,6 +10,7 @@
 
 package appeng.parts.p2p;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -60,11 +61,16 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 @Interface(iface = "buildcraft.api.transport.IPipeConnection", iname = IntegrationType.BuildCraftTransport)
-public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
+public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         implements IPipeConnection, ISidedInventory, IGridTickable, IRoutedTunnel {
 
     /** Output only: the target wrapped into the input's destination, or null if none was. */
     private @Nullable TileTarget boundTarget;
+    /**
+     * Output only: the slot layout that the wrapper of {@link #boundTarget} fixed, as {@link #readLayout} returns it.
+     * Null if the layout is not tracked.
+     */
+    private int @Nullable [] boundLayout;
     private final TileTargetCache targetCache = new TileTargetCache();
 
     private boolean viewed;
@@ -88,8 +94,18 @@ public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
     public void onNeighborChanged() {
         this.targetCache.markStale();
 
-        refreshTarget();
-        super.onNeighborChanged();
+        if (this.hasTargetChanged()) {
+            refreshTarget();
+        }
+    }
+
+    /** Whether the adjacent tile or its slot layout differs from what was wrapped into the input's destination. */
+    private boolean hasTargetChanged() {
+        final TileTarget target = this.resolveOutputTarget();
+        if (target != this.boundTarget) return true;
+        return target != null && this.boundLayout != null
+                && target.tile() instanceof IInventory inventory
+                && !Arrays.equals(this.boundLayout, this.readLayout(inventory));
     }
 
     /**
@@ -102,53 +118,66 @@ public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
         return this.targetCache.isWaitingForChunk() && this.resolveOutputTarget() != null;
     }
 
+    /**
+     * The slot layout that the output wrapper fixes: the accessible slots of a sided inventory, or the size of another.
+     * The returned array may be owned by the tile.
+     */
+    private int[] readLayout(final IInventory inventory) {
+        if (inventory instanceof ISidedInventory sided) {
+            return sided.getAccessibleSlotsFromSide(this.getSide().getOpposite().ordinal());
+        }
+        return new int[] { inventory.getSizeInventory() };
+    }
+
     private @Nullable TileTarget resolveOutputTarget() {
         return this.getProxy().isActive() ? this.targetCache.get(this.getTile(), this.getSide()) : null;
     }
 
     private @Nullable InventoryTarget getTargetInv() {
-        if (loopsBackToThis()) {
+        final TileTarget target = this.resolveOutputTarget();
+        this.boundTarget = target;
+        this.boundLayout = null;
+
+        if (target == null || loopsBackToThis()) {
             return null;
         }
 
         IInventory output = null;
-        final TileTarget target = this.resolveOutputTarget();
-        this.boundTarget = target;
 
-        if (target != null) {
-            final TileEntity te = target.tile();
+        final TileEntity te = target.tile();
 
-            if (IntegrationRegistry.INSTANCE.isEnabled(IntegrationType.BuildCraftTransport)) {
-                final IBuildCraftTransport buildcraft = (IBuildCraftTransport) IntegrationRegistry.INSTANCE
-                        .getInstance(IntegrationType.BuildCraftTransport);
-                if (buildcraft.isPipe(te, this.getSide().getOpposite())) {
-                    try {
-                        output = new WrapperBCPipe(te, this.getSide().getOpposite());
-                    } catch (final Throwable ignore) {}
-                }
+        if (IntegrationRegistry.INSTANCE.isEnabled(IntegrationType.BuildCraftTransport)) {
+            final IBuildCraftTransport buildcraft = (IBuildCraftTransport) IntegrationRegistry.INSTANCE
+                    .getInstance(IntegrationType.BuildCraftTransport);
+            if (buildcraft.isPipe(te, this.getSide().getOpposite())) {
+                try {
+                    output = new WrapperBCPipe(te, this.getSide().getOpposite());
+                } catch (final Throwable ignore) {}
             }
+        }
 
-            /*
-             * if ( AppEng.INSTANCE.isIntegrationEnabled( "TE" ) ) { ITE thermal = (ITE) AppEng.INSTANCE.getIntegration(
-             * "TE" ); if ( thermal != null ) { if ( thermal.isPipe( te, side.getOpposite() ) ) { try { output = new
-             * WrapperTEPipe( te, side.getOpposite() ); } catch (Throwable ignore) { } } } }
-             */
+        /*
+         * if ( AppEng.INSTANCE.isIntegrationEnabled( "TE" ) ) { ITE thermal = (ITE) AppEng.INSTANCE.getIntegration(
+         * "TE" ); if ( thermal != null ) { if ( thermal.isPipe( te, side.getOpposite() ) ) { try { output = new
+         * WrapperTEPipe( te, side.getOpposite() ); } catch (Throwable ignore) { } } } }
+         */
 
-            if (output == null) {
-                if (te instanceof TileEntityChest) {
-                    output = target.chestInventory();
-                } else if (te instanceof IInventory inventory) {
-                    output = inventory instanceof ISidedInventory sided
-                            ? new WrapperMCISidedInventory(sided, this.getSide().getOpposite())
-                            : inventory;
-                }
+        if (output == null) {
+            if (te instanceof TileEntityChest) {
+                output = target.chestInventory();
+            } else if (te instanceof IInventory inventory) {
+                output = inventory instanceof ISidedInventory sided
+                        ? new WrapperMCISidedInventory(sided, this.getSide().getOpposite())
+                        : inventory;
+                // The wrappers fix this layout. A double chest pair is tracked by the target instead.
+                this.boundLayout = this.readLayout(inventory).clone();
             }
+        }
 
-            if (output != null) {
-                final TileEntity self = this.getTile();
-                // Evaluated for every slot access, so only cheap checks belong here.
-                output = new GuardedInventory(output, () -> target.isValid() && !self.isInvalid());
-            }
+        if (output != null) {
+            final TileEntity self = this.getTile();
+            // Evaluated for every slot access, so only cheap checks belong here.
+            output = new GuardedInventory(output, () -> target.isValid() && !self.isInvalid());
         }
 
         return output == null ? null : new InventoryTarget(output, target);
@@ -205,6 +234,7 @@ public class PartP2PItems extends PartP2PRoutedTunnel<PartP2PItems>
     @Override
     public void removeFromWorld() {
         this.boundTarget = null;
+        this.boundLayout = null;
         super.removeFromWorld();
     }
 

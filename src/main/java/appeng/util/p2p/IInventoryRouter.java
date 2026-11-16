@@ -33,8 +33,8 @@ public interface IInventoryRouter {
 
     /*
      * Set inventory target for the member. This will typically be the inventory in front of the tunnel. Should
-     * immediately invalidate the old target if different from the current one (returns true in this case). Layout can
-     * be out of date.
+     * immediately invalidate the old target if different from the current one. Size change is notified by returning
+     * true. Layout can be out of date.
      */
     boolean setTarget(IRoutedTunnel member, @Nullable InventoryTarget target);
 

@@ -11,9 +11,9 @@ import appeng.util.p2p.P2PRoute;
 import appeng.util.p2p.P2PSideAccess;
 import appeng.util.p2p.P2PTransportPolicy;
 
-public abstract class PartP2PRoutedTunnel<T extends PartP2PRoutedTunnel<T>> extends PartP2PTunnelNormal<T> {
+public abstract class PartP2PTunnelRouted<T extends PartP2PTunnelRouted<T>> extends PartP2PTunnelNormal<T> {
 
-    public PartP2PRoutedTunnel(final ItemStack is) {
+    public PartP2PTunnelRouted(final ItemStack is) {
         super(is);
     }
 
