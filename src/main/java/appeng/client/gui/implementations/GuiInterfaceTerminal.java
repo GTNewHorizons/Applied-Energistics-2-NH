@@ -216,12 +216,7 @@ public class GuiInterfaceTerminal extends AEBaseGui
             }
         };
 
-        searchStringSave = new GuiImgButton(
-                0,
-                0,
-                Settings.SAVE_SEARCH,
-                AEConfig.instance.selectSearchBarText ? SaveSearchMode.SELECT
-                        : AEConfig.instance.preserveSearchBar ? SaveSearchMode.YES : SaveSearchMode.NO);
+        searchStringSave = new GuiImgButton(0, 0, Settings.SAVE_SEARCH, AEConfig.instance.getSaveSearchMode());
         guiButtonAssemblersOnly = new GuiImgButton(0, 0, Settings.ACTIONS, null);
         guiButtonHideFull = new GuiImgButton(0, 0, Settings.ACTIONS, null);
         guiButtonShowHidden = new GuiImgButton(0, 0, Settings.ACTIONS, null);
@@ -610,8 +605,7 @@ public class GuiInterfaceTerminal extends AEBaseGui
                     AEConfig.instance.settings.putSetting(iBtn.getSetting(), next);
                     initGui();
                 } else if (btn == searchStringSave) {
-                    AEConfig.instance.preserveSearchBar = next != SaveSearchMode.NO;
-                    AEConfig.instance.selectSearchBarText = next == SaveSearchMode.SELECT;
+                    AEConfig.instance.setSaveSearchMode((SaveSearchMode) next);
                 } else if (btn == guiButtonSectionOrder) {
                     AEConfig.instance.settings.putSetting(iBtn.getSetting(), next);
                     masterList.changeSectionComparator(((StringOrder) next).comparator);
@@ -632,7 +626,7 @@ public class GuiInterfaceTerminal extends AEBaseGui
     }
 
     public void setSearchString() {
-        boolean setString = AEConfig.instance.preserveSearchBar || isSubGui();
+        boolean setString = AEConfig.instance.getSaveSearchMode() != SaveSearchMode.NO || isSubGui();
         if (searchFieldInputs.getText().isEmpty() && setString) {
             searchFieldInputs.setText(searchFieldInputsText);
         }
@@ -642,10 +636,10 @@ public class GuiInterfaceTerminal extends AEBaseGui
         if (searchFieldNames.getText().isEmpty() && setString) {
             searchFieldNames.setText(searchFieldNamesText);
         }
-        if (AEConfig.instance.selectSearchBarText) {
-            searchFieldInputs.selectAll();
-            searchFieldOutputs.selectAll();
-            searchFieldNames.selectAll();
+        if (AEConfig.instance.getSaveSearchMode() == SaveSearchMode.SELECT) {
+            if (searchFieldInputs.isFocused()) searchFieldInputs.selectAll();
+            if (searchFieldOutputs.isFocused()) searchFieldOutputs.selectAll();
+            if (searchFieldNames.isFocused()) searchFieldNames.selectAll();
         }
     }
 

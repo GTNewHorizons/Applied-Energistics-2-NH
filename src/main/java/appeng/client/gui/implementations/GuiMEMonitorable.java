@@ -199,7 +199,9 @@ public class GuiMEMonitorable extends AEBaseGui
                 repo.setSearchString(text.trim());
                 repo.updateView();
 
-                if (AEConfig.instance.preserveSearchBar) monitorableContainer.saveSearchString(this.getText());
+                if (AEConfig.instance.getSaveSearchMode() != SaveSearchMode.NO) {
+                    monitorableContainer.saveSearchString(this.getText());
+                }
             }
         };
 
@@ -303,8 +305,7 @@ public class GuiMEMonitorable extends AEBaseGui
         } else if (btn == this.searchBoxSettings) {
             AEConfig.instance.settings.putSetting(iBtn.getSetting(), next);
         } else if (btn == this.searchStringSave) {
-            AEConfig.instance.preserveSearchBar = next != SaveSearchMode.NO;
-            AEConfig.instance.selectSearchBarText = next == SaveSearchMode.SELECT;
+            AEConfig.instance.setSaveSearchMode((SaveSearchMode) next);
         } else {
             try {
                 NetworkHandler.instance.sendToServer(new PacketValueConfig(iBtn.getSetting().name(), next.name()));
@@ -483,8 +484,7 @@ public class GuiMEMonitorable extends AEBaseGui
                         this.guiLeft - 18,
                         offset,
                         Settings.SAVE_SEARCH,
-                        AEConfig.instance.selectSearchBarText ? SaveSearchMode.SELECT
-                                : AEConfig.instance.preserveSearchBar ? SaveSearchMode.YES : SaveSearchMode.NO));
+                        AEConfig.instance.getSaveSearchMode()));
         offset += 20;
 
         if (!(this instanceof GuiMEPortableCell)) {
@@ -541,15 +541,14 @@ public class GuiMEMonitorable extends AEBaseGui
 
         if (this.isSubGui()) {
             this.searchField.setText(memoryText);
-        } else if (AEConfig.instance.preserveSearchBar) {
+        } else if (AEConfig.instance.getSaveSearchMode() != SaveSearchMode.NO) {
             final String localMemoryText = this.monitorableContainer.getSavedSearchString();
             final String mem = localMemoryText == null ? memoryText : localMemoryText;
             this.searchField.setText(mem, true);
             repo.setSearchString(mem);
         }
         this.searchField.setCursorPositionEnd();
-        if (AEConfig.instance.selectSearchBarText && AEConfig.instance.preserveSearchBar
-                && !this.searchField.getText().isEmpty()) {
+        if (AEConfig.instance.getSaveSearchMode() == SaveSearchMode.SELECT && !this.searchField.getText().isEmpty()) {
             this.searchField.selectAll();
         }
 

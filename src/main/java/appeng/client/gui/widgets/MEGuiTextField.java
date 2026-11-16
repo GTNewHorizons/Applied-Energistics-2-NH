@@ -246,6 +246,7 @@ public class MEGuiTextField implements ITooltip {
     }
 
     public void selectAll() {
+        field.setCursorPositionEnd();
         field.setSelectionPos(0);
     }
 

@@ -90,8 +90,6 @@ public final class AEConfig extends Configuration implements IConfigurableObject
     public boolean useColoredCraftingStatus;
     public boolean previewBlocks;
     public int previewLineWidth;
-    public boolean preserveSearchBar = true;
-    public boolean selectSearchBarText = false;
     public boolean showOnlyInterfacesWithFreeSlotsInInterfaceTerminal = false;
     public boolean autoFocusInterfaceTerminalSearch = true;
     public boolean showContainerInteractionTooltips = true;
@@ -393,8 +391,6 @@ public final class AEConfig extends Configuration implements IConfigurableObject
         this.useColoredCraftingStatus = this.get("Client", "useColoredCraftingStatus", true).getBoolean(true);
         this.previewBlocks = this.get("Client", "previewBlocks", true).getBoolean(true);
         this.previewLineWidth = this.get("Client", "previewLineWidth", 3).getInt(3);
-        this.preserveSearchBar = this.get("Client", "preserveSearchBar", true).getBoolean(true);
-        this.selectSearchBarText = this.get("Client", "selectSearchBarText", false).getBoolean(false);
         this.showOnlyInterfacesWithFreeSlotsInInterfaceTerminal = this
                 .get("Client", "showOnlyInterfacesWithFreeSlotsInInterfaceTerminal", false).getBoolean(false);
         this.autoFocusInterfaceTerminalSearch = this.get("Client", "autoFocusInterfaceTerminalSearch", true)
@@ -650,6 +646,14 @@ public final class AEConfig extends Configuration implements IConfigurableObject
     @Override
     public IConfigManager getConfigManager() {
         return this.settings;
+    }
+
+    public SaveSearchMode getSaveSearchMode() {
+        return (SaveSearchMode) this.settings.getSetting(Settings.SAVE_SEARCH);
+    }
+
+    public void setSaveSearchMode(SaveSearchMode mode) {
+        this.settings.putSetting(Settings.SAVE_SEARCH, mode);
     }
 
     /**
