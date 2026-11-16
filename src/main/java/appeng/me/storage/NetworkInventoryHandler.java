@@ -282,7 +282,7 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
         if (trace == null) {
             return null;
         }
-        return trace.begin(inv, this.traceGrid(), this.getDepth(Actionable.SIMULATE).size(), stickyClaim);
+        return trace.begin(inv, stickyClaim);
     }
 
     private IGrid traceGrid() {

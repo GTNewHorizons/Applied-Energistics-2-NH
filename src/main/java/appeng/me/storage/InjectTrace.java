@@ -32,13 +32,6 @@ public final class InjectTrace {
 
         public final IMEInventoryHandler<?> handler;
 
-        /** Network that routed the stack, null if it could not name itself. */
-        @Nullable
-        public final IGrid grid;
-
-        /** 1 for the network the insert started on, one more for each subnetwork it passed through. */
-        public final int depth;
-
         /** Position of this hand-over among all recorded events, in the order they happened. */
         public final int order;
 
@@ -50,11 +43,8 @@ public final class InjectTrace {
         /** Whether a later hand-over of the same stack recorded this again, see {@link #discard}. */
         private boolean discarded;
 
-        private Entry(final IMEInventoryHandler<?> handler, @Nullable final IGrid grid, final int depth,
-                final int order, final boolean stickyClaim) {
+        private Entry(final IMEInventoryHandler<?> handler, final int order, final boolean stickyClaim) {
             this.handler = handler;
-            this.grid = grid;
-            this.depth = depth;
             this.order = order;
             this.stickyClaim = stickyClaim;
         }
@@ -127,9 +117,8 @@ public final class InjectTrace {
         return type == Actionable.SIMULATE ? CURRENT.get() : null;
     }
 
-    Entry begin(final IMEInventoryHandler<?> handler, @Nullable final IGrid grid, final int depth,
-            final boolean stickyClaim) {
-        final Entry entry = new Entry(handler, grid, depth, this.nextOrder++, stickyClaim);
+    Entry begin(final IMEInventoryHandler<?> handler, final boolean stickyClaim) {
+        final Entry entry = new Entry(handler, this.nextOrder++, stickyClaim);
         this.entries.add(entry);
         return entry;
     }
@@ -197,13 +186,6 @@ public final class InjectTrace {
             }
         }
         return Collections.unmodifiableList(result);
-    }
-
-    /**
-     * @return whether a network refused the insert because the source lacked permission
-     */
-    public boolean wasDenied(final IGrid grid) {
-        return this.denied.contains(grid);
     }
 
     /**

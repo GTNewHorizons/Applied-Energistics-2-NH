@@ -109,7 +109,6 @@ public class NetworkInventoryHandlerTraceFunctionalTest {
         assertSame(low, entries.get(1).handler);
         assertEquals(44, entries.get(1).getAccepted());
         assertTrue(entries.get(0).order < entries.get(1).order);
-        assertEquals(1, entries.get(0).depth);
         assertEquals(0, high.stored, "a simulation must not store anything");
     }
 
@@ -187,11 +186,7 @@ public class NetworkInventoryHandlerTraceFunctionalTest {
 
         final InjectTrace.Entry outerEntry = trace.getEntries().get(0);
         assertSame(inner, outerEntry.handler);
-        assertSame(outerSystem.grid, outerEntry.grid);
-        assertEquals(1, outerEntry.depth);
         for (final InjectTrace.Entry entry : trace.getEntries().subList(1, trace.getEntries().size())) {
-            assertSame(innerSystem.grid, entry.grid);
-            assertEquals(2, entry.depth);
             assertTrue(entry.order > outerEntry.order);
         }
     }
