@@ -1,7 +1,5 @@
 package appeng.api.features.transfer;
 
-import java.util.Set;
-
 import org.jetbrains.annotations.Nullable;
 
 import appeng.api.networking.IGridHost;
@@ -26,6 +24,4 @@ public interface ITransferInspectorRegistry {
      */
     @Nullable
     ITransferInspector<?> getInspector(Class<?> machineClass);
-
-    Set<Class<?>> getRegisteredClasses();
 }

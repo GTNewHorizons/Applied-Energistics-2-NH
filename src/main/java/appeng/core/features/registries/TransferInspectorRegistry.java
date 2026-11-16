@@ -34,11 +34,6 @@ public class TransferInspectorRegistry implements ITransferInspectorRegistry {
         return this.resolved.computeIfAbsent(machineClass, this::resolve).orElse(null);
     }
 
-    @Override
-    public Set<Class<?>> getRegisteredClasses() {
-        return Collections.unmodifiableSet(this.inspectors.keySet());
-    }
-
     private Optional<ITransferInspector<?>> resolve(final Class<?> machineClass) {
         for (Class<?> current = machineClass; current != null; current = current.getSuperclass()) {
             final ITransferInspector<?> inspector = this.inspectors.get(current);

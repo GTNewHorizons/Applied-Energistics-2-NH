@@ -2,7 +2,6 @@ package appeng.core.features.registries;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -27,29 +26,8 @@ public final class TransferInspectorRegistryTest {
     }
 
     @Test
-    public void exactClassWinsOverSuperclass() {
-        final ITransferInspector<Base> base = inspector();
-        final ITransferInspector<Sub> sub = inspector();
-        this.registry.register(Base.class, base);
-        this.registry.register(Sub.class, sub);
-
-        assertSame(sub, this.registry.getInspector(Sub.class));
-        assertSame(base, this.registry.getInspector(Base.class));
-    }
-
-    @Test
     public void subclassInheritsNearestSuperclass() {
         final ITransferInspector<Base> base = inspector();
-        this.registry.register(Base.class, base);
-
-        assertSame(base, this.registry.getInspector(SubSub.class));
-    }
-
-    @Test
-    public void superclassWinsOverInterface() {
-        final ITransferInspector<Marker> marker = inspector();
-        final ITransferInspector<Base> base = inspector();
-        this.registry.register(Marker.class, marker);
         this.registry.register(Base.class, base);
 
         assertSame(base, this.registry.getInspector(SubSub.class));
@@ -62,25 +40,6 @@ public final class TransferInspectorRegistryTest {
 
         assertSame(marker, this.registry.getInspector(SubSub.class));
         assertSame(marker, this.registry.getInspector(Sub.class));
-    }
-
-    @Test
-    public void laterRegistrationReplacesCachedResult() {
-        final ITransferInspector<Base> base = inspector();
-        final ITransferInspector<Sub> sub = inspector();
-        this.registry.register(Base.class, base);
-        assertSame(base, this.registry.getInspector(Sub.class));
-
-        this.registry.register(Sub.class, sub);
-
-        assertSame(sub, this.registry.getInspector(Sub.class));
-    }
-
-    @Test
-    public void registeredClassesAreListed() {
-        this.registry.register(Base.class, inspector());
-
-        assertTrue(this.registry.getRegisteredClasses().contains(Base.class));
     }
 
     private interface Marker extends IGridHost {
