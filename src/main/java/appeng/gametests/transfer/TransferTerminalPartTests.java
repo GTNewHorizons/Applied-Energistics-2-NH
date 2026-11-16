@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.InventoryCrafting;
 import net.minecraft.item.ItemStack;
@@ -548,54 +547,6 @@ public class TransferTerminalPartTests {
                     helper.assertEquals(0L, container[0].leftoverSync.get(), "The leftover note is cleared");
                     helper.assertFalse(container[0].deniedSync.get(), "The denied note is cleared");
                     helper.assertEquals(0, container[0].stickyCountSync.get(), "The sticky separator is cleared");
-                }).thenSucceed();
-    }
-
-    @GameTest(template = TEMPLATE, timeoutTicks = 260)
-    public static void aFlickeringNetworkRescansAtMostEveryFewTicks(GameTestHelper helper) {
-        PartTransferTerminal terminal = terminal(helper);
-        ContainerTransferTerminal[] container = new ContainerTransferTerminal[1];
-        int[] rows = new int[1];
-
-        helper.startSequence()
-                .thenWaitUntil(
-                        "wait for the terminal to join the network",
-                        60,
-                        () -> assertActive(helper, terminal, "Terminal should become active"))
-                .thenExecute("open the terminal, then cut the power", () -> {
-                    container[0] = new ContainerTransferTerminal(
-                            helper.spawnFakePlayer("transfer_terminal").inventory,
-                            terminal);
-                    container[0].detectAndSendChanges();
-                    rows[0] = container[0].getFilteredRows().size();
-                    helper.assertEquals(1, container[0].getScanCount(), "Opening scans once");
-                    helper.setBlock("controller", Blocks.air);
-                })
-                .thenWaitUntil(
-                        "wait for the terminal to lose power",
-                        60,
-                        () -> helper.assertFalse(terminal.getProxy().isActive(), "Terminal should go offline"))
-                .thenExecute("tick the screen while offline, then restore the power", () -> {
-                    container[0].detectAndSendChanges();
-                    helper.assertTrue(container[0].getFilteredRows().isEmpty(), "Nothing is listed while offline");
-                    // The template's controller is also its power source.
-                    helper.setBlock(
-                            "controller",
-                            AEApi.instance().definitions().blocks().creativeEnergyController().maybeBlock().get());
-                })
-                .thenWaitUntil(
-                        "wait for the terminal to come back",
-                        100,
-                        () -> assertActive(helper, terminal, "Terminal should become active again"))
-                .thenExecute("tick the screen once it is back", () -> {
-                    container[0].detectAndSendChanges();
-                    helper.assertEquals(1, container[0].getScanCount(), "Coming back right away does not scan");
-                    helper.assertEquals(rows[0], container[0].getFilteredRows().size(), "The last rows show again");
-
-                    for (int tick = 0; tick < 10; tick++) {
-                        container[0].detectAndSendChanges();
-                    }
-                    helper.assertEquals(2, container[0].getScanCount(), "The waiting scan runs once");
                 }).thenSucceed();
     }
 

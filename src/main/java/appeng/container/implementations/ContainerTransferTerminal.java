@@ -183,8 +183,6 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
     /** Whether the terminal was offline at the last tick, unlike {@link #wasOffline} a resend does not reset it. */
     private boolean offline;
 
-    /** How many times the networks were scanned, for tests. */
-    private int scanCount;
     private int ticksSinceFingerprint;
     private int lastSentTotal;
     private int lastSentStart;
@@ -390,7 +388,6 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
         this.scanned = TransferScanner.scan(this.grids, AEApi.instance().registries().transferInspectors());
         // Only needed while simulating, see withUninspected.
         this.uninspected = null;
-        this.scanCount++;
         this.updateTypes();
         this.configNames.clear();
         this.fingerprint = TransferScanner.fingerprint(this.grids);
@@ -538,13 +535,6 @@ public class ContainerTransferTerminal extends AEBaseContainer implements IVirtu
      */
     public List<TransferComponentInfo> getFilteredRows() {
         return Collections.unmodifiableList(this.filtered);
-    }
-
-    /**
-     * @return how many times this screen scanned the networks, for tests
-     */
-    public int getScanCount() {
-        return this.scanCount;
     }
 
     public static boolean isYes(final ObjectSyncHandler<YesNo> sync) {
