@@ -64,22 +64,6 @@ public final class TransferRowOrderTest {
                         row("a bus", 0, TransferDescription.builder().build())));
     }
 
-    /**
-     * A sticky card only matters for stacks the storage claims, which needs a query. Those cases are covered by
-     * {@code TransferResultFilterFunctionalTest}.
-     */
-    @Test
-    public void stickyCardAloneDoesNotReorder() {
-        assertEquals(
-                Arrays.asList("high", "low", "sticky"),
-                sorted(
-                        true,
-                        TransferDirection.EXPORT,
-                        row("low", 0, storage().priority(1).build()),
-                        row("sticky", 0, storage().sticky(true).priority(0).build()),
-                        row("high", 0, storage().priority(9).build())));
-    }
-
     @Test
     public void importDrainsLowestPriorityFirst() {
         assertEquals(

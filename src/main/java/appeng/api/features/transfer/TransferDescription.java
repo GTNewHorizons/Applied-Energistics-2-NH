@@ -35,7 +35,6 @@ public final class TransferDescription {
     public final boolean hasCraftingCard;
     public final boolean canImport;
     public final boolean canExport;
-    public final boolean sticky;
     public final boolean hasPriority;
     public final int priority;
     @Nullable
@@ -83,7 +82,6 @@ public final class TransferDescription {
         this.hasCraftingCard = builder.hasCraftingCard;
         this.canImport = builder.canImport;
         this.canExport = builder.canExport;
-        this.sticky = builder.sticky;
         this.hasPriority = builder.hasPriority;
         this.priority = builder.priority;
         this.oreFilter = builder.oreFilter;
@@ -134,7 +132,6 @@ public final class TransferDescription {
         out.writeBoolean(this.hasCraftingCard);
         out.writeBoolean(this.canImport);
         out.writeBoolean(this.canExport);
-        out.writeBoolean(this.sticky);
         out.writeBoolean(this.storageHandler);
         out.writeBoolean(this.generic);
         out.writeBoolean(this.hasPriority);
@@ -180,7 +177,6 @@ public final class TransferDescription {
         builder.hasCraftingCard(in.readBoolean());
         builder.canImport(in.readBoolean());
         builder.canExport(in.readBoolean());
-        builder.sticky(in.readBoolean());
         builder.storageHandler(in.readBoolean());
         builder.generic(in.readBoolean());
         final boolean hasPriority = in.readBoolean();
@@ -251,7 +247,6 @@ public final class TransferDescription {
         private boolean hasCraftingCard;
         private boolean canImport;
         private boolean canExport;
-        private boolean sticky;
         private boolean storageHandler;
         private boolean generic;
         private boolean hiddenByDefault;
@@ -274,7 +269,6 @@ public final class TransferDescription {
             this.hasCraftingCard = from.hasCraftingCard;
             this.canImport = from.canImport;
             this.canExport = from.canExport;
-            this.sticky = from.sticky;
             this.storageHandler = from.storageHandler;
             this.generic = from.generic;
             this.hiddenByDefault = from.hiddenByDefault;
@@ -326,11 +320,6 @@ public final class TransferDescription {
 
         public Builder canExport(final boolean canExport) {
             this.canExport = canExport;
-            return this;
-        }
-
-        public Builder sticky(final boolean sticky) {
-            this.sticky = sticky;
             return this;
         }
 

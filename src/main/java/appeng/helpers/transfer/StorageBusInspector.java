@@ -62,8 +62,8 @@ public final class StorageBusInspector implements ITransferInspector<PartStorage
                 EmptyPolicy.MATCH_ALL);
 
         final TransferDescription.Builder builder = InspectorSupport.withUpgrades(
-                TransferDescription.builder().storageHandler(true).priority(bus.getPriority()).sticky(sticky)
-                        .canImport(canImport).canExport(canExport),
+                TransferDescription.builder().storageHandler(true).priority(bus.getPriority()).canImport(canImport)
+                        .canExport(canExport),
                 bus.getInventoryByName("upgrades"),
                 InspectorSupport.has(bus, Upgrades.CRAFTING));
 

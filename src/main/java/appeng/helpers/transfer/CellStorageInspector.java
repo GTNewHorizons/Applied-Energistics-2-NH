@@ -66,7 +66,6 @@ abstract class CellStorageInspector<T extends IGridHost> implements ITransferIns
     @Override
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public TransferDescription inspect(final T host) {
-        boolean sticky = false;
         final TransferDescription.Builder builder = TransferDescription.builder().storageHandler(true)
                 .priority(this.priority(host)).canImport(true).canExport(true);
 
@@ -74,8 +73,7 @@ abstract class CellStorageInspector<T extends IGridHost> implements ITransferIns
         final Set<String> oreFilters = new LinkedHashSet<>();
         final Set<IAEStackType<?>> storedTypes = new HashSet<>();
         for (final IAEStackType<?> type : AEStackTypeRegistry.getAllTypes()) {
-            for (final IMEInventoryHandler handler : this.handlers(host, type)) {
-                sticky |= handler.getSticky();
+            if (!this.handlers(host, type).isEmpty()) {
                 storedTypes.add(type);
             }
             for (final IMEInventoryHandler handler : this.partitionHandlers(host, type)) {
@@ -115,7 +113,7 @@ abstract class CellStorageInspector<T extends IGridHost> implements ITransferIns
             builder.oreFilter(String.join("|", oreFilters));
         }
 
-        return builder.sticky(sticky).hiddenByDefault(this.hiddenByDefault())
+        return builder.hiddenByDefault(this.hiddenByDefault())
                 .matcher(new CellMatcher(type -> this.handlers(host, type), this.source(host))).build();
     }
 

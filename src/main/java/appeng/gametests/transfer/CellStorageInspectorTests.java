@@ -75,7 +75,6 @@ public class CellStorageInspectorTests {
                     description.matcher.isExplicitlyListed(itemStack(Blocks.cobblestone, 1)),
                     "The partition lists cobblestone");
             helper.assertEquals(1, description.config.size(), "The partition is shown");
-            helper.assertFalse(description.sticky, "No cell has a sticky card");
         }).thenSucceed();
     }
 
@@ -166,12 +165,11 @@ public class CellStorageInspectorTests {
 
         helper.startSequence().thenWaitUntil("wait for the chest to see its cell", 80, () -> {
             assertActive(helper, chest.getProxy(), "Chest should become active");
-            helper.assertTrue(CHEST.inspect(chest).sticky, "The cell has a sticky card");
+            helper.assertTrue(
+                    CHEST.inspect(chest).matcher.capturesAsSticky(itemStack(Blocks.cobblestone, 1)),
+                    "Sticky storage claims its partition");
         }).thenExecute("ask the inspector", () -> {
             final TransferDescription description = CHEST.inspect(chest);
-            helper.assertTrue(
-                    description.matcher.capturesAsSticky(itemStack(Blocks.cobblestone, 1)),
-                    "Sticky storage claims its partition");
             helper.assertFalse(
                     description.matcher.capturesAsSticky(itemStack(Blocks.dirt, 1)),
                     "The partition keeps dirt out");
@@ -198,7 +196,9 @@ public class CellStorageInspectorTests {
 
         helper.startSequence().thenWaitUntil("wait for the drive to see its cell", 80, () -> {
             assertActive(helper, drive.getProxy(), "Drive should become active");
-            helper.assertTrue(DRIVE.inspect(drive).sticky, "The cell has a sticky card");
+            helper.assertTrue(
+                    DRIVE.inspect(drive).matcher.capturesAsSticky(itemStack(Blocks.cobblestone, 1)),
+                    "The sticky cell claims what it holds");
         }).thenExecute("ask the inspector", () -> {
             final TransferDescription description = DRIVE.inspect(drive);
             helper.assertTrue(

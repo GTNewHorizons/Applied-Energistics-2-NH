@@ -119,17 +119,15 @@ public class StorageBusInspectorTests {
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 20)
-    public static void reportsPriorityStickyAndListing(GameTestHelper helper) {
+    public static void reportsPriorityAndListing(GameTestHelper helper) {
         PartStorageBus bus = bus(helper);
         bus.setPriority(42);
         bus.getAEInventoryByName(StorageName.CONFIG).putAEStackInSlot(0, iron());
-        install(bus.getInventoryByName("upgrades"), cards().cardSticky());
 
         TransferDescription description = INSPECTOR.inspect(bus);
 
         helper.assertTrue(description.storageHandler, "Storage buses follow AE's routing");
         helper.assertEquals(42, description.priority, "Priority should be reported");
-        helper.assertTrue(description.sticky, "Sticky card should be reported");
         helper.assertTrue(description.matcher.isExplicitlyListed(iron()), "Whitelisted stack is listed");
         helper.assertFalse(description.matcher.isExplicitlyListed(gold()), "Other stacks are not listed");
         helper.succeed();

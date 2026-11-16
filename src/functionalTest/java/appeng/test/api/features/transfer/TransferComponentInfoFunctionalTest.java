@@ -49,8 +49,7 @@ public class TransferComponentInfoFunctionalTest {
                 .setting(Settings.ACCESS, AccessRestriction.READ)
                 .setting(Settings.REDSTONE_CONTROLLED, RedstoneMode.LOW_SIGNAL).upgrade(new ItemStack(Items.diamond, 2))
                 .config(iron, true).config(water, false).hasCraftingCard(true).canImport(true).canExport(false)
-                .sticky(true).storageHandler(true).priority(-7).oreFilter("ingot*").fuzzyMode(FuzzyMode.PERCENT_50)
-                .build();
+                .storageHandler(true).priority(-7).oreFilter("ingot*").fuzzyMode(FuzzyMode.PERCENT_50).build();
 
         final TransferComponentInfo read = roundTrip(
                 new TransferComponentInfo(
@@ -88,7 +87,6 @@ public class TransferComponentInfoFunctionalTest {
         assertTrue(result.hasCraftingCard);
         assertTrue(result.canImport);
         assertFalse(result.canExport);
-        assertTrue(result.sticky);
         assertTrue(result.storageHandler);
         assertTrue(result.hasPriority);
         assertEquals(-7, result.priority);
