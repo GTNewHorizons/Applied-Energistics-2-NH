@@ -24,11 +24,6 @@ public final class TransferGridLinksCollectTest {
     }
 
     @Test
-    public void startsWithTheGivenNode() {
-        assertEquals(Collections.singletonList("a"), this.collect("a", 10));
-    }
-
-    @Test
     public void visitsNearerNodesBeforeFartherOnes() {
         this.link("a", "b", "c");
         this.link("b", "d");

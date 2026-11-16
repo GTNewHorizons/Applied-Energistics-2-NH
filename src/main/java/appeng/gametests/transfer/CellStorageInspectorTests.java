@@ -93,16 +93,6 @@ public class CellStorageInspectorTests {
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 100)
-    public static void anEmptyDriveHoldsNoKindOfCell(final GameTestHelper helper) {
-        final TileDrive drive = drive(helper);
-
-        helper.startSequence().thenWaitUntil("wait for the drive to join the network", 80, () -> {
-            assertActive(helper, drive.getProxy(), "Drive should become active");
-            helper.assertTrue(DRIVE.inspect(drive).storedTypes.isEmpty(), "A drive without cells stores nothing");
-        }).thenSucceed();
-    }
-
-    @GameTest(template = TEMPLATE, timeoutTicks = 100)
     public static void anOreFilteredCellIsListedWithItsFilter(final GameTestHelper helper) {
         final TileDrive drive = drive(helper);
         final ItemStack cell = cell1k();
@@ -155,6 +145,7 @@ public class CellStorageInspectorTests {
                     final TransferDescription description = DRIVE.inspect(drive);
                     helper.assertFalse(exports(description, itemStack(Blocks.dirt, 1)), "There is no cell");
                     helper.assertTrue(description.config.isEmpty(), "There is nothing to show");
+                    helper.assertTrue(description.storedTypes.isEmpty(), "A drive without cells stores nothing");
                 }).thenSucceed();
     }
 

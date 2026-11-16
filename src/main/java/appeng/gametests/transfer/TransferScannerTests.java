@@ -112,24 +112,12 @@ public class TransferScannerTests {
                     registry.register(PartStorageBus.class, host -> TransferDescription.builder().build());
 
                     helper.assertEquals(1, scan(helper, registry).size(), "The storage bus should remain");
-                }).thenSucceed();
-    }
-
-    @GameTest(template = TEMPLATE, timeoutTicks = 100)
-    public static void anInspectorThatFailsToLinkOnlyLosesItsOwnRow(GameTestHelper helper) {
-        IPart importBus = placeImportBus(helper);
-
-        helper.startSequence()
-                .thenWaitUntil(
-                        "wait for the bus to join the network",
-                        60,
-                        () -> assertActive(helper, importBus, "Import bus should become active"))
-                .thenExecute("scan with an inspector built against another version of a mod", () -> {
+                }).thenExecute("scan with an inspector built against another version of a mod", () -> {
                     TransferInspectorRegistry registry = new TransferInspectorRegistry();
                     registry.register(PartImportBus.class, host -> { throw new NoSuchMethodError("missing"); });
                     registry.register(PartStorageBus.class, host -> TransferDescription.builder().build());
 
-                    helper.assertEquals(1, scan(helper, registry).size(), "The storage bus should remain");
+                    helper.assertEquals(1, scan(helper, registry).size(), "A linkage error loses only its own row");
                 }).thenSucceed();
     }
 
