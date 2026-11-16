@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.List;
 
 import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
 
 import appeng.me.GridAccessException;
 import appeng.util.p2p.P2PRoute;
@@ -32,31 +31,6 @@ public abstract class PartP2PRoutedTunnel<T extends PartP2PRoutedTunnel<T>> exte
         return this.resolveRoute(getSideAccess().extract());
     }
 
-    protected final List<T> getDependentTunnels() {
-        final P2PTransportPolicy policy = this.getTransportPolicy();
-        final List<T> tunnels = new ArrayList<>();
-
-        if (this.isOutput()) {
-            if (policy.outputReachesPeers()) {
-                this.addOtherOutputs(tunnels);
-            }
-            if (policy.inputReachesOutputs()) {
-                this.addInput(tunnels);
-            }
-        } else if (policy.outputReachesInput()) {
-            this.addOtherOutputs(tunnels);
-        }
-
-        return tunnels;
-    }
-
-    protected final TileEntity getFacingTileEntity() {
-        return this.getTile().getWorldObj().getTileEntity(
-                this.getTile().xCoord + this.getSide().offsetX,
-                this.getTile().yCoord + this.getSide().offsetY,
-                this.getTile().zCoord + this.getSide().offsetZ);
-    }
-
     private List<T> resolveRoute(final P2PRoute route) {
         return switch (route) {
             case OUTPUTS -> this.addOtherOutputs(new ArrayList<>());
@@ -64,10 +38,6 @@ public abstract class PartP2PRoutedTunnel<T extends PartP2PRoutedTunnel<T>> exte
             case PEERS -> this.addInput(this.addOtherOutputs(new ArrayList<>()));
             default -> Collections.emptyList();
         };
-    }
-
-    protected final List<T> getPeerTunnels() {
-        return this.resolveRoute(P2PRoute.PEERS);
     }
 
     private List<T> addOtherOutputs(final List<T> into) {

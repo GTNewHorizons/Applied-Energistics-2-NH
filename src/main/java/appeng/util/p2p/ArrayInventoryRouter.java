@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import appeng.util.target.InventoryTarget;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
@@ -64,11 +65,11 @@ public class ArrayInventoryRouter implements IInventoryRouter {
         }
         InventoryTarget oldTarget = members.put(member, target);
         stackLimitChanged = true;
-        return !InventoryTarget.isSameTarget(oldTarget, target);
+        return getSize(oldTarget) != getSize(target);
     }
 
     @Override
-    public void commit() {
+    public void rebuildLayout() {
         table.clear();
         cumSum.clear();
         memberIndex.clear();
@@ -184,7 +185,7 @@ public class ArrayInventoryRouter implements IInventoryRouter {
         int tunnelIndex = slotToTunnel(slotIndex);
         IRoutedTunnel viewed = table.get(tunnelIndex);
         InventoryTarget target = members.get(viewed);
-        if (target == null || target.size != getSnapshotTargetSize(viewed)) {
+        if (target == null || target.size() != getSnapshotTargetSize(viewed)) {
             return false;
         }
         if (!target.isValid()) {
@@ -233,7 +234,7 @@ public class ArrayInventoryRouter implements IInventoryRouter {
             IRoutedTunnel member = entry.getKey();
             InventoryTarget target = entry.getValue();
 
-            if (target == null || !target.isValid() || target.size == 0) {
+            if (target == null || !target.isValid() || target.size() == 0) {
                 continue;
             }
 
@@ -252,7 +253,7 @@ public class ArrayInventoryRouter implements IInventoryRouter {
     }
 
     private static int getSize(final InventoryTarget target) {
-        return target == null ? 0 : target.size;
+        return target == null ? 0 : target.size();
     }
 
     private int getSnapshotTargetSize(final IRoutedTunnel t) {

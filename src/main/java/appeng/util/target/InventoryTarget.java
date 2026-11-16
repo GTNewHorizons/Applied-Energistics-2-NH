@@ -1,25 +1,24 @@
-package appeng.util.p2p;
+package appeng.util.target;
 
-import appeng.util.target.TileTarget;
 import net.minecraft.inventory.IInventory;
 
 public class InventoryTarget {
 
     public final IInventory inv;
     private final TileTarget tile;
-    private final int[] layout;
+    private final int size;
 
-    public InventoryTarget(IInventory inv, TileTarget tile, int[] layout) {
+    public InventoryTarget(IInventory inv, TileTarget tile) {
         this.inv = inv;
         this.tile = tile;
-        this.layout = layout;
+        this.size = inv.getSizeInventory();
     }
 
     public int size() {
-        return layout.length;
+        return size;
     }
 
     public boolean isValid() {
-        return this.inv.getSizeInventory() == this.size() && this.tile.isValid();
+        return this.tile.isValid() && inv.getSizeInventory() == this.size;
     }
 }

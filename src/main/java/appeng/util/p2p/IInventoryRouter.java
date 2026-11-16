@@ -4,6 +4,8 @@ import net.minecraft.inventory.IInventory;
 
 import org.jspecify.annotations.Nullable;
 
+import appeng.util.target.InventoryTarget;
+
 public interface IInventoryRouter {
 
     final class SlotView {
@@ -20,7 +22,7 @@ public interface IInventoryRouter {
     void addMember(IRoutedTunnel output);
 
     /*
-     * Remove output P2P tunnel from the router. Should immediately invalidate access.
+     * Remove output P2P tunnel from the router. Should immediately invalidate access but layout can be out of date
      */
     void removeMember(IRoutedTunnel output);
 
@@ -31,15 +33,16 @@ public interface IInventoryRouter {
 
     /*
      * Set inventory target for the member. This will typically be the inventory in front of the tunnel. Should
-     * immediately invalidate the old target if different from the current one (returns true in this case).
+     * immediately invalidate the old target if different from the current one (returns true in this case). Layout can
+     * be out of date.
      */
     boolean setTarget(IRoutedTunnel member, @Nullable InventoryTarget target);
 
     /*
-     * Commit all changes and make the router up to date. Should notify size changes to the members through
-     * onViewSizeChange(), if any.
+     * Commit all changes and rebuild the layout. Should notify size changes to the members through onViewSizeChange(),
+     * if any.
      */
-    void commit();
+    void rebuildLayout();
 
     int getViewSize(IRoutedTunnel viewer);
 

@@ -15,19 +15,17 @@ import java.util.Stack;
 
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.IIcon;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import appeng.api.config.PowerUnits;
 import appeng.integration.IntegrationType;
 import appeng.integration.modules.helpers.NullRFHandler;
-import appeng.me.GridAccessException;
 import appeng.transformer.annotations.Integration.Interface;
 import appeng.transformer.annotations.Integration.InterfaceList;
 import appeng.util.Platform;
-import appeng.util.target.TileTargetCache;
 import appeng.util.p2p.P2PTransportPolicy;
+import appeng.util.target.TileTargetCache;
 import cofh.api.energy.IEnergyHandler;
 import cofh.api.energy.IEnergyProvider;
 import cofh.api.energy.IEnergyReceiver;
@@ -47,12 +45,6 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower>
     private static final IEnergyHandler NULL_HANDLER = new NullRFHandler();
 
     private final TileTargetCache targetCache = new TileTargetCache();
-
-    private boolean cachedReceiver = false;
-    private IEnergyReceiver receiverTarget;
-
-    private boolean cachedProvider = false;
-    private IEnergyProvider providerTarget;
 
     public PartP2PRFPower(final ItemStack is) {
         super(is);
@@ -77,10 +69,7 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower>
 
     @Override
     public void onNeighborChanged() {
-        this.cachedReceiver = false;
-        this.cachedProvider = false;
         super.onNeighborChanged();
-
         this.targetCache.markStale();
     }
 
@@ -186,31 +175,27 @@ public final class PartP2PRFPower extends PartP2PRoutedTunnel<PartP2PRFPower>
     }
 
     private IEnergyReceiver getReceiver() {
-        if (!this.cachedReceiver) {
-            final TileEntity te = this.getFacingTileEntity();
-            this.receiverTarget = te instanceof IEnergyReceiver ? (IEnergyReceiver) te : null;
-            this.cachedReceiver = true;
-        }
+        var target = this.targetCache.get(this.getTile(), this.getSide());
+        IEnergyReceiver receiverTarget = target != null && target.tile() instanceof IEnergyReceiver receiver ? receiver
+                : null;
 
-        if (this.receiverTarget == null || !this.receiverTarget.canConnectEnergy(this.getSide().getOpposite())) {
+        if (receiverTarget == null || !receiverTarget.canConnectEnergy(this.getSide().getOpposite())) {
             return NULL_HANDLER;
         }
 
-        return this.receiverTarget;
+        return receiverTarget;
     }
 
     private IEnergyProvider getProvider() {
-        if (!this.cachedProvider) {
-            final TileEntity te = this.getFacingTileEntity();
-            this.providerTarget = te instanceof IEnergyProvider ? (IEnergyProvider) te : null;
-            this.cachedProvider = true;
-        }
+        var target = this.targetCache.get(this.getTile(), this.getSide());
+        IEnergyProvider providerTarget = target != null && target.tile() instanceof IEnergyProvider provider ? provider
+                : null;
 
-        if (this.providerTarget == null || !this.providerTarget.canConnectEnergy(this.getSide().getOpposite())) {
+        if (providerTarget == null || !providerTarget.canConnectEnergy(this.getSide().getOpposite())) {
             return NULL_HANDLER;
         }
 
-        return this.providerTarget;
+        return providerTarget;
     }
 
     @Override

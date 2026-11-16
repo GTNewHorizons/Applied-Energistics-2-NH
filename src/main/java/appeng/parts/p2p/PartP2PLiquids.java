@@ -26,9 +26,9 @@ import net.minecraftforge.fluids.FluidTankInfo;
 import net.minecraftforge.fluids.IFluidHandler;
 
 import appeng.me.GridAccessException;
-import appeng.util.target.TileTargetCache;
 import appeng.util.p2p.P2PRoute;
 import appeng.util.p2p.P2PTransportPolicy;
+import appeng.util.target.TileTargetCache;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -63,12 +63,6 @@ public class PartP2PLiquids extends PartP2PRoutedTunnel<PartP2PLiquids> implemen
     @Override
     public void onNeighborChanged() {
         this.targetCache.markStale();
-        if (this.isOutput()) {
-            final PartP2PLiquids in = this.getInput();
-            if (in != null) {
-                in.onTunnelNetworkChange();
-            }
-        }
     }
 
     @Override
