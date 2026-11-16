@@ -172,9 +172,9 @@ public class ArrayInventoryRouter implements IInventoryRouter {
             int mySize = cumSum.getInt(myIndex + 1) - myCumSum;
             if (policy.outputReachesPeers()) {
                 int invOffset = (int) Math.floorMod(offset, table.size() - 1);
-                int slotOffset = cumSum.getInt(invOffset);
+                int slotOffset = invOffset >= myIndex ? cumSum.getInt(invOffset + 1) - mySize : cumSum.getInt(invOffset);
                 int slotTarget = (slotOffset + slot) % viewSize;
-                slotIndex = slotTarget + (slotTarget >= myCumSum ? mySize : 0);
+                slotIndex = slotTarget >= myCumSum ? slotTarget + mySize : slotTarget;
             } else if (policy.outputReachesInput()) {
                 slotIndex = slot;
             }

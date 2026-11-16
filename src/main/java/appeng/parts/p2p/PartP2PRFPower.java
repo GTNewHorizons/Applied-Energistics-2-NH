@@ -124,7 +124,7 @@ public final class PartP2PRFPower extends PartP2PTunnelRouted<PartP2PRFPower>
 
     @Override
     public int extractEnergy(final ForgeDirection from, final int maxExtract, final boolean simulate) {
-        if (!this.isActive() || this.isBusy()) {
+        if (!this.getProxy().isActive() || this.isBusy()) {
             return 0;
         }
 
