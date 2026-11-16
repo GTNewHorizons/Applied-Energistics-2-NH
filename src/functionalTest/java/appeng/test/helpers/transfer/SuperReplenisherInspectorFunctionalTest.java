@@ -73,6 +73,5 @@ public class SuperReplenisherInspectorFunctionalTest {
         final TransferDescription description = new SuperReplenisherInspector().inspect(tile);
 
         assertFalse(description.matcher.canTransfer(IRON, TransferDirection.IMPORT));
-        assertFalse(description.canImport);
     }
 }

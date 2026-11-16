@@ -89,8 +89,7 @@ public class TransferInsertSimulationTests {
         throw new AssertionError("The storage bus should be listed");
     }
 
-    private static TransferComponentInfo driveRow(final GameTestHelper helper,
-            final TransferInsertSimulation.Result result) {
+    private static TransferComponentInfo driveRow(final TransferInsertSimulation.Result result) {
         for (final TransferComponentInfo row : result.rows) {
             if (row.side == (byte) ForgeDirection.UNKNOWN.ordinal()) {
                 return row;
@@ -149,7 +148,7 @@ public class TransferInsertSimulationTests {
             final TransferInsertSimulation.Result result = simulate(helper, Blocks.cobblestone, 64);
             helper.assertEquals(24L, busRow(helper, result).simulatedAmount, "Only the last slot has room");
             helper.assertEquals(0L, result.leftover, "The cell in the drive takes the rest");
-            final TransferComponentInfo drive = driveRow(helper, result);
+            final TransferComponentInfo drive = driveRow(result);
             helper.assertEquals(40L, drive.simulatedAmount, "The drive takes the rest");
             helper.assertEquals(1, drive.simulatedSlots.size(), "One cell takes it");
             helper.assertEquals(0, drive.simulatedSlots.get(0).slot, "The cell is in the first slot");
@@ -504,7 +503,7 @@ public class TransferInsertSimulationTests {
 
             final TransferInsertSimulation.Result result = TransferInsertSimulation
                     .run(grids, rows, itemStack(Blocks.cobblestone, 64), SOURCE);
-            final TransferComponentInfo drive = driveRow(helper, result);
+            final TransferComponentInfo drive = driveRow(result);
             helper.assertTrue(drive.description.generic, "The drive has no inspector");
             helper.assertEquals(40L, drive.simulatedAmount, "Its share of the stack is shown");
             helper.assertEquals(0L, result.leftover, "Every part of the stack has a row");

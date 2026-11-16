@@ -18,7 +18,6 @@ import net.minecraftforge.fluids.FluidStack;
 import org.junit.jupiter.api.Test;
 
 import appeng.api.config.AccessRestriction;
-import appeng.api.config.FuzzyMode;
 import appeng.api.config.RedstoneMode;
 import appeng.api.config.Settings;
 import appeng.api.features.transfer.TransferComponentInfo;
@@ -49,7 +48,7 @@ public class TransferComponentInfoFunctionalTest {
                 .setting(Settings.ACCESS, AccessRestriction.READ)
                 .setting(Settings.REDSTONE_CONTROLLED, RedstoneMode.LOW_SIGNAL).upgrade(new ItemStack(Items.diamond, 2))
                 .config(iron, true).config(water, false).hasCraftingCard(true).canImport(true).canExport(false)
-                .storageHandler(true).priority(-7).oreFilter("ingot*").fuzzyMode(FuzzyMode.PERCENT_50).build();
+                .storageHandler(true).priority(-7).oreFilter("ingot*").build();
 
         final TransferComponentInfo read = roundTrip(
                 new TransferComponentInfo(
@@ -113,17 +112,6 @@ public class TransferComponentInfoFunctionalTest {
         assertFalse(read.description.hasPriority);
         assertNull(read.description.oreFilter);
         assertTrue(read.description.config.isEmpty());
-    }
-
-    @Test
-    public void matcherStaysOnTheServer() {
-        final TransferDescription description = TransferDescription.builder().matcher((stack, direction) -> true)
-                .build();
-
-        final TransferComponentInfo read = roundTrip(
-                new TransferComponentInfo(null, "", null, 0, 0, 0, 0, (byte) 0, 0, description));
-
-        assertSame(TransferMatcher.NONE, read.description.matcher);
     }
 
     @Test

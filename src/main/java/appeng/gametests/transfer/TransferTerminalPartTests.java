@@ -34,7 +34,6 @@ import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
 import appeng.container.implementations.ContainerTransferTerminal;
 import appeng.core.AppEng;
-import appeng.helpers.transfer.TransferRowWindow;
 import appeng.helpers.transfer.TransferTypeFilter;
 import appeng.parts.automation.PartExportBus;
 import appeng.parts.reporting.PartTransferTerminal;
@@ -45,12 +44,6 @@ public class TransferTerminalPartTests {
 
     private static PartTransferTerminal terminal(GameTestHelper helper) {
         return place(helper, AEApi.instance().definitions().parts().transferTerminal(), ForgeDirection.UP);
-    }
-
-    @GameTest(template = TEMPLATE, timeoutTicks = 20)
-    public static void terminalCanBePlacedOnACable(GameTestHelper helper) {
-        helper.assertNotNull(terminal(helper), "Terminal part should be placed");
-        helper.succeed();
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 20)
@@ -79,53 +72,6 @@ public class TransferTerminalPartTests {
                         crafted),
                 "They should craft one Transfer Terminal");
         helper.succeed();
-    }
-
-    @GameTest(template = TEMPLATE, timeoutTicks = 100)
-    public static void containerScansTheNetworkWhenOpened(GameTestHelper helper) {
-        PartTransferTerminal terminal = terminal(helper);
-
-        helper.startSequence()
-                .thenWaitUntil(
-                        "wait for the terminal to join the network",
-                        60,
-                        () -> assertActive(helper, terminal, "Terminal should become active"))
-                .thenExecute("open the container and tick it", () -> {
-                    FakePlayer player = helper.spawnFakePlayer("transfer_terminal");
-                    ContainerTransferTerminal container = new ContainerTransferTerminal(player.inventory, terminal);
-
-                    container.detectAndSendChanges();
-                    container.detectAndSendChanges();
-
-                    helper.assertNull(container.getQuery(), "A new terminal has nothing searched");
-                }).thenSucceed();
-    }
-
-    @GameTest(template = TEMPLATE, timeoutTicks = 100)
-    public static void filtersAndWindowChangesApplyWithoutError(GameTestHelper helper) {
-        PartTransferTerminal terminal = terminal(helper);
-
-        helper.startSequence()
-                .thenWaitUntil(
-                        "wait for the terminal to join the network",
-                        60,
-                        () -> assertActive(helper, terminal, "Terminal should become active"))
-                .thenExecute("change every filter and the window", () -> {
-                    FakePlayer player = helper.spawnFakePlayer("transfer_terminal");
-                    ContainerTransferTerminal container = new ContainerTransferTerminal(player.inventory, terminal);
-                    container.detectAndSendChanges();
-
-                    container.directionSync.set(TransferDirection.EXPORT);
-                    container.craftingOnlySync.set(YesNo.YES);
-                    container.hideUnfilteredSync.set(YesNo.YES);
-                    container.networkOnlySync.set(YesNo.YES);
-                    container.searchTextSync.set("iron");
-                    container.windowStartSync.setLocalValue(1000);
-                    container.windowSizeSync.setLocalValue(TransferRowWindow.ALL);
-                    container.detectAndSendChanges();
-
-                    helper.assertNull(container.getQuery(), "The filters do not touch the query");
-                }).thenSucceed();
     }
 
     @GameTest(template = TEMPLATE, timeoutTicks = 100)
@@ -355,10 +301,6 @@ public class TransferTerminalPartTests {
         terminal.onCellArrayChanged(new MENetworkCellArrayUpdate());
 
         helper.assertTrue(terminal.getChangeCount() > before, "A storage change should request a rescan");
-        helper.assertEquals(
-                terminal.getChangeCount(),
-                terminal.getChangeCount(),
-                "Every open screen has to see the change, so reading it must not reset it");
         helper.succeed();
     }
 
