@@ -431,6 +431,7 @@ public enum GuiText implements Localization {
     FakeUpgrade,
 
     AdvancedBlockingCardDeprecated;
+    InterfaceUpgrades;
 
     private final String root;
 
