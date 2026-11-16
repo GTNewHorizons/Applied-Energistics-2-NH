@@ -66,6 +66,7 @@ import appeng.core.sync.packets.PacketSpatialAction;
 import appeng.core.sync.packets.PacketSwapSlots;
 import appeng.core.sync.packets.PacketSwitchGuis;
 import appeng.core.sync.packets.PacketToggleInterfaceVisibility;
+import appeng.core.sync.packets.PacketTransferTerminalUpdate;
 import appeng.core.sync.packets.PacketTransitionEffect;
 import appeng.core.sync.packets.PacketValueConfig;
 import appeng.core.sync.packets.PacketVirtualSlot;
@@ -164,7 +165,8 @@ public class AppEngPacketHandlerBase {
         PACKET_SUPER_WIRELESS_TOOL_COMMAND(PacketWirelessToolCommand.class),
         PACKET_CRAFTING_DIAGNOSTIC_RESET(PacketCraftingDiagnosticReset.class),
         PACKET_HIGHLIGHT_ITEM_FLOW(PacketHighlightItemFlow.class),
-        PACKET_FLOW_RATES(PacketFlowRates.class);
+        PACKET_FLOW_RATES(PacketFlowRates.class),
+        PACKET_TRANSFER_TERMINAL_UPDATE(PacketTransferTerminalUpdate.class);
 
         private final Class<? extends AppEngPacket> packetClass;
         private final Constructor<? extends AppEngPacket> packetConstructor;

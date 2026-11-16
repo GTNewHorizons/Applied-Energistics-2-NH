@@ -211,6 +211,80 @@ public enum GuiText implements Localization {
     SimulationIncomplete,
 
     InterfaceTerminal,
+
+    TransferTerminal,
+
+    TransferTerminalQueryTooltip,
+
+    TransferTerminalSearchTooltip,
+
+    TransferTerminalSearchLanguageWarning,
+
+    TransferTerminalTieTooltip,
+
+    TransferTermIn,
+
+    TransferTermOut,
+
+    TransferTermBoth,
+
+    TransferTermNone,
+
+    TransferTermPriority,
+
+    TransferTermCellTypes,
+
+    TransferTermCards,
+
+    TransferTermSettings,
+
+    TransferTermOreFilter,
+
+    TransferTermFuzzySlot,
+
+    TransferTermShowingSlots,
+
+    TransferTermSubNetwork,
+
+    TransferTermSubNetworkTooltip,
+
+    TransferTermLocation,
+
+    TransferTerminalOrderTooltip,
+
+    TransferTerminalNetworkTooltip,
+
+    TransferTerminalMoveTooltip,
+
+    TransferTermStickySeparator,
+
+    TransferTermStickySeparatorDesc,
+
+    TransferTermWouldReceive,
+
+    TransferTermWouldReceiveNothing,
+
+    TransferTermStickyClaimed,
+
+    TransferTermSlotAmount,
+
+    TransferTermLeftover,
+
+    TransferTermLeftoverShort,
+
+    TransferTermDenied,
+
+    TransferTermDeniedShort,
+
+    TransferTermLocked,
+
+    TransferTermLockedShort,
+
+    TransferTermCraftingCpu,
+
+    TransferTermNoDetails,
+
+    TransferTermQueryAmountHint,
     NoCraftingCPUs,
     Clean,
     InvalidPattern,

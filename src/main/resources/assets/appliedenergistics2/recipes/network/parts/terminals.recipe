@@ -15,6 +15,10 @@ shapeless=
     -> ae2:ItemPart.InterfaceTerminal
 
 shapeless=
+    ae2:ItemPart.InterfaceTerminal ae2:ItemPart.StorageBus ae2:ItemMaterial.LogicProcessor
+    -> ae2:ItemPart.TransferTerminal
+
+shapeless=
     ae2:ItemPart.CraftingTerminal ae2:ItemMaterial.EngProcessor
     -> ae2:ItemPart.PatternTerminal
 

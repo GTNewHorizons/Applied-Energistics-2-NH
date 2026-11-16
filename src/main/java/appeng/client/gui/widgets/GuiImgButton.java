@@ -58,6 +58,7 @@ import appeng.api.config.SortOrder;
 import appeng.api.config.StorageFilter;
 import appeng.api.config.StringOrder;
 import appeng.api.config.TerminalStyle;
+import appeng.api.config.TransferDirection;
 import appeng.api.config.ViewItems;
 import appeng.api.config.WirelessToolGroupBy;
 import appeng.api.config.YesNo;
@@ -592,6 +593,84 @@ public class GuiImgButton extends GuiButton implements ITooltip {
 
             this.registerApp(16 + 3, Settings.CRAFT_ONLY, YesNo.YES, ButtonToolTips.Craft, ButtonToolTips.CraftOnly);
             this.registerApp(16 + 2, Settings.CRAFT_ONLY, YesNo.NO, ButtonToolTips.Craft, ButtonToolTips.CraftEither);
+            this.registerApp(
+                    16 * 9 + 1,
+                    Settings.TRANSFER_DIRECTION,
+                    TransferDirection.IMPORT,
+                    ButtonToolTips.TransferTermDirection,
+                    ButtonToolTips.TransferTermImport);
+            this.registerApp(
+                    16 * 9,
+                    Settings.TRANSFER_DIRECTION,
+                    TransferDirection.EXPORT,
+                    ButtonToolTips.TransferTermDirection,
+                    ButtonToolTips.TransferTermExport);
+            this.registerApp(
+                    16 * 9 + 2,
+                    Settings.TRANSFER_DIRECTION,
+                    TransferDirection.BOTH,
+                    ButtonToolTips.TransferTermDirection,
+                    ButtonToolTips.TransferTermBoth);
+            this.registerApp(
+                    16 + 3,
+                    Settings.TRANSFER_CRAFTING_CARD_ONLY,
+                    YesNo.YES,
+                    ButtonToolTips.TransferTermCraftingOnly,
+                    ButtonToolTips.TransferTermCraftingOnlyYes);
+            this.registerApp(
+                    16 + 2,
+                    Settings.TRANSFER_CRAFTING_CARD_ONLY,
+                    YesNo.NO,
+                    ButtonToolTips.TransferTermCraftingOnly,
+                    ButtonToolTips.TransferTermCraftingOnlyNo);
+            this.registerApp(
+                    16 * 13 + 7,
+                    Settings.TRANSFER_HIDE_UNFILTERED,
+                    YesNo.YES,
+                    ButtonToolTips.TransferTermHideUnfiltered,
+                    ButtonToolTips.TransferTermHideUnfilteredYes);
+            this.registerApp(
+                    16 * 13 + 6,
+                    Settings.TRANSFER_HIDE_UNFILTERED,
+                    YesNo.NO,
+                    ButtonToolTips.TransferTermHideUnfiltered,
+                    ButtonToolTips.TransferTermHideUnfilteredNo);
+            this.registerApp(
+                    8 * 16 + 13,
+                    Settings.TRANSFER_NETWORK_ONLY,
+                    YesNo.YES,
+                    ButtonToolTips.TransferTermNetworkOnly,
+                    ButtonToolTips.TransferTermNetworkOnlyYes);
+            this.registerApp(
+                    8 * 16 + 12,
+                    Settings.TRANSFER_NETWORK_ONLY,
+                    YesNo.NO,
+                    ButtonToolTips.TransferTermNetworkOnly,
+                    ButtonToolTips.TransferTermNetworkOnlyNo);
+            this.registerApp(
+                    5 * 16 + 10,
+                    Settings.TRANSFER_SIMULATE,
+                    YesNo.YES,
+                    ButtonToolTips.TransferTermSimulate,
+                    ButtonToolTips.TransferTermSimulateYes);
+            this.registerApp(
+                    5 * 16 + 11,
+                    Settings.TRANSFER_SIMULATE,
+                    YesNo.NO,
+                    ButtonToolTips.TransferTermSimulate,
+                    ButtonToolTips.TransferTermSimulateNo);
+            this.registerApp(
+                    6,
+                    Settings.ACTIONS,
+                    ActionItems.TRANSFER_RESET_FILTERS,
+                    ButtonToolTips.TransferTermReset,
+                    ButtonToolTips.TransferTermResetDesc);
+            this.registerApp(
+                    130,
+                    Settings.ACTIONS,
+                    ActionItems.TRANSFER_COMPONENT_TYPES,
+                    ButtonToolTips.TransferTermTypes,
+                    ButtonToolTips.TransferTermTypesDesc);
 
             this.registerApp(
                     16 * 11 + 2,

@@ -13,6 +13,7 @@
 
 package appeng.api.features;
 
+import appeng.api.features.transfer.ITransferInspectorRegistry;
 import appeng.api.movable.IMovableRegistry;
 import appeng.api.networking.IGridCacheRegistry;
 import appeng.api.storage.ICellRegistry;
@@ -77,6 +78,11 @@ public interface IRegistryContainer {
      * Allows you to register certain class to be displayed on interface terminals.
      */
     IInterfaceTerminalRegistry interfaceTerminal();
+
+    /**
+     * Allows you to register components to be displayed on the Transfer Terminal.
+     */
+    ITransferInspectorRegistry transferInspectors();
 
     /**
      * get access to the locatable registry

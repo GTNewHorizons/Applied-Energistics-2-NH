@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import org.jspecify.annotations.NonNull;
 
@@ -45,6 +46,7 @@ import appeng.util.inv.ItemListIgnoreCrafting;
 import appeng.util.item.NetworkItemList;
 import appeng.util.item.PrioritizedNetworkItemList;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetworkInventory<T> {
 
@@ -113,7 +115,11 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
             return input;
         }
 
+        // Only simulations are traced, a real insertion never sees a trace.
+        final InjectTrace trace = InjectTrace.current(type);
+
         if (this.testPermission(src, SecurityPermissions.INJECT)) {
+            if (trace != null) trace.denied(this.traceGrid());
             this.surface(this, type);
             return input;
         }
@@ -130,7 +136,10 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
 
             if (inv.canAccept(input)
                     && (inv.isPrioritized(input) || inv.extractItems(input, Actionable.SIMULATE, src) != null)) {
+                final InjectTrace.Entry entry = this.beginTrace(trace, inv, inv.getSticky());
+                final long before = input.getStackSize();
                 input = inv.injectItems(input, type, src);
+                InjectTrace.finish(entry, before, input);
                 if (!stickyInventoryFound && inv.getSticky()) stickyInventoryFound = true;
             }
         }
@@ -146,6 +155,9 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
             // Simulate doesn't have memory, so pass 2 must account for amounts already accepted by pass 1 in
             // the same inventory.
             final Int2LongOpenHashMap simulatedPass1Inserted = new Int2LongOpenHashMap();
+            // What subnetworks behind each handler recorded in pass 1, only kept while tracing.
+            final Int2ObjectOpenHashMap<InjectTrace.Mark[]> tracedPass1 = trace == null ? null
+                    : new Int2ObjectOpenHashMap<>();
 
             int passTwoIndex = -1;
             // Pass 1
@@ -159,7 +171,11 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
                         && (inv.isPrioritized(input) || inv.extractItems(input, Actionable.SIMULATE, src) != null)) {
                     long before = input.getStackSize();
 
+                    final InjectTrace.Entry entry = this.beginTrace(trace, inv, false);
+                    final InjectTrace.Mark nestedFrom = trace == null ? null : trace.mark();
                     input = inv.injectItems(input, type, src);
+                    InjectTrace.finish(entry, before, input);
+                    if (trace != null) tracedPass1.put(i, new InjectTrace.Mark[] { nestedFrom, trace.mark() });
                     if (input == null) break outer;
 
                     if (type == Actionable.SIMULATE && inv.validForPass(2)) {
@@ -205,12 +221,21 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
                     if (inv.canAccept(input) && !inv.isPrioritized(input)) {
                         if (type == Actionable.SIMULATE) {
                             final long pass1Inserted = simulatedPass1Inserted.getOrDefault(i, 0);
+                            final long before = input.getStackSize();
+                            final InjectTrace.Entry entry = this.beginTrace(trace, inv, false);
                             if (pass1Inserted > 0) {
+                                if (trace != null) {
+                                    // The handler is about to see its pass 1 share again, and so is any
+                                    // subnetwork behind it, which records it anew.
+                                    final InjectTrace.Mark[] nested = tracedPass1.get(i);
+                                    if (nested != null) trace.discard(nested[0], nested[1]);
+                                }
                                 final T pass2Input = input.copy();
                                 pass2Input.setStackSize(pass2Input.getStackSize() + pass1Inserted);
 
                                 final T pass2Leftover = inv.injectItems(pass2Input, type, src);
                                 if (pass2Leftover == null) {
+                                    InjectTrace.finish(entry, before, null);
                                     input = null;
                                     break outer;
                                 }
@@ -221,6 +246,8 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
                             } else {
                                 input = inv.injectItems(input, type, src);
                             }
+                            // Pass 1 recorded its own share, this only counts what pass 2 added.
+                            InjectTrace.finish(entry, before, input);
                         } else {
                             input = inv.injectItems(input, type, src);
                         }
@@ -248,6 +275,18 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
         this.surface(this, type);
 
         return input;
+    }
+
+    private InjectTrace.Entry beginTrace(final InjectTrace trace, final IMEInventoryHandler<T> inv,
+            final boolean stickyClaim) {
+        if (trace == null) {
+            return null;
+        }
+        return trace.begin(inv, stickyClaim);
+    }
+
+    private IGrid traceGrid() {
+        return this.security == null ? null : this.security.getGrid();
     }
 
     private boolean diveList(final NetworkInventoryHandler<T> networkInventoryHandler, final Actionable type) {
@@ -294,7 +333,28 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
         }
     }
 
+    /**
+     * Runs simulated storage calls whose exceptions the caller catches. Networks only leave the recursion guard on
+     * their way out of a call that returns, so after an exception they would stay on it and refuse every later
+     * simulation on this thread. Here the guard is put back as it was however the calls end.
+     */
+    public static <R> R guardSimulation(final Supplier<R> body) {
+        final LinkedList depth = depthOf(Actionable.SIMULATE);
+        final int size = depth.size();
+        try {
+            return body.get();
+        } finally {
+            while (depth.size() > size) {
+                depth.pop();
+            }
+        }
+    }
+
     private LinkedList getDepth(final Actionable type) {
+        return depthOf(type);
+    }
+
+    private static LinkedList depthOf(final Actionable type) {
         final ThreadLocal<LinkedList> depth = type == Actionable.MODULATE ? DEPTH_MOD : DEPTH_SIM;
 
         LinkedList s = depth.get();

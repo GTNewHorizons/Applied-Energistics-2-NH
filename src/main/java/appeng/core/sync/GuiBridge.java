@@ -50,6 +50,7 @@ import appeng.api.parts.IPart;
 import appeng.api.parts.IPatternTerminal;
 import appeng.api.parts.IPatternTerminalEx;
 import appeng.api.parts.IStorageBus;
+import appeng.api.parts.ITransferTerminal;
 import appeng.api.storage.ITerminalHost;
 import appeng.api.util.DimensionalCoord;
 import appeng.client.gui.GuiNull;
@@ -104,6 +105,7 @@ import appeng.container.implementations.ContainerSpatialLinkChamber;
 import appeng.container.implementations.ContainerStorageBus;
 import appeng.container.implementations.ContainerStorageReshuffle;
 import appeng.container.implementations.ContainerSuperMEReplenisher;
+import appeng.container.implementations.ContainerTransferTerminal;
 import appeng.container.implementations.ContainerVibrationChamber;
 import appeng.container.implementations.ContainerWireless;
 import appeng.container.implementations.ContainerWirelessKit;
@@ -162,6 +164,9 @@ public enum GuiBridge implements IGuiHandler {
 
     GUI_PATTERN_TERMINAL_EX(ContainerPatternTermEx.class, IPatternTerminalEx.class, GuiHostType.ITEM_OR_WORLD,
             SecurityPermissions.CRAFT),
+
+    GUI_TRANSFER_TERMINAL(ContainerTransferTerminal.class, ITransferTerminal.class, GuiHostType.ITEM_OR_WORLD,
+            SecurityPermissions.BUILD),
 
     GUI_INTERFACE_TERMINAL(ContainerInterfaceTerminal.class, IInterfaceTerminal.class, GuiHostType.ITEM_OR_WORLD,
             SecurityPermissions.BUILD),

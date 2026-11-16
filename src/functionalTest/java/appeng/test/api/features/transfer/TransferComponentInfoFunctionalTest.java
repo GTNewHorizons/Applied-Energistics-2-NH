@@ -1,0 +1,270 @@
+package appeng.test.api.features.transfer;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Arrays;
+import java.util.Collections;
+
+import net.minecraft.init.Items;
+import net.minecraft.item.ItemStack;
+import net.minecraftforge.fluids.FluidRegistry;
+import net.minecraftforge.fluids.FluidStack;
+
+import org.junit.jupiter.api.Test;
+
+import appeng.api.config.AccessRestriction;
+import appeng.api.config.RedstoneMode;
+import appeng.api.config.Settings;
+import appeng.api.features.transfer.TransferComponentInfo;
+import appeng.api.features.transfer.TransferDescription;
+import appeng.api.features.transfer.TransferMatcher;
+import appeng.util.item.AEFluidStack;
+import appeng.util.item.AEFluidStackType;
+import appeng.util.item.AEItemStack;
+import appeng.util.item.AEItemStackType;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
+public class TransferComponentInfoFunctionalTest {
+
+    private static TransferComponentInfo roundTrip(final TransferComponentInfo info) {
+        final ByteBuf buffer = Unpooled.buffer();
+        info.write(buffer);
+        final TransferComponentInfo read = TransferComponentInfo.read(buffer);
+        assertEquals(0, buffer.readableBytes(), "The whole row should be consumed");
+        return read;
+    }
+
+    @Test
+    public void fullRowSurvivesTheNetwork() {
+        final AEItemStack iron = AEItemStack.create(new ItemStack(Items.iron_ingot, 1));
+        final AEFluidStack water = AEFluidStack.create(new FluidStack(FluidRegistry.WATER, 1));
+        final TransferDescription description = TransferDescription.builder()
+                .setting(Settings.ACCESS, AccessRestriction.READ)
+                .setting(Settings.REDSTONE_CONTROLLED, RedstoneMode.LOW_SIGNAL).upgrade(new ItemStack(Items.diamond, 2))
+                .config(iron, true).config(water, false).hasCraftingCard(true).canImport(true).canExport(false)
+                .storageHandler(true).priority(-7).oreFilter("ingot*").build();
+
+        final TransferComponentInfo read = roundTrip(
+                new TransferComponentInfo(
+                        new ItemStack(Items.apple, 1),
+                        "My Bus",
+                        "{\"text\":\"x\"}",
+                        1,
+                        -2,
+                        3,
+                        -4,
+                        (byte) 5,
+                        6,
+                        description));
+
+        assertEquals(Items.apple, read.selfRep.getItem());
+        assertEquals("My Bus", read.customName);
+        assertEquals("{\"text\":\"x\"}", read.nameSuffixJson);
+        assertEquals(1, read.x);
+        assertEquals(-2, read.y);
+        assertEquals(3, read.z);
+        assertEquals(-4, read.dim);
+        assertEquals(5, read.side);
+        assertEquals(6, read.networkTier);
+
+        final TransferDescription result = read.description;
+        assertEquals(2, result.settings.size());
+        assertSame(Settings.ACCESS, result.settings.get(0).setting);
+        assertSame(AccessRestriction.READ, result.settings.get(0).value);
+        assertSame(RedstoneMode.LOW_SIGNAL, result.settings.get(1).value);
+        assertEquals(2, result.upgrades.get(0).stackSize);
+        assertEquals(iron, result.config.get(0).stack);
+        assertTrue(result.config.get(0).fuzzy);
+        assertEquals(water, result.config.get(1).stack);
+        assertFalse(result.config.get(1).fuzzy);
+        assertTrue(result.hasCraftingCard);
+        assertTrue(result.canImport);
+        assertFalse(result.canExport);
+        assertTrue(result.storageHandler);
+        assertTrue(result.hasPriority);
+        assertEquals(-7, result.priority);
+        assertEquals("ingot*", result.oreFilter);
+    }
+
+    @Test
+    public void emptyRowSurvivesTheNetwork() {
+        final TransferComponentInfo read = roundTrip(
+                new TransferComponentInfo(
+                        null,
+                        "",
+                        null,
+                        0,
+                        0,
+                        0,
+                        0,
+                        (byte) 0,
+                        0,
+                        TransferDescription.builder().build()));
+
+        assertNull(read.selfRep);
+        assertNull(read.nameSuffixJson);
+        assertFalse(read.description.hasPriority);
+        assertNull(read.description.oreFilter);
+        assertTrue(read.description.config.isEmpty());
+    }
+
+    @Test
+    public void queryMarksMatchingConfigEntriesAndSurvivesTheNetwork() {
+        final AEItemStack iron = AEItemStack.create(new ItemStack(Items.iron_ingot, 1));
+        final AEItemStack gold = AEItemStack.create(new ItemStack(Items.gold_ingot, 1));
+        final TransferMatcher listed = new TransferMatcher() {
+
+            @Override
+            public boolean canTransfer(final appeng.api.storage.data.IAEStack<?> stack,
+                    final appeng.api.config.TransferDirection direction) {
+                return true;
+            }
+
+            @Override
+            public boolean isExplicitlyListed(final appeng.api.storage.data.IAEStack<?> stack) {
+                return true;
+            }
+        };
+        final TransferDescription description = TransferDescription.builder().config(iron, false).config(gold, false)
+                .matcher(listed).build();
+
+        final TransferComponentInfo queried = new TransferComponentInfo(
+                null,
+                "",
+                null,
+                0,
+                0,
+                0,
+                0,
+                (byte) 0,
+                0,
+                description).withQuery(gold);
+
+        assertTrue(queried.explicitlyListed);
+        final TransferComponentInfo read = roundTrip(queried);
+        assertFalse(read.description.config.get(0).matchesQuery);
+        assertTrue(read.description.config.get(1).matchesQuery);
+        assertFalse(queried.withQuery(null).description.config.get(1).matchesQuery);
+    }
+
+    @Test
+    public void rowsStartWithoutASimulation() {
+        final TransferComponentInfo read = roundTrip(
+                new TransferComponentInfo(
+                        null,
+                        "",
+                        null,
+                        0,
+                        0,
+                        0,
+                        0,
+                        (byte) 0,
+                        0,
+                        TransferDescription.builder().build()));
+
+        assertEquals(TransferComponentInfo.NOT_SIMULATED, read.simulatedAmount);
+        assertFalse(read.stickyClaimed);
+        assertTrue(read.simulatedSlots.isEmpty());
+    }
+
+    @Test
+    public void simulationSurvivesTheNetworkAndLaterQueries() {
+        final TransferComponentInfo simulated = new TransferComponentInfo(
+                null,
+                "",
+                null,
+                0,
+                0,
+                0,
+                0,
+                (byte) 0,
+                0,
+                TransferDescription.builder().build()).withSimulation(
+                        123_456_789_012L,
+                        3,
+                        true,
+                        Arrays.asList(
+                                new TransferComponentInfo.SlotAmount(0, 5),
+                                new TransferComponentInfo.SlotAmount(9, 118)));
+
+        final TransferComponentInfo read = roundTrip(simulated);
+        assertEquals(123_456_789_012L, read.simulatedAmount);
+        assertTrue(read.stickyClaimed);
+        assertEquals(2, read.simulatedSlots.size());
+        assertEquals(9, read.simulatedSlots.get(1).slot);
+        assertEquals(118, read.simulatedSlots.get(1).amount);
+        assertEquals(Integer.MAX_VALUE, read.simulationOrder, "The order only sorts rows on the server");
+
+        final TransferComponentInfo requeried = simulated.withQuery(null);
+        assertEquals(3, requeried.simulationOrder);
+        assertEquals(123_456_789_012L, requeried.simulatedAmount);
+    }
+
+    @Test
+    public void genericRowsAreToldApartOnTheClient() {
+        final TransferDescription generic = TransferDescription.builder().generic(true).storageHandler(true).build();
+
+        assertTrue(
+                roundTrip(
+                        new TransferComponentInfo(
+                                null,
+                                "",
+                                null,
+                                0,
+                                0,
+                                0,
+                                0,
+                                (byte) 0,
+                                0,
+                                generic)).description.generic);
+        assertTrue(generic.toBuilder().build().generic, "Copies keep the flag");
+        assertFalse(
+                roundTrip(
+                        new TransferComponentInfo(
+                                null,
+                                "",
+                                null,
+                                0,
+                                0,
+                                0,
+                                0,
+                                (byte) 0,
+                                0,
+                                TransferDescription.builder().build())).description.generic);
+    }
+
+    @Test
+    public void storedTypesSurviveTheNetworkInOrder() {
+        final TransferDescription description = TransferDescription.builder()
+                .storedType(AEFluidStackType.FLUID_STACK_TYPE).storedType(AEItemStackType.ITEM_STACK_TYPE)
+                .storedType(AEFluidStackType.FLUID_STACK_TYPE).build();
+
+        final TransferComponentInfo read = roundTrip(
+                new TransferComponentInfo(null, "", null, 0, 0, 0, 0, (byte) 0, 0, description));
+
+        assertEquals(
+                Arrays.asList(AEFluidStackType.FLUID_STACK_TYPE, AEItemStackType.ITEM_STACK_TYPE),
+                read.description.storedTypes,
+                "Each type once, in the order given");
+        assertEquals(2, description.toBuilder().build().storedTypes.size(), "Copies keep the types");
+    }
+
+    @Test
+    public void liveHandlersStayOnTheServer() {
+        final TransferDescription description = TransferDescription.builder()
+                .liveHandlers(type -> Collections.emptyList()).slotOf(handler -> 0).build();
+
+        final TransferComponentInfo read = roundTrip(
+                new TransferComponentInfo(null, "", null, 0, 0, 0, 0, (byte) 0, 0, description));
+
+        assertNotNull(description.toBuilder().build().liveHandlers, "Copies keep the handlers");
+        assertNull(read.description.liveHandlers);
+        assertNull(read.description.slotOf);
+    }
+}

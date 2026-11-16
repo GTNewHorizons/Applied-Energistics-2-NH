@@ -364,6 +364,7 @@ public final class Registration {
         target.partPatternTerminal = this.converter.of(source.patternTerminal());
         target.partCraftingTerminal = this.converter.of(source.craftingTerminal());
         target.partCraftingDiagnosticTerminal = this.converter.of(source.craftingDiagnosticTerminal());
+        target.partTransferTerminal = this.converter.of(source.transferTerminal());
         target.partTerminal = this.converter.of(source.terminal());
         target.partStorageMonitor = this.converter.of(source.storageMonitor());
         target.partThroughputMonitor = this.converter.of(source.throughputMonitor());
@@ -602,6 +603,19 @@ public final class Registration {
 
         // default settings..
         ((P2PTunnelRegistry) registries.p2pTunnel()).configure();
+
+        // TEMPORARY - remove before the pull request, see TempAddonTransferInspectors and TempGTTransferInspectors
+        // A version of the addon without one of the classes these name only loses its Transfer Terminal rows.
+        if (appeng.util.Platform.isAE2FCLoaded) {
+            try {
+                appeng.integration.modules.TempAddonTransferInspectors.register();
+            } catch (final LinkageError ignored) {}
+        }
+        if (appeng.util.Platform.isGTLoaded) {
+            try {
+                appeng.integration.modules.TempGTTransferInspectors.register();
+            } catch (final LinkageError ignored) {}
+        }
 
         // add to localization..
         PlayerMessages.values();

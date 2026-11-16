@@ -23,11 +23,13 @@ import appeng.api.features.IRegistryContainer;
 import appeng.api.features.ISpecialComparisonRegistry;
 import appeng.api.features.IWirelessTermRegistry;
 import appeng.api.features.IWorldGen;
+import appeng.api.features.transfer.ITransferInspectorRegistry;
 import appeng.api.movable.IMovableRegistry;
 import appeng.api.networking.IGridCacheRegistry;
 import appeng.api.storage.ICellRegistry;
 import appeng.api.storage.IExternalStorageRegistry;
 import appeng.api.storage.IItemDisplayRegistry;
+import appeng.helpers.transfer.CoreTransferInspectors;
 
 /**
  * represents all registries
@@ -45,6 +47,7 @@ public class RegistryContainer implements IRegistryContainer {
     private final ICellRegistry cell = new CellRegistry();
     private final IItemDisplayRegistry itemDisplay = new ItemDisplayRegistry();
     private final IInterfaceTerminalRegistry interfaceTerminalRegistry = new InterfaceTerminalRegistry();
+    private final ITransferInspectorRegistry transferInspectors = CoreTransferInspectors.createRegistry();
     private final ILocatableRegistry locatable = new LocatableRegistry();
     private final ISpecialComparisonRegistry comparison = new SpecialComparisonRegistry();
     private final IWirelessTermRegistry wireless = new WirelessRegistry();
@@ -99,6 +102,11 @@ public class RegistryContainer implements IRegistryContainer {
     @Override
     public IInscriberRegistry inscriber() {
         return this.inscriber;
+    }
+
+    @Override
+    public ITransferInspectorRegistry transferInspectors() {
+        return this.transferInspectors;
     }
 
     @Override
