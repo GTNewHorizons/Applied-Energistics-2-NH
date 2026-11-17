@@ -430,7 +430,7 @@ public enum GuiText implements Localization {
     UpgradesInstalled,
     FakeUpgrade,
 
-    AdvancedBlockingCardDeprecated;
+    AdvancedBlockingCardDeprecated,
     InterfaceUpgrades;
 
     private final String root;
