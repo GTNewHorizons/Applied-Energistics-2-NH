@@ -1,7 +1,6 @@
 package appeng.client.render.previewBlocks;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Arrays;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.Tessellator;
@@ -12,15 +11,16 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 import org.lwjgl.opengl.GL11;
 
-import com.github.bsideup.jabel.Desugar;
-
 import appeng.api.parts.IPartHost;
 import appeng.core.AEConfig;
 
 public abstract class AbstractRendererPreview {
 
     private static final double DEPTH_BIAS = 0.0005;
-    private static final Set<Edge> drawnEdges = new HashSet<>();
+    private static final double EDGE_EPSILON = 1.0e-6;
+    // six doubles per edge, both ends
+    private static double[] drawnEdges = new double[6 * 32];
+    private static int drawnCount;
 
     private boolean wasBlend;
     private boolean wasTexture;
@@ -54,31 +54,44 @@ public abstract class AbstractRendererPreview {
         tessellator.draw();
     }
 
-    /** Adds a line unless this pass already drew it, so edges shared by two boxes do not blend twice. */
+    /** Adds a line to the batch unless this pass already added the same one. */
     private void addEdge(Tessellator tessellator, double x1, double y1, double z1, double x2, double y2, double z2) {
-        final Edge edge = Edge.of(x1, y1, z1, x2, y2, z2);
-        if (drawnEdges.add(edge)) {
+        // a line drawn twice blends twice, so the joint of two boxes would look brighter
+        if (!isDrawn(x1, y1, z1, x2, y2, z2)) {
+            remember(x1, y1, z1, x2, y2, z2);
             tessellator.addVertex(x1, y1, z1);
             tessellator.addVertex(x2, y2, z2);
         }
     }
 
-    @Desugar
-    private record Edge(int x1, int y1, int z1, int x2, int y2, int z2) {
-
-        static Edge of(double x1, double y1, double z1, double x2, double y2, double z2) {
-            final int ax = key(x1), ay = key(y1), az = key(z1);
-            final int bx = key(x2), by = key(y2), bz = key(z2);
-            // order the ends so both directions of a line give the same key
-            if (ax < bx || ax == bx && (ay < by || ay == by && az <= bz)) {
-                return new Edge(ax, ay, az, bx, by, bz);
+    private static boolean isDrawn(double x1, double y1, double z1, double x2, double y2, double z2) {
+        for (int i = 0; i < drawnCount; i += 6) {
+            if (near(i, x1, y1, z1, x2, y2, z2) || near(i, x2, y2, z2, x1, y1, z1)) {
+                return true;
             }
-            return new Edge(bx, by, bz, ax, ay, az);
         }
+        return false;
+    }
 
-        private static int key(double value) {
-            return (int) Math.round(value * 1024.0);
+    private static boolean near(int i, double x1, double y1, double z1, double x2, double y2, double z2) {
+        final double[] e = drawnEdges;
+        return Math.abs(e[i] - x1) < EDGE_EPSILON && Math.abs(e[i + 1] - y1) < EDGE_EPSILON
+                && Math.abs(e[i + 2] - z1) < EDGE_EPSILON
+                && Math.abs(e[i + 3] - x2) < EDGE_EPSILON
+                && Math.abs(e[i + 4] - y2) < EDGE_EPSILON
+                && Math.abs(e[i + 5] - z2) < EDGE_EPSILON;
+    }
+
+    private static void remember(double x1, double y1, double z1, double x2, double y2, double z2) {
+        if (drawnCount + 6 > drawnEdges.length) {
+            drawnEdges = Arrays.copyOf(drawnEdges, drawnEdges.length * 2);
         }
+        drawnEdges[drawnCount++] = x1;
+        drawnEdges[drawnCount++] = y1;
+        drawnEdges[drawnCount++] = z1;
+        drawnEdges[drawnCount++] = x2;
+        drawnEdges[drawnCount++] = y2;
+        drawnEdges[drawnCount++] = z2;
     }
 
     protected void getValidColorGL11() {
@@ -238,7 +251,7 @@ public abstract class AbstractRendererPreview {
         GL11.glDisable(GL11.GL_LIGHTING);
         GL11.glDisable(GL11.GL_CULL_FACE);
         GL11.glDepthMask(false);
-        drawnEdges.clear();
+        drawnCount = 0;
         // push lines back, so edges lying on an existing cable are hidden by its faces
         GL11.glDepthRange(DEPTH_BIAS, 1.0);
 
