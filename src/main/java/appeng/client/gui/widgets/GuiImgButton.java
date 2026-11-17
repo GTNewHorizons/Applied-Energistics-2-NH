@@ -49,6 +49,7 @@ import appeng.api.config.PowerUnits;
 import appeng.api.config.PriorityCardMode;
 import appeng.api.config.RedstoneMode;
 import appeng.api.config.RelativeDirection;
+import appeng.api.config.SaveSearchMode;
 import appeng.api.config.SchedulingMode;
 import appeng.api.config.SearchBoxMode;
 import appeng.api.config.Settings;
@@ -287,15 +288,21 @@ public class GuiImgButton extends GuiButton implements ITooltip {
             this.registerApp(
                     16 * 2 + 7,
                     Settings.SAVE_SEARCH,
-                    YesNo.YES,
+                    SaveSearchMode.YES,
                     ButtonToolTips.SaveSearchString,
                     ButtonToolTips.SaveSearchStringYes);
             this.registerApp(
                     16 * 2 + 8,
                     Settings.SAVE_SEARCH,
-                    YesNo.NO,
+                    SaveSearchMode.NO,
                     ButtonToolTips.SaveSearchString,
                     ButtonToolTips.SaveSearchStringNo);
+            this.registerApp(
+                    16 * 2 + 7,
+                    Settings.SAVE_SEARCH,
+                    SaveSearchMode.SELECT,
+                    ButtonToolTips.SaveSearchString,
+                    ButtonToolTips.SaveSearchStringSelect);
 
             this.registerApp(
                     16 * 5 + 3,
