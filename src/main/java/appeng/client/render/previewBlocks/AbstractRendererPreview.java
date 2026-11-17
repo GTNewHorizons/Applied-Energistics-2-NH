@@ -1,5 +1,8 @@
 package appeng.client.render.previewBlocks;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
@@ -9,10 +12,21 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 import org.lwjgl.opengl.GL11;
 
+import com.github.bsideup.jabel.Desugar;
+
 import appeng.api.parts.IPartHost;
 import appeng.core.AEConfig;
 
 public abstract class AbstractRendererPreview {
+
+    private static final double DEPTH_BIAS = 0.0005;
+    private static final Set<Edge> drawnEdges = new HashSet<>();
+
+    private boolean wasBlend;
+    private boolean wasTexture;
+    private boolean wasLighting;
+    private boolean wasCullFace;
+    private boolean wasDepthMask;
 
     private final int lineWidth = AEConfig.instance.previewLineWidth;
 
@@ -22,43 +36,49 @@ public abstract class AbstractRendererPreview {
         GL11.glLineWidth(lineWidth);
         tessellator.startDrawing(GL11.GL_LINES);
 
-        tessellator.addVertex(minX, minY, minZ);
-        tessellator.addVertex(maxX, minY, minZ);
+        addEdge(tessellator, minX, minY, minZ, maxX, minY, minZ);
+        addEdge(tessellator, maxX, minY, minZ, maxX, minY, maxZ);
+        addEdge(tessellator, maxX, minY, maxZ, minX, minY, maxZ);
+        addEdge(tessellator, minX, minY, maxZ, minX, minY, minZ);
 
-        tessellator.addVertex(maxX, minY, minZ);
-        tessellator.addVertex(maxX, minY, maxZ);
+        addEdge(tessellator, minX, maxY, minZ, maxX, maxY, minZ);
+        addEdge(tessellator, maxX, maxY, minZ, maxX, maxY, maxZ);
+        addEdge(tessellator, maxX, maxY, maxZ, minX, maxY, maxZ);
+        addEdge(tessellator, minX, maxY, maxZ, minX, maxY, minZ);
 
-        tessellator.addVertex(maxX, minY, maxZ);
-        tessellator.addVertex(minX, minY, maxZ);
-
-        tessellator.addVertex(minX, minY, maxZ);
-        tessellator.addVertex(minX, minY, minZ);
-
-        tessellator.addVertex(minX, maxY, minZ);
-        tessellator.addVertex(maxX, maxY, minZ);
-
-        tessellator.addVertex(maxX, maxY, minZ);
-        tessellator.addVertex(maxX, maxY, maxZ);
-
-        tessellator.addVertex(maxX, maxY, maxZ);
-        tessellator.addVertex(minX, maxY, maxZ);
-
-        tessellator.addVertex(minX, maxY, maxZ);
-        tessellator.addVertex(minX, maxY, minZ);
-
-        tessellator.addVertex(minX, minY, minZ);
-        tessellator.addVertex(minX, maxY, minZ);
-
-        tessellator.addVertex(maxX, minY, minZ);
-        tessellator.addVertex(maxX, maxY, minZ);
-
-        tessellator.addVertex(maxX, minY, maxZ);
-        tessellator.addVertex(maxX, maxY, maxZ);
-
-        tessellator.addVertex(minX, minY, maxZ);
-        tessellator.addVertex(minX, maxY, maxZ);
+        addEdge(tessellator, minX, minY, minZ, minX, maxY, minZ);
+        addEdge(tessellator, maxX, minY, minZ, maxX, maxY, minZ);
+        addEdge(tessellator, maxX, minY, maxZ, maxX, maxY, maxZ);
+        addEdge(tessellator, minX, minY, maxZ, minX, maxY, maxZ);
 
         tessellator.draw();
+    }
+
+    /** Adds a line unless this pass already drew it, so edges shared by two boxes do not blend twice. */
+    private void addEdge(Tessellator tessellator, double x1, double y1, double z1, double x2, double y2, double z2) {
+        final Edge edge = Edge.of(x1, y1, z1, x2, y2, z2);
+        if (drawnEdges.add(edge)) {
+            tessellator.addVertex(x1, y1, z1);
+            tessellator.addVertex(x2, y2, z2);
+        }
+    }
+
+    @Desugar
+    private record Edge(int x1, int y1, int z1, int x2, int y2, int z2) {
+
+        static Edge of(double x1, double y1, double z1, double x2, double y2, double z2) {
+            final int ax = key(x1), ay = key(y1), az = key(z1);
+            final int bx = key(x2), by = key(y2), bz = key(z2);
+            // order the ends so both directions of a line give the same key
+            if (ax < bx || ax == bx && (ay < by || ay == by && az <= bz)) {
+                return new Edge(ax, ay, az, bx, by, bz);
+            }
+            return new Edge(bx, by, bz, ax, ay, az);
+        }
+
+        private static int key(double value) {
+            return (int) Math.round(value * 1024.0);
+        }
     }
 
     protected void getValidColorGL11() {
@@ -205,22 +225,41 @@ public abstract class AbstractRendererPreview {
         GL11.glPushMatrix();
         GL11.glTranslated(-playerX, -playerY, -playerZ);
 
+        // the highlight event runs inside the world pass, so put back whatever GL state it finds
+        wasBlend = GL11.glIsEnabled(GL11.GL_BLEND);
+        wasTexture = GL11.glIsEnabled(GL11.GL_TEXTURE_2D);
+        wasLighting = GL11.glIsEnabled(GL11.GL_LIGHTING);
+        wasCullFace = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+        wasDepthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
+
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         GL11.glDisable(GL11.GL_LIGHTING);
         GL11.glDisable(GL11.GL_CULL_FACE);
         GL11.glDepthMask(false);
+        drawnEdges.clear();
+        // push lines back, so edges lying on an existing cable are hidden by its faces
+        GL11.glDepthRange(DEPTH_BIAS, 1.0);
 
         getValidColorGL11();
     }
 
     protected void clearGlState() {
-        GL11.glDepthMask(true);
-        GL11.glEnable(GL11.GL_CULL_FACE);
-        GL11.glEnable(GL11.GL_TEXTURE_2D);
-        GL11.glEnable(GL11.GL_LIGHTING);
-        GL11.glDisable(GL11.GL_BLEND);
+        GL11.glDepthRange(0.0, 1.0);
+        GL11.glDepthMask(wasDepthMask);
+        setEnabled(GL11.GL_CULL_FACE, wasCullFace);
+        setEnabled(GL11.GL_TEXTURE_2D, wasTexture);
+        setEnabled(GL11.GL_LIGHTING, wasLighting);
+        setEnabled(GL11.GL_BLEND, wasBlend);
         GL11.glPopMatrix();
+    }
+
+    private static void setEnabled(int capability, boolean enabled) {
+        if (enabled) {
+            GL11.glEnable(capability);
+        } else {
+            GL11.glDisable(capability);
+        }
     }
 }
