@@ -27,6 +27,7 @@ import net.minecraftforge.fluids.FluidTankInfo;
 import net.minecraftforge.fluids.IFluidHandler;
 
 import appeng.me.GridAccessException;
+import appeng.util.Platform;
 import appeng.util.item.FluidKey;
 import appeng.util.p2p.P2PRoute;
 import appeng.util.p2p.P2PTransportPolicy;
@@ -54,7 +55,7 @@ public class PartP2PLiquids extends PartP2PTunnelRouted<PartP2PLiquids> implemen
 
     @Override
     public P2PTransportPolicy getTransportPolicy() {
-        return P2PTransportPolicy.TWO_WAY_PUSH;
+        return P2PTransportPolicy.TWO_WAY_PUSH_PULL;
     }
 
     @Override
@@ -302,7 +303,7 @@ public class PartP2PLiquids extends PartP2PTunnelRouted<PartP2PLiquids> implemen
                 return null;
             }
 
-            fluidSelector += drainedAmount;
+            fluidSelector = Platform.getRandom().nextLong();
 
             return targetKey.toStack(drainedAmount);
         } finally {
