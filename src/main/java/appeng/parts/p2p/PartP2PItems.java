@@ -63,18 +63,18 @@ import cpw.mods.fml.relauncher.SideOnly;
 public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         implements IPipeConnection, ISidedInventory, IGridTickable, IRoutedTunnel {
 
-    /** Output only: the target wrapped into the router's view, or null if none was. */
+    /** The target wrapped into the router's view, or null if none was. */
     private @Nullable TileTarget boundTarget;
     /**
-     * Output only: the slot layout that the wrapper of {@link #boundTarget} fixed, as {@link #readLayout} returns it.
-     * Null if the layout is not tracked.
+     * The slot layout that the wrapper of {@link #boundTarget} fixed, as {@link #readLayout} returns it. Null if the
+     * layout is not tracked.
      */
     private int @Nullable [] boundLayout;
     private final TileTargetCache targetCache = new TileTargetCache();
 
     private boolean viewed;
     private PartP2PItems owner;
-    private final IInventoryRouter router = new ArrayInventoryRouter(this, getTransportPolicy());
+    private IInventoryRouter router;
     private final IInventoryRouter.SlotView slotView = new IInventoryRouter.SlotView();
     private long invOffset;
     private boolean busy;
@@ -226,9 +226,15 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
 
     @Override
     public void removeFromWorld() {
+        super.removeFromWorld();
         this.boundTarget = null;
         this.boundLayout = null;
-        super.removeFromWorld();
+        if (this.owner == this) {
+            this.releaseRouter();
+        } else if (this.owner != null) {
+            this.owner.removeRouteMember(this);
+        }
+        this.owner = null;
     }
 
     @Override
@@ -460,13 +466,16 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         if (newOwner != this.owner) {
             if (this.owner == this) {
                 // I was an input P2P, but am no longer
-                this.clearRouteMembers();
+                this.releaseRouter();
             } else if (this.owner != null) {
                 // I was an output P2P who left the router
                 this.owner.removeRouteMember(this);
             }
             this.owner = newOwner;
-            if (this.owner != this && this.owner != null) {
+            if (this.owner == this) {
+                // I am an input P2P now
+                this.createRouter();
+            } else if (this.owner != null) {
                 // I am an output P2P who has joined a new router
                 this.owner.addRouteMember(this);
             }
@@ -496,28 +505,29 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         this.rebuildQueued = true;
         TickHandler.INSTANCE.addCallable(null, world -> {
             this.rebuildQueued = false;
-            this.router.rebuildLayout();
+            if (this.router != null) {
+                this.router.rebuildLayout();
+            }
             return null;
         });
     }
 
     private void addRouteMember(PartP2PItems t) {
-        this.router.addMember(t);
-        this.scheduleRebuild();
+        if (this.router != null) {
+            this.router.addMember(t);
+            this.scheduleRebuild();
+        }
     }
 
     private void removeRouteMember(PartP2PItems t) {
-        this.router.removeMember(t);
-        this.scheduleRebuild();
-    }
-
-    private void clearRouteMembers() {
-        this.router.clearMembers();
-        this.scheduleRebuild();
+        if (this.router != null) {
+            this.router.removeMember(t);
+            this.scheduleRebuild();
+        }
     }
 
     private void setRouteTarget(PartP2PItems t, InventoryTarget inv) {
-        if (this.router.setTarget(t, inv)) {
+        if (this.router != null && this.router.setTarget(t, inv)) {
             this.scheduleRebuild();
         }
     }
@@ -531,6 +541,34 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
             this.owner.setRouteTarget(this, null);
         } else {
             this.owner.setRouteTarget(this, newTarget);
+        }
+    }
+
+    private void createRouter() {
+        this.router = new ArrayInventoryRouter(this, getTransportPolicy());
+        try {
+            for (final PartP2PItems output : this.getOutputs()) {
+                if (output.owner == this) {
+                    // It joined the frequency but had no access to the router...
+                    this.router.addMember(output);
+                    output.refreshTarget();
+                }
+            }
+        } catch (final GridAccessException e) {
+            // :P
+        }
+        this.scheduleRebuild();
+    }
+
+    private void releaseRouter() {
+        final IInventoryRouter oldRouter = this.router;
+        this.router = null;
+        if (oldRouter != null) {
+            oldRouter.clearMembers();
+            TickHandler.INSTANCE.addCallable(null, world -> {
+                oldRouter.rebuildLayout();
+                return null;
+            });
         }
     }
 }

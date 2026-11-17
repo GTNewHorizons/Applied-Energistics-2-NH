@@ -11,8 +11,19 @@ import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Reference2ReferenceMap;
+import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 
 public class ArrayInventoryRouter implements IInventoryRouter {
+
+    private enum ViewType {
+        ALL,
+        OTHERS,
+        OUTPUTS,
+        OTHER_OUTPUTS,
+        INPUT,
+        NONE
+    }
 
     private final IRoutedTunnel input;
     private final P2PTransportPolicy policy;
@@ -22,6 +33,7 @@ public class ArrayInventoryRouter implements IInventoryRouter {
     private final IntArrayList cumSum = new IntArrayList();
     private final Reference2IntMap<IRoutedTunnel> memberIndex = new Reference2IntOpenHashMap<>();
     private final Reference2IntMap<IRoutedTunnel> viewSizes = new Reference2IntOpenHashMap<>();
+    private final Reference2ReferenceMap<IRoutedTunnel, ViewType> viewTypes = new Reference2ReferenceOpenHashMap<>();
 
     private int min1StackLimit = Integer.MAX_VALUE;
     private int min2StackLimit = Integer.MAX_VALUE;
@@ -94,19 +106,21 @@ public class ArrayInventoryRouter implements IInventoryRouter {
 
         Reference2IntMap<IRoutedTunnel> oldViewSizes = new Reference2IntOpenHashMap<>(viewSizes);
         viewSizes.clear();
+        viewTypes.clear();
         List<IRoutedTunnel> changed = new ArrayList<>();
         for (Map.Entry<IRoutedTunnel, InventoryTarget> entry : members.entrySet()) {
             IRoutedTunnel member = entry.getKey();
             InventoryTarget target = entry.getValue();
+
             int mySize = getSize(target);
             int newViewSize = 0;
             if (member == input) {
                 if (policy.inputReachesOutputs()) {
-                    newViewSize = cumSum.getInt(members.size()) - mySize;
+                    newViewSize = cumSum.getInt(table.size()) - mySize;
                 }
             } else {
                 if (policy.outputReachesPeers()) {
-                    newViewSize += cumSum.getInt(members.size()) - mySize;
+                    newViewSize += cumSum.getInt(table.size()) - mySize;
                 } else if (policy.outputReachesInput()) {
                     newViewSize += cumSum.getInt(1);
                 }
@@ -115,6 +129,8 @@ public class ArrayInventoryRouter implements IInventoryRouter {
             if (newViewSize != oldViewSizes.getInt(member)) {
                 changed.add(member);
             }
+
+            viewTypes.put(member, getViewType(member));
         }
 
         for (final Reference2IntMap.Entry<IRoutedTunnel> entry : oldViewSizes.reference2IntEntrySet()) {
@@ -196,42 +212,56 @@ public class ArrayInventoryRouter implements IInventoryRouter {
         int inputSize = cumSum.getInt(1);
         int myCumSum = cumSum.getInt(myIndex);
         int mySize = cumSum.getInt(myIndex + 1) - myCumSum;
+        ViewType viewType = viewTypes.get(viewer);
 
-        if (viewsAll(viewer)) {
+        int invOffset, slotOffset, slotTarget;
 
-            int invOffset = (int) Math.floorMod(offset, table.size());
-            int slotOffset = cumSum.getInt(invOffset);
-            slotIndex = (slotOffset + slot) % viewSize;
+        switch (viewType) {
 
-        } else if (viewsOutputs(viewer)) {
+            case ALL:
 
-            int invOffset = (int) Math.floorMod(offset, table.size() - 1);
-            int slotOffset = cumSum.getInt(invOffset + 1) - inputSize;
-            int slotTarget = (slotOffset + slot) % viewSize;
-            slotIndex = slotTarget + inputSize;
+                invOffset = (int) Math.floorMod(offset, table.size());
+                slotOffset = cumSum.getInt(invOffset);
+                slotIndex = (slotOffset + slot) % viewSize;
+                break;
 
-        } else if (viewsOthers(viewer)) {
+            case OUTPUTS:
 
-            int invOffset = (int) Math.floorMod(offset, table.size() - 1);
-            int slotOffset = invOffset >= myIndex ? cumSum.getInt(invOffset + 1) - mySize : cumSum.getInt(invOffset);
-            int slotTarget = (slotOffset + slot) % viewSize;
-            slotIndex = slotTarget >= myCumSum ? slotTarget + mySize : slotTarget;
+                invOffset = (int) Math.floorMod(offset, table.size() - 1);
+                slotOffset = cumSum.getInt(invOffset + 1) - inputSize;
+                slotTarget = (slotOffset + slot) % viewSize;
+                slotIndex = slotTarget + inputSize;
+                break;
 
-        } else if (viewsOtherOutputs(viewer)) {
+            case OTHERS:
 
-            int invOffset = (int) Math.floorMod(offset, table.size() - 2);
-            int slotOffset = invOffset + 1 >= myIndex ? cumSum.getInt(invOffset + 2) - inputSize - mySize
-                    : cumSum.getInt(invOffset + 1) - inputSize;
-            int slotTarget = (slotOffset + slot) % viewSize;
-            slotIndex = slotTarget + inputSize >= myCumSum ? slotTarget + inputSize + mySize : slotTarget + inputSize;
+                invOffset = (int) Math.floorMod(offset, table.size() - 1);
+                slotOffset = invOffset >= myIndex ? cumSum.getInt(invOffset + 1) - mySize : cumSum.getInt(invOffset);
+                slotTarget = (slotOffset + slot) % viewSize;
+                slotIndex = slotTarget >= myCumSum ? slotTarget + mySize : slotTarget;
+                break;
 
-        } else if (viewsInput(viewer)) {
-            slotIndex = slot;
+            case OTHER_OUTPUTS:
+
+                invOffset = (int) Math.floorMod(offset, table.size() - 2);
+                slotOffset = invOffset + 1 >= myIndex ? cumSum.getInt(invOffset + 2) - inputSize - mySize
+                        : cumSum.getInt(invOffset + 1) - inputSize;
+                slotTarget = (slotOffset + slot) % viewSize;
+                slotIndex = slotTarget + inputSize >= myCumSum ? slotTarget + inputSize + mySize
+                        : slotTarget + inputSize;
+                break;
+
+            case INPUT:
+                slotIndex = slot;
+                break;
+
+            default:
         }
 
         if (slotIndex == -1) {
             return false;
         }
+
         int tunnelIndex = slotToTunnel(slotIndex);
         IRoutedTunnel viewed = table.get(tunnelIndex);
         InventoryTarget target = members.get(viewed);
@@ -259,31 +289,19 @@ public class ArrayInventoryRouter implements IInventoryRouter {
         return true;
     }
 
-    private boolean viewsAll(IRoutedTunnel viewer) {
-        int inputSize = cumSum.getInt(1);
-        return viewer != input && inputSize > 0 && policy.outputReachesPeers() && !memberIndex.containsKey(viewer);
-    }
-
-    private boolean viewsOthers(IRoutedTunnel viewer) {
-        int inputSize = cumSum.getInt(1);
-        return viewer != input && inputSize > 0 && policy.outputReachesPeers() && memberIndex.containsKey(viewer);
-    }
-
-    private boolean viewsOutputs(IRoutedTunnel viewer) {
-        if (viewer == input) {
-            return policy.inputReachesOutputs();
+    private ViewType getViewType(IRoutedTunnel member) {
+        if (member == input) {
+            return policy.inputReachesOutputs() ? ViewType.OUTPUTS : ViewType.NONE;
         }
-        int inputSize = cumSum.getInt(1);
-        return inputSize == 0 && policy.outputReachesPeers() && !memberIndex.containsKey(viewer);
-    }
-
-    private boolean viewsOtherOutputs(IRoutedTunnel viewer) {
-        int inputSize = cumSum.getInt(1);
-        return viewer != input && inputSize == 0 && policy.outputReachesPeers() && memberIndex.containsKey(viewer);
-    }
-
-    private boolean viewsInput(IRoutedTunnel viewer) {
-        return viewer != input && policy.outputReachesInput();
+        if (policy.outputReachesPeers()) {
+            boolean hasSlots = memberIndex.containsKey(member);
+            int inputSize = cumSum.getInt(1);
+            if (inputSize > 0) {
+                return hasSlots ? ViewType.OTHERS : ViewType.ALL;
+            }
+            return hasSlots ? ViewType.OTHER_OUTPUTS : ViewType.OUTPUTS;
+        }
+        return policy.outputReachesInput() ? ViewType.INPUT : ViewType.NONE;
     }
 
     private int slotToTunnel(int slot) {
