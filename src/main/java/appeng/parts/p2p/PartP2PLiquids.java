@@ -10,6 +10,7 @@
 
 package appeng.parts.p2p;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -26,11 +27,16 @@ import net.minecraftforge.fluids.FluidTankInfo;
 import net.minecraftforge.fluids.IFluidHandler;
 
 import appeng.me.GridAccessException;
+import appeng.util.item.FluidKey;
 import appeng.util.p2p.P2PRoute;
 import appeng.util.p2p.P2PTransportPolicy;
 import appeng.util.target.TileTargetCache;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 public class PartP2PLiquids extends PartP2PTunnelRouted<PartP2PLiquids> implements IFluidHandler {
 
@@ -39,6 +45,8 @@ public class PartP2PLiquids extends PartP2PTunnelRouted<PartP2PLiquids> implemen
     private static final FluidTankInfo[] INACTIVE_TANK = { new FluidTankInfo(null, 0) };
     private final TileTargetCache targetCache = new TileTargetCache();
     private int tmpUsed;
+
+    private long fluidSelector;
 
     public PartP2PLiquids(final ItemStack is) {
         super(is);
@@ -202,21 +210,101 @@ public class PartP2PLiquids extends PartP2PTunnelRouted<PartP2PLiquids> implemen
         final Stack<PartP2PLiquids> stack = this.getDepth();
         stack.push(this);
         try {
-            final List<PartP2PLiquids> extractTargets = filter == null ? this.getExtractTargets()
+            final List<PartP2PLiquids> list = filter == null ? this.getExtractTargets()
                     : this.getExtractTargets(filter.getFluid());
-            for (final PartP2PLiquids t : extractTargets) {
-                final IFluidHandler tank = t.getTarget();
+            final List<FluidKey> keys = new ArrayList<>();
+            final Object2IntMap<FluidKey> fluidIndex = new Object2IntOpenHashMap<>();
+            final LongList fluidAmounts = new LongArrayList();
+            final List<List<FluidProvider>> providers = new ArrayList<>();
+            long totalAmounts = 0;
+
+            for (final PartP2PLiquids l : list) {
+                final IFluidHandler tank = l.getTarget();
+                final ForgeDirection side = l.getSide().getOpposite();
                 if (tank == null) {
                     continue;
                 }
-                final ForgeDirection side = t.getSide().getOpposite();
-                final FluidStack drained = filter == null ? tank.drain(side, maxDrain, doDrain)
-                        : tank.drain(side, new FluidStack(filter, maxDrain), doDrain);
-                if (drained != null && drained.amount > 0) {
-                    return drained;
+                FluidStack drained = filter == null ? tank.drain(side, maxDrain, false)
+                        : tank.drain(side, filter, false);
+                if (drained == null || drained.amount <= 0 || (filter != null && !filter.isFluidEqual(drained))) {
+                    continue;
+                }
+                totalAmounts += drained.amount;
+                FluidKey key = FluidKey.of(drained);
+                if (!fluidIndex.containsKey(key)) {
+                    fluidIndex.put(key, fluidIndex.size());
+                    keys.add(key);
+                    fluidAmounts.add(0);
+                    providers.add(new ArrayList<>());
+                }
+                int index = fluidIndex.getInt(key);
+                fluidAmounts.set(index, fluidAmounts.getLong(index) + drained.amount);
+                providers.get(index).add(new FluidProvider(l, tank, drained.amount));
+            }
+
+            if (totalAmounts == 0) {
+                return null;
+            }
+
+            long fluidOffset = Math.floorMod(this.fluidSelector, totalAmounts);
+
+            int targetIndex = 0;
+            long totalOffset = 0;
+            for (; targetIndex < fluidAmounts.size(); targetIndex++) {
+                totalOffset += fluidAmounts.getLong(targetIndex);
+                if (fluidOffset < totalOffset) {
+                    break;
                 }
             }
-            return null;
+
+            final FluidKey targetKey = keys.get(targetIndex);
+            final List<FluidProvider> targetProviders = providers.get(targetIndex);
+            final long targetAmount = fluidAmounts.getLong(targetIndex);
+
+            if (!doDrain) {
+                return targetKey.toStack((int) Math.min(targetAmount, maxDrain));
+            }
+
+            int drainedAmount = 0;
+            int available = maxDrain;
+
+            for (final FluidProvider provider : targetProviders) {
+                final PartP2PLiquids l = provider.tunnel;
+                final IFluidHandler tank = provider.tank;
+                final ForgeDirection side = l.getSide().getOpposite();
+
+                int amount = (int) Math.ceil(maxDrain * ((double) provider.amount / (double) targetAmount));
+                if (amount > available) {
+                    amount = available;
+                }
+
+                FluidStack targetStack = targetKey.toStack(amount);
+                FluidStack drained = tank.drain(side, targetStack, true);
+                if (drained == null && filter == null) {
+                    // Bad tank...
+                    final FluidStack wouldDrain = tank.drain(side, amount, false);
+                    if (targetStack.isFluidEqual(wouldDrain)) {
+                        drained = tank.drain(side, amount, true);
+                    }
+                }
+
+                if (drained != null && targetStack.isFluidEqual(drained)) {
+                    amount = Math.min(amount, drained.amount);
+                    drainedAmount += amount;
+                    available -= amount;
+                    if (available <= 0) {
+                        break;
+                    }
+                }
+            }
+
+            if (drainedAmount <= 0) {
+                return null;
+            }
+
+            fluidSelector += drainedAmount;
+
+            return targetKey.toStack(drainedAmount);
         } finally {
             stack.pop();
         }
@@ -305,5 +393,18 @@ public class PartP2PLiquids extends PartP2PTunnelRouted<PartP2PLiquids> implemen
             }
         }
         return false;
+    }
+
+    private static class FluidProvider {
+
+        final PartP2PLiquids tunnel;
+        final IFluidHandler tank;
+        final int amount;
+
+        public FluidProvider(PartP2PLiquids l, IFluidHandler tank, int amount) {
+            this.tunnel = l;
+            this.tank = tank;
+            this.amount = amount;
+        }
     }
 }

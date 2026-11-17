@@ -721,6 +721,10 @@ public class Platform {
         return Math.abs(RANDOM_GENERATOR.nextInt());
     }
 
+    public static long getRandomLong() {
+        return Math.abs(RANDOM_GENERATOR.nextLong());
+    }
+
     /*
      * Utility function to get the full inventory for a Double Chest in the World.
      */
