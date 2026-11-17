@@ -60,7 +60,7 @@ public class BlockRendererPreviewEvent {
 
     @SubscribeEvent
     public void onDrawBlockHighlight(DrawBlockHighlightEvent event) {
-        // fires before the liquid pass, so water blends over the preview and only solid blocks hide it
+        // runs before the liquid pass, so water blends over the preview and solid blocks hide it
         if (AEConfig.instance.previewBlocks) {
             if (currentItem == null) return;
             ViewHelper.setCurrentPartialTicks(event.partialTicks);

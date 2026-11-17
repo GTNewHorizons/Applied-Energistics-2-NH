@@ -56,7 +56,7 @@ public abstract class AbstractRendererPreview {
 
     /** Adds a line to the batch unless this pass already added the same one. */
     private void addEdge(Tessellator tessellator, double x1, double y1, double z1, double x2, double y2, double z2) {
-        // a line drawn twice blends twice, so the joint of two boxes would look brighter
+        // a line drawn twice blends twice and brightens the joint of two boxes
         if (!isDrawn(x1, y1, z1, x2, y2, z2)) {
             remember(x1, y1, z1, x2, y2, z2);
             tessellator.addVertex(x1, y1, z1);
@@ -238,7 +238,7 @@ public abstract class AbstractRendererPreview {
         GL11.glPushMatrix();
         GL11.glTranslated(-playerX, -playerY, -playerZ);
 
-        // the highlight event runs inside the world pass, so put back whatever GL state it finds
+        // the highlight event runs inside the world pass, so restore the GL state it had
         wasBlend = GL11.glIsEnabled(GL11.GL_BLEND);
         wasTexture = GL11.glIsEnabled(GL11.GL_TEXTURE_2D);
         wasLighting = GL11.glIsEnabled(GL11.GL_LIGHTING);
@@ -252,7 +252,7 @@ public abstract class AbstractRendererPreview {
         GL11.glDisable(GL11.GL_CULL_FACE);
         GL11.glDepthMask(false);
         drawnCount = 0;
-        // push lines back, so edges lying on an existing cable are hidden by its faces
+        // push lines back so the faces of an existing cable hide edges lying on it
         GL11.glDepthRange(DEPTH_BIAS, 1.0);
 
         getValidColorGL11();
