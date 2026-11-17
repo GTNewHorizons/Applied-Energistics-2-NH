@@ -227,7 +227,9 @@ public class PartP2PLiquids extends PartP2PTunnelRouted<PartP2PLiquids> implemen
                 }
                 FluidStack drained = filter == null ? tank.drain(side, maxDrain, false)
                         : tank.drain(side, filter, false);
-                if (drained == null || drained.amount <= 0 || (filter != null && !filter.isFluidEqual(drained))) {
+                if (drained == null || drained.getFluid() == null
+                        || drained.amount <= 0
+                        || (filter != null && !filter.isFluidEqual(drained))) {
                     continue;
                 }
                 totalAmounts += drained.amount;
@@ -398,11 +400,11 @@ public class PartP2PLiquids extends PartP2PTunnelRouted<PartP2PLiquids> implemen
         return false;
     }
 
-    private static class FluidProvider {
+    private static final class FluidProvider {
 
-        final PartP2PLiquids tunnel;
-        final IFluidHandler tank;
-        final int amount;
+        private final PartP2PLiquids tunnel;
+        private final IFluidHandler tank;
+        private final int amount;
 
         public FluidProvider(PartP2PLiquids l, IFluidHandler tank, int amount) {
             this.tunnel = l;
