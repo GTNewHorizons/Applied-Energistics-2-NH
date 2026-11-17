@@ -43,10 +43,10 @@ import com.glodblock.github.util.ModAndClassUtil;
 import com.glodblock.github.util.NameConst;
 import com.glodblock.github.util.Util;
 
+import appeng.api.config.SaveSearchMode;
 import appeng.api.config.Settings;
 import appeng.api.config.TerminalFontSize;
 import appeng.api.config.TerminalStyle;
-import appeng.api.config.YesNo;
 import appeng.api.features.LevelItemInfo;
 import appeng.api.features.LevelState;
 import appeng.api.storage.ITerminalHost;
@@ -186,7 +186,7 @@ public class GuiLevelTerminal extends FCBaseMEGui implements IDropToFillTextFiel
                 itemRender);
         craftingStatusBtn.setHideEdge(13);
 
-        if (AEConfig.instance.preserveSearchBar || isSubGui()) {
+        if (AEConfig.instance.getSaveSearchMode() != SaveSearchMode.NO || isSubGui()) {
             setSearchString();
         }
         buttonList.add(terminalStyleBox);
@@ -206,8 +206,14 @@ public class GuiLevelTerminal extends FCBaseMEGui implements IDropToFillTextFiel
     }
 
     public void setSearchString() {
-        searchFieldOutputs.setText(searchFieldOutputsText);
-        searchFieldNames.setText(searchFieldNamesText);
+        if (AEConfig.instance.getSaveSearchMode() != SaveSearchMode.NO || isSubGui()) {
+            searchFieldOutputs.setText(searchFieldOutputsText);
+            searchFieldNames.setText(searchFieldNamesText);
+        }
+        if (AEConfig.instance.getSaveSearchMode() == SaveSearchMode.SELECT) {
+            if (searchFieldOutputs.isFocused()) searchFieldOutputs.selectAll();
+            if (searchFieldNames.isFocused()) searchFieldNames.selectAll();
+        }
     }
 
     protected void repositionSlots() {
@@ -297,8 +303,7 @@ public class GuiLevelTerminal extends FCBaseMEGui implements IDropToFillTextFiel
             final GuiImgButton iBtn = (GuiImgButton) btn;
             final Enum<?> cv = iBtn.getCurrentValue();
             final Enum<?> next = Platform.rotateEnum(cv, backwards, iBtn.getSetting().getPossibleValues());
-            AEConfig.instance.preserveSearchBar = next == YesNo.YES;
-            AEConfig.instance.settings.putSetting(Settings.SAVE_SEARCH, next);
+            AEConfig.instance.setSaveSearchMode((SaveSearchMode) next);
             searchStringSave.set(next);
 
         } else if (btn == craftingStatusBtn) {

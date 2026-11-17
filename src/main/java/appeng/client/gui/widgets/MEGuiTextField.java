@@ -245,6 +245,11 @@ public class MEGuiTextField implements ITooltip {
         field.setCursorPositionEnd();
     }
 
+    public void selectAll() {
+        field.setCursorPositionEnd();
+        field.setSelectionPos(0);
+    }
+
     public void setFocused(boolean focus) {
         if (field.isFocused() == focus) {
             return;
