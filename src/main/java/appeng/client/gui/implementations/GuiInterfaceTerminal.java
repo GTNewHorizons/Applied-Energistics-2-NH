@@ -55,6 +55,7 @@ import com.github.bsideup.jabel.Desugar;
 
 import appeng.api.AEApi;
 import appeng.api.config.ActionItems;
+import appeng.api.config.SaveSearchMode;
 import appeng.api.config.Settings;
 import appeng.api.config.StringOrder;
 import appeng.api.config.TerminalStyle;
@@ -215,11 +216,7 @@ public class GuiInterfaceTerminal extends AEBaseGui
             }
         };
 
-        searchStringSave = new GuiImgButton(
-                0,
-                0,
-                Settings.SAVE_SEARCH,
-                AEConfig.instance.preserveSearchBar ? YesNo.YES : YesNo.NO);
+        searchStringSave = new GuiImgButton(0, 0, Settings.SAVE_SEARCH, AEConfig.instance.getSaveSearchMode());
         guiButtonAssemblersOnly = new GuiImgButton(0, 0, Settings.ACTIONS, null);
         guiButtonHideFull = new GuiImgButton(0, 0, Settings.ACTIONS, null);
         guiButtonShowHidden = new GuiImgButton(0, 0, Settings.ACTIONS, null);
@@ -608,7 +605,7 @@ public class GuiInterfaceTerminal extends AEBaseGui
                     AEConfig.instance.settings.putSetting(iBtn.getSetting(), next);
                     initGui();
                 } else if (btn == searchStringSave) {
-                    AEConfig.instance.preserveSearchBar = next == YesNo.YES;
+                    AEConfig.instance.setSaveSearchMode((SaveSearchMode) next);
                 } else if (btn == guiButtonSectionOrder) {
                     AEConfig.instance.settings.putSetting(iBtn.getSetting(), next);
                     masterList.changeSectionComparator(((StringOrder) next).comparator);
@@ -629,7 +626,7 @@ public class GuiInterfaceTerminal extends AEBaseGui
     }
 
     public void setSearchString() {
-        boolean setString = AEConfig.instance.preserveSearchBar || isSubGui();
+        boolean setString = AEConfig.instance.getSaveSearchMode() != SaveSearchMode.NO || isSubGui();
         if (searchFieldInputs.getText().isEmpty() && setString) {
             searchFieldInputs.setText(searchFieldInputsText);
         }
@@ -638,6 +635,11 @@ public class GuiInterfaceTerminal extends AEBaseGui
         }
         if (searchFieldNames.getText().isEmpty() && setString) {
             searchFieldNames.setText(searchFieldNamesText);
+        }
+        if (AEConfig.instance.getSaveSearchMode() == SaveSearchMode.SELECT) {
+            if (searchFieldInputs.isFocused()) searchFieldInputs.selectAll();
+            if (searchFieldOutputs.isFocused()) searchFieldOutputs.selectAll();
+            if (searchFieldNames.isFocused()) searchFieldNames.selectAll();
         }
     }
 
