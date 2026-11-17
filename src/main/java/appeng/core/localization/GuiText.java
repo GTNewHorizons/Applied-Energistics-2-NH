@@ -429,6 +429,7 @@ public enum GuiText implements Localization {
 
     UpgradesInstalled,
     FakeUpgrade,
+    InterfaceUpgrades,
 
     PatternTargetsTitle,
     PatternTargetsMatch,
