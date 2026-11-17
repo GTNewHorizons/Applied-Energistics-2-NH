@@ -351,7 +351,9 @@ public class PartP2PLiquids extends PartP2PTunnelRouted<PartP2PLiquids> implemen
             stack.push(this);
             try {
                 final List<FluidTankInfo> infos = new LinkedList<>();
-                for (final PartP2PLiquids t : this.getExtractTargets()) {
+                final List<PartP2PLiquids> targets = this.getExtractTargets();
+                Collections.shuffle(targets, Platform.getRandom());
+                for (final PartP2PLiquids t : targets) {
                     final IFluidHandler tank = t.getTarget();
                     final FluidTankInfo[] targetInfos = tank != null ? tank.getTankInfo(t.getSide().getOpposite())
                             : null;
