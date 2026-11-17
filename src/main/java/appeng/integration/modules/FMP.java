@@ -15,6 +15,7 @@ import java.util.List;
 
 import net.minecraft.block.Block;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
@@ -35,23 +36,38 @@ import appeng.integration.IIntegrationModule;
 import appeng.integration.abstraction.IFMP;
 import appeng.integration.modules.helpers.FMPPacketEvent;
 import appeng.parts.CableBusContainer;
+import codechicken.lib.data.MCDataInput;
 import codechicken.lib.vec.BlockCoord;
 import codechicken.microblock.BlockMicroMaterial;
 import codechicken.multipart.MultiPartRegistry;
 import codechicken.multipart.MultiPartRegistry.IPartConverter;
-import codechicken.multipart.MultiPartRegistry.IPartFactory;
+import codechicken.multipart.MultiPartRegistry.IPartFactory2;
 import codechicken.multipart.MultipartGenerator;
 import codechicken.multipart.TMultiPart;
 import codechicken.multipart.TileMultipart;
 import cpw.mods.fml.common.eventhandler.Event;
 
-public class FMP implements IIntegrationModule, IPartFactory, IPartConverter, IFMP {
+public class FMP implements IIntegrationModule, IPartFactory2, IPartConverter, IFMP {
 
     @Reflected
     public static FMP instance;
 
     @Override
-    public TMultiPart createPart(final String name, final boolean client) {
+    public TMultiPart createPart(final String name, final NBTTagCompound nbt) {
+        return this.createPart(name);
+    }
+
+    @Override
+    public TMultiPart createPart(final String name, final MCDataInput packet) {
+        return this.createPart(name);
+    }
+
+    @Override
+    public TMultiPart createPartForClientPreview(final String name, final NBTTagCompound nbt) {
+        return this.createPart(name);
+    }
+
+    private TMultiPart createPart(final String name) {
         for (final PartRegistry pr : PartRegistry.values()) {
             if (pr.getName().equals(name)) {
                 return pr.construct(0);
@@ -109,7 +125,7 @@ public class FMP implements IIntegrationModule, IPartFactory, IPartConverter, IF
         }
 
         MultiPartRegistry.registerConverter(this);
-        MultiPartRegistry.registerParts(this, data);
+        MultiPartRegistry.registerPartFactory(this, data);
 
         MultipartGenerator.registerPassThroughInterface("appeng.helpers.AEMultiTile");
     }
@@ -132,9 +148,7 @@ public class FMP implements IIntegrationModule, IPartFactory, IPartConverter, IF
 
             final TileMultipart mp = TileMultipart.getOrConvertTile(tile.getWorldObj(), loc);
             if (mp != null) {
-                final scala.collection.Iterator<TMultiPart> i = mp.partList().iterator();
-                while (i.hasNext()) {
-                    final TMultiPart p = i.next();
+                for (final TMultiPart p : mp.jPartList()) {
                     if (p instanceof CableBusPart) {
                         return (IPartHost) p;
                     }
@@ -151,9 +165,7 @@ public class FMP implements IIntegrationModule, IPartFactory, IPartConverter, IF
     @Override
     public CableBusContainer getCableContainer(final TileEntity te) {
         if (te instanceof TileMultipart mp) {
-            final scala.collection.Iterator<TMultiPart> i = mp.partList().iterator();
-            while (i.hasNext()) {
-                final TMultiPart p = i.next();
+            for (final TMultiPart p : mp.jPartList()) {
                 if (p instanceof CableBusPart) {
                     return ((CableBusPart) p).getCableBus();
                 }
