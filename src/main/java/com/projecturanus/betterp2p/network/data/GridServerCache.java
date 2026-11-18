@@ -1,284 +1,302 @@
-package com.projecturanus.betterp2p.network.data
+package com.projecturanus.betterp2p.network.data;
 
-import java.lang.IllegalStateException
-import java.util.stream.Collectors
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import net.minecraft.entity.player.EntityPlayer
-import net.minecraft.item.ItemStack
-import net.minecraft.nbt.NBTTagCompound
-import net.minecraft.util.ChatComponentTranslation
-import net.minecraftforge.common.util.ForgeDirection
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.ChatComponentTranslation;
+import net.minecraftforge.common.util.ForgeDirection;
 
-import com.projecturanus.betterp2p.BetterP2P
-import com.projecturanus.betterp2p.util.p2p.TunnelInfo
-import com.projecturanus.betterp2p.util.p2p.outputProperty
-import com.projecturanus.betterp2p.util.p2p.getTypeIndex
+import org.jspecify.annotations.Nullable;
 
-import appeng.api.config.SecurityPermissions
-import appeng.api.networking.IGrid
-import appeng.api.networking.security.ISecurityGrid
-import appeng.me.GridAccessException
-import appeng.me.cache.P2PCache
-import appeng.parts.p2p.PartP2PTunnel
-import appeng.parts.p2p.PartP2PTunnelNormal
-import appeng.parts.p2p.PartP2PTunnelStatic
-import appeng.util.Platform
+import com.projecturanus.betterp2p.BetterP2P;
+import com.projecturanus.betterp2p.util.p2p.P2PUtil;
+import com.projecturanus.betterp2p.util.p2p.TunnelInfo;
 
-/**
- * When the player uses the adv memory card, this is cached on the server side
- * to provide access to the Grid when the player performs actions in the GUI
- * Each player has a list of p2ps that will be sent. These are tracked in [listP2P].
- */
-class GridServerCache(private val grid: IGrid, val player: EntityPlayer, var type: Int) {
-    /**
-     * The P2P list. On init, this is the full list.
-     */
-    private val listP2P: MutableMap<P2PLocation, PartP2PTunnel<*>> = mutableMapOf()
+import appeng.api.config.SecurityPermissions;
+import appeng.api.networking.IGrid;
+import appeng.api.networking.IGridHost;
+import appeng.api.networking.IGridNode;
+import appeng.api.networking.security.ISecurityGrid;
+import appeng.api.parts.IPart;
+import appeng.api.parts.IPartHost;
+import appeng.me.GridAccessException;
+import appeng.parts.p2p.PartP2PTunnel;
+import appeng.parts.p2p.PartP2PTunnelNormal;
+import appeng.parts.p2p.PartP2PTunnelStatic;
+import appeng.util.Platform;
 
-    /**
-     * The dirty P2P list. Updates are accumulated here and sent altogether.
-     */
-    private val dirtyP2P: MutableSet<P2PLocation> = mutableSetOf()
+public class GridServerCache {
 
-    init {
-        rebuildList(type)
+    private final IGrid grid;
+    private final EntityPlayer player;
+    private int type;
+
+    private final Map<P2PLocation, PartP2PTunnel<?>> listP2P = new LinkedHashMap<>();
+    private final Set<P2PLocation> dirtyP2P = new LinkedHashSet<>();
+
+    public GridServerCache(IGrid grid, EntityPlayer player, int type) {
+        this.grid = grid;
+        this.player = player;
+        this.type = type;
+        rebuildList(type);
     }
 
-    /**
-     * Refreshes the global p2p list
-     */
-    private fun rebuildList(type: Int) {
-        synchronized(listP2P) {
-            listP2P.clear()
-            dirtyP2P.clear()
-            grid.machinesClasses.forEach {
-                // Find all P2P tunnels...
-                if (PartP2PTunnel::class.java.isAssignableFrom(it) &&
-                        (type == TUNNEL_ANY || BetterP2P.proxy.getP2PFromIndex(type)?.clazz == it)) {
-                    grid.getMachines(it).forEach { gridNode ->
-                        val p2p = gridNode.machine as PartP2PTunnel<*>
-                        listP2P[p2p.toLoc()] = p2p
-                    }
+    public void setType(int type) {
+        this.type = type;
+    }
+
+    private void rebuildList(int type) {
+        synchronized (listP2P) {
+            listP2P.clear();
+            dirtyP2P.clear();
+            for (Class<? extends IGridHost> clazz : grid.getMachinesClasses()) {
+                if (!PartP2PTunnel.class.isAssignableFrom(clazz) || !isTargetClass(type, clazz)) {
+                    continue;
+                }
+                for (IGridNode node : grid.getMachines(clazz)) {
+                    PartP2PTunnel<?> p2p = (PartP2PTunnel<?>) node.getMachine();
+                    listP2P.put(P2PLocation.of(p2p), p2p);
                 }
             }
         }
     }
 
-    /**
-     * Refreshes and gets the p2p list of the targeted type
-     * If [type] is [TUNNEL_ANY] or invalid, returns the full list; else filters the list to the
-     * targeted type
-     */
-    fun retrieveP2PList(): List<P2PInfo> {
-        if (grid is ISecurityGrid && !grid.hasPermission(player, SecurityPermissions.BUILD)) {
-            return emptyList()
+    private static boolean isTargetClass(int type, Class<?> clazz) {
+        if (type == MemoryInfo.TUNNEL_ANY) {
+            return true;
         }
-        rebuildList(type)
-
-        return listP2P.values.mapNotNull {
-            val index = BetterP2P.proxy.getP2PFromClass(it.javaClass)?.index ?: TUNNEL_ANY
-            if (type == TUNNEL_ANY || index == type) {
-                it.toInfo()
-            } else null
-        }
+        TunnelInfo info = BetterP2P.proxy.getP2PFromIndex(type);
+        return info != null && info.clazz == clazz;
     }
 
-    /**
-     * Sets the entry to the p2p tunnel and marks it as dirty to be sent in the next network update.
-     * Only p2ps of the currently targeted type can be shown
-     */
-    fun markDirty(key: P2PLocation, p2p: PartP2PTunnel<*>) {
-        synchronized(listP2P) {
-            if (type == TUNNEL_ANY || p2p.getTypeIndex() == type) {
-                listP2P[key] = p2p
-                dirtyP2P.add(key)
+    private boolean hasPermission() {
+        return !(grid instanceof ISecurityGrid securityGrid)
+                || securityGrid.hasPermission(player, SecurityPermissions.BUILD);
+    }
+
+    public List<P2PInfo> retrieveP2PList() {
+        if (!hasPermission()) {
+            return Collections.emptyList();
+        }
+        rebuildList(type);
+
+        List<P2PInfo> result = new ArrayList<>();
+        for (PartP2PTunnel<?> tunnel : listP2P.values()) {
+            if (type == MemoryInfo.TUNNEL_ANY || P2PUtil.getTypeIndex(tunnel) == type) {
+                result.add(P2PInfo.of(tunnel));
             }
         }
-    }
-
-    /**
-     * Returns the list of P2Ps that are currently marked dirty, and clears the dirty list.
-     */
-    fun getP2PUpdates(): List<P2PInfo> {
-        val result = dirtyP2P.mapNotNull {
-            listP2P[it]?.toInfo()
-        }
-
-        dirtyP2P.clear()
-
         return result;
     }
 
+    public void markDirty(P2PLocation key, PartP2PTunnel<?> p2p) {
+        synchronized (listP2P) {
+            if (type == MemoryInfo.TUNNEL_ANY || P2PUtil.getTypeIndex(p2p) == type) {
+                listP2P.put(key, p2p);
+                dirtyP2P.add(key);
+            }
+        }
+    }
+
     /**
-     * Link the two P2P tunnels together. Returns the pair of P2P tunnels on success, or null otherwise.
+     * Returns the P2P tunnels marked dirty since the last call and clears the dirty list.
      */
-    fun linkP2P(inputIndex: P2PLocation, outputIndex: P2PLocation):
-            Pair<PartP2PTunnel<*>, PartP2PTunnel<*>>? {
-        // If these calls mess up we have bigger problems...
-        val input = listP2P[inputIndex] ?: return null
-        var output = listP2P[outputIndex] ?: return null
+    public List<P2PInfo> getP2PUpdates() {
+        List<P2PInfo> result = new ArrayList<>();
+        for (P2PLocation loc : dirtyP2P) {
+            PartP2PTunnel<?> tunnel = listP2P.get(loc);
+            if (tunnel != null) {
+                result.add(P2PInfo.of(tunnel));
+            }
+        }
+        dirtyP2P.clear();
+        return result;
+    }
 
-        // Double check security permissions. In theory, the cache won't be set up in the first place
-        // for intruders.
-        if (grid is ISecurityGrid && !grid.hasPermission(player, SecurityPermissions.BUILD)) {
-            return null
+    public boolean linkP2P(P2PLocation inputIndex, P2PLocation outputIndex) {
+        PartP2PTunnel<?> input = listP2P.get(inputIndex);
+        PartP2PTunnel<?> output = listP2P.get(outputIndex);
+        if (input == null || output == null) {
+            return false;
         }
 
-        //change type if necessary
-        if (input.javaClass != output.javaClass) {
-            output = changeP2PType(output, BetterP2P.proxy.getP2PFromClass(input.javaClass)!!) ?: return null
+        if (!hasPermission()) {
+            return false;
         }
 
-        // Network loop
+        if (input.getClass() != output.getClass()) {
+            TunnelInfo inputType = BetterP2P.proxy.getP2PFromClass(input.getClass());
+            if (inputType == null) {
+                return false;
+            }
+            output = changeP2PType(output, inputType);
+            if (output == null) {
+                return false;
+            }
+        }
+
         if (input == output) {
-            return null
+            return false;
         }
 
-        // Perform the link
-        val memoryCardData : NBTTagCompound
-
-        val inputResult = input.convertToInput(player, null)
-        if(inputResult != null) {
-            memoryCardData = inputResult.memoryCardData
-            markDirty(inputIndex, inputResult)
-        } else {
-            throw IllegalStateException("Cannot bind")
+        PartP2PTunnel<?> inputResult = input.convertToInput(player, null);
+        if (inputResult == null) {
+            throw new IllegalStateException("Cannot bind");
         }
-        val newType = ItemStack.loadItemStackFromNBT(memoryCardData)
-        val freq = memoryCardData.getLong("freq")
-        val outputResult = output.convertToOutput(player, newType, freq)
-        if (outputResult != null) {
-            markDirty(outputIndex, outputResult)
-        } else {
-            throw IllegalStateException("Cannot bind")
-        }
+        NBTTagCompound memoryCardData = inputResult.getMemoryCardData();
+        markDirty(inputIndex, inputResult);
 
-        return inputResult to outputResult
+        ItemStack newType = ItemStack.loadItemStackFromNBT(memoryCardData);
+        long freq = memoryCardData.getLong("freq");
+        PartP2PTunnel<?> outputResult = output.convertToOutput(player, newType, freq);
+        if (outputResult == null) {
+            throw new IllegalStateException("Cannot bind");
+        }
+        markDirty(outputIndex, outputResult);
+        return true;
     }
 
-    fun unlinkP2P(p2pIndex: P2PLocation): PartP2PTunnel<*>? {
-        val tunnel = listP2P[p2pIndex] ?: return null
-        val newTunnel = tunnel.unbind(player)
-        if(newTunnel != tunnel) {
-            markDirty(p2pIndex, newTunnel)
+    public void unlinkP2P(P2PLocation p2pIndex) {
+        PartP2PTunnel<?> tunnel = listP2P.get(p2pIndex);
+        if (tunnel == null) {
+            return;
         }
-        return newTunnel
+        PartP2PTunnel<?> newTunnel = tunnel.unbind(player);
+        if (newTunnel != tunnel) {
+            markDirty(p2pIndex, newTunnel);
+        }
     }
 
-    /**
-     * Converts one P2P into the type
-     */
-    private fun changeP2PType(tunnel: PartP2PTunnel<*>, newType: TunnelInfo): PartP2PTunnel<*>? {
-        if (BetterP2P.proxy.getP2PFromClass(tunnel.javaClass) == newType) {
-            player.addChatMessage(ChatComponentTranslation("gui.advanced_memory_card.error.same_type"))
-            return null
+    private @Nullable PartP2PTunnel<?> changeP2PType(PartP2PTunnel<?> tunnel, TunnelInfo newType) {
+        if (BetterP2P.proxy.getP2PFromClass(tunnel.getClass()) == newType) {
+            player.addChatMessage(new ChatComponentTranslation("gui.advanced_memory_card.error.same_type"));
+            return null;
         }
-        var converted = false
-        // Change to a static P2P type
-        if (PartP2PTunnelStatic::class.java.isAssignableFrom(newType.clazz)) {
-            for ((i, stack) in player.inventory.mainInventory.withIndex()) {
-                if (stack?.isItemEqual(newType.stack) == true) {
-                    player.inventory.decrStackSize(i, 1)
-                    converted = true
-                    break
+        boolean converted = false;
+        if (PartP2PTunnelStatic.class.isAssignableFrom(newType.clazz)) {
+            converted = consumeOneItem(newType.stack);
+            if (!converted) {
+                sendMissingItems(1, newType);
+                return null;
+            }
+        }
+        if (tunnel instanceof PartP2PTunnelStatic<?>) {
+            List<TunnelInfo> attunables = BetterP2P.proxy.getP2PTypeList().stream()
+                    .filter(e -> PartP2PTunnelNormal.class.isAssignableFrom(e.clazz))
+                    // Check the exact type first
+                    .sorted((o1, o2) -> o1 == newType ? -1 : o2 == newType ? 1 : 0).collect(Collectors.toList());
+            for (TunnelInfo attunable : attunables) {
+                if (consumeOneItem(attunable.stack)) {
+                    converted = true;
+                    break;
                 }
             }
             if (!converted) {
-                player.addChatMessage(ChatComponentTranslation("gui.advanced_memory_card.error.missing_items", 1, newType.stack.displayName))
-                return null
-            }
-        }
-        // Change from a static P2P type
-        if (tunnel is PartP2PTunnelStatic<*>) {
-            val attunables = BetterP2P.proxy.getP2PTypeList().stream()
-                .filter{e -> PartP2PTunnelNormal::class.java.isAssignableFrom(e.clazz)}
-                // move exact type to the front so we check for it first
-                .sorted { o1, o2 -> if(o1.equals(newType)) -1 else if(o2.equals(newType)) 1 else 0 }
-                .collect(Collectors.toList())
-            outer@ for (attunable in attunables) {
-                for ((i, stack) in player.inventory.mainInventory.withIndex()) {
-                    if (stack?.isItemEqual(attunable.stack) == true) {
-                        player.inventory.decrStackSize(i, 1)
-                        converted = true
-                        break@outer
-                    }
-                }
-            }
-            if (!converted) {
-                player.addChatMessage(ChatComponentTranslation("gui.advanced_memory_card.error.missing_items", 1, newType.stack.displayName))
-                return null
+                sendMissingItems(1, newType);
+                return null;
             }
         }
 
-        // handle drops
         if (converted) {
-            val drop = ItemStack.copyItemStack(tunnel.itemStack)
-            drop.stackSize = 1
-            val drops = mutableListOf<ItemStack>(drop)
-            tunnel.getDrops(drops, false)
-            for (j in drops) {
-                player.inventory.addItemStackToInventory(j)
+            ItemStack drop = ItemStack.copyItemStack(tunnel.getItemStack());
+            drop.stackSize = 1;
+            List<ItemStack> drops = new ArrayList<>();
+            drops.add(drop);
+            tunnel.getDrops(drops, false);
+            for (ItemStack stack : drops) {
+                player.inventory.addItemStackToInventory(stack);
             }
-            Platform.spawnDrops(player.worldObj, player.posX.toInt(), player.posY.toInt(), player.posZ.toInt(), drops)
+            Platform.spawnDrops(player.worldObj, (int) player.posX, (int) player.posY, (int) player.posZ, drops);
         }
 
-        val host = tunnel.host
-        host.removePart(tunnel.side, false)
-        val dir = host.addPart(newType.stack, tunnel.side, player)
-        val newPart = host.getPart(dir)
-        if (newPart is PartP2PTunnel<*>) {
-            newPart.outputProperty = tunnel.isOutput
+        IPartHost host = tunnel.getHost();
+        host.removePart(tunnel.getSide(), false);
+        ForgeDirection dir = host.addPart(newType.stack, tunnel.getSide(), player);
+        IPart newPart = host.getPart(dir);
+        if (newPart instanceof PartP2PTunnel<?>newTunnel) {
+            newTunnel.output = tunnel.isOutput();
             try {
-                val p2p: P2PCache = newPart.proxy.p2P
-                p2p.updateFreq(newPart, tunnel.frequency)
-                return newPart
-            } catch (e: GridAccessException) {
-                // :P
-            }
+                newTunnel.getProxy().getP2P().updateFreq(newTunnel, tunnel.getFrequency());
+                return newTunnel;
+            } catch (GridAccessException ignored) {}
         }
-        return null
+        return null;
     }
 
-    /**
-     * Converts all connected P2Ps to a new type
-     */
-    fun changeAllP2Ps(p2p: P2PLocation, newType: TunnelInfo): Boolean {
-        if (grid is ISecurityGrid && !grid.hasPermission(player, SecurityPermissions.BUILD)) {
-            return false
+    private boolean consumeOneItem(ItemStack target) {
+        ItemStack[] inventory = player.inventory.mainInventory;
+        for (int i = 0; i < inventory.length; i++) {
+            ItemStack stack = inventory[i];
+            if (stack != null && stack.isItemEqual(target)) {
+                player.inventory.decrStackSize(i, 1);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void sendMissingItems(int amount, TunnelInfo type) {
+        player.addChatMessage(
+                new ChatComponentTranslation(
+                        "gui.advanced_memory_card.error.missing_items",
+                        amount,
+                        type.stack.getDisplayName()));
+    }
+
+    public boolean changeAllP2Ps(P2PLocation p2p, TunnelInfo newType) {
+        if (!hasPermission()) {
+            return false;
         }
 
-        var tunnel = listP2P[p2p] ?: return false
+        PartP2PTunnel<?> tunnel = listP2P.get(p2p);
+        if (tunnel == null) {
+            return false;
+        }
 
         try {
-            if (tunnel.isOutput && tunnel.input != null) {
-                tunnel = tunnel.input
+            if (tunnel.isOutput()) {
+                PartP2PTunnel<?> input = tunnel.getInput();
+                if (input != null) {
+                    tunnel = input;
+                }
             }
 
-            val outputs = tunnel.outputs.toMutableList()
-            if (PartP2PTunnelStatic::class.java.isAssignableFrom(newType.clazz)) {
-                val amt = outputs.size + 1
-                var hasItems = 0
-                for (stack in player.inventory.mainInventory) {
-                    if (stack?.isItemEqual(newType.stack) == true) {
-                        hasItems += stack.stackSize
-                        if (hasItems >= amt) {
-                            break
+            List<PartP2PTunnel<?>> outputs = new ArrayList<>();
+            for (PartP2PTunnel<?> output : tunnel.getOutputs()) {
+                outputs.add(output);
+            }
+            if (PartP2PTunnelStatic.class.isAssignableFrom(newType.clazz)) {
+                int amount = outputs.size() + 1;
+                int hasItems = 0;
+                for (ItemStack stack : player.inventory.mainInventory) {
+                    if (stack != null && stack.isItemEqual(newType.stack)) {
+                        hasItems += stack.stackSize;
+                        if (hasItems >= amount) {
+                            break;
                         }
                     }
                 }
-                if (hasItems < amt) {
-                    player.addChatMessage(ChatComponentTranslation("gui.advanced_memory_card.error.missing_items", amt, newType.stack.displayName))
-                    return false
+                if (hasItems < amount) {
+                    sendMissingItems(amount, newType);
+                    return false;
                 }
             }
-            changeP2PType(tunnel, newType)
-            for (o in outputs) {
-                changeP2PType(o, newType)
+            changeP2PType(tunnel, newType);
+            for (PartP2PTunnel<?> output : outputs) {
+                changeP2PType(output, newType);
             }
-            return true
-        } catch (e: GridAccessException) {
-            // :P
+            return true;
+        } catch (GridAccessException e) {
+            return false;
         }
-        return false
     }
 }

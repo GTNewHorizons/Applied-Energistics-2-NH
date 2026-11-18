@@ -1,57 +1,26 @@
-package com.projecturanus.betterp2p.util
+package com.projecturanus.betterp2p.util;
 
-import net.minecraft.tileentity.TileEntity
-import net.minecraft.util.EnumFacing
-import net.minecraft.util.Vec3
-import net.minecraft.world.IBlockAccess
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.Vec3;
+import net.minecraft.world.IBlockAccess;
 
-import appeng.api.parts.IPart
-import appeng.api.parts.IPartHost
-import appeng.api.parts.SelectedPart
-import appeng.parts.AEBasePart
-import appeng.parts.ICableBusContainer
-import appeng.tile.networking.TileCableBus
+import org.jspecify.annotations.Nullable;
 
-/**
- * @see appeng.block.networking.BlockCableBus.cb
- */
-fun getCableBus(w: IBlockAccess, posX: Int, posY: Int, posZ: Int): ICableBusContainer? {
-    val te = w.getTileEntity(posX, posY, posZ)
-    var out: ICableBusContainer? = null
-    if (te is TileCableBus) {
-        out = te.cableBus
-    }
-    return out
-}
+import appeng.api.parts.IPart;
+import appeng.api.parts.IPartHost;
+import appeng.api.parts.SelectedPart;
 
-fun getPart(w: IBlockAccess, posX: Int, posY: Int, posZ: Int, hitX: Float, hitY: Float, hitZ: Float): IPart? {
-    val vec = Vec3.createVectorHelper(hitX.toDouble(), hitY.toDouble(), hitZ.toDouble())
-    val te = w.getTileEntity(posX, posY, posZ)
-    if (te !is IPartHost) return null
-    val p: SelectedPart? = (te as IPartHost).selectPart(vec)
-    return p?.part
-}
+public final class CableBusUtil {
 
-val AEBasePart.facingPosX: Int?
-    get() =
-        host?.location?.x?.and(side?.offsetX ?: EnumFacing.UP.frontOffsetX)
+    private CableBusUtil() {}
 
-val AEBasePart.facingPosY: Int?
-    get() =
-        host?.location?.y?.and(side?.offsetY ?: EnumFacing.UP.frontOffsetY)
-
-val AEBasePart.facingPosZ: Int?
-    get() =
-        host?.location?.z?.and(side?.offsetZ ?: EnumFacing.UP.frontOffsetZ)
-
-val AEBasePart.facingTile: TileEntity?
-    get() {
-        if (host.isInWorld) {
-            val posX = facingPosX
-            val posY = facingPosY
-            val posZ = facingPosZ
-            if (posX != null && posY != null && posZ != null)
-                return host?.location?.world?.getTileEntity(posX, posY, posZ)
+    public static @Nullable IPart getPart(IBlockAccess w, int posX, int posY, int posZ, float hitX, float hitY,
+            float hitZ) {
+        TileEntity te = w.getTileEntity(posX, posY, posZ);
+        if (!(te instanceof IPartHost host)) {
+            return null;
         }
-        return null
+        SelectedPart p = host.selectPart(Vec3.createVectorHelper(hitX, hitY, hitZ));
+        return p != null ? p.part : null;
     }
+}
