@@ -9,7 +9,6 @@ import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagList;
 import net.minecraft.stats.Achievement;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
@@ -29,12 +28,9 @@ import net.p455w0rd.wirelesscraftingterminal.items.ItemEnum;
 import net.p455w0rd.wirelesscraftingterminal.items.ItemMagnet;
 import net.p455w0rd.wirelesscraftingterminal.reference.Reference;
 
-import org.jspecify.annotations.Nullable;
-
 import appeng.api.AEApi;
 import appeng.api.config.SecurityPermissions;
 import appeng.api.storage.data.IAEItemStack;
-import appeng.util.PlayerInventoryUtil;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent;
@@ -72,26 +68,16 @@ public class CommonProxy {
 
     @SubscribeEvent
     public void tickEvent(TickEvent.PlayerTickEvent e) {
-        final IntObjectPair<ItemStack> terminal = PlayerInventoryUtil
-                .findWirelessTerminal(e.player, stack -> getInstalledMagnet(stack) != null);
+        final IntObjectPair<ItemStack> terminal = RandomUtils.getWirelessTermWithMagnet(e.player.inventory);
         if (terminal == null) {
             return;
         }
         final ItemStack wirelessTerm = terminal.second();
-        final ItemStack magnetItem = getInstalledMagnet(wirelessTerm);
+        final ItemStack magnetItem = RandomUtils.getInstalledMagnet(wirelessTerm);
         if (magnetItem != null && magnetItem.getItem() instanceof ItemMagnet magnet) {
             magnet.setItemStack(magnetItem);
             magnet.doMagnet(magnetItem, e.player.worldObj, e.player, wirelessTerm);
         }
-    }
-
-    private static @Nullable ItemStack getInstalledMagnet(final ItemStack terminal) {
-        if (!RandomUtils.isWirelessCraftingTerminal(terminal) || !terminal.hasTagCompound()) {
-            return null;
-        }
-        final NBTTagList tagList = terminal.getTagCompound().getTagList("MagnetSlot", 10);
-        final ItemStack magnetItem = ItemStack.loadItemStackFromNBT(tagList.getCompoundTagAt(0));
-        return magnetItem != null && magnetItem.getItem() instanceof ItemMagnet ? magnetItem : null;
     }
 
     @SubscribeEvent
@@ -183,11 +169,10 @@ public class CommonProxy {
                 AchievementHandler.triggerAch(boosterAch, player);
             }
         }
-        IntObjectPair<ItemStack> termItemPair = PlayerInventoryUtil
-                .findWirelessTerminal(player, i -> getInstalledMagnet(i) != null);
+        IntObjectPair<ItemStack> termItemPair = RandomUtils.getWirelessTermWithMagnet(player.inventory);
         if (termItemPair != null) {
             final ItemStack wirelessTerm = termItemPair.second();
-            final ItemStack magnetItem = getInstalledMagnet(wirelessTerm);
+            final ItemStack magnetItem = RandomUtils.getInstalledMagnet(wirelessTerm);
             if (magnetItem != null && magnetItem.getItem() instanceof ItemMagnet magnet) {
                 magnet.obj = ContainerWirelessCraftingTerminal
                         .getGuiObject(wirelessTerm, player, world, termItemPair.firstInt());
