@@ -60,13 +60,6 @@ public class ArrayInventoryRouter<T extends IRoutedTunnel> implements IInventory
     }
 
     @Override
-    public void clearMembers() {
-        members.clear();
-        members.put(input, new ViewInfo());
-        stackLimitChanged = true;
-    }
-
-    @Override
     public void rebuildLayout() {
         table.clear();
         cumSum.clear();

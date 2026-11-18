@@ -22,11 +22,6 @@ public interface IInventoryRouter<T> {
     void removeMember(T output);
 
     /*
-     * Clear all members. No need to rebuild the layout but should immediately invalidate access.
-     */
-    void clearMembers();
-
-    /*
      * Rebuild the layout. Should give view sizes to the members through setViewSize().
      */
     void rebuildLayout();
