@@ -745,7 +745,9 @@ public class GuiMEMonitorable extends AEBaseGui
 
                 if (slot.getAEStack() != null && slot.getAEStack().getStackSize() == 0
                         && player.inventory.getItemStack() == null) {
-                    this.sendAction(MonitorableAction.AUTO_CRAFT, slot.getAEStack(), -1);
+                    if (slot.getAEStack().isCraftable()) {
+                        this.sendAction(MonitorableAction.AUTO_CRAFT, slot.getAEStack(), -1);
+                    }
                     return true;
                 }
                 this.sendAction(MonitorableAction.PICKUP_OR_SET_DOWN, slotStack, -1);
