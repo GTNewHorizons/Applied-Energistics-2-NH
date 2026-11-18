@@ -1,7 +1,6 @@
 package com.projecturanus.betterp2p.client.render;
 
 import java.util.Collection;
-import java.util.List;
 
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
@@ -10,7 +9,6 @@ import net.minecraftforge.client.event.RenderWorldLastEvent;
 import org.lwjgl.opengl.GL11;
 
 import com.projecturanus.betterp2p.network.data.P2PLocation;
-import com.projecturanus.betterp2p.util.GlStateManager;
 
 /**
  * This class is based on the <a href=
@@ -20,87 +18,18 @@ import com.projecturanus.betterp2p.util.GlStateManager;
  */
 public class OutlineRenderer {
 
-    public static void renderOutlines(RenderWorldLastEvent evt, EntityPlayer p, Collection<List<Integer>> coordinates,
-            int r, int g, int b) {
-        double doubleX = p.lastTickPosX + (p.posX - p.lastTickPosX);
-        double doubleY = p.lastTickPosY + (p.posY - p.lastTickPosY);
-        double doubleZ = p.lastTickPosZ + (p.posZ - p.lastTickPosZ);
-        GlStateManager.pushAttrib();
-        GlStateManager.disableDepth();
-        GlStateManager.disableTexture2D();
-        GlStateManager.disableLighting();
-        GlStateManager.depthMask(false);
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(-doubleX, -doubleY, -doubleZ);
-        renderOutlines(coordinates, r, g, b, 4);
-        GlStateManager.popMatrix();
-        GlStateManager.popAttrib();
-        GlStateManager.enableDepth();
-        GlStateManager.enableTexture2D();
-        GlStateManager.enableLighting();
-        GlStateManager.depthMask(true);
-    }
-
-    private static void renderOutlines(Collection<List<Integer>> coordinates, int r, int g, int b, int thickness) {
-        Tessellator tessellator = Tessellator.instance;
-        tessellator.startDrawing(GL11.GL_LINES);
-        GL11.glLineWidth(thickness);
-        for (List<Integer> coordinate : coordinates) {
-            float x = coordinate.get(0);
-            float y = coordinate.get(1);
-            float z = coordinate.get(2);
-            renderHighLightedBlocksOutline(tessellator, x, y, z, r, g, b, 255); // .02f
-        }
-        tessellator.draw();
-    }
-
-    public static void renderHighLightedBlocksOutline(Tessellator tessellator, float mx, float my, float mz, int r,
-            int g, int b, int a) {
-        tessellator.setColorRGBA(r, g, b, a);
-        tessellator.addVertex(mx, my, mz);
-        tessellator.addVertex(mx + 1, my, mz);
-        tessellator.addVertex(mx, my, mz);
-        tessellator.addVertex(mx, my + 1, mz);
-        tessellator.addVertex(mx, my, mz);
-        tessellator.addVertex(mx, my, mz + 1);
-        tessellator.addVertex(mx + 1, my + 1, mz + 1);
-        tessellator.addVertex(mx, my + 1, mz + 1);
-        tessellator.addVertex(mx + 1, my + 1, mz + 1);
-        tessellator.addVertex(mx + 1, my, mz + 1);
-        tessellator.addVertex(mx + 1, my + 1, mz + 1);
-        tessellator.addVertex(mx + 1, my + 1, mz);
-        tessellator.addVertex(mx, my + 1, mz);
-        tessellator.addVertex(mx, my + 1, mz + 1);
-        tessellator.addVertex(mx, my + 1, mz);
-        tessellator.addVertex(mx + 1, my + 1, mz);
-        tessellator.addVertex(mx + 1, my, mz);
-        tessellator.addVertex(mx + 1, my, mz + 1);
-        tessellator.addVertex(mx + 1, my, mz);
-        tessellator.addVertex(mx + 1, my + 1, mz);
-        tessellator.addVertex(mx, my, mz + 1);
-        tessellator.addVertex(mx + 1, my, mz + 1);
-        tessellator.addVertex(mx, my, mz + 1);
-        tessellator.addVertex(mx, my + 1, mz + 1);
-    }
-
     public static void renderOutlinesWithFacing(RenderWorldLastEvent evt, EntityPlayer p,
             Collection<P2PLocation> coordinates, int r, int g, int b) {
-
         double doubleX = p.lastTickPosX + (p.posX - p.lastTickPosX);
         double doubleY = p.lastTickPosY + (p.posY - p.lastTickPosY);
         double doubleZ = p.lastTickPosZ + (p.posZ - p.lastTickPosZ);
-        GlStateManager.pushAttrib();
-        GlStateManager.disableDepth();
-        GlStateManager.disableTexture2D();
-        GlStateManager.disableLighting();
-        GlStateManager.depthMask(false);
-
+        GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_LIGHTING_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_LINE_BIT);
+        GL11.glDisable(GL11.GL_DEPTH_TEST);
+        GL11.glDisable(GL11.GL_TEXTURE_2D);
+        GL11.glDisable(GL11.GL_LIGHTING);
+        GL11.glDepthMask(false);
         renderOutlinesWithFacing(coordinates, -doubleX, -doubleY, -doubleZ, r, g, b, 4);
-        GlStateManager.popAttrib();
-        GlStateManager.enableDepth();
-        GlStateManager.enableTexture2D();
-        GlStateManager.enableLighting();
-        GlStateManager.depthMask(true);
+        GL11.glPopAttrib();
     }
 
     private static void renderOutlinesWithFacing(Collection<P2PLocation> coordinates, double x, double y, double z,
@@ -108,16 +37,16 @@ public class OutlineRenderer {
         Tessellator tessellator = Tessellator.instance;
 
         for (P2PLocation pos : coordinates) {
-            GlStateManager.pushMatrix();
-            GlStateManager.translate(x, y, z);
+            GL11.glPushMatrix();
+            GL11.glTranslated(x, y, z);
             tessellator.startDrawing(GL11.GL_LINES);
             GL11.glLineWidth(thickness);
             tessellator.setTranslation(pos.x, pos.y, pos.z);
 
             renderHighLightedBlocksOutlineForFacing(tessellator, r, g, b, 255);
             tessellator.setTranslation(0, 0, 0);
-            GlStateManager.translate(pos.x, pos.y, pos.z);
-            GlStateManager.translate(0.5, 0.5, 0.5);
+            GL11.glTranslated(pos.x, pos.y, pos.z);
+            GL11.glTranslated(0.5, 0.5, 0.5);
 
             switch (pos.facing) {
                 case DOWN:
@@ -140,20 +69,15 @@ public class OutlineRenderer {
                 case WEST:
                     break;
             }
-            int[] west_matrix = { 1, 0, 0, 0, 1, 0, 0, 0, 1 };
-            int[] east_matrix = { -1, 0, 0, 0, 1, 0, 0, 0, 1 };
-            int[] north_matrix = { 0, 0, -1, 0, 1, 0, 1, 0, 0 };
-            int[] south_matrix = { 0, 0, 1, 0, 1, 0, -1, 0, 0 };
 
-            GlStateManager.translate(-0.5, -0.5, -0.5);
-            GlStateManager.translate(-pos.x, -pos.y, -pos.z);
+            GL11.glTranslated(-0.5, -0.5, -0.5);
+            GL11.glTranslated(-pos.x, -pos.y, -pos.z);
             tessellator.draw();
-            GlStateManager.popMatrix();
+            GL11.glPopMatrix();
         }
-
     }
 
-    public static void renderHighLightedBlocksOutlineForFacing(Tessellator tessellator, int r, int g, int b, int a) {
+    private static void renderHighLightedBlocksOutlineForFacing(Tessellator tessellator, int r, int g, int b, int a) {
         double minX = 0;
         double minY = 0.125;
         double minZ = 0.125;
