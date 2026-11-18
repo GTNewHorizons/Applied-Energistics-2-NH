@@ -34,8 +34,8 @@ public interface IInventoryRouter<T> {
     int getViewStackLimit(T viewer);
 
     /*
-     * Computes the viewer's inventory view. offset determines the start index, used for load balancing.
-     * Returns true if succeeds.
+     * Computes the viewer's inventory view. offset determines the start index, used for load balancing. Returns true if
+     * succeeds.
      */
     boolean resolve(T viewer, int slot, long offset, SlotView<T> out);
 }
