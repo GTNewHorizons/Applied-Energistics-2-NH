@@ -2,7 +2,9 @@ package appeng.util.p2p;
 
 public interface IRoutedTunnel {
 
-    void onInvalidTarget();
+    int getTargetInventorySize();
 
-    void onViewSizeChange();
+    int getTargetInventoryStackLimit();
+
+    void setViewSize(int size);
 }

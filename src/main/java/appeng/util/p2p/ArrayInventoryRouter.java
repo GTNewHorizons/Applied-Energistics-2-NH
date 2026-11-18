@@ -1,20 +1,13 @@
 package appeng.util.p2p;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
-import appeng.util.target.InventoryTarget;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.objects.Reference2IntMap;
-import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Reference2ReferenceMap;
-import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 
-public class ArrayInventoryRouter implements IInventoryRouter {
+public class ArrayInventoryRouter<T extends IRoutedTunnel> implements IInventoryRouter<T> {
 
     private enum ViewType {
         ALL,
@@ -25,36 +18,40 @@ public class ArrayInventoryRouter implements IInventoryRouter {
         NONE
     }
 
-    private final IRoutedTunnel input;
-    private final P2PTransportPolicy policy;
-    private final Reference2ObjectMap<IRoutedTunnel, InventoryTarget> members = new Reference2ObjectOpenHashMap<>();
+    private static class ViewInfo {
 
-    private final ArrayList<IRoutedTunnel> table = new ArrayList<>(); // input always come first, even if empty
+        int tableIndex = -1;
+        ViewType type = ViewType.NONE;
+        int size = 0;
+    }
+
+    private final T input;
+    private final P2PTransportPolicy policy;
+    private final Reference2ObjectMap<T, ViewInfo> members = new Reference2ObjectOpenHashMap<>();
+
+    private final ArrayList<T> table = new ArrayList<>(); // input always come first, even if empty
     private final IntArrayList cumSum = new IntArrayList();
-    private final Reference2IntMap<IRoutedTunnel> memberIndex = new Reference2IntOpenHashMap<>();
-    private final Reference2IntMap<IRoutedTunnel> viewSizes = new Reference2IntOpenHashMap<>();
-    private final Reference2ReferenceMap<IRoutedTunnel, ViewType> viewTypes = new Reference2ReferenceOpenHashMap<>();
 
     private int min1StackLimit = Integer.MAX_VALUE;
     private int min2StackLimit = Integer.MAX_VALUE;
     private int inputStackLimit = Integer.MAX_VALUE;
-    private IRoutedTunnel minMember;
+    private T minMember;
     private boolean stackLimitChanged;
 
-    public ArrayInventoryRouter(IRoutedTunnel input, P2PTransportPolicy policy) {
+    public ArrayInventoryRouter(T input, P2PTransportPolicy policy) {
         this.input = input;
         this.policy = policy;
-        this.members.put(input, null);
+        this.members.put(input, new ViewInfo());
     }
 
     @Override
-    public void addMember(IRoutedTunnel output) {
-        members.putIfAbsent(output, null);
+    public void addMember(T output) {
+        members.putIfAbsent(output, new ViewInfo());
         stackLimitChanged = true;
     }
 
     @Override
-    public void removeMember(IRoutedTunnel output) {
+    public void removeMember(T output) {
         if (output == input) {
             return;
         }
@@ -64,55 +61,42 @@ public class ArrayInventoryRouter implements IInventoryRouter {
 
     @Override
     public void clearMembers() {
-        InventoryTarget inputTarget = members.get(input);
         members.clear();
-        members.put(input, inputTarget);
+        members.put(input, new ViewInfo());
         stackLimitChanged = true;
-    }
-
-    @Override
-    public boolean setTarget(IRoutedTunnel member, InventoryTarget target) {
-        if (!members.containsKey(member)) {
-            return false;
-        }
-        InventoryTarget oldTarget = members.put(member, target);
-        stackLimitChanged = true;
-        return getSize(oldTarget) != getSize(target);
     }
 
     @Override
     public void rebuildLayout() {
         table.clear();
         cumSum.clear();
-        memberIndex.clear();
-
         table.add(input);
         cumSum.add(0);
-        memberIndex.put(input, 0);
-        int sum = getSize(members.get(input));
+
+        int inputSize = input.getTargetInventorySize();
+        int sum = inputSize;
         cumSum.add(sum);
 
-        for (Map.Entry<IRoutedTunnel, InventoryTarget> entry : members.entrySet()) {
-            IRoutedTunnel member = entry.getKey();
-            InventoryTarget target = entry.getValue();
-            int mySize = getSize(target);
-            if (member == input || mySize == 0) {
+        for (Map.Entry<T, ViewInfo> entry : members.entrySet()) {
+            T member = entry.getKey();
+            ViewInfo view = entry.getValue();
+            if (member == input) {
                 continue;
             }
-            memberIndex.put(member, table.size());
+            int mySize = member.getTargetInventorySize();
+            if (mySize == 0) {
+                continue;
+            }
+            view.tableIndex = table.size();
             table.add(member);
             cumSum.add(sum += mySize);
         }
 
-        Reference2IntMap<IRoutedTunnel> oldViewSizes = new Reference2IntOpenHashMap<>(viewSizes);
-        viewSizes.clear();
-        viewTypes.clear();
-        List<IRoutedTunnel> changed = new ArrayList<>();
-        for (Map.Entry<IRoutedTunnel, InventoryTarget> entry : members.entrySet()) {
-            IRoutedTunnel member = entry.getKey();
-            InventoryTarget target = entry.getValue();
+        for (Map.Entry<T, ViewInfo> entry : members.entrySet()) {
+            T member = entry.getKey();
+            ViewInfo view = entry.getValue();
 
-            int mySize = getSize(target);
+            int mySize = getSnapshotTargetSize(view);
             int newViewSize = 0;
             if (member == input) {
                 if (policy.inputReachesOutputs()) {
@@ -122,35 +106,17 @@ public class ArrayInventoryRouter implements IInventoryRouter {
                 if (policy.outputReachesPeers()) {
                     newViewSize += cumSum.getInt(table.size()) - mySize;
                 } else if (policy.outputReachesInput()) {
-                    newViewSize += cumSum.getInt(1);
+                    newViewSize += inputSize;
                 }
             }
-            viewSizes.put(member, newViewSize);
-            if (newViewSize != oldViewSizes.getInt(member)) {
-                changed.add(member);
-            }
-
-            viewTypes.put(member, getViewType(member));
-        }
-
-        for (final Reference2IntMap.Entry<IRoutedTunnel> entry : oldViewSizes.reference2IntEntrySet()) {
-            if (!members.containsKey(entry.getKey()) && entry.getIntValue() != 0) {
-                changed.add(entry.getKey());
-            }
-        }
-
-        for (IRoutedTunnel member : changed) {
-            member.onViewSizeChange();
+            member.setViewSize(newViewSize);
+            view.size = newViewSize;
+            view.type = getViewType(member, mySize > 0);
         }
     }
 
     @Override
-    public int getViewSize(IRoutedTunnel viewer) {
-        return viewSizes.getInt(viewer);
-    }
-
-    @Override
-    public int getViewStackLimit(IRoutedTunnel viewer) {
+    public int getViewStackLimit(T viewer) {
         if (stackLimitChanged) {
             refreshStackLimits();
             stackLimitChanged = false;
@@ -175,15 +141,8 @@ public class ArrayInventoryRouter implements IInventoryRouter {
         min2StackLimit = Integer.MAX_VALUE;
         inputStackLimit = Integer.MAX_VALUE;
         minMember = null;
-        for (Entry<IRoutedTunnel, InventoryTarget> entry : members.entrySet()) {
-            IRoutedTunnel member = entry.getKey();
-            InventoryTarget target = entry.getValue();
-
-            if (target == null || !target.isValid() || target.size() == 0) {
-                continue;
-            }
-
-            final int limit = target.inv.getInventoryStackLimit();
+        for (final T member : members.keySet()) {
+            final int limit = member.getTargetInventoryStackLimit();
             if (member == input) {
                 inputStackLimit = limit;
             }
@@ -198,21 +157,22 @@ public class ArrayInventoryRouter implements IInventoryRouter {
     }
 
     @Override
-    public boolean resolve(IRoutedTunnel viewer, int slot, long offset, SlotView out) {
-        if (!members.containsKey(viewer)) {
-            return false;
+    public SlotView<T> resolve(T viewer, int slot, long offset) {
+        final ViewInfo view = members.get(viewer);
+        if (view == null) {
+            return null;
         }
-        int viewSize = viewSizes.getInt(viewer);
+        final int viewSize = view.size;
         if (slot < 0 || slot >= viewSize) {
-            return false;
+            return null;
         }
 
         int slotIndex = -1;
-        int myIndex = memberIndex.getInt(viewer);
+        int myIndex = view.tableIndex;
+        int mySize = getSnapshotTargetSize(view);
         int inputSize = cumSum.getInt(1);
         int myCumSum = cumSum.getInt(myIndex);
-        int mySize = cumSum.getInt(myIndex + 1) - myCumSum;
-        ViewType viewType = viewTypes.get(viewer);
+        ViewType viewType = view.type;
 
         int invOffset, slotOffset, slotTarget;
 
@@ -259,20 +219,14 @@ public class ArrayInventoryRouter implements IInventoryRouter {
         }
 
         if (slotIndex == -1) {
-            return false;
+            return null;
         }
 
         int tunnelIndex = slotToTunnel(slotIndex);
-        IRoutedTunnel viewed = table.get(tunnelIndex);
-        InventoryTarget target = members.get(viewed);
-        if (target == null || target.size() != getSnapshotTargetSize(viewed)) {
-            return false;
-        }
-        if (!target.isValid()) {
-            viewed.onInvalidTarget();
-            return false;
-        }
-        out.inv = target.inv;
+        T viewed = table.get(tunnelIndex);
+
+        SlotView<T> out = new SlotView<>();
+        out.provider = viewed;
         out.slot = slotIndex - cumSum.getInt(tunnelIndex);
         if (viewer == input) {
             out.canExtract = policy.inputSide().extract() == P2PRoute.OUTPUTS;
@@ -286,15 +240,14 @@ public class ArrayInventoryRouter implements IInventoryRouter {
                 out.canInsert = policy.outputSide().insert() == P2PRoute.PEERS;
             }
         }
-        return true;
+        return out;
     }
 
-    private ViewType getViewType(IRoutedTunnel member) {
+    private ViewType getViewType(T member, boolean hasSlots) {
         if (member == input) {
             return policy.inputReachesOutputs() ? ViewType.OUTPUTS : ViewType.NONE;
         }
         if (policy.outputReachesPeers()) {
-            boolean hasSlots = memberIndex.containsKey(member);
             int inputSize = cumSum.getInt(1);
             if (inputSize > 0) {
                 return hasSlots ? ViewType.OTHERS : ViewType.ALL;
@@ -320,12 +273,11 @@ public class ArrayInventoryRouter implements IInventoryRouter {
         return low - 1;
     }
 
-    private static int getSize(final InventoryTarget target) {
-        return target == null ? 0 : target.size();
-    }
-
-    private int getSnapshotTargetSize(final IRoutedTunnel t) {
-        final int index = memberIndex.getInt(t);
+    private int getSnapshotTargetSize(final ViewInfo view) {
+        final int index = view.tableIndex;
+        if (index == -1) {
+            return 0;
+        }
         return cumSum.getInt(index + 1) - cumSum.getInt(index);
     }
 }

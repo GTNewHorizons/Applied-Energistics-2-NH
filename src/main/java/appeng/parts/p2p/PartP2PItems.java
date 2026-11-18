@@ -51,7 +51,6 @@ import appeng.util.p2p.ArrayInventoryRouter;
 import appeng.util.p2p.IInventoryRouter;
 import appeng.util.p2p.IRoutedTunnel;
 import appeng.util.p2p.P2PTransportPolicy;
-import appeng.util.target.InventoryTarget;
 import appeng.util.target.TileTarget;
 import appeng.util.target.TileTargetCache;
 import buildcraft.api.transport.IPipeConnection;
@@ -71,14 +70,17 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
      */
     private int @Nullable [] boundLayout;
     private final TileTargetCache targetCache = new TileTargetCache();
+    private IInventory cachedTargetInv;
 
     private boolean viewed;
     private PartP2PItems owner;
-    private IInventoryRouter router;
-    private final IInventoryRouter.SlotView slotView = new IInventoryRouter.SlotView();
+    private IInventoryRouter<PartP2PItems> router;
+    private final SlotView slotView = new SlotView();
     private long invOffset;
     private boolean busy;
     private boolean rebuildQueued;
+
+    private int viewSize;
 
     public PartP2PItems(final ItemStack is) {
         super(is);
@@ -94,11 +96,11 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         this.targetCache.markStale();
 
         if (this.hasTargetChanged()) {
-            refreshTarget();
+            this.refreshTarget();
         }
     }
 
-    /** Whether the adjacent tile or its slot layout differs from what was given to the router. */
+    /** Whether the adjacent tile or its slot layout differs from what was cached. */
     private boolean hasTargetChanged() {
         final TileTarget target = this.resolveOutputTarget();
         if (target != this.boundTarget) return true;
@@ -132,7 +134,7 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         return this.getProxy().isActive() ? this.targetCache.get(this.getTile(), this.getSide()) : null;
     }
 
-    private @Nullable InventoryTarget getTargetInv() {
+    private @Nullable IInventory getTargetInv() {
         final TileTarget target = this.resolveOutputTarget();
         this.boundTarget = target;
         this.boundLayout = null;
@@ -173,7 +175,7 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
             }
         }
 
-        return output == null ? null : new InventoryTarget(output, target);
+        return output;
     }
 
     @Override
@@ -248,8 +250,7 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
 
     @Override
     public int getSizeInventory() {
-        final IInventoryRouter router = getOwnerRouter();
-        return router == null ? 0 : router.getViewSize(this);
+        return viewSize;
     }
 
     @Override
@@ -259,7 +260,7 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         }
         this.busy = true;
         try {
-            IInventoryRouter.SlotView view = getSlotView(i);
+            SlotView view = getSlotView(i);
             return view == null ? null : view.inv.getStackInSlot(view.slot);
         } finally {
             this.busy = false;
@@ -273,7 +274,7 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         }
         this.busy = true;
         try {
-            IInventoryRouter.SlotView view = getSlotView(i);
+            SlotView view = getSlotView(i);
             if (view == null || !view.canExtract) {
                 return null;
             }
@@ -299,7 +300,7 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         }
         this.busy = true;
         try {
-            final IInventoryRouter.SlotView view = getSlotView(i);
+            final SlotView view = getSlotView(i);
             if (view == null) {
                 return;
             }
@@ -339,7 +340,7 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
 
     @Override
     public int getInventoryStackLimit() {
-        final IInventoryRouter router = getOwnerRouter();
+        final IInventoryRouter<PartP2PItems> router = getOwnerRouter();
         return router == null ? 64 : router.getViewStackLimit(this);
     }
 
@@ -366,7 +367,7 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         }
         this.busy = true;
         try {
-            IInventoryRouter.SlotView view = getSlotView(i);
+            SlotView view = getSlotView(i);
             return view != null && view.canInsert && view.inv.isItemValidForSlot(view.slot, itemstack);
         } finally {
             this.busy = false;
@@ -385,7 +386,7 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         }
         this.busy = true;
         try {
-            IInventoryRouter.SlotView view = getSlotView(i);
+            SlotView view = getSlotView(i);
             if (view == null || !view.canExtract) {
                 return false;
             }
@@ -406,15 +407,24 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
     }
 
     @Override
-    public void onInvalidTarget() {
-        refreshTarget();
+    public int getTargetInventorySize() {
+        return 0;
     }
 
     @Override
-    public void onViewSizeChange() {
-        final IPartHost host = this.getHost();
-        if (host != null) {
-            host.notifyNeighbors();
+    public int getTargetInventoryStackLimit() {
+        return 0;
+    }
+
+    @Override
+    public void setViewSize(int size) {
+        int oldSize = this.viewSize;
+        this.viewSize = size;
+        if (oldSize != size) {
+            final IPartHost host = this.getHost();
+            if (host != null) {
+                host.notifyNeighbors();
+            }
         }
     }
 
@@ -446,19 +456,33 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         return loopsBackTo(this, new HashSet<>());
     }
 
-    private IInventoryRouter getOwnerRouter() {
+    private IInventoryRouter<PartP2PItems> getOwnerRouter() {
         return owner == null ? null : owner.router;
     }
 
-    private IInventoryRouter.SlotView getSlotView(final int slot) {
+    private SlotView getSlotView(final int slot) {
         this.viewed = true;
 
-        final IInventoryRouter router = getOwnerRouter();
+        final IInventoryRouter<PartP2PItems> router = getOwnerRouter();
         final TileEntity te = this.getTile();
         if (router == null || te == null || te.getWorldObj() == null) {
             return null;
         }
-        return router.resolve(this, slot, this.invOffset, this.slotView) ? this.slotView : null;
+        IInventoryRouter.SlotView<PartP2PItems> rawSlotView = router.resolve(this, slot, this.invOffset);
+        if (rawSlotView == null) {
+            return null;
+        }
+        PartP2PItems provider = rawSlotView.provider;
+        if (provider.getTile().isInvalid() || provider.boundTarget == null
+                || !provider.boundTarget.isValid()
+                || provider.cachedTargetInv == null) {
+            return null;
+        }
+        slotView.inv = provider.cachedTargetInv;
+        slotView.slot = rawSlotView.slot;
+        slotView.canExtract = rawSlotView.canExtract;
+        slotView.canInsert = rawSlotView.canInsert;
+        return slotView;
     }
 
     private void syncRouter() {
@@ -526,26 +550,15 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         }
     }
 
-    private void setRouteTarget(PartP2PItems t, InventoryTarget inv) {
-        if (this.router != null && this.router.setTarget(t, inv)) {
-            this.scheduleRebuild();
-        }
-    }
-
     private void refreshTarget() {
-        if (this.owner == null) {
-            return;
-        }
-        InventoryTarget newTarget = getTargetInv();
-        if (newTarget == null || !newTarget.isValid()) {
-            this.owner.setRouteTarget(this, null);
-        } else {
-            this.owner.setRouteTarget(this, newTarget);
+        this.cachedTargetInv = getTargetInv();
+        if (this.owner != null) {
+            this.owner.scheduleRebuild();
         }
     }
 
     private void createRouter() {
-        this.router = new ArrayInventoryRouter(this, getTransportPolicy());
+        this.router = new ArrayInventoryRouter<>(this, getTransportPolicy());
         try {
             for (final PartP2PItems output : this.getOutputs()) {
                 if (output.owner == this) {
@@ -561,7 +574,7 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
     }
 
     private void releaseRouter() {
-        final IInventoryRouter oldRouter = this.router;
+        final IInventoryRouter<PartP2PItems> oldRouter = this.router;
         this.router = null;
         if (oldRouter != null) {
             oldRouter.clearMembers();
@@ -570,5 +583,13 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
                 return null;
             });
         }
+    }
+
+    private static class SlotView {
+
+        public IInventory inv;
+        public int slot;
+        public boolean canInsert;
+        public boolean canExtract;
     }
 }
