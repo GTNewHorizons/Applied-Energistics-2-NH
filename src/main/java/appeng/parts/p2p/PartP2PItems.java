@@ -232,9 +232,10 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         super.removeFromWorld();
         this.boundTarget = null;
         this.boundLayout = null;
+        this.cachedTargetInv = null;
         this.setViewSize(0);
         if (this.owner == this) {
-            this.releaseRouter();
+            this.router = null;
         } else if (this.owner != null) {
             this.owner.removeRouteMember(this);
         }
@@ -500,7 +501,7 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
             this.setViewSize(0);
             if (this.owner == this) {
                 // I was an input P2P, but am no longer
-                this.releaseRouter();
+                this.router = null;
             } else if (this.owner != null) {
                 // I was an output P2P who left the router
                 this.owner.removeRouteMember(this);
@@ -581,18 +582,6 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
             // :P
         }
         this.scheduleRebuild();
-    }
-
-    private void releaseRouter() {
-        final IInventoryRouter<PartP2PItems> oldRouter = this.router;
-        this.router = null;
-        if (oldRouter != null) {
-            oldRouter.clearMembers();
-            TickHandler.INSTANCE.addCallable(null, world -> {
-                oldRouter.rebuildLayout();
-                return null;
-            });
-        }
     }
 
     private static class SlotView {
