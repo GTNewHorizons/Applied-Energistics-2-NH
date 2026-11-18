@@ -1,12 +1,14 @@
 package com.projecturanus.betterp2p.client.gui.widget;
 
+import org.jspecify.annotations.Nullable;
+
 import com.projecturanus.betterp2p.client.gui.InfoWrapper;
 
 import appeng.client.gui.widgets.MEGuiTextField;
 
 public class IGuiTextField extends MEGuiTextField {
 
-    InfoWrapper info = null;
+    private @Nullable InfoWrapper info;
 
     public void setVisible(boolean visible) {
         this.field.setVisible(visible);
@@ -26,11 +28,11 @@ public class IGuiTextField extends MEGuiTextField {
         this.setVisible(false);
     }
 
-    public void setInfo(InfoWrapper _info) {
+    public void setInfo(@Nullable InfoWrapper _info) {
         info = _info;
     }
 
-    public InfoWrapper getInfo() {
+    public @Nullable InfoWrapper getInfo() {
         return info;
     }
 

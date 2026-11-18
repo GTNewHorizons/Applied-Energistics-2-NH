@@ -1,5 +1,6 @@
-package com.projecturanus.betterp2p.client
+package com.projecturanus.betterp2p.client;
 
-interface TextureBound {
-    fun bindTexture(modid: String, location: String)
+public interface TextureBound {
+
+    void bindTexture(String modid, String location);
 }

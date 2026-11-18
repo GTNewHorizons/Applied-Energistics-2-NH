@@ -1,105 +1,119 @@
-package com.projecturanus.betterp2p.client.gui
+package com.projecturanus.betterp2p.client.gui;
 
-import com.projecturanus.betterp2p.BetterP2P
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.function.BiPredicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.jspecify.annotations.Nullable;
+
+import com.projecturanus.betterp2p.BetterP2P;
 
 /**
- * Extend the default filtering. Holds information about the search filter.
- *
- * There are 4 modes of filtering:
- * - By input/output: Using `@in/@out` filters by input/output respectively.
- * - By bound/unbound: Using `@b` or `@u` filters by bound/unbound respectively.
- * - By type: Using `@types=<type1>;<type2>;...` filters by type.
- * - By name: Use the name
- * If someone comes and says "sort by freq pls" then we can add it at that time
+ * Parses the search query into filters.
+ * <ul>
+ * <li>{@code @in} / {@code @out}: inputs / outputs</li>
+ * <li>{@code @b} / {@code @u}: bound / unbound tunnels</li>
+ * <li>{@code @type=<type1>;<type2>;...}: tunnel types</li>
+ * <li>anything else: tunnel name</li>
+ * </ul>
  */
-class InfoFilter {
+public class InfoFilter {
 
-    /**
-     * Active filters to use when filtering entries.
-     */
-    val activeFilters: MutableMap<Filter, MutableList<String>?> = mutableMapOf()
+    // https://stackoverflow.com/questions/366202/regex-for-splitting-a-string-using-space-when-not-surrounded-by-single-or-double
+    private static final Pattern SEARCH_REGEX = Pattern.compile("[^\\s\"']+|\"([^\"]*)\"|'([^']*)'");
 
-    /**
-     * Parse the query string for filters and update the active
-     * filter list.
-     */
-    fun updateFilter(query: String) {
-        val tokens = SEARCH_REGEX.findAll(query)
-        activeFilters.clear()
-        var bind: String
-        tokens.forEach {
-            val token = it.value
-            // If we don't start with a tag, skip all these regexes
+    private static final Filter[] FLAG_FILTERS = { Filter.INPUT, Filter.OUTPUT, Filter.BOUND, Filter.UNBOUND };
+
+    private final Map<Filter, @Nullable List<String>> activeFilters = new EnumMap<>(Filter.class);
+
+    public Map<Filter, @Nullable List<String>> getActiveFilters() {
+        return activeFilters;
+    }
+
+    public void updateFilter(String query) {
+        activeFilters.clear();
+        Matcher matcher = SEARCH_REGEX.matcher(query);
+        while (matcher.find()) {
+            String token = matcher.group();
             if (token.startsWith("@")) {
-                when {
-                    it.value.matches(Filter.INPUT.pattern) -> {
-                        activeFilters.putIfAbsent(Filter.INPUT, null)
-                    }
-                    it.value.matches(Filter.OUTPUT.pattern) -> {
-                        activeFilters.putIfAbsent(Filter.OUTPUT, null)
-                    }
-                    it.value.matches(Filter.BOUND.pattern) -> {
-                        activeFilters.putIfAbsent(Filter.BOUND, null)
-                    }
-                    it.value.matches(Filter.UNBOUND.pattern) -> {
-                        activeFilters.putIfAbsent(Filter.UNBOUND, null)
-                    }
-                    it.value.matches(Filter.TYPE.pattern) -> {
-                        val result = Filter.TYPE.pattern.find(it.value)!!
-                        val l = mutableListOf<String>()
-                        activeFilters.putIfAbsent(Filter.TYPE, l)
-                        val types = result.groupValues[1].split(";")
-                        types.forEach(l::add)
-                    }
-                    it.value.isBlank() -> {}
-                    else -> {
-                    }
-                }
+                updateTagFilter(token);
+                continue;
+            }
+            List<String> names = new ArrayList<>();
+            activeFilters.putIfAbsent(Filter.NAME, names);
+            if (matcher.group(1) != null) {
+                names.add(matcher.group(1));
+            } else if (matcher.group(2) != null) {
+                names.add(matcher.group(2));
             } else {
-                val l = mutableListOf<String>()
-                activeFilters.putIfAbsent(Filter.NAME, l)
-                when {
-                    it.groups[1] != null -> l.add(it.groups[1]!!.value)
-                    it.groups[2] != null -> l.add(it.groups[2]!!.value)
-                    else -> activeFilters[Filter.NAME]!!.add(it.value)
-                }
+                activeFilters.get(Filter.NAME).add(token);
             }
         }
     }
-}
 
-/**
- * Holds different filter types.
- * TODO they will probably be adjustable in the config.
- */
-enum class Filter(val pattern: Regex, val filter: (InfoWrapper, List<String>?) -> Boolean) {
-    INPUT("\\A@in\\z".toRegex(), { it, _ -> !it.output }),
-    OUTPUT("\\A@out\\z".toRegex(), { it, _ -> it.output }),
-    BOUND("\\A@b\\z".toRegex(), { it, _ -> it.frequency != 0L }),
-    UNBOUND("\\A@u\\z".toRegex(), { it, _ -> it.frequency == 0L || it.error }),
-    TYPE("\\A@types*=(.+)\\z".toRegex(), filter@{ it, strs ->
-        val tags = BetterP2P.proxy.getP2PFromIndex(it.type)!!.dispName.lowercase()
-        for (f in strs!!) {
-            if (tags.contains(f.lowercase())) {
-                return@filter true
+    private void updateTagFilter(String token) {
+        for (Filter filter : FLAG_FILTERS) {
+            if (filter.pattern.matcher(token).matches()) {
+                activeFilters.putIfAbsent(filter, null);
+                return;
             }
         }
-        false
-    }),
-    NAME("\"?.+\"?".toRegex(), filter@{ it, strs ->
-        val name = it.name.lowercase()
-        for (f in strs!!) {
-            // Double quotes will likely break P2P tunneling
-            val query = f.removeSurrounding("\"")
-            if (name.contains(query)) {
-                return@filter true
-            }
+        Matcher typeMatcher = Filter.TYPE.pattern.matcher(token);
+        if (typeMatcher.matches()) {
+            List<String> types = new ArrayList<>();
+            activeFilters.putIfAbsent(Filter.TYPE, types);
+            Collections.addAll(types, typeMatcher.group(1).split(";", -1));
         }
-        false
-    });
+    }
+
+    private static String removeSurroundingQuotes(String s) {
+        if (s.length() >= 2 && s.startsWith("\"") && s.endsWith("\"")) {
+            return s.substring(1, s.length() - 1);
+        }
+        return s;
+    }
+
+    public enum Filter {
+
+        INPUT("\\A@in\\z", (info, args) -> !info.output),
+        OUTPUT("\\A@out\\z", (info, args) -> info.output),
+        BOUND("\\A@b\\z", (info, args) -> info.getFrequency() != 0L),
+        UNBOUND("\\A@u\\z", (info, args) -> info.getFrequency() == 0L || info.isError()),
+        TYPE("\\A@types*=(.+)\\z", (info, args) -> {
+            String tags = BetterP2P.proxy.getP2PFromIndex(info.type).dispName.toLowerCase(Locale.ROOT);
+            for (String f : args) {
+                if (tags.contains(f.toLowerCase(Locale.ROOT))) {
+                    return true;
+                }
+            }
+            return false;
+        }),
+        NAME("\"?.+\"?", (info, args) -> {
+            String name = info.name.toLowerCase(Locale.ROOT);
+            for (String f : args) {
+                if (name.contains(removeSurroundingQuotes(f))) {
+                    return true;
+                }
+            }
+            return false;
+        });
+
+        private final Pattern pattern;
+        private final BiPredicate<InfoWrapper, List<String>> filter;
+
+        Filter(String pattern, BiPredicate<InfoWrapper, List<String>> filter) {
+            this.pattern = Pattern.compile(pattern);
+            this.filter = filter;
+        }
+
+        public boolean test(InfoWrapper info, @Nullable List<String> args) {
+            return filter.test(info, args);
+        }
+    }
 }
-
-// Splitting a string with regex is hard.
-// https://stackoverflow.com/questions/366202/regex-for-splitting-a-string-using-space-when-not-surrounded-by-single-or-double
-val SEARCH_REGEX = "[^\\s\"']+|\"([^\"]*)\"|'([^']*)'".toRegex()
-

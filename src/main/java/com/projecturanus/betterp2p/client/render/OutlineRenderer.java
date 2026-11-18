@@ -6,13 +6,11 @@ import java.util.List;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
-import net.minecraftforge.common.util.ForgeDirection;
 
 import org.lwjgl.opengl.GL11;
 
+import com.projecturanus.betterp2p.network.data.P2PLocation;
 import com.projecturanus.betterp2p.util.GlStateManager;
-
-import kotlin.Pair;
 
 /**
  * This class is based on the <a href=
@@ -86,7 +84,7 @@ public class OutlineRenderer {
     }
 
     public static void renderOutlinesWithFacing(RenderWorldLastEvent evt, EntityPlayer p,
-            Collection<Pair<List<Integer>, ForgeDirection>> coordinates, int r, int g, int b) {
+            Collection<P2PLocation> coordinates, int r, int g, int b) {
 
         double doubleX = p.lastTickPosX + (p.posX - p.lastTickPosX);
         double doubleY = p.lastTickPosY + (p.posY - p.lastTickPosY);
@@ -105,26 +103,23 @@ public class OutlineRenderer {
         GlStateManager.depthMask(true);
     }
 
-    private static void renderOutlinesWithFacing(Collection<Pair<List<Integer>, ForgeDirection>> coordinates, double x,
-            double y, double z, int r, int g, int b, int thickness) {
+    private static void renderOutlinesWithFacing(Collection<P2PLocation> coordinates, double x, double y, double z,
+            int r, int g, int b, int thickness) {
         Tessellator tessellator = Tessellator.instance;
 
-        for (Pair<List<Integer>, ForgeDirection> coordinate : coordinates) {
-            List<Integer> pos = coordinate.component1();
-            ForgeDirection facing = coordinate.component2();
-            if (pos == null || facing == null || pos.size() != 3) continue;
+        for (P2PLocation pos : coordinates) {
             GlStateManager.pushMatrix();
             GlStateManager.translate(x, y, z);
             tessellator.startDrawing(GL11.GL_LINES);
             GL11.glLineWidth(thickness);
-            tessellator.setTranslation(pos.get(0), pos.get(1), pos.get(2));
+            tessellator.setTranslation(pos.x, pos.y, pos.z);
 
             renderHighLightedBlocksOutlineForFacing(tessellator, r, g, b, 255);
             tessellator.setTranslation(0, 0, 0);
-            GlStateManager.translate(pos.get(0), pos.get(1), pos.get(2));
+            GlStateManager.translate(pos.x, pos.y, pos.z);
             GlStateManager.translate(0.5, 0.5, 0.5);
 
-            switch (facing) {
+            switch (pos.facing) {
                 case DOWN:
                     GL11.glRotated(90, 0, 1, 0);
                     GL11.glRotated(90, 0, 0, 1);
@@ -151,7 +146,7 @@ public class OutlineRenderer {
             int[] south_matrix = { 0, 0, 1, 0, 1, 0, -1, 0, 0 };
 
             GlStateManager.translate(-0.5, -0.5, -0.5);
-            GlStateManager.translate(-pos.get(0), -pos.get(1), -pos.get(2));
+            GlStateManager.translate(-pos.x, -pos.y, -pos.z);
             tessellator.draw();
             GlStateManager.popMatrix();
         }
