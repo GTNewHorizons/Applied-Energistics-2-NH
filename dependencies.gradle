@@ -60,6 +60,7 @@ dependencies {
         exclude module: "Hodgepodge"
         exclude module: "waila"
     }
+    functionalTestRuntimeOnly('com.github.GTNewHorizons:ForgeMultipart:2.0.0:dev') {transitive = false}
 
     devOnlyNonPublishable("com.github.GTNewHorizons:Horizon-QA:0.15.0:dev")
 
