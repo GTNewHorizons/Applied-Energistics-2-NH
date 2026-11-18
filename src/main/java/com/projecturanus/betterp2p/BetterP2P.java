@@ -28,7 +28,8 @@ public class BetterP2P {
 
     @SidedProxy(
             serverSide = "com.projecturanus.betterp2p.CommonProxy",
-            clientSide = "com.projecturanus.betterp2p.ClientProxy")
+            clientSide = "com.projecturanus.betterp2p.ClientProxy",
+            modId = BetterP2P.MODID)
     public static CommonProxy proxy;
 
     @Mod.EventHandler
