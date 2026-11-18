@@ -1,57 +1,59 @@
-package com.projecturanus.betterp2p.network.packet
+package com.projecturanus.betterp2p.network.packet;
 
-import net.minecraft.client.Minecraft
+import java.util.Collections;
+import java.util.List;
 
-import com.projecturanus.betterp2p.client.gui.GuiAdvancedMemoryCard
-import com.projecturanus.betterp2p.network.data.*
-import cpw.mods.fml.common.network.simpleimpl.IMessage
-import cpw.mods.fml.common.network.simpleimpl.IMessageHandler
-import cpw.mods.fml.common.network.simpleimpl.MessageContext
-import cpw.mods.fml.relauncher.Side
-import cpw.mods.fml.relauncher.SideOnly
-import io.netty.buffer.ByteBuf
+import net.minecraft.client.Minecraft;
 
-/**
- * A Server->Client packet that sends a list of P2Ps over the net.
- */
-class S2COpenGui(var infos: List<P2PInfo> = emptyList(),
-                 var memoryInfo: MemoryInfo = MemoryInfo()) : IMessage {
-    override fun fromBytes(buf: ByteBuf) {
-        val length = buf.readInt()
-        val list = ArrayList<P2PInfo>(length)
+import org.jspecify.annotations.Nullable;
 
-        for (i in 0 until length) {
-            val info = readP2PInfo(buf)
+import com.projecturanus.betterp2p.client.gui.GuiAdvancedMemoryCard;
+import com.projecturanus.betterp2p.network.data.MemoryInfo;
+import com.projecturanus.betterp2p.network.data.P2PInfo;
 
-            if (info != null) {
-                list.add(info)
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import io.netty.buffer.ByteBuf;
+
+public class S2COpenGui implements IMessage {
+
+    private List<P2PInfo> infos = Collections.emptyList();
+    private MemoryInfo memoryInfo = new MemoryInfo();
+
+    public S2COpenGui() {}
+
+    public S2COpenGui(List<P2PInfo> infos, MemoryInfo memoryInfo) {
+        this.infos = infos;
+        this.memoryInfo = memoryInfo;
+    }
+
+    @Override
+    public void fromBytes(ByteBuf buf) {
+        infos = P2PInfo.readList(buf);
+        memoryInfo = MemoryInfo.read(buf);
+    }
+
+    @Override
+    public void toBytes(ByteBuf buf) {
+        P2PInfo.writeList(buf, infos);
+        memoryInfo.write(buf);
+    }
+
+    public static class Handler implements IMessageHandler<S2COpenGui, IMessage> {
+
+        @Override
+        @SideOnly(Side.CLIENT)
+        public @Nullable IMessage onMessage(S2COpenGui message, MessageContext ctx) {
+            Minecraft mc = Minecraft.getMinecraft();
+            if (mc.currentScreen instanceof GuiAdvancedMemoryCard gui) {
+                gui.refreshInfo(message.infos);
+            } else {
+                mc.displayGuiScreen(new GuiAdvancedMemoryCard(message.infos, message.memoryInfo));
             }
+            return null;
         }
-
-        infos = list
-        memoryInfo = readMemoryInfo(buf)
-    }
-
-    override fun toBytes(buf: ByteBuf) {
-        buf.writeInt(infos.size)
-        infos.forEach { writeP2PInfo(buf, it) }
-        writeMemoryInfo(buf, memoryInfo)
     }
 }
-
-/**
- * Handler on client side for GUI open.
- */
-class ClientOpenGuiHandler : IMessageHandler<S2COpenGui, IMessage?> {
-    @SideOnly(Side.CLIENT)
-    override fun onMessage(message: S2COpenGui, ctx: MessageContext): IMessage? {
-        val gui = Minecraft.getMinecraft().currentScreen
-        if (gui is GuiAdvancedMemoryCard) {
-            gui.refreshInfo(message.infos)
-        } else {
-            Minecraft.getMinecraft().displayGuiScreen(GuiAdvancedMemoryCard(message))
-        }
-        return null
-    }
-}
-

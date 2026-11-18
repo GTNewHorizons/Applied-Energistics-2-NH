@@ -1,47 +1,58 @@
-package com.projecturanus.betterp2p.network.packet
+package com.projecturanus.betterp2p.network.packet;
 
-import com.projecturanus.betterp2p.network.ModNetwork
-import com.projecturanus.betterp2p.network.data.P2PLocation
-import com.projecturanus.betterp2p.network.data.TUNNEL_ANY
-import com.projecturanus.betterp2p.network.data.readP2PLocation
-import com.projecturanus.betterp2p.network.data.writeP2PLocation
+import net.minecraft.entity.player.EntityPlayerMP;
 
-import cpw.mods.fml.common.network.simpleimpl.IMessage
-import cpw.mods.fml.common.network.simpleimpl.IMessageHandler
-import cpw.mods.fml.common.network.simpleimpl.MessageContext
-import io.netty.buffer.ByteBuf
+import org.jspecify.annotations.Nullable;
 
-/**
- * Unlink input from outputs message (set freq to 0)
- */
-class C2SUnlinkP2P(var p2p: P2PLocation? = null, var type: Int = TUNNEL_ANY): IMessage {
-    override fun fromBytes(buf: ByteBuf) {
-        p2p = readP2PLocation(buf)
-        type = buf.readByte().toInt()
+import com.projecturanus.betterp2p.network.ModNetwork;
+import com.projecturanus.betterp2p.network.data.GridServerCache;
+import com.projecturanus.betterp2p.network.data.MemoryInfo;
+import com.projecturanus.betterp2p.network.data.P2PLocation;
+
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import io.netty.buffer.ByteBuf;
+
+public class C2SUnlinkP2P implements IMessage {
+
+    private @Nullable P2PLocation p2p;
+    private int type = MemoryInfo.TUNNEL_ANY;
+
+    public C2SUnlinkP2P() {}
+
+    public C2SUnlinkP2P(P2PLocation p2p, int type) {
+        this.p2p = p2p;
+        this.type = type;
     }
 
-    override fun toBytes(buf: ByteBuf) {
-        // Clientside can crash if they want to send faulty packets :P
-        writeP2PLocation(buf, p2p!!)
-        buf.writeByte(type)
+    @Override
+    public void fromBytes(ByteBuf buf) {
+        p2p = P2PLocation.read(buf);
+        type = buf.readByte();
     }
-}
 
-/**
- * Client -> Server
- * Handler on server side
- */
-class ServerUnlinkP2PHandler : IMessageHandler<C2SUnlinkP2P, S2COpenGui?> {
-    override fun onMessage(message: C2SUnlinkP2P, ctx: MessageContext): S2COpenGui? {
-        // message validation
-        if (message.p2p == null) {
-            return null
+    @Override
+    public void toBytes(ByteBuf buf) {
+        p2p.write(buf);
+        buf.writeByte(type);
+    }
+
+    public static class Handler implements IMessageHandler<C2SUnlinkP2P, IMessage> {
+
+        @Override
+        public @Nullable IMessage onMessage(C2SUnlinkP2P message, MessageContext ctx) {
+            if (message.p2p == null) {
+                return null;
+            }
+            EntityPlayerMP player = ctx.getServerHandler().playerEntity;
+            GridServerCache cache = ModNetwork.getGridCache(player);
+            if (cache == null) {
+                return null;
+            }
+            cache.unlinkP2P(message.p2p);
+            ModNetwork.requestP2PUpdate(player);
+            return null;
         }
-        val cache = ModNetwork.playerState[ctx.serverHandler.playerEntity.uniqueID] ?: return null
-
-        cache.gridCache.unlinkP2P(message.p2p!!)
-        ModNetwork.requestP2PUpdate(ctx.serverHandler.playerEntity)
-
-        return null
     }
 }
