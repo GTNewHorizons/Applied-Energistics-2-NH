@@ -687,6 +687,9 @@ public abstract class AEBaseContainer extends Container {
 
     @Override
     public boolean canInteractWith(final EntityPlayer entityplayer) {
+        if (this.obj != null && !this.obj.isValid()) {
+            return false;
+        }
         if (this.isValidContainer()) {
             if (this.tileEntity instanceof IInventory) {
                 return ((IInventory) this.tileEntity).isUseableByPlayer(entityplayer);
