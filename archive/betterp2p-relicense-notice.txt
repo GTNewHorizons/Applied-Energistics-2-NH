@@ -1,0 +1,13 @@
+BetterP2P (https://github.com/GTNewHorizons/BetterP2P) was licensed under the GNU General Public License v3.0.
+See original-betterp2p-license-notice.txt for the original license text.
+
+The original author and every contributor up to commit 7a38f2fc9a840bcf6f15bb85de2cc2cb6ac8d3be
+agreed to relicense their contributions under the GNU Lesser General Public License v3.0.
+The authors of the following later commits, which were cherry-picked into this repository, also agreed:
+
+- 47550d0 Make more Memory Card UI strings translatable (#38) by Ranzu
+- 3ec42b7 Fix/various p2p binding issues (#39) by hiroscho
+- 202a9c6 Fix issues when changing p2p type that involves conversion (#40) by hiroscho
+- da39f2e Fix class checks (#41) by hiroscho
+
+No other commit of BetterP2P after 7a38f2fc is included in this repository.
