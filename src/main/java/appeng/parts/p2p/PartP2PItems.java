@@ -479,9 +479,12 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         }
         if (provider.boundTarget == null || provider.getTile().isInvalid()
                 || !provider.boundTarget.isValid()
-                || provider.cachedTargetInv == null
-                || provider.cachedTargetInv.getSizeInventory() != this.rawSlotView.size) {
+                || provider.cachedTargetInv == null) {
             provider.refreshTarget();
+            return null;
+        }
+        if (provider.cachedTargetInv.getSizeInventory() != this.rawSlotView.size) {
+            this.owner.scheduleRebuild();
             return null;
         }
         this.slotView.inv = provider.cachedTargetInv;
