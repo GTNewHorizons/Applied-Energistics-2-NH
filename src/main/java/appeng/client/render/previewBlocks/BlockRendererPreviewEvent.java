@@ -58,7 +58,7 @@ public class BlockRendererPreviewEvent {
         }
     }
 
-    @SubscribeEvent
+    @SubscribeEvent(receiveCanceled = true)
     public void onDrawBlockHighlight(DrawBlockHighlightEvent event) {
         // runs before the liquid pass, so water blends over the preview and solid blocks hide it
         if (AEConfig.instance.previewBlocks) {
