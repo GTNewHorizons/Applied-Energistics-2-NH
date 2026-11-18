@@ -374,6 +374,9 @@ public class PartP2PLiquids extends PartP2PTunnelRouted<PartP2PLiquids> implemen
     }
 
     private FluidTankInfo[] getTank() {
+        if (!this.getProxy().isActive()) {
+            return INACTIVE_TANK;
+        }
         if (this.isOutput()) {
             final PartP2PLiquids tun = this.getInput();
             if (tun != null) {
