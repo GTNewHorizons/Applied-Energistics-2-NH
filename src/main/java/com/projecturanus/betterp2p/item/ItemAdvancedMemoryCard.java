@@ -10,6 +10,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.StatCollector;
+import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.common.util.ForgeDirection;
@@ -20,7 +21,6 @@ import com.projecturanus.betterp2p.client.gui.widget.GuiScale;
 import com.projecturanus.betterp2p.network.ModNetwork;
 import com.projecturanus.betterp2p.network.data.MemoryInfo;
 import com.projecturanus.betterp2p.network.data.P2PLocation;
-import com.projecturanus.betterp2p.util.CableBusUtil;
 import com.projecturanus.betterp2p.util.p2p.P2PUtil;
 
 import appeng.api.config.SecurityPermissions;
@@ -29,8 +29,10 @@ import appeng.api.networking.IGridHost;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.security.ISecurityGrid;
 import appeng.api.parts.IPart;
+import appeng.api.parts.SelectedPart;
 import appeng.core.CreativeTab;
 import appeng.parts.p2p.PartP2PTunnel;
+import appeng.util.Platform;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -76,7 +78,8 @@ public class ItemAdvancedMemoryCard extends Item {
         if (!(te instanceof IGridHost gridHost) || gridHost.getGridNode(ForgeDirection.getOrientation(side)) == null) {
             return false;
         }
-        IPart part = CableBusUtil.getPart(w, x, y, z, hx, hy, hz);
+        SelectedPart selected = Platform.selectPartFromTE(te, Vec3.createVectorHelper(hx, hy, hz));
+        IPart part = selected != null ? selected.part : null;
         IGridNode node = part != null ? part.getGridNode() : null;
         IGrid grid = node != null ? node.getGrid() : null;
         if (grid == null) {
