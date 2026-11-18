@@ -35,5 +35,5 @@ public interface IInventoryRouter<T> {
     /*
      * Computes the viewer's inventory view. offset determines the start index, used for load balancing.
      */
-    SlotView<T> resolve(T viewer, int slot, long offset);
+    SlotView<T> resolve(T viewer, int slot, long offset, SlotView<T> out);
 }

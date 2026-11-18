@@ -81,10 +81,12 @@ public class ArrayInventoryRouter<T extends IRoutedTunnel> implements IInventory
             T member = entry.getKey();
             ViewInfo view = entry.getValue();
             if (member == input) {
+                view.tableIndex = 0;
                 continue;
             }
             int mySize = member.getTargetInventorySize();
             if (mySize == 0) {
+                view.tableIndex = -1;
                 continue;
             }
             view.tableIndex = table.size();
@@ -113,6 +115,8 @@ public class ArrayInventoryRouter<T extends IRoutedTunnel> implements IInventory
             view.size = newViewSize;
             view.type = getViewType(member, mySize > 0);
         }
+
+        stackLimitChanged = true;
     }
 
     @Override
@@ -157,7 +161,7 @@ public class ArrayInventoryRouter<T extends IRoutedTunnel> implements IInventory
     }
 
     @Override
-    public SlotView<T> resolve(T viewer, int slot, long offset) {
+    public SlotView<T> resolve(T viewer, int slot, long offset, SlotView<T> out) {
         final ViewInfo view = members.get(viewer);
         if (view == null) {
             return null;
@@ -225,7 +229,6 @@ public class ArrayInventoryRouter<T extends IRoutedTunnel> implements IInventory
         int tunnelIndex = slotToTunnel(slotIndex);
         T viewed = table.get(tunnelIndex);
 
-        SlotView<T> out = new SlotView<>();
         out.provider = viewed;
         out.slot = slotIndex - cumSum.getInt(tunnelIndex);
         if (viewer == input) {

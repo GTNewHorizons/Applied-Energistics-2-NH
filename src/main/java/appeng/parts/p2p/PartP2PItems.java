@@ -75,6 +75,7 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
     private boolean viewed;
     private PartP2PItems owner;
     private IInventoryRouter<PartP2PItems> router;
+    private final IInventoryRouter.SlotView<PartP2PItems> rawSlotView = new IInventoryRouter.SlotView<>();
     private final SlotView slotView = new SlotView();
     private long invOffset;
     private boolean busy;
@@ -231,6 +232,7 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         super.removeFromWorld();
         this.boundTarget = null;
         this.boundLayout = null;
+        this.setViewSize(0);
         if (this.owner == this) {
             this.releaseRouter();
         } else if (this.owner != null) {
@@ -408,12 +410,12 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
 
     @Override
     public int getTargetInventorySize() {
-        return 0;
+        return this.cachedTargetInv == null ? 0 : this.cachedTargetInv.getSizeInventory();
     }
 
     @Override
     public int getTargetInventoryStackLimit() {
-        return 0;
+        return this.cachedTargetInv == null ? Integer.MAX_VALUE : this.cachedTargetInv.getInventoryStackLimit();
     }
 
     @Override
@@ -468,26 +470,31 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         if (router == null || te == null || te.getWorldObj() == null) {
             return null;
         }
-        IInventoryRouter.SlotView<PartP2PItems> rawSlotView = router.resolve(this, slot, this.invOffset);
+        router.resolve(this, slot, this.invOffset, this.rawSlotView);
         if (rawSlotView == null) {
             return null;
         }
-        PartP2PItems provider = rawSlotView.provider;
+        PartP2PItems provider = this.rawSlotView.provider;
+        if (provider.owner != this.owner) {
+            return null;
+        }
         if (provider.getTile().isInvalid() || provider.boundTarget == null
                 || !provider.boundTarget.isValid()
                 || provider.cachedTargetInv == null) {
+            provider.refreshTarget();
             return null;
         }
-        slotView.inv = provider.cachedTargetInv;
-        slotView.slot = rawSlotView.slot;
-        slotView.canExtract = rawSlotView.canExtract;
-        slotView.canInsert = rawSlotView.canInsert;
+        this.slotView.inv = provider.cachedTargetInv;
+        this.slotView.slot = this.rawSlotView.slot;
+        this.slotView.canExtract = this.rawSlotView.canExtract;
+        this.slotView.canInsert = this.rawSlotView.canInsert;
         return slotView;
     }
 
     private void syncRouter() {
         final PartP2PItems newOwner = findOwner();
         if (newOwner != this.owner) {
+            this.setViewSize(0);
             if (this.owner == this) {
                 // I was an input P2P, but am no longer
                 this.releaseRouter();
