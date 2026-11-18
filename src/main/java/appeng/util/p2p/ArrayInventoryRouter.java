@@ -161,21 +161,21 @@ public class ArrayInventoryRouter<T extends IRoutedTunnel> implements IInventory
     }
 
     @Override
-    public SlotView<T> resolve(T viewer, int slot, long offset, SlotView<T> out) {
+    public boolean resolve(T viewer, int slot, long offset, SlotView<T> out) {
         final ViewInfo view = members.get(viewer);
         if (view == null) {
-            return null;
+            return false;
         }
         final int viewSize = view.size;
         if (slot < 0 || slot >= viewSize) {
-            return null;
+            return false;
         }
 
         int slotIndex = -1;
         int myIndex = view.tableIndex;
         int mySize = getSnapshotTargetSize(view);
         int inputSize = cumSum.getInt(1);
-        int myCumSum = cumSum.getInt(myIndex);
+        int myCumSum = myIndex == -1 ? 0 : cumSum.getInt(myIndex);
         ViewType viewType = view.type;
 
         int invOffset, slotOffset, slotTarget;
@@ -223,13 +223,14 @@ public class ArrayInventoryRouter<T extends IRoutedTunnel> implements IInventory
         }
 
         if (slotIndex == -1) {
-            return null;
+            return false;
         }
 
         int tunnelIndex = slotToTunnel(slotIndex);
         T viewed = table.get(tunnelIndex);
 
         out.provider = viewed;
+        out.size = cumSum.getInt(tunnelIndex + 1) - cumSum.getInt(tunnelIndex);
         out.slot = slotIndex - cumSum.getInt(tunnelIndex);
         if (viewer == input) {
             out.canExtract = policy.inputSide().extract() == P2PRoute.OUTPUTS;
@@ -243,7 +244,7 @@ public class ArrayInventoryRouter<T extends IRoutedTunnel> implements IInventory
                 out.canInsert = policy.outputSide().insert() == P2PRoute.PEERS;
             }
         }
-        return out;
+        return true;
     }
 
     private ViewType getViewType(T member, boolean hasSlots) {

@@ -470,17 +470,17 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         if (router == null || te == null || te.getWorldObj() == null) {
             return null;
         }
-        router.resolve(this, slot, this.invOffset, this.rawSlotView);
-        if (rawSlotView == null) {
+        if (!router.resolve(this, slot, this.invOffset, this.rawSlotView)) {
             return null;
         }
         PartP2PItems provider = this.rawSlotView.provider;
         if (provider.owner != this.owner) {
             return null;
         }
-        if (provider.getTile().isInvalid() || provider.boundTarget == null
+        if (provider.boundTarget == null || provider.getTile().isInvalid()
                 || !provider.boundTarget.isValid()
-                || provider.cachedTargetInv == null) {
+                || provider.cachedTargetInv == null
+                || provider.cachedTargetInv.getSizeInventory() != this.rawSlotView.size) {
             provider.refreshTarget();
             return null;
         }

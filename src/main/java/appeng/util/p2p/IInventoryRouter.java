@@ -5,6 +5,7 @@ public interface IInventoryRouter<T> {
     final class SlotView<T> {
 
         public T provider;
+        public int size;
         public int slot;
         public boolean canInsert;
         public boolean canExtract;
@@ -34,6 +35,7 @@ public interface IInventoryRouter<T> {
 
     /*
      * Computes the viewer's inventory view. offset determines the start index, used for load balancing.
+     * Returns true if succeeds.
      */
-    SlotView<T> resolve(T viewer, int slot, long offset, SlotView<T> out);
+    boolean resolve(T viewer, int slot, long offset, SlotView<T> out);
 }
