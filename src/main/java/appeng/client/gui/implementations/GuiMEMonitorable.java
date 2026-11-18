@@ -40,6 +40,7 @@ import appeng.api.config.ActionItems;
 import appeng.api.config.CraftingStatus;
 import appeng.api.config.PinSectionOrder;
 import appeng.api.config.PinsRows;
+import appeng.api.config.SaveSearchMode;
 import appeng.api.config.SearchBoxFocusPriority;
 import appeng.api.config.SearchBoxMode;
 import appeng.api.config.Settings;
@@ -198,7 +199,9 @@ public class GuiMEMonitorable extends AEBaseGui
                 repo.setSearchString(text.trim());
                 repo.updateView();
 
-                if (AEConfig.instance.preserveSearchBar) monitorableContainer.saveSearchString(this.getText());
+                if (AEConfig.instance.getSaveSearchMode() != SaveSearchMode.NO) {
+                    monitorableContainer.saveSearchString(this.getText());
+                }
             }
         };
 
@@ -302,7 +305,7 @@ public class GuiMEMonitorable extends AEBaseGui
         } else if (btn == this.searchBoxSettings) {
             AEConfig.instance.settings.putSetting(iBtn.getSetting(), next);
         } else if (btn == this.searchStringSave) {
-            AEConfig.instance.preserveSearchBar = next == YesNo.YES;
+            AEConfig.instance.setSaveSearchMode((SaveSearchMode) next);
         } else {
             try {
                 NetworkHandler.instance.sendToServer(new PacketValueConfig(iBtn.getSetting().name(), next.name()));
@@ -481,7 +484,7 @@ public class GuiMEMonitorable extends AEBaseGui
                         this.guiLeft - 18,
                         offset,
                         Settings.SAVE_SEARCH,
-                        AEConfig.instance.preserveSearchBar ? YesNo.YES : YesNo.NO));
+                        AEConfig.instance.getSaveSearchMode()));
         offset += 20;
 
         if (!(this instanceof GuiMEPortableCell)) {
@@ -538,13 +541,16 @@ public class GuiMEMonitorable extends AEBaseGui
 
         if (this.isSubGui()) {
             this.searchField.setText(memoryText);
-        } else if (AEConfig.instance.preserveSearchBar) {
+        } else if (AEConfig.instance.getSaveSearchMode() != SaveSearchMode.NO) {
             final String localMemoryText = this.monitorableContainer.getSavedSearchString();
             final String mem = localMemoryText == null ? memoryText : localMemoryText;
             this.searchField.setText(mem, true);
             repo.setSearchString(mem);
         }
         this.searchField.setCursorPositionEnd();
+        if (AEConfig.instance.getSaveSearchMode() == SaveSearchMode.SELECT && !this.searchField.getText().isEmpty()) {
+            this.searchField.selectAll();
+        }
 
         this.setScrollBar();
 
@@ -739,7 +745,9 @@ public class GuiMEMonitorable extends AEBaseGui
 
                 if (slot.getAEStack() != null && slot.getAEStack().getStackSize() == 0
                         && player.inventory.getItemStack() == null) {
-                    this.sendAction(MonitorableAction.AUTO_CRAFT, slot.getAEStack(), -1);
+                    if (slot.getAEStack().isCraftable()) {
+                        this.sendAction(MonitorableAction.AUTO_CRAFT, slot.getAEStack(), -1);
+                    }
                     return true;
                 }
                 this.sendAction(MonitorableAction.PICKUP_OR_SET_DOWN, slotStack, -1);
