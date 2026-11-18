@@ -7,7 +7,7 @@ import org.lwjgl.opengl.GL11
 
 /**
  * Render things in world
- * Author: Cyclic
+ * Based on Cyclic by Lothrazar (MIT, see archive/original-betterp2p-cyclic-license.txt)
  */
 object WorldRenderer {
     fun renderBlockList(blockPosList: List<List<Int>>, center: List<Int>, relX: Double, relY: Double, relZ: Double, red: Float, green: Float, blue: Float) {

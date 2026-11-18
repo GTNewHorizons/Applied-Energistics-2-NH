@@ -16,6 +16,8 @@ import org.lwjgl.opengl.GL11;
 import com.projecturanus.betterp2p.util.GlStateManager;
 
 /**
+ * Based on Cyclic by Lothrazar (MIT, see archive/original-betterp2p-cyclic-license.txt).
+ * <p>
  * This class uses the code from BuildersGuides. <a href="https://github.com/Ipsis/BuildersGuides">Source code</a>
  * <a href="https://github.com/Ipsis/BuildersGuides/blob/master/COPYING.LESSER">Source license</a> In particular, two
  * functions of <a href=
