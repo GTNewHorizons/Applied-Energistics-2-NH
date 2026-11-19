@@ -524,12 +524,7 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
                 cardSource = availableCard;
             }
             // A grid behind a Pattern Repeater can deny BUILD; a row there would only fail on click.
-            final IGridNode providerNode = entry.provider.getGridNode(ForgeDirection.UNKNOWN);
-            final IGrid providerGrid = providerNode == null ? null : providerNode.getGrid();
-            if (providerGrid != null && canBuild.computeIfAbsent(
-                    providerGrid,
-                    g -> g.<ISecurityGrid>getCache(ISecurityGrid.class)
-                            .hasPermission(player, SecurityPermissions.BUILD))) {
+            if (canBuildOn(entry.provider, player, canBuild)) {
                 shown.add(entry);
                 cardSources.add(cardSource);
             }
@@ -537,7 +532,13 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
         this.lastTargets = shown;
         this.lastTargetCards = cardSources;
 
-        this.lastConflicts = PatternTargetQuery.findConflicts(node.getGrid(), details);
+        final List<PatternTargetQuery.Conflict> conflictsWithBuild = new ArrayList<>();
+        for (PatternTargetQuery.Conflict conflict : PatternTargetQuery.findConflicts(node.getGrid(), details)) {
+            if (canBuildOn(conflict.provider, player, canBuild)) {
+                conflictsWithBuild.add(conflict);
+            }
+        }
+        this.lastConflicts = conflictsWithBuild;
         final Set<IInterfaceViewable> withSamePattern = Collections.newSetFromMap(new IdentityHashMap<>());
         for (PatternTargetQuery.Conflict conflict : this.lastConflicts) {
             if (conflict.sameRecipe) {
@@ -585,6 +586,17 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
                             conflict.sameRecipe));
         }
         this.patternTargetsAction.send(new PatternTargetList(true, entries, conflicts));
+    }
+
+    /**
+     * Returns whether the player has BUILD on the provider's grid, caching the answer per grid.
+     */
+    private static boolean canBuildOn(IInterfaceViewable provider, EntityPlayer player, Map<IGrid, Boolean> cache) {
+        final IGridNode providerNode = provider.getGridNode(ForgeDirection.UNKNOWN);
+        final IGrid providerGrid = providerNode == null ? null : providerNode.getGrid();
+        return providerGrid != null && cache.computeIfAbsent(
+                providerGrid,
+                g -> g.<ISecurityGrid>getCache(ISecurityGrid.class).hasPermission(player, SecurityPermissions.BUILD));
     }
 
     private void extractConflict(int index) {
