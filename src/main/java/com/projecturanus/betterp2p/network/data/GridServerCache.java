@@ -54,17 +54,15 @@ public class GridServerCache {
     }
 
     private void rebuildList(int type) {
-        synchronized (listP2P) {
-            listP2P.clear();
-            dirtyP2P.clear();
-            for (Class<? extends IGridHost> clazz : grid.getMachinesClasses()) {
-                if (!PartP2PTunnel.class.isAssignableFrom(clazz) || !isTargetClass(type, clazz)) {
-                    continue;
-                }
-                for (IGridNode node : grid.getMachines(clazz)) {
-                    PartP2PTunnel<?> p2p = (PartP2PTunnel<?>) node.getMachine();
-                    listP2P.put(P2PLocation.of(p2p), p2p);
-                }
+        listP2P.clear();
+        dirtyP2P.clear();
+        for (Class<? extends IGridHost> clazz : grid.getMachinesClasses()) {
+            if (!PartP2PTunnel.class.isAssignableFrom(clazz) || !isTargetClass(type, clazz)) {
+                continue;
+            }
+            for (IGridNode node : grid.getMachines(clazz)) {
+                PartP2PTunnel<?> p2p = (PartP2PTunnel<?>) node.getMachine();
+                listP2P.put(P2PLocation.of(p2p), p2p);
             }
         }
     }
@@ -93,11 +91,9 @@ public class GridServerCache {
     }
 
     public void markDirty(P2PLocation key, PartP2PTunnel<?> p2p) {
-        synchronized (listP2P) {
-            if (isTargetClass(type, p2p.getClass())) {
-                listP2P.put(key, p2p);
-                dirtyP2P.add(key);
-            }
+        if (isTargetClass(type, p2p.getClass())) {
+            listP2P.put(key, p2p);
+            dirtyP2P.add(key);
         }
     }
 

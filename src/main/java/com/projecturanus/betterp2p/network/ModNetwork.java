@@ -1,12 +1,8 @@
 package com.projecturanus.betterp2p.network;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.WeakHashMap;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -33,13 +29,11 @@ import cpw.mods.fml.relauncher.Side;
 
 public final class ModNetwork {
 
-    private static final long NETWORK_CD = 250L;
+    private static final long LIST_COOLDOWN = 250L;
 
     public static final SimpleNetworkWrapper CHANNEL = NetworkRegistry.INSTANCE.newSimpleChannel(BetterP2P.MODID);
 
-    private static final Map<UUID, PlayerRequest> playerState = Collections.synchronizedMap(new WeakHashMap<>());
-
-    private static ScheduledThreadPoolExecutor networkWorker;
+    private static final Map<UUID, PlayerRequest> playerState = new HashMap<>();
 
     private ModNetwork() {}
 
@@ -54,12 +48,6 @@ public final class ModNetwork {
         CHANNEL.registerMessage(C2SRefreshP2PList.Handler.class, C2SRefreshP2PList.class, id++, Side.SERVER);
         CHANNEL.registerMessage(C2SUnlinkP2P.Handler.class, C2SUnlinkP2P.class, id++, Side.SERVER);
         CHANNEL.registerMessage(C2STypeChange.Handler.class, C2STypeChange.class, id, Side.SERVER);
-        networkWorker = new ScheduledThreadPoolExecutor(1, r -> {
-            Thread thread = new Thread(r, "BetterP2P-NetworkWorker");
-            thread.setDaemon(true);
-            thread.setPriority(Thread.MIN_PRIORITY);
-            return thread;
-        });
     }
 
     public static @Nullable GridServerCache getGridCache(EntityPlayer player) {
@@ -68,49 +56,45 @@ public final class ModNetwork {
     }
 
     public static void requestP2PList(EntityPlayer player, int type) {
-        synchronized (playerState) {
-            PlayerRequest request = playerState.get(player.getUniqueID());
-            if (request == null) {
-                return;
-            }
-            GridServerCache cache = request.gridCache;
-            cache.setType(type);
-            sendUpdate((EntityPlayerMP) player, request, () -> new S2CUpdateP2P(cache.retrieveP2PList(), true));
+        PlayerRequest request = playerState.get(player.getUniqueID());
+        if (request == null) {
+            return;
         }
+        request.gridCache.setType(type);
+        request.listPending = true;
+        flushP2PList(request, System.currentTimeMillis());
     }
 
-    /**
-     * Requests within the cooldown are bundled into one update.
-     */
     public static void requestP2PUpdate(EntityPlayer player) {
-        synchronized (playerState) {
-            PlayerRequest request = playerState.get(player.getUniqueID());
-            if (request == null) {
-                return;
-            }
-            GridServerCache cache = request.gridCache;
-            sendUpdate((EntityPlayerMP) player, request, () -> new S2CUpdateP2P(cache.getP2PUpdates(), false));
+        PlayerRequest request = playerState.get(player.getUniqueID());
+        if (request == null) {
+            return;
+        }
+        CHANNEL.sendTo(new S2CUpdateP2P(request.gridCache.getP2PUpdates(), false), request.player);
+    }
+
+    static void flushPendingLists() {
+        if (playerState.isEmpty()) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        for (PlayerRequest request : playerState.values()) {
+            flushP2PList(request, now);
         }
     }
 
-    private static void sendUpdate(EntityPlayerMP player, PlayerRequest request, Supplier<S2CUpdateP2P> message) {
-        if (request.updateReady + NETWORK_CD < System.currentTimeMillis()) {
-            CHANNEL.sendTo(message.get(), player);
-            request.updateReady = System.currentTimeMillis() + NETWORK_CD;
-        } else if (!request.updatePending) {
-            request.updatePending = true;
-            networkWorker.schedule(() -> {
-                synchronized (playerState) {
-                    CHANNEL.sendTo(message.get(), player);
-                    request.updatePending = false;
-                }
-            }, request.updateReady - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+    private static void flushP2PList(PlayerRequest request, long now) {
+        if (!request.listPending || now < request.nextListTime) {
+            return;
         }
+        request.listPending = false;
+        request.nextListTime = now + LIST_COOLDOWN;
+        CHANNEL.sendTo(new S2CUpdateP2P(request.gridCache.retrieveP2PList(), true), request.player);
     }
 
     public static void initConnection(EntityPlayer player, IGrid grid, MemoryInfo info) {
         GridServerCache cache = new GridServerCache(grid, player, info.getType());
-        playerState.put(player.getUniqueID(), new PlayerRequest(cache));
+        playerState.put(player.getUniqueID(), new PlayerRequest((EntityPlayerMP) player, cache));
         CHANNEL.sendTo(new S2COpenGui(cache.retrieveP2PList(), info), (EntityPlayerMP) player);
     }
 
@@ -119,16 +103,18 @@ public final class ModNetwork {
     }
 
     public static void stop() {
-        networkWorker.shutdown();
+        playerState.clear();
     }
 
     private static final class PlayerRequest {
 
+        private final EntityPlayerMP player;
         private final GridServerCache gridCache;
-        private boolean updatePending;
-        private long updateReady = System.currentTimeMillis();
+        private boolean listPending;
+        private long nextListTime;
 
-        private PlayerRequest(GridServerCache gridCache) {
+        private PlayerRequest(EntityPlayerMP player, GridServerCache gridCache) {
+            this.player = player;
             this.gridCache = gridCache;
         }
     }

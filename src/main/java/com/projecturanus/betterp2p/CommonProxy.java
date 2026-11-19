@@ -15,7 +15,7 @@ import org.jspecify.annotations.Nullable;
 import com.glodblock.github.common.parts.PartFluidP2PInterface;
 import com.glodblock.github.loader.ItemAndBlockHolder;
 import com.projecturanus.betterp2p.item.ItemAdvancedMemoryCard;
-import com.projecturanus.betterp2p.network.ServerPlayerDisconnectHandler;
+import com.projecturanus.betterp2p.network.ServerEventHandler;
 import com.projecturanus.betterp2p.util.p2p.TunnelInfo;
 
 import appeng.api.AEApi;
@@ -46,7 +46,7 @@ public class CommonProxy {
     private final Int2ObjectMap<TunnelInfo> tunnelIndices = new Int2ObjectLinkedOpenHashMap<>();
 
     public void postInit() {
-        ServerPlayerDisconnectHandler.register();
+        ServerEventHandler.register();
         IItems items = AEApi.instance().definitions().items();
         GameRegistry.addRecipe(
                 new ShapelessRecipes(
