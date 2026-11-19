@@ -58,7 +58,9 @@ public class GridServerCache {
             }
             for (IGridNode node : grid.getMachines(clazz)) {
                 PartP2PTunnel<?> p2p = (PartP2PTunnel<?>) node.getMachine();
-                result.add(p2p);
+                if (p2p.getGridNode() == node) {
+                    result.add(p2p);
+                }
             }
         }
         return result;
