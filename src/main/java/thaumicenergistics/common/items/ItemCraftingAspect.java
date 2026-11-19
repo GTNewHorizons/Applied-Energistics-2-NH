@@ -19,7 +19,7 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import thaumcraft.api.aspects.Aspect;
 import thaumcraft.common.Thaumcraft;
-import thaumicenergistics.common.ThaumicEnergistics;
+import thaumicenergistics.common.ThECreativeTab;
 import thaumicenergistics.common.integration.tc.AspectHooks;
 
 /**
@@ -36,7 +36,7 @@ public class ItemCraftingAspect extends Item {
         this.setMaxStackSize(64);
         this.setHasSubtypes(true);
         this.setMaxDamage(0);
-        this.setCreativeTab(ThaumicEnergistics.ThETab);
+        this.setCreativeTab(ThECreativeTab.INSTANCE);
         this.setUnlocalizedName("itemCraftingAspect");
     }
 
