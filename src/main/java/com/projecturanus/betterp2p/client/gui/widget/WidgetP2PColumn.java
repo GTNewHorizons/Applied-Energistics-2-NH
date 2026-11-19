@@ -129,11 +129,8 @@ public class WidgetP2PColumn {
                 ModNetwork.CHANNEL.sendToServer(new C2SLinkP2P(selectedEntry, info.loc));
             }
             case COPY -> {
-                InfoWrapper selected = infos.getSelectedInfo();
-                InfoWrapper input = selected != null ? findInput(selected.getFrequency()) : null;
-                if (input != null) {
-                    ModNetwork.CHANNEL.sendToServer(new C2SLinkP2P(input.loc, info.loc));
-                }
+                BetterP2P.logger.debug("Copy {} to {}", selectedEntry, info.loc);
+                ModNetwork.CHANNEL.sendToServer(new C2SLinkP2P(selectedEntry, info.loc));
             }
             default -> BetterP2P.logger.debug("Somehow bind button was pressed while in UNBIND mode.");
         }
