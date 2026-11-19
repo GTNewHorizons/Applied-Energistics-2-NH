@@ -12,6 +12,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import appeng.api.AEApi;
@@ -31,8 +32,10 @@ import appeng.api.util.IInterfaceViewable;
 import appeng.core.AELog;
 import appeng.helpers.DualityInterface;
 import appeng.helpers.IInterfaceHost;
+import appeng.me.GridAccessException;
 import appeng.me.cache.CraftingGridCache;
 import appeng.parts.misc.PartPatternRepeater;
+import appeng.parts.p2p.PartP2PInterface;
 
 /**
  * Finds the pattern providers whose machine can run a pattern.
@@ -82,7 +85,7 @@ public final class PatternTargetQuery {
         }
 
         final List<IInterfaceViewable> providers = new ArrayList<>();
-        final List<Object> keys = new ArrayList<>();
+        final List<List<Object>> keys = new ArrayList<>();
         final Map<Class<?>, Set<Object>> keysByClass = new HashMap<>();
         final Set<IInterfaceViewable> visited = new HashSet<>();
         final Set<Class<? extends IInterfaceViewable>> supported = AEApi.instance().registries().interfaceTerminal()
@@ -92,22 +95,29 @@ public final class PatternTargetQuery {
             for (Class<? extends IInterfaceViewable> c : supported) {
                 for (IGridNode node : currentGrid.getMachines(c)) {
                     final IInterfaceViewable machine = (IInterfaceViewable) node.getMachine();
-                    if (!node.isActive() || !visited.add(machine) || !machine.shouldDisplay()) {
+                    // A linked P2P output shows the input's patterns, so the tunnel gets one row: the input's.
+                    if (!node.isActive() || isLinkedTunnelOutput(machine)
+                            || !visited.add(machine)
+                            || !machine.shouldDisplay()) {
                         continue;
                     }
 
                     providers.add(machine);
                     if (!supportsAll(machine.getSupportedStackTypes(), neededTypes)) {
-                        keys.add(StackTypeMismatch.INSTANCE);
+                        keys.add(Collections.singletonList(StackTypeMismatch.INSTANCE));
                         continue;
                     }
 
-                    final IPatternTarget target = machine.getPatternTarget();
-                    final Object key = target == null ? null : target.getTargetKey();
-                    keys.add(key);
-                    if (key != null) {
-                        keysByClass.computeIfAbsent(key.getClass(), k -> new HashSet<>()).add(key);
+                    final List<Object> memberKeys = new ArrayList<>();
+                    for (IInterfaceViewable member : pushingMembers(machine)) {
+                        final IPatternTarget target = member.getPatternTarget();
+                        final Object key = target == null ? null : target.getTargetKey();
+                        memberKeys.add(key);
+                        if (key != null) {
+                            keysByClass.computeIfAbsent(key.getClass(), k -> new HashSet<>()).add(key);
+                        }
                     }
+                    keys.add(memberKeys);
                 }
             }
         }
@@ -122,7 +132,73 @@ public final class PatternTargetQuery {
         final List<Entry> entries = new ArrayList<>(providers.size());
         for (int i = 0; i < providers.size(); i++) {
             final IInterfaceViewable provider = providers.get(i);
-            final Object key = keys.get(i);
+            entries.add(new Entry(provider, combine(keys.get(i), results), countFreeSlots(provider)));
+        }
+
+        return new Result(entries, distinctKeys, System.nanoTime() - start);
+    }
+
+    private static boolean isLinkedTunnelOutput(IInterfaceViewable machine) {
+        return machine instanceof PartP2PInterface p2p && p2p.isOutput() && p2p.getInput() != null;
+    }
+
+    /**
+     * Returns the provider whose row stands for this one: the input of a linked P2P tunnel, else the provider itself.
+     */
+    private static IInterfaceViewable rowProvider(IInterfaceViewable machine) {
+        return isLinkedTunnelOutput(machine) ? ((PartP2PInterface) machine).getInput() : machine;
+    }
+
+    /**
+     * Returns the providers that push this provider's patterns: every end of a P2P tunnel that faces a block, or the
+     * provider alone.
+     */
+    private static List<IInterfaceViewable> pushingMembers(IInterfaceViewable machine) {
+        if (!(machine instanceof PartP2PInterface input)) {
+            return Collections.singletonList(machine);
+        }
+
+        // Every output reuses the input's crafting list, so a pattern placed in the input runs on all ends.
+        final List<IInterfaceViewable> members = new ArrayList<>();
+        if (facesBlock(input)) {
+            members.add(input);
+        }
+        try {
+            for (PartP2PInterface output : input.getOutputs()) {
+                if (facesBlock(output)) {
+                    members.add(output);
+                }
+            }
+        } catch (GridAccessException ignored) {
+            // The tunnel is offline, so only the input can push.
+        }
+        return members;
+    }
+
+    private static boolean facesBlock(IInterfaceHost host) {
+        final TileEntity tile = host.getTileEntity();
+        final World world = tile.getWorldObj();
+        for (ForgeDirection side : host.getTargets()) {
+            final int x = tile.xCoord + side.offsetX;
+            final int y = tile.yCoord + side.offsetY;
+            final int z = tile.zCoord + side.offsetZ;
+            if (world.blockExists(x, y, z) && world.getTileEntity(x, y, z) != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns the weakest match among the member keys of one provider.
+     */
+    private static PatternMatch combine(List<Object> memberKeys, Map<Object, PatternMatch> results) {
+        if (memberKeys.isEmpty()) {
+            return PatternMatch.UNKNOWN;
+        }
+        boolean notReady = false;
+        boolean unknown = false;
+        for (Object key : memberKeys) {
             final PatternMatch match;
             if (key == StackTypeMismatch.INSTANCE) {
                 match = PatternMatch.NO_MATCH;
@@ -131,10 +207,23 @@ public final class PatternTargetQuery {
             } else {
                 match = results.getOrDefault(key, PatternMatch.UNKNOWN);
             }
-            entries.add(new Entry(provider, match, countFreeSlots(provider)));
+            switch (match) {
+                case NO_MATCH:
+                    return PatternMatch.NO_MATCH;
+                case NOT_READY:
+                    notReady = true;
+                    break;
+                case UNKNOWN:
+                    unknown = true;
+                    break;
+                default:
+                    break;
+            }
         }
-
-        return new Result(entries, distinctKeys, System.nanoTime() - start);
+        if (notReady) {
+            return PatternMatch.NOT_READY;
+        }
+        return unknown ? PatternMatch.UNKNOWN : PatternMatch.MATCH;
     }
 
     @SuppressWarnings("unchecked")
@@ -233,7 +322,9 @@ public final class PatternTargetQuery {
                 // repeater here keeps each pattern once.
                 for (ICraftingMedium medium : craftingGrid.getMediums(details)) {
                     final Object host = medium instanceof DualityInterface duality ? duality.getHost() : medium;
-                    final IInterfaceViewable provider = host instanceof IInterfaceViewable viewable ? viewable : null;
+                    final IInterfaceViewable provider = host instanceof IInterfaceViewable viewable
+                            ? rowProvider(viewable)
+                            : null;
                     if (provider != null) {
                         addConflict(conflicts, provider, details, sameRecipe(details, pattern));
                     }
