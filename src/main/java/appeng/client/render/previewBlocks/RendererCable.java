@@ -452,12 +452,12 @@ public class RendererCable extends AbstractRendererPreview implements IRenderPre
                 minY = previewY + (shortest ? 0.0 : -1.0 + 10.0 / 16.0);
                 minZ = previewZ + 6.0 / 16.0;
                 maxX = previewX + 10.0 / 16.0;
-                maxY = previewY + (shortest ? 10.0 / 16.0 : 6.0 / 16.0);
+                maxY = previewY + 6.0 / 16.0;
                 maxZ = previewZ + 10.0 / 16.0;
                 break;
             case UP:
                 minX = previewX + 6.0 / 16.0;
-                minY = previewY + (shortest ? 6.0 / 16.0 : 10.0 / 16.0);
+                minY = previewY + 10.0 / 16.0;
                 minZ = previewZ + 6.0 / 16.0;
                 maxX = previewX + 10.0 / 16.0;
                 maxY = previewY + (shortest ? 1.0 : 1.0 + 6.0 / 16.0);
@@ -469,12 +469,12 @@ public class RendererCable extends AbstractRendererPreview implements IRenderPre
                 minZ = previewZ + (shortest ? 0.0 : -1.0 + 10.0 / 16.0);
                 maxX = previewX + 10.0 / 16.0;
                 maxY = previewY + 10.0 / 16.0;
-                maxZ = previewZ + (shortest ? 10.0 / 16.0 : 6.0 / 16.0);
+                maxZ = previewZ + 6.0 / 16.0;
                 break;
             case SOUTH:
                 minX = previewX + 6.0 / 16.0;
                 minY = previewY + 6.0 / 16.0;
-                minZ = previewZ + (shortest ? 6.0 / 16.0 : 10.0 / 16.0);
+                minZ = previewZ + 10.0 / 16.0;
                 maxX = previewX + 10.0 / 16.0;
                 maxY = previewY + 10.0 / 16.0;
                 maxZ = previewZ + (shortest ? 1.0 : 1.0 + 6.0 / 16.0);
@@ -483,12 +483,12 @@ public class RendererCable extends AbstractRendererPreview implements IRenderPre
                 minX = previewX + (shortest ? 0.0 : -1.0 + 10.0 / 16.0);
                 minY = previewY + 6.0 / 16.0;
                 minZ = previewZ + 6.0 / 16.0;
-                maxX = previewX + (shortest ? 10.0 / 16.0 : 6.0 / 16.0);
+                maxX = previewX + 6.0 / 16.0;
                 maxY = previewY + 10.0 / 16.0;
                 maxZ = previewZ + 10.0 / 16.0;
                 break;
             case EAST:
-                minX = previewX + (shortest ? 6.0 / 16.0 : 10.0 / 16.0);
+                minX = previewX + 10.0 / 16.0;
                 minY = previewY + 6.0 / 16.0;
                 minZ = previewZ + 6.0 / 16.0;
                 maxX = previewX + (shortest ? 1.0 : 1.0 + 6.0 / 16.0);
@@ -499,6 +499,7 @@ public class RendererCable extends AbstractRendererPreview implements IRenderPre
                 return;
         }
 
-        renderWireframeCube(minX, minY, minZ, maxX, maxY, maxZ);
+        // the connection starts at the core face, so the core draws the four edges they share
+        renderWireframeCube(minX, minY, minZ, maxX, maxY, maxZ, direction.getOpposite());
     }
 }

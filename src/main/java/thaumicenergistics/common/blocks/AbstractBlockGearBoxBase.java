@@ -14,7 +14,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import thaumicenergistics.api.ThEApi;
-import thaumicenergistics.common.ThaumicEnergistics;
+import thaumicenergistics.common.ThECreativeTab;
 import thaumicenergistics.common.tiles.TileGearBox;
 
 /**
@@ -38,7 +38,7 @@ public abstract class AbstractBlockGearBoxBase extends AbstractBlockAEWrenchable
         super(Material.ground);
 
         // Set creative tab
-        this.setCreativeTab(ThaumicEnergistics.ThETab);
+        this.setCreativeTab(ThECreativeTab.INSTANCE);
 
         // Set sound type
         this.setStepSound(Block.soundTypeStone);
