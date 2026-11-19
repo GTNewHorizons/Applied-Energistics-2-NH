@@ -9,6 +9,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.IIcon;
 
 import appeng.api.implementations.items.IStorageComponent;
+import thaumicenergistics.common.ThECreativeTab;
 import thaumicenergistics.common.ThaumicEnergistics;
 import thaumicenergistics.common.storage.EnumEssentiaStorageTypes;
 
@@ -33,7 +34,7 @@ public class ItemStorageComponent extends Item implements IStorageComponent {
         this.setHasSubtypes(true);
 
         // Goes in ThE's creative tab.
-        this.setCreativeTab(ThaumicEnergistics.ThETab);
+        this.setCreativeTab(ThECreativeTab.INSTANCE);
     }
 
     @Override
