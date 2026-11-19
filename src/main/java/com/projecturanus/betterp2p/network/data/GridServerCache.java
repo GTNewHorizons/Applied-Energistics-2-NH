@@ -18,7 +18,6 @@ import net.minecraftforge.common.util.ForgeDirection;
 import org.jspecify.annotations.Nullable;
 
 import com.projecturanus.betterp2p.BetterP2P;
-import com.projecturanus.betterp2p.util.p2p.P2PUtil;
 import com.projecturanus.betterp2p.util.p2p.TunnelInfo;
 
 import appeng.api.config.SecurityPermissions;
@@ -71,11 +70,8 @@ public class GridServerCache {
     }
 
     private static boolean isTargetClass(int type, Class<?> clazz) {
-        if (type == MemoryInfo.TUNNEL_ANY) {
-            return true;
-        }
-        TunnelInfo info = BetterP2P.proxy.getP2PFromIndex(type);
-        return info != null && info.clazz == clazz;
+        TunnelInfo info = BetterP2P.proxy.getP2PFromClass(clazz);
+        return info != null && (type == MemoryInfo.TUNNEL_ANY || info.index == type);
     }
 
     private boolean hasPermission() {
@@ -91,16 +87,14 @@ public class GridServerCache {
 
         List<P2PInfo> result = new ArrayList<>();
         for (PartP2PTunnel<?> tunnel : listP2P.values()) {
-            if (type == MemoryInfo.TUNNEL_ANY || P2PUtil.getTypeIndex(tunnel) == type) {
-                result.add(P2PInfo.of(tunnel));
-            }
+            result.add(P2PInfo.of(tunnel));
         }
         return result;
     }
 
     public void markDirty(P2PLocation key, PartP2PTunnel<?> p2p) {
         synchronized (listP2P) {
-            if (type == MemoryInfo.TUNNEL_ANY || P2PUtil.getTypeIndex(p2p) == type) {
+            if (isTargetClass(type, p2p.getClass())) {
                 listP2P.put(key, p2p);
                 dirtyP2P.add(key);
             }

@@ -32,6 +32,7 @@ import appeng.parts.p2p.PartP2POpenComputers;
 import appeng.parts.p2p.PartP2PPressure;
 import appeng.parts.p2p.PartP2PRFPower;
 import appeng.parts.p2p.PartP2PRedstone;
+import appeng.parts.p2p.PartP2PSound;
 import appeng.parts.p2p.PartP2PTunnel;
 import appeng.parts.p2p.PartP2PTunnelME;
 import cpw.mods.fml.common.Loader;
@@ -83,6 +84,7 @@ public class CommonProxy {
                 typeId++,
                 PartP2PInterface.class,
                 stack -> new PartP2PInterface(stack));
+        registerTunnel(parts.p2PTunnelSound(), typeId++, PartP2PSound.class, stack -> new PartP2PSound(stack));
         if (Loader.isModLoaded("ae2fc") && ItemAndBlockHolder.FLUID_INTERFACE_P2P != null) {
             registerTunnel(
                     typeId,
