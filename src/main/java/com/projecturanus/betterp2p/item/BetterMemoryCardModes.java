@@ -24,6 +24,10 @@ public enum BetterMemoryCardModes {
         this.unlocalizedDesc = unlocalizedDesc;
     }
 
+    public static BetterMemoryCardModes fromOrdinal(int ordinal) {
+        return ordinal >= 0 && ordinal < VALUES.length ? VALUES[ordinal] : OUTPUT;
+    }
+
     public BetterMemoryCardModes next(boolean reverse) {
         return VALUES[Math.floorMod(ordinal() + (reverse ? -1 : 1), VALUES.length)];
     }

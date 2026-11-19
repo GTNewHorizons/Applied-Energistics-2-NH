@@ -66,18 +66,8 @@ public final class MemoryInfo {
             selectedEntry = P2PLocation.read(buf);
         }
         long frequency = buf.readLong();
-        BetterMemoryCardModes mode;
-        try {
-            mode = BetterMemoryCardModes.values()[buf.readInt()];
-        } catch (Exception e) {
-            mode = BetterMemoryCardModes.OUTPUT;
-        }
-        GuiScale guiScale;
-        try {
-            guiScale = GuiScale.values()[buf.readByte()];
-        } catch (ArrayIndexOutOfBoundsException e) {
-            guiScale = GuiScale.DYNAMIC;
-        }
+        BetterMemoryCardModes mode = BetterMemoryCardModes.fromOrdinal(buf.readInt());
+        GuiScale guiScale = GuiScale.fromOrdinal(buf.readByte());
         int type = buf.readByte();
         return new MemoryInfo(selectedEntry, frequency, mode, guiScale, type);
     }

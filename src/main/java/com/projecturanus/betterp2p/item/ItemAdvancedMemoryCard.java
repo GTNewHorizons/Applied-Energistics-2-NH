@@ -131,8 +131,8 @@ public class ItemAdvancedMemoryCard extends Item {
         return new MemoryInfo(
                 P2PLocation.readFromNBT(compound.getCompoundTag("selectedIndex")),
                 compound.getLong("frequency"),
-                BetterMemoryCardModes.values()[compound.getInteger("mode")],
-                GuiScale.values()[compound.getByte("gui")],
+                BetterMemoryCardModes.fromOrdinal(compound.getInteger("mode")),
+                GuiScale.fromOrdinal(compound.getByte("gui")),
                 MemoryInfo.TUNNEL_ANY);
     }
 

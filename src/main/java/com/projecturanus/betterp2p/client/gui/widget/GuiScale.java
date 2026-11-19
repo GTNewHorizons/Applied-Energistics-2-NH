@@ -26,6 +26,10 @@ public enum GuiScale {
         return size.applyAsInt(availableHeight);
     }
 
+    public static GuiScale fromOrdinal(int ordinal) {
+        return ordinal >= 0 && ordinal < VALUES.length ? VALUES[ordinal] : DYNAMIC;
+    }
+
     public GuiScale next(boolean reverse) {
         return VALUES[Math.floorMod(ordinal() + (reverse ? -1 : 1), VALUES.length)];
     }
