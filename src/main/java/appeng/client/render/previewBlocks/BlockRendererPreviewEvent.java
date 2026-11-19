@@ -27,6 +27,7 @@ public class BlockRendererPreviewEvent {
     public void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         if (AEConfig.instance.previewBlocks) {
+            ControllerPlacementPreview.getInstance().onClientTick();
             EntityPlayer player = Minecraft.getMinecraft().thePlayer;
             if (player == null) {
                 return;
@@ -62,6 +63,7 @@ public class BlockRendererPreviewEvent {
     public void onDrawBlockHighlight(DrawBlockHighlightEvent event) {
         // runs before the liquid pass, so water blends over the preview and solid blocks hide it
         if (AEConfig.instance.previewBlocks) {
+            ControllerPlacementPreview.getInstance().onRenderWorldLast(event.partialTicks);
             if (currentItem == null) return;
             ViewHelper.setCurrentPartialTicks(event.partialTicks);
             ViewHelper.handleItem(currentItem);

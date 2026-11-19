@@ -17,9 +17,12 @@ import java.util.List;
 import net.minecraft.block.Block;
 import net.minecraft.block.Block.SoundType;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ChatComponentTranslation;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
@@ -46,6 +49,7 @@ import appeng.api.parts.IPartHost;
 import appeng.api.parts.IPartItem;
 import appeng.api.parts.PartItemStack;
 import appeng.api.parts.SelectedPart;
+import appeng.core.AEConfig;
 import appeng.core.CommonHelper;
 import appeng.core.localization.PlayerMessages;
 import appeng.core.sync.network.NetworkHandler;
@@ -55,6 +59,7 @@ import appeng.core.sync.packets.PacketPartPlacement;
 import appeng.core.sync.packets.PacketRequestResync;
 import appeng.facade.IFacadeItem;
 import appeng.fmp.FMPPlacementHelper;
+import appeng.helpers.ControllerPlacementChecker;
 import appeng.integration.IntegrationRegistry;
 import appeng.integration.IntegrationType;
 import appeng.integration.abstraction.IBuildCraftTransport;
@@ -265,6 +270,7 @@ public class PartPlacement {
             final Optional<ItemBlock> maybeMultiPartItemBlock = multiPart.maybeItemBlock();
             if (!maybeMultiPartItemBlock.isPresent()) return false;
             if (!maybeMultiPartItemBlock.get().field_150939_a.canPlaceBlockAt(world, x, y, z)) return false;
+            if (refuseConflictingCable(held, player, world, x, y, z)) return true;
             maybeMultiPartItemBlock.get().placeBlockAt(
                     new ItemStack(maybeMultiPartItemBlock.get()),
                     player,
@@ -279,6 +285,8 @@ public class PartPlacement {
                     0);
             host = getExistingHost(world.getTileEntity(x, y, z));
             if (host == null) return false;
+        } else if (host.canAddPart(held, side) && refuseConflictingCable(held, player, world, x, y, z)) {
+            return true;
         }
         // FMP does not support client side prediction, assume placement is successful on the client side to stop
         // interaction pipeline on the client side. Item use is the last item in the pipeline, we possibly skip
@@ -324,6 +332,31 @@ public class PartPlacement {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Server side: refuses (with chat message and inventory resync) a cable that would connect two networks that each
+     * have a controller. Must be called before anything is modified.
+     */
+    private static boolean refuseConflictingCable(ItemStack held, EntityPlayer player, World world, int x, int y,
+            int z) {
+        if (world.isRemote || !AEConfig.instance.preventConflictingCablePlacement) return false;
+        if (!(held.getItem() instanceof IPartItem partItem)
+                || !(partItem.createPartFromItemStack(held) instanceof PartCable cable)
+                || !ControllerPlacementChecker.wouldCableConflict(world, x, y, z, cable.getCableColor())) {
+            return false;
+        }
+        final ChatComponentTranslation msg = new ChatComponentTranslation(
+                "chat.appliedenergistics2.CablePlacementConflict");
+        msg.getChatStyle().setColor(EnumChatFormatting.RED);
+        player.addChatMessage(msg);
+        // the client already consumed the item locally; resync so the stack count is correct
+        if (player instanceof EntityPlayerMP playerMP) {
+            playerMP.sendContainerToPlayer(playerMP.inventoryContainer);
+        }
+        // the client may have predicted the part into an existing host; resend block + tile state to undo it
+        world.markBlockForUpdate(x, y, z);
+        return true;
     }
 
     private static void decreaseHeldItem(ItemStack held, EntityPlayer player) {

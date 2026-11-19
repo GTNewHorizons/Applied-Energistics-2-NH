@@ -965,3 +965,8 @@ tile.appliedenergistics2.BlockWireless.desc=ПКМ із терміналом в 
 
 # WAILA
 waila.appliedenergistics2.IOBusSpeed=Швидкість: %s %s/t
+
+chat.appliedenergistics2.ControllerPlacementConflict=Неможливо поставити контролер: у цій мережі вже є контролер.
+chat.appliedenergistics2.CablePlacementConflict=Неможливо поставити кабель: він з'єднає мережі з різними контролерами.
+gui.appliedenergistics2.ControllerPlacementConflict=У цій мережі вже є контролер!
+gui.appliedenergistics2.CablePlacementConflict=Цей кабель з'єднає мережі з різними контролерами!

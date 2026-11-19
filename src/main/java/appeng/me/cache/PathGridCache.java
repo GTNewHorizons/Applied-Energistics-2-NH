@@ -216,6 +216,10 @@ public class PathGridCache implements IPathingGrid {
         }
     }
 
+    public Set<TileController> getControllers() {
+        return java.util.Collections.unmodifiableSet(this.controllers);
+    }
+
     private void recalcController() {
         this.recalculateControllerNextTick = false;
         final ControllerState old = this.controllerState;

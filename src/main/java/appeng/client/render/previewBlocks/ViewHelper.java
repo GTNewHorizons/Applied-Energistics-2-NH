@@ -211,10 +211,16 @@ public class ViewHelper {
         placementSide = ForgeDirection.getOrientation(mop.sideHit);
 
         if (handleItemValid(cachedItemStack)) {
-            getRenderPreviewFromItem(cachedItemStack).ifPresent(
-                    preview -> {
-                        isValidPosition = preview.canPlace(getWorld(), placementSide, previewX, previewY, previewZ);
-                    });
+            getRenderPreviewFromItem(cachedItemStack).ifPresent(preview -> {
+                isValidPosition = preview.canPlace(getWorld(), placementSide, previewX, previewY, previewZ);
+                // RendererCable.canPlace updates previewX/Y/Z to the block the cable would be placed in
+                if (isValidPosition && cachedPart instanceof PartCable cable) {
+                    if (ControllerPlacementPreview.getInstance()
+                            .queryCable(previewX, previewY, previewZ, cable.getCableColor())) {
+                        isValidPosition = false;
+                    }
+                }
+            });
         } else {
             isValidPosition = false;
         }

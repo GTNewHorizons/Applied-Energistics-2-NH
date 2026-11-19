@@ -15,6 +15,8 @@ public enum GuiText implements Localization {
     inventory("container"), // mc's default Inventory localization.
 
     Chest,
+    ControllerPlacementConflict,
+    CablePlacementConflict,
     StoredEnergy,
     Of,
     Condenser,
