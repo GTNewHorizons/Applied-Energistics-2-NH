@@ -19,8 +19,8 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import thaumcraft.api.aspects.Aspect;
 import thaumicenergistics.client.textures.BlockTextureManager;
+import thaumicenergistics.common.ThECreativeTab;
 import thaumicenergistics.common.ThEGuiHandler;
-import thaumicenergistics.common.ThaumicEnergistics;
 import thaumicenergistics.common.tiles.TileEssentiaVibrationChamber;
 import thaumicenergistics.common.utils.EffectiveSide;
 
@@ -43,7 +43,7 @@ public class BlockEssentiaVibrationChamber extends AbstractBlockAEWrenchable {
         this.setStepSound(Block.soundTypeMetal);
 
         // Place in the ThE creative tab
-        this.setCreativeTab(ThaumicEnergistics.ThETab);
+        this.setCreativeTab(ThECreativeTab.INSTANCE);
     }
 
     /**
