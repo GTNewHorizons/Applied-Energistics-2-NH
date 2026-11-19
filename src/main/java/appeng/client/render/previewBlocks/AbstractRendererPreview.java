@@ -14,51 +14,47 @@ import appeng.core.AEConfig;
 
 public abstract class AbstractRendererPreview {
 
+    private static final double DEPTH_BIAS = 0.0005;
+
     private final int lineWidth = AEConfig.instance.previewLineWidth;
 
     protected void renderWireframeCube(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
+        renderWireframeCube(minX, minY, minZ, maxX, maxY, maxZ, null);
+    }
+
+    /** Draws the 12 edges of a box, leaving out the four edges of {@code skipFace} (null skips none). */
+    protected void renderWireframeCube(double minX, double minY, double minZ, double maxX, double maxY, double maxZ,
+            ForgeDirection skipFace) {
         Tessellator tessellator = Tessellator.instance;
 
         GL11.glLineWidth(lineWidth);
         tessellator.startDrawing(GL11.GL_LINES);
 
-        tessellator.addVertex(minX, minY, minZ);
-        tessellator.addVertex(maxX, minY, minZ);
+        // an edge drawn by two boxes blends twice, so the box that touches another one skips the shared face
+        addEdge(tessellator, skipFace, ForgeDirection.DOWN, ForgeDirection.NORTH, minX, minY, minZ, maxX, minY, minZ);
+        addEdge(tessellator, skipFace, ForgeDirection.DOWN, ForgeDirection.EAST, maxX, minY, minZ, maxX, minY, maxZ);
+        addEdge(tessellator, skipFace, ForgeDirection.DOWN, ForgeDirection.SOUTH, maxX, minY, maxZ, minX, minY, maxZ);
+        addEdge(tessellator, skipFace, ForgeDirection.DOWN, ForgeDirection.WEST, minX, minY, maxZ, minX, minY, minZ);
 
-        tessellator.addVertex(maxX, minY, minZ);
-        tessellator.addVertex(maxX, minY, maxZ);
+        addEdge(tessellator, skipFace, ForgeDirection.UP, ForgeDirection.NORTH, minX, maxY, minZ, maxX, maxY, minZ);
+        addEdge(tessellator, skipFace, ForgeDirection.UP, ForgeDirection.EAST, maxX, maxY, minZ, maxX, maxY, maxZ);
+        addEdge(tessellator, skipFace, ForgeDirection.UP, ForgeDirection.SOUTH, maxX, maxY, maxZ, minX, maxY, maxZ);
+        addEdge(tessellator, skipFace, ForgeDirection.UP, ForgeDirection.WEST, minX, maxY, maxZ, minX, maxY, minZ);
 
-        tessellator.addVertex(maxX, minY, maxZ);
-        tessellator.addVertex(minX, minY, maxZ);
-
-        tessellator.addVertex(minX, minY, maxZ);
-        tessellator.addVertex(minX, minY, minZ);
-
-        tessellator.addVertex(minX, maxY, minZ);
-        tessellator.addVertex(maxX, maxY, minZ);
-
-        tessellator.addVertex(maxX, maxY, minZ);
-        tessellator.addVertex(maxX, maxY, maxZ);
-
-        tessellator.addVertex(maxX, maxY, maxZ);
-        tessellator.addVertex(minX, maxY, maxZ);
-
-        tessellator.addVertex(minX, maxY, maxZ);
-        tessellator.addVertex(minX, maxY, minZ);
-
-        tessellator.addVertex(minX, minY, minZ);
-        tessellator.addVertex(minX, maxY, minZ);
-
-        tessellator.addVertex(maxX, minY, minZ);
-        tessellator.addVertex(maxX, maxY, minZ);
-
-        tessellator.addVertex(maxX, minY, maxZ);
-        tessellator.addVertex(maxX, maxY, maxZ);
-
-        tessellator.addVertex(minX, minY, maxZ);
-        tessellator.addVertex(minX, maxY, maxZ);
+        addEdge(tessellator, skipFace, ForgeDirection.WEST, ForgeDirection.NORTH, minX, minY, minZ, minX, maxY, minZ);
+        addEdge(tessellator, skipFace, ForgeDirection.EAST, ForgeDirection.NORTH, maxX, minY, minZ, maxX, maxY, minZ);
+        addEdge(tessellator, skipFace, ForgeDirection.EAST, ForgeDirection.SOUTH, maxX, minY, maxZ, maxX, maxY, maxZ);
+        addEdge(tessellator, skipFace, ForgeDirection.WEST, ForgeDirection.SOUTH, minX, minY, maxZ, minX, maxY, maxZ);
 
         tessellator.draw();
+    }
+
+    /** Adds a line to the batch unless it lies on the skipped face. */
+    private void addEdge(Tessellator tessellator, ForgeDirection skipFace, ForgeDirection faceA, ForgeDirection faceB,
+            double x1, double y1, double z1, double x2, double y2, double z2) {
+        if (skipFace == faceA || skipFace == faceB) return;
+        tessellator.addVertex(x1, y1, z1);
+        tessellator.addVertex(x2, y2, z2);
     }
 
     protected void getValidColorGL11() {
@@ -158,6 +154,11 @@ public abstract class AbstractRendererPreview {
 
     protected void renderBase(double minXBase, double minYBase, double minZBase, double maxXBase, double maxYBase,
             double maxZBase) {
+        renderBase(minXBase, minYBase, minZBase, maxXBase, maxYBase, maxZBase, null);
+    }
+
+    protected void renderBase(double minXBase, double minYBase, double minZBase, double maxXBase, double maxYBase,
+            double maxZBase, ForgeDirection skipFace) {
         double minX = minXBase / 16.0;
         double minY = minYBase / 16.0;
         double minZ = minZBase / 16.0;
@@ -165,7 +166,7 @@ public abstract class AbstractRendererPreview {
         double maxY = maxYBase / 16.0;
         double maxZ = maxZBase / 16.0;
 
-        renderWireframeCube(minX, minY, minZ, maxX, maxY, maxZ);
+        renderWireframeCube(minX, minY, minZ, maxX, maxY, maxZ, skipFace);
     }
 
     protected void renderCommonPreview(Runnable renderSpecificContent) {
@@ -205,22 +206,28 @@ public abstract class AbstractRendererPreview {
         GL11.glPushMatrix();
         GL11.glTranslated(-playerX, -playerY, -playerZ);
 
+        // the highlight event runs inside the world pass, so restore the GL state it had
+        GL11.glPushAttrib(
+                GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT
+                        | GL11.GL_DEPTH_BUFFER_BIT
+                        | GL11.GL_VIEWPORT_BIT
+                        | GL11.GL_CURRENT_BIT
+                        | GL11.GL_LINE_BIT);
+
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         GL11.glDisable(GL11.GL_LIGHTING);
         GL11.glDisable(GL11.GL_CULL_FACE);
         GL11.glDepthMask(false);
+        // push lines back so the faces of an existing cable hide edges lying on it
+        GL11.glDepthRange(DEPTH_BIAS, 1.0);
 
         getValidColorGL11();
     }
 
     protected void clearGlState() {
-        GL11.glDepthMask(true);
-        GL11.glEnable(GL11.GL_CULL_FACE);
-        GL11.glEnable(GL11.GL_TEXTURE_2D);
-        GL11.glEnable(GL11.GL_LIGHTING);
-        GL11.glDisable(GL11.GL_BLEND);
+        GL11.glPopAttrib();
         GL11.glPopMatrix();
     }
 }
