@@ -1,16 +1,23 @@
 package appeng.client.render.previewBlocks;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import org.lwjgl.opengl.GL11;
 
+import com.gtnewhorizon.gtnhlib.api.OutlineShape;
+
 import appeng.api.parts.IPartHost;
 import appeng.core.AEConfig;
+import it.unimi.dsi.fastutil.doubles.DoubleList;
 
 public abstract class AbstractRendererPreview {
 
@@ -18,43 +25,31 @@ public abstract class AbstractRendererPreview {
 
     private final int lineWidth = AEConfig.instance.previewLineWidth;
 
-    protected void renderWireframeCube(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
-        renderWireframeCube(minX, minY, minZ, maxX, maxY, maxZ, null);
+    private final List<AxisAlignedBB> boxes = new ArrayList<>();
+    private OutlineShape shape = OutlineShape.EMPTY;
+
+    /** Adds a box to the outline that {@link #renderOutline()} draws. */
+    protected void addBox(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
+        boxes.add(AxisAlignedBB.getBoundingBox(minX, minY, minZ, maxX, maxY, maxZ));
     }
 
-    /** Draws the 12 edges of a box, leaving out the four edges of {@code skipFace} (null skips none). */
-    protected void renderWireframeCube(double minX, double minY, double minZ, double maxX, double maxY, double maxZ,
-            ForgeDirection skipFace) {
-        Tessellator tessellator = Tessellator.instance;
+    /** Draws the boxes added since the last call as one outline, without lines where they meet. */
+    protected void renderOutline() {
+        OutlineShape built = OutlineShape.of(boxes);
+        boxes.clear();
+        // the shape merges its lines once, so keep the old one while the boxes stay the same
+        if (!built.hasSameBoxes(shape)) shape = built;
 
+        DoubleList lines = shape.getLines();
+        if (lines.isEmpty()) return;
+
+        Tessellator tessellator = Tessellator.instance;
         GL11.glLineWidth(lineWidth);
         tessellator.startDrawing(GL11.GL_LINES);
-
-        // an edge drawn by two boxes blends twice, so the box that touches another one skips the shared face
-        addEdge(tessellator, skipFace, ForgeDirection.DOWN, ForgeDirection.NORTH, minX, minY, minZ, maxX, minY, minZ);
-        addEdge(tessellator, skipFace, ForgeDirection.DOWN, ForgeDirection.EAST, maxX, minY, minZ, maxX, minY, maxZ);
-        addEdge(tessellator, skipFace, ForgeDirection.DOWN, ForgeDirection.SOUTH, maxX, minY, maxZ, minX, minY, maxZ);
-        addEdge(tessellator, skipFace, ForgeDirection.DOWN, ForgeDirection.WEST, minX, minY, maxZ, minX, minY, minZ);
-
-        addEdge(tessellator, skipFace, ForgeDirection.UP, ForgeDirection.NORTH, minX, maxY, minZ, maxX, maxY, minZ);
-        addEdge(tessellator, skipFace, ForgeDirection.UP, ForgeDirection.EAST, maxX, maxY, minZ, maxX, maxY, maxZ);
-        addEdge(tessellator, skipFace, ForgeDirection.UP, ForgeDirection.SOUTH, maxX, maxY, maxZ, minX, maxY, maxZ);
-        addEdge(tessellator, skipFace, ForgeDirection.UP, ForgeDirection.WEST, minX, maxY, maxZ, minX, maxY, minZ);
-
-        addEdge(tessellator, skipFace, ForgeDirection.WEST, ForgeDirection.NORTH, minX, minY, minZ, minX, maxY, minZ);
-        addEdge(tessellator, skipFace, ForgeDirection.EAST, ForgeDirection.NORTH, maxX, minY, minZ, maxX, maxY, minZ);
-        addEdge(tessellator, skipFace, ForgeDirection.EAST, ForgeDirection.SOUTH, maxX, minY, maxZ, maxX, maxY, maxZ);
-        addEdge(tessellator, skipFace, ForgeDirection.WEST, ForgeDirection.SOUTH, minX, minY, maxZ, minX, maxY, maxZ);
-
+        for (int i = 0; i < lines.size(); i += 3) {
+            tessellator.addVertex(lines.getDouble(i), lines.getDouble(i + 1), lines.getDouble(i + 2));
+        }
         tessellator.draw();
-    }
-
-    /** Adds a line to the batch unless it lies on the skipped face. */
-    private void addEdge(Tessellator tessellator, ForgeDirection skipFace, ForgeDirection faceA, ForgeDirection faceB,
-            double x1, double y1, double z1, double x2, double y2, double z2) {
-        if (skipFace == faceA || skipFace == faceB) return;
-        tessellator.addVertex(x1, y1, z1);
-        tessellator.addVertex(x2, y2, z2);
     }
 
     protected void getValidColorGL11() {
@@ -154,11 +149,6 @@ public abstract class AbstractRendererPreview {
 
     protected void renderBase(double minXBase, double minYBase, double minZBase, double maxXBase, double maxYBase,
             double maxZBase) {
-        renderBase(minXBase, minYBase, minZBase, maxXBase, maxYBase, maxZBase, null);
-    }
-
-    protected void renderBase(double minXBase, double minYBase, double minZBase, double maxXBase, double maxYBase,
-            double maxZBase, ForgeDirection skipFace) {
         double minX = minXBase / 16.0;
         double minY = minYBase / 16.0;
         double minZ = minZBase / 16.0;
@@ -166,7 +156,7 @@ public abstract class AbstractRendererPreview {
         double maxY = maxYBase / 16.0;
         double maxZ = maxZBase / 16.0;
 
-        renderWireframeCube(minX, minY, minZ, maxX, maxY, maxZ, skipFace);
+        addBox(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
     protected void renderCommonPreview(Runnable renderSpecificContent) {
@@ -191,6 +181,7 @@ public abstract class AbstractRendererPreview {
         }
 
         renderSpecificContent.run();
+        renderOutline();
 
         clearGlState();
     }
