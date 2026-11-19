@@ -3,16 +3,16 @@ package com.projecturanus.betterp2p.network.data;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChatComponentTranslation;
+import net.minecraft.world.World;
+import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import org.jspecify.annotations.Nullable;
@@ -25,7 +25,6 @@ import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridHost;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.security.ISecurityGrid;
-import appeng.api.parts.IPart;
 import appeng.api.parts.IPartHost;
 import appeng.me.GridAccessException;
 import appeng.parts.p2p.PartP2PTunnel;
@@ -39,32 +38,41 @@ public class GridServerCache {
     private final EntityPlayer player;
     private int type;
 
-    private final Map<P2PLocation, PartP2PTunnel<?>> listP2P = new LinkedHashMap<>();
-    private final Set<P2PLocation> dirtyP2P = new LinkedHashSet<>();
+    private final Map<P2PLocation, PartP2PTunnel<?>> dirtyP2P = new LinkedHashMap<>();
 
     public GridServerCache(IGrid grid, EntityPlayer player, int type) {
         this.grid = grid;
         this.player = player;
         this.type = type;
-        rebuildList(type);
     }
 
     public void setType(int type) {
         this.type = type;
     }
 
-    private void rebuildList(int type) {
-        listP2P.clear();
-        dirtyP2P.clear();
+    private List<PartP2PTunnel<?>> collectTunnels() {
+        List<PartP2PTunnel<?>> result = new ArrayList<>();
         for (Class<? extends IGridHost> clazz : grid.getMachinesClasses()) {
             if (!PartP2PTunnel.class.isAssignableFrom(clazz) || !isTargetClass(type, clazz)) {
                 continue;
             }
             for (IGridNode node : grid.getMachines(clazz)) {
                 PartP2PTunnel<?> p2p = (PartP2PTunnel<?>) node.getMachine();
-                listP2P.put(P2PLocation.of(p2p), p2p);
+                result.add(p2p);
             }
         }
+        return result;
+    }
+
+    private @Nullable PartP2PTunnel<?> findTunnel(P2PLocation loc) {
+        World world = DimensionManager.getWorld(loc.dim);
+        if (world == null || !world.blockExists(loc.x, loc.y, loc.z)
+                || !(world.getTileEntity(loc.x, loc.y, loc.z) instanceof IPartHost host)
+                || !(host.getPart(loc.facing) instanceof PartP2PTunnel<?>tunnel)) {
+            return null;
+        }
+        IGridNode node = tunnel.getGridNode();
+        return node != null && node.getGrid() == grid ? tunnel : null;
     }
 
     private static boolean isTargetClass(int type, Class<?> clazz) {
@@ -81,10 +89,9 @@ public class GridServerCache {
         if (!hasPermission()) {
             return Collections.emptyList();
         }
-        rebuildList(type);
-
+        dirtyP2P.clear();
         List<P2PInfo> result = new ArrayList<>();
-        for (PartP2PTunnel<?> tunnel : listP2P.values()) {
+        for (PartP2PTunnel<?> tunnel : collectTunnels()) {
             result.add(P2PInfo.of(tunnel));
         }
         return result;
@@ -92,8 +99,7 @@ public class GridServerCache {
 
     public void markDirty(P2PLocation key, PartP2PTunnel<?> p2p) {
         if (isTargetClass(type, p2p.getClass())) {
-            listP2P.put(key, p2p);
-            dirtyP2P.add(key);
+            dirtyP2P.put(key, p2p);
         }
     }
 
@@ -102,19 +108,16 @@ public class GridServerCache {
      */
     public List<P2PInfo> getP2PUpdates() {
         List<P2PInfo> result = new ArrayList<>();
-        for (P2PLocation loc : dirtyP2P) {
-            PartP2PTunnel<?> tunnel = listP2P.get(loc);
-            if (tunnel != null) {
-                result.add(P2PInfo.of(tunnel));
-            }
+        for (PartP2PTunnel<?> tunnel : dirtyP2P.values()) {
+            result.add(P2PInfo.of(tunnel));
         }
         dirtyP2P.clear();
         return result;
     }
 
     public boolean linkP2P(P2PLocation inputIndex, P2PLocation outputIndex) {
-        PartP2PTunnel<?> input = listP2P.get(inputIndex);
-        PartP2PTunnel<?> output = listP2P.get(outputIndex);
+        PartP2PTunnel<?> input = findTunnel(inputIndex);
+        PartP2PTunnel<?> output = findTunnel(outputIndex);
         if (input == null || output == null) {
             return false;
         }
@@ -156,7 +159,7 @@ public class GridServerCache {
     }
 
     public void unlinkP2P(P2PLocation p2pIndex) {
-        PartP2PTunnel<?> tunnel = listP2P.get(p2pIndex);
+        PartP2PTunnel<?> tunnel = findTunnel(p2pIndex);
         if (tunnel == null) {
             return;
         }
@@ -211,8 +214,7 @@ public class GridServerCache {
         IPartHost host = tunnel.getHost();
         host.removePart(tunnel.getSide(), false);
         ForgeDirection dir = host.addPart(newType.stack, tunnel.getSide(), player);
-        IPart newPart = host.getPart(dir);
-        if (newPart instanceof PartP2PTunnel<?>newTunnel) {
+        if (dir != null && host.getPart(dir) instanceof PartP2PTunnel<?>newTunnel) {
             newTunnel.output = tunnel.isOutput();
             try {
                 newTunnel.getProxy().getP2P().updateFreq(newTunnel, tunnel.getFrequency());
@@ -247,7 +249,7 @@ public class GridServerCache {
             return false;
         }
 
-        PartP2PTunnel<?> tunnel = listP2P.get(p2p);
+        PartP2PTunnel<?> tunnel = findTunnel(p2p);
         if (tunnel == null) {
             return false;
         }
