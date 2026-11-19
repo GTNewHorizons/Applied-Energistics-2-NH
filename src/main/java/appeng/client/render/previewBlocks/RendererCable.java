@@ -41,6 +41,7 @@ public class RendererCable extends AbstractRendererPreview implements IRenderPre
             renderCableCore(0.0);
             renderCableConnections();
         }
+        renderOutline();
 
         clearGlState();
     }
@@ -145,7 +146,7 @@ public class RendererCable extends AbstractRendererPreview implements IRenderPre
         double maxY = previewY + max;
         double maxZ = previewZ + max;
 
-        renderWireframeCube(minX, minY, minZ, maxX, maxY, maxZ);
+        addBox(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
     private void renderDenseCableConnections() {
@@ -369,7 +370,7 @@ public class RendererCable extends AbstractRendererPreview implements IRenderPre
                 return;
         }
 
-        renderWireframeCube(minX, minY, minZ, maxX, maxY, maxZ);
+        addBox(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
     private void renderNormalConnectionForDense(ForgeDirection direction) {
@@ -430,7 +431,7 @@ public class RendererCable extends AbstractRendererPreview implements IRenderPre
                 return;
         }
 
-        renderWireframeCube(minX, minY, minZ, maxX, maxY, maxZ);
+        addBox(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
     private void renderCableConnections() {
@@ -499,7 +500,6 @@ public class RendererCable extends AbstractRendererPreview implements IRenderPre
                 return;
         }
 
-        // the connection starts at the core face, so the core draws the four edges they share
-        renderWireframeCube(minX, minY, minZ, maxX, maxY, maxZ, direction.getOpposite());
+        addBox(minX, minY, minZ, maxX, maxY, maxZ);
     }
 }
