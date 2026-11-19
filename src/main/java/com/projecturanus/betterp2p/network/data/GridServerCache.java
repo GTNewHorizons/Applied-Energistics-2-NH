@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -89,6 +88,20 @@ public class GridServerCache {
     public static boolean hasPermission(IGrid grid, EntityPlayer player) {
         ISecurityGrid security = grid.getCache(ISecurityGrid.class);
         return security == null || security.hasPermission(player, SecurityPermissions.BUILD);
+    }
+
+    private static List<PartP2PTunnel<?>> collectOutputs(PartP2PTunnel<?> input) {
+        List<PartP2PTunnel<?>> result = new ArrayList<>();
+        if (input.getFrequency() == 0) {
+            return result;
+        }
+        try {
+            for (PartP2PTunnel<?> output : input.getProxy().getP2P()
+                    .getOutputs(input.getFrequency(), input.getClass())) {
+                result.add(output);
+            }
+        } catch (GridAccessException ignored) {}
+        return result;
     }
 
     public List<P2PInfo> retrieveP2PList() {
@@ -193,11 +206,9 @@ public class GridServerCache {
         if (input == null) {
             input = tunnel;
         }
-        try {
-            for (PartP2PTunnel<?> output : input.getOutputs()) {
-                markDirty(P2PLocation.of(output), output);
-            }
-        } catch (GridAccessException ignored) {}
+        for (PartP2PTunnel<?> output : collectOutputs(input)) {
+            markDirty(P2PLocation.of(output), output);
+        }
         markDirty(P2PLocation.of(input), input);
         return true;
     }
@@ -207,32 +218,12 @@ public class GridServerCache {
             player.addChatMessage(new ChatComponentTranslation("gui.advanced_memory_card.error.same_type"));
             return null;
         }
-        boolean converted = false;
-        if (PartP2PTunnelStatic.class.isAssignableFrom(newType.clazz)) {
-            converted = consumeOneItem(newType.stack);
-            if (!converted) {
+        List<TunnelInfo> materials = getConversionMaterials(tunnel, newType);
+        if (!materials.isEmpty()) {
+            if (!consumeOneItem(materials)) {
                 sendMissingItems(1, newType);
                 return null;
             }
-        }
-        if (tunnel instanceof PartP2PTunnelStatic<?>) {
-            List<TunnelInfo> attunables = BetterP2P.proxy.getP2PTypeList().stream()
-                    .filter(e -> PartP2PTunnelNormal.class.isAssignableFrom(e.clazz))
-                    // Check the exact type first
-                    .sorted((o1, o2) -> o1 == newType ? -1 : o2 == newType ? 1 : 0).collect(Collectors.toList());
-            for (TunnelInfo attunable : attunables) {
-                if (consumeOneItem(attunable.stack)) {
-                    converted = true;
-                    break;
-                }
-            }
-            if (!converted) {
-                sendMissingItems(1, newType);
-                return null;
-            }
-        }
-
-        if (converted) {
             ItemStack drop = ItemStack.copyItemStack(tunnel.getItemStack());
             drop.stackSize = 1;
             List<ItemStack> drops = new ArrayList<>();
@@ -257,16 +248,51 @@ public class GridServerCache {
         return null;
     }
 
-    private boolean consumeOneItem(ItemStack target) {
+    private static List<TunnelInfo> getConversionMaterials(PartP2PTunnel<?> tunnel, TunnelInfo newType) {
+        if (PartP2PTunnelStatic.class.isAssignableFrom(newType.clazz)) {
+            return Collections.singletonList(newType);
+        }
+        if (!(tunnel instanceof PartP2PTunnelStatic<?>)) {
+            return Collections.emptyList();
+        }
+        List<TunnelInfo> attunables = new ArrayList<>();
+        attunables.add(newType);
+        for (TunnelInfo info : BetterP2P.proxy.getP2PTypeList()) {
+            if (info != newType && PartP2PTunnelNormal.class.isAssignableFrom(info.clazz)) {
+                attunables.add(info);
+            }
+        }
+        return attunables;
+    }
+
+    private boolean consumeOneItem(List<TunnelInfo> materials) {
         ItemStack[] inventory = player.inventory.mainInventory;
-        for (int i = 0; i < inventory.length; i++) {
-            ItemStack stack = inventory[i];
-            if (stack != null && stack.isItemEqual(target)) {
-                player.inventory.decrStackSize(i, 1);
-                return true;
+        for (TunnelInfo material : materials) {
+            for (int i = 0; i < inventory.length; i++) {
+                ItemStack stack = inventory[i];
+                if (stack != null && stack.isItemEqual(material.stack)) {
+                    player.inventory.decrStackSize(i, 1);
+                    return true;
+                }
             }
         }
         return false;
+    }
+
+    private int countItems(List<TunnelInfo> materials) {
+        int count = 0;
+        for (ItemStack stack : player.inventory.mainInventory) {
+            if (stack == null) {
+                continue;
+            }
+            for (TunnelInfo material : materials) {
+                if (stack.isItemEqual(material.stack)) {
+                    count += stack.stackSize;
+                    break;
+                }
+            }
+        }
+        return count;
     }
 
     private void sendMissingItems(int amount, TunnelInfo type) {
@@ -286,42 +312,30 @@ public class GridServerCache {
         if (tunnel == null) {
             return false;
         }
-
-        try {
-            if (tunnel.isOutput()) {
-                PartP2PTunnel<?> input = tunnel.getInput();
-                if (input != null) {
-                    tunnel = input;
-                }
+        if (tunnel.isOutput()) {
+            PartP2PTunnel<?> input = tunnel.getInput();
+            if (input != null) {
+                tunnel = input;
             }
-
-            List<PartP2PTunnel<?>> outputs = new ArrayList<>();
-            for (PartP2PTunnel<?> output : tunnel.getOutputs()) {
-                outputs.add(output);
-            }
-            if (PartP2PTunnelStatic.class.isAssignableFrom(newType.clazz)) {
-                int amount = outputs.size() + 1;
-                int hasItems = 0;
-                for (ItemStack stack : player.inventory.mainInventory) {
-                    if (stack != null && stack.isItemEqual(newType.stack)) {
-                        hasItems += stack.stackSize;
-                        if (hasItems >= amount) {
-                            break;
-                        }
-                    }
-                }
-                if (hasItems < amount) {
-                    sendMissingItems(amount, newType);
-                    return false;
-                }
-            }
-            changeP2PType(tunnel, newType);
-            for (PartP2PTunnel<?> output : outputs) {
-                changeP2PType(output, newType);
-            }
-            return true;
-        } catch (GridAccessException e) {
+        }
+        if (BetterP2P.proxy.getP2PFromClass(tunnel.getClass()) == newType) {
+            player.addChatMessage(new ChatComponentTranslation("gui.advanced_memory_card.error.same_type"));
             return false;
         }
+
+        List<PartP2PTunnel<?>> endpoints = new ArrayList<>();
+        endpoints.add(tunnel);
+        endpoints.addAll(collectOutputs(tunnel));
+        List<TunnelInfo> materials = getConversionMaterials(tunnel, newType);
+        if (!materials.isEmpty() && countItems(materials) < endpoints.size()) {
+            sendMissingItems(endpoints.size(), newType);
+            return false;
+        }
+
+        boolean changed = false;
+        for (PartP2PTunnel<?> endpoint : endpoints) {
+            changed |= changeP2PType(endpoint, newType) != null;
+        }
+        return changed;
     }
 }
