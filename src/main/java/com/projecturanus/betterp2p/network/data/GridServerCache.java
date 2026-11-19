@@ -81,8 +81,12 @@ public class GridServerCache {
     }
 
     private boolean hasPermission() {
-        return !(grid instanceof ISecurityGrid securityGrid)
-                || securityGrid.hasPermission(player, SecurityPermissions.BUILD);
+        return hasPermission(grid, player);
+    }
+
+    public static boolean hasPermission(IGrid grid, EntityPlayer player) {
+        ISecurityGrid security = grid.getCache(ISecurityGrid.class);
+        return security == null || security.hasPermission(player, SecurityPermissions.BUILD);
     }
 
     public List<P2PInfo> retrieveP2PList() {

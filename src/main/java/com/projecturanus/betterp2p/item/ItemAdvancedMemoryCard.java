@@ -19,15 +19,14 @@ import com.projecturanus.betterp2p.BetterP2P;
 import com.projecturanus.betterp2p.client.ClientCache;
 import com.projecturanus.betterp2p.client.gui.widget.GuiScale;
 import com.projecturanus.betterp2p.network.ModNetwork;
+import com.projecturanus.betterp2p.network.data.GridServerCache;
 import com.projecturanus.betterp2p.network.data.MemoryInfo;
 import com.projecturanus.betterp2p.network.data.P2PLocation;
 import com.projecturanus.betterp2p.util.p2p.P2PUtil;
 
-import appeng.api.config.SecurityPermissions;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridHost;
 import appeng.api.networking.IGridNode;
-import appeng.api.networking.security.ISecurityGrid;
 import appeng.api.parts.IPart;
 import appeng.api.parts.SelectedPart;
 import appeng.core.CreativeTab;
@@ -85,8 +84,7 @@ public class ItemAdvancedMemoryCard extends Item {
         if (grid == null) {
             return false;
         }
-        if (grid instanceof ISecurityGrid securityGrid
-                && !securityGrid.hasPermission(player, SecurityPermissions.BUILD)) {
+        if (!GridServerCache.hasPermission(grid, player)) {
             return false;
         }
 
