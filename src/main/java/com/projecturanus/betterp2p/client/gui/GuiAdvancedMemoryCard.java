@@ -502,15 +502,22 @@ public class GuiAdvancedMemoryCard extends GuiScreen implements TextureBound {
 
         private final List<TunnelInfo> types = BetterP2P.proxy.getP2PTypeList();
         private int index;
-        private final ClientTunnelInfo me = (ClientTunnelInfo) BetterP2P.proxy.getP2PFromClass(PartP2PTunnelME.class);
-        private final ClientTunnelInfo fluid = (ClientTunnelInfo) BetterP2P.proxy.getP2PFromClass(PartP2PLiquids.class);
-        private final ClientTunnelInfo redstone = (ClientTunnelInfo) BetterP2P.proxy
+        private final @Nullable ClientTunnelInfo me = (ClientTunnelInfo) BetterP2P.proxy
+                .getP2PFromClass(PartP2PTunnelME.class);
+        private final @Nullable ClientTunnelInfo fluid = (ClientTunnelInfo) BetterP2P.proxy
+                .getP2PFromClass(PartP2PLiquids.class);
+        private final @Nullable ClientTunnelInfo redstone = (ClientTunnelInfo) BetterP2P.proxy
                 .getP2PFromClass(PartP2PRedstone.class);
 
         private TypeButton() {
             super(GuiAdvancedMemoryCard.this, 0, 0, 32, 32);
-            index = type != null ? type.index : types.size();
+            index = indexOf(type);
             updateHoverText();
+        }
+
+        private int indexOf(@Nullable ClientTunnelInfo info) {
+            int i = info != null ? types.indexOf(info) : -1;
+            return i >= 0 ? i : types.size();
         }
 
         private void updateHoverText() {
@@ -550,11 +557,18 @@ public class GuiAdvancedMemoryCard extends GuiScreen implements TextureBound {
                         yPosition + 2,
                         28.0,
                         28.0);
-            } else {
+            } else if (!types.isEmpty()) {
                 IIcon overlay = types.get(0).stack.getIconIndex();
-                GuiHelper.drawBlockIcon(mc, redstone.getIcon(), overlay, xPosition + 12, yPosition + 12, 18.0, 18.0);
-                GuiHelper.drawBlockIcon(mc, fluid.getIcon(), overlay, xPosition + 7, yPosition + 7, 18.0, 18.0);
-                GuiHelper.drawBlockIcon(mc, me.getIcon(), overlay, xPosition + 2, yPosition + 2, 18.0, 18.0);
+                drawAnyTypeIcon(redstone, overlay, 12);
+                drawAnyTypeIcon(fluid, overlay, 7);
+                drawAnyTypeIcon(me, overlay, 2);
+            }
+        }
+
+        private void drawAnyTypeIcon(@Nullable ClientTunnelInfo info, IIcon overlay, int offset) {
+            if (info != null) {
+                GuiHelper
+                        .drawBlockIcon(mc, info.getIcon(), overlay, xPosition + offset, yPosition + offset, 18.0, 18.0);
             }
         }
 
@@ -566,7 +580,7 @@ public class GuiAdvancedMemoryCard extends GuiScreen implements TextureBound {
 
         @Override
         public void accept(@Nullable ClientTunnelInfo newType) {
-            index = newType != null ? newType.index : MemoryInfo.TUNNEL_ANY;
+            index = indexOf(newType);
             type = newType;
             commitType();
             closeTypeSelector(newType);
