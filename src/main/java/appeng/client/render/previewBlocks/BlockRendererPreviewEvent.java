@@ -3,7 +3,7 @@ package appeng.client.render.previewBlocks;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraftforge.client.event.RenderWorldLastEvent;
+import net.minecraftforge.client.event.DrawBlockHighlightEvent;
 import net.minecraftforge.event.world.WorldEvent;
 
 import appeng.core.AEConfig;
@@ -58,8 +58,9 @@ public class BlockRendererPreviewEvent {
         }
     }
 
-    @SubscribeEvent
-    public void onRenderWorldLast(RenderWorldLastEvent event) {
+    @SubscribeEvent(receiveCanceled = true)
+    public void onDrawBlockHighlight(DrawBlockHighlightEvent event) {
+        // runs before the liquid pass, so water blends over the preview and solid blocks hide it
         if (AEConfig.instance.previewBlocks) {
             if (currentItem == null) return;
             ViewHelper.setCurrentPartialTicks(event.partialTicks);
