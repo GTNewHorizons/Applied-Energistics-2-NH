@@ -47,11 +47,9 @@ public class C2SUnlinkP2P implements IMessage {
             }
             EntityPlayerMP player = ctx.getServerHandler().playerEntity;
             GridServerCache cache = ModNetwork.getGridCache(player);
-            if (cache == null) {
-                return null;
+            if (cache != null && cache.unlinkP2P(message.p2p)) {
+                ModNetwork.requestP2PUpdate(player);
             }
-            cache.unlinkP2P(message.p2p);
-            ModNetwork.requestP2PUpdate(player);
             return null;
         }
     }

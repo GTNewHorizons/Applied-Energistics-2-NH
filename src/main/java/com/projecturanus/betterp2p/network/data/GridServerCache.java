@@ -158,15 +158,42 @@ public class GridServerCache {
         return true;
     }
 
-    public void unlinkP2P(P2PLocation p2pIndex) {
+    public boolean unlinkP2P(P2PLocation p2pIndex) {
+        if (!hasPermission()) {
+            return false;
+        }
         PartP2PTunnel<?> tunnel = findTunnel(p2pIndex);
         if (tunnel == null) {
-            return;
+            return false;
         }
         PartP2PTunnel<?> newTunnel = tunnel.unbind(player);
-        if (newTunnel != tunnel) {
-            markDirty(p2pIndex, newTunnel);
+        if (newTunnel == tunnel) {
+            return false;
         }
+        markDirty(p2pIndex, newTunnel);
+        return true;
+    }
+
+    public boolean renameP2P(P2PLocation loc, String name) {
+        if (!hasPermission()) {
+            return false;
+        }
+        PartP2PTunnel<?> tunnel = findTunnel(loc);
+        if (tunnel == null) {
+            return false;
+        }
+        tunnel.setCustomName(name);
+        PartP2PTunnel<?> input = tunnel.isOutput() ? tunnel.getInput() : tunnel;
+        if (input == null) {
+            input = tunnel;
+        }
+        try {
+            for (PartP2PTunnel<?> output : input.getOutputs()) {
+                markDirty(P2PLocation.of(output), output);
+            }
+        } catch (GridAccessException ignored) {}
+        markDirty(P2PLocation.of(input), input);
+        return true;
     }
 
     private @Nullable PartP2PTunnel<?> changeP2PType(PartP2PTunnel<?> tunnel, TunnelInfo newType) {
