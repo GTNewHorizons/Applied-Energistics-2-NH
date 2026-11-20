@@ -3,7 +3,7 @@ package thaumicenergistics.common.items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
-import thaumicenergistics.common.ThaumicEnergistics;
+import thaumicenergistics.common.ThECreativeTab;
 
 /**
  * Enumeration of all ThE items.
@@ -45,7 +45,7 @@ public enum ItemEnum {
 
         this.item = item;
 
-        this.item.setCreativeTab(ThaumicEnergistics.ThETab);
+        this.item.setCreativeTab(ThECreativeTab.INSTANCE);
     }
 
     /**
