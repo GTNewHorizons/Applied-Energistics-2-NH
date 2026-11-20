@@ -60,6 +60,7 @@ import appeng.integration.IntegrationType;
 import appeng.integration.abstraction.IBuildCraftTransport;
 import appeng.integration.abstraction.IFMP;
 import appeng.integration.abstraction.IImmibisMicroblocks;
+import appeng.integration.abstraction.ILiquidLogged;
 import appeng.items.parts.ItemMultiPart;
 import appeng.items.parts.PartType;
 import appeng.me.GridAccessException;
@@ -208,6 +209,11 @@ public class PartPlacement {
                 if (host.canAddPart(held, side)) {
                     if (host.getFacadeContainer().addFacade(fp)) {
                         host.markForUpdate();
+                        final ILiquidLogged liquidLogged = IntegrationRegistry.INSTANCE
+                                .getInstanceIfEnabled(IntegrationType.LiquidLogged);
+                        if (liquidLogged != null) {
+                            liquidLogged.revalidate(host);
+                        }
                         player.swingItem();
                         decreaseHeldItem(held, player);
                         if (isClient) {
@@ -265,6 +271,15 @@ public class PartPlacement {
             final Optional<ItemBlock> maybeMultiPartItemBlock = multiPart.maybeItemBlock();
             if (!maybeMultiPartItemBlock.isPresent()) return false;
             if (!maybeMultiPartItemBlock.get().field_150939_a.canPlaceBlockAt(world, x, y, z)) return false;
+            // the PlaceEvent above fires before the block is placed, so LiquidLogged cannot see the replaced water
+            final ILiquidLogged liquidLogged = IntegrationRegistry.INSTANCE
+                    .getInstanceIfEnabled(IntegrationType.LiquidLogged);
+            final boolean wasWater = liquidLogged != null && liquidLogged.isWaterSource(world, x, y, z);
+            if (wasWater && world.isRemote) {
+                // only the server stores the fluid, so the client waits for it instead of flashing the water away
+                player.swingItem();
+                return true;
+            }
             maybeMultiPartItemBlock.get().placeBlockAt(
                     new ItemStack(maybeMultiPartItemBlock.get()),
                     player,
@@ -277,6 +292,9 @@ public class PartPlacement {
                     0.5f,
                     0.5f,
                     0);
+            if (wasWater) {
+                liquidLogged.fillWater(world, x, y, z);
+            }
             host = getExistingHost(world.getTileEntity(x, y, z));
             if (host == null) return false;
         }
