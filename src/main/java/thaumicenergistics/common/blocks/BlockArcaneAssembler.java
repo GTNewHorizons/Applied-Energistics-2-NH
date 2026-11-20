@@ -20,8 +20,8 @@ import appeng.api.implementations.items.IMemoryCard;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import thaumicenergistics.client.textures.BlockTextureManager;
+import thaumicenergistics.common.ThECreativeTab;
 import thaumicenergistics.common.ThEGuiHandler;
-import thaumicenergistics.common.ThaumicEnergistics;
 import thaumicenergistics.common.tiles.TileArcaneAssembler;
 import thaumicenergistics.common.utils.EffectiveSide;
 
@@ -46,7 +46,7 @@ public class BlockArcaneAssembler extends AbstractBlockAEWrenchable {
         this.setStepSound(Block.soundTypeMetal);
 
         // Place in the ThE creative tab
-        this.setCreativeTab(ThaumicEnergistics.ThETab);
+        this.setCreativeTab(ThECreativeTab.INSTANCE);
     }
 
     /**
