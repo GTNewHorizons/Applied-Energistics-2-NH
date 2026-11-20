@@ -9,6 +9,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.IIcon;
 import net.minecraft.util.MathHelper;
 
+import thaumicenergistics.common.ThECreativeTab;
 import thaumicenergistics.common.ThaumicEnergistics;
 import thaumicenergistics.common.registries.ThEStrings;
 
@@ -100,7 +101,7 @@ public class ItemMaterial extends Item {
     public ItemMaterial() {
         this.setMaxDamage(0);
         this.setHasSubtypes(true);
-        this.setCreativeTab(ThaumicEnergistics.ThETab);
+        this.setCreativeTab(ThECreativeTab.INSTANCE);
     }
 
     /**

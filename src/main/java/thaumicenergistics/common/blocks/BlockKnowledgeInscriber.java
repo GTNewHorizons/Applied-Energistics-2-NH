@@ -16,8 +16,8 @@ import net.minecraftforge.common.util.ForgeDirection;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import thaumicenergistics.client.textures.BlockTextureManager;
+import thaumicenergistics.common.ThECreativeTab;
 import thaumicenergistics.common.ThEGuiHandler;
-import thaumicenergistics.common.ThaumicEnergistics;
 import thaumicenergistics.common.tiles.TileKnowledgeInscriber;
 import thaumicenergistics.common.utils.EffectiveSide;
 
@@ -40,7 +40,7 @@ public class BlockKnowledgeInscriber extends AbstractBlockAEWrenchable {
         this.setStepSound(Block.soundTypeMetal);
 
         // Place in the ThE creative tab
-        this.setCreativeTab(ThaumicEnergistics.ThETab);
+        this.setCreativeTab(ThECreativeTab.INSTANCE);
     }
 
     @Override
