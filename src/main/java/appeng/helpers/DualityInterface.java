@@ -1683,15 +1683,11 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
         final World hostWorld = hostTile.getWorldObj();
 
         for (final ForgeDirection direction : this.iHost.getTargets()) {
-            final int xPos = hostTile.xCoord + direction.offsetX;
-            final int yPos = hostTile.yCoord + direction.offsetY;
-            final int zPos = hostTile.zCoord + direction.offsetZ;
-            // getTileEntity loads the chunk, and an interface on a chunk border must not do that from a query.
-            if (!hostWorld.blockExists(xPos, yPos, zPos)) {
-                continue;
-            }
-
-            final TileEntity directedTile = hostWorld.getTileEntity(xPos, yPos, zPos);
+            final TileEntity directedTile = Platform.getLoadedTileEntity(
+                    hostWorld,
+                    hostTile.xCoord + direction.offsetX,
+                    hostTile.yCoord + direction.offsetY,
+                    hostTile.zCoord + direction.offsetZ);
             if (directedTile == null) {
                 continue;
             }

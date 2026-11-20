@@ -1,34 +1,24 @@
 package appeng.api.crafting;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
 import appeng.api.networking.crafting.ICraftingPatternDetails;
 
 /**
- * Pattern target of anything that runs crafting table patterns, such as a Molecular Assembler; AE2 registers its
- * matcher.
+ * Pattern target of anything that runs crafting table patterns, such as a Molecular Assembler.
  */
-public enum CraftingMachineTarget implements IPatternTarget {
+public enum CraftingMachineTarget implements IPatternTarget, IPatternTargetKey {
 
     INSTANCE;
 
     @Override
-    public Object getTargetKey() {
+    public IPatternTargetKey getTargetKey() {
         return this;
     }
 
     /**
      * Matches crafting table patterns and rejects processing patterns.
      */
-    public static Map<CraftingMachineTarget, PatternMatch> match(ICraftingPatternDetails pattern,
-            Set<CraftingMachineTarget> keys) {
-        final PatternMatch result = pattern.isCraftable() ? PatternMatch.MATCH : PatternMatch.NO_MATCH;
-        final Map<CraftingMachineTarget, PatternMatch> results = new HashMap<>();
-        for (CraftingMachineTarget key : keys) {
-            results.put(key, result);
-        }
-        return results;
+    @Override
+    public PatternMatch match(ICraftingPatternDetails pattern) {
+        return pattern.isCraftable() ? PatternMatch.MATCH : PatternMatch.NO_MATCH;
     }
 }

@@ -342,6 +342,9 @@ public class GuiPatternTerm extends GuiMEMonitorable {
 
     private void drawTargetPanel(final int mouseX, final int mouseY) {
         this.targetPanel.setList(this.container.getClientTargets());
+        if (!this.targetPanel.isVisible()) {
+            return;
+        }
         this.targetPanel.setPatternIcon(this.container.getEncodedPattern());
         this.targetPanel.layout(
                 this.guiLeft,

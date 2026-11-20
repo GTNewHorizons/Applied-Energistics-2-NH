@@ -15,14 +15,6 @@ import static appeng.parts.reporting.PartPatternTerminal.*;
 import static appeng.util.IterationCounter.fetchNewId;
 import static appeng.util.Platform.isServer;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
@@ -39,12 +31,6 @@ import net.minecraftforge.common.util.ForgeDirection;
 import appeng.api.AEApi;
 import appeng.api.config.Actionable;
 import appeng.api.config.SecurityPermissions;
-import appeng.api.crafting.PatternMatch;
-import appeng.api.implementations.ICraftingPatternItem;
-import appeng.api.networking.IGrid;
-import appeng.api.networking.IGridNode;
-import appeng.api.networking.crafting.ICraftingPatternDetails;
-import appeng.api.networking.security.ISecurityGrid;
 import appeng.api.networking.security.MachineSource;
 import appeng.api.parts.IPatternTerminal;
 import appeng.api.storage.IMEMonitor;
@@ -53,8 +39,6 @@ import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IItemList;
-import appeng.api.util.DimensionalCoord;
-import appeng.api.util.IInterfaceViewable;
 import appeng.container.ContainerNull;
 import appeng.container.ContainerOpenContext;
 import appeng.container.PrimaryGui;
@@ -71,7 +55,6 @@ import appeng.container.sync.handlers.BooleanSyncHandler;
 import appeng.core.sync.GuiBridge;
 import appeng.core.sync.packets.PacketPatternSlot;
 import appeng.crafting.target.PatternTargetList;
-import appeng.crafting.target.PatternTargetQuery;
 import appeng.helpers.IContainerCraftingPacket;
 import appeng.items.contents.WirelessPatternTerminalGuiObject;
 import appeng.items.storage.ItemViewCell;
@@ -117,11 +100,7 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
     public final ActionHandler<Integer> sendToTargetAction;
     public final ActionHandler<Integer> extractConflictAction;
 
-    private ItemStack lastTargetPattern;
-    private List<PatternTargetQuery.Entry> lastTargets = Collections.emptyList();
-    private List<PatternTargetQuery.Conflict> lastConflicts = Collections.emptyList();
-    private List<Integer> lastTargetCards = Collections.emptyList();
-    private PatternTargetList clientTargets = PatternTargetList.EMPTY;
+    private final PatternTargetController targets = new PatternTargetController(this);
 
     public ContainerPatternTerm(final InventoryPlayer ip, final ITerminalHost monitorable) {
         this(ip, monitorable, true);
@@ -228,11 +207,11 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
         this.clearAction = sync.actionC2S("clear").onServerAction(this::clear);
         this.doubleAction = sync.actionC2S("double", StreamCodecs.intValue()).onServerAction(this::doubleStacks);
         this.patternTargetsAction = sync.actionS2C("patternTargets", PatternTargetList.CODEC)
-                .onClientAction(list -> this.clientTargets = list);
+                .onClientAction(this.targets::setClientTargets);
         this.sendToTargetAction = sync.actionC2S("sendToTarget", StreamCodecs.intValue())
-                .onServerAction(this::sendPatternToTarget);
+                .onServerAction(this.targets::sendToTarget);
         this.extractConflictAction = sync.actionC2S("extractConflict", StreamCodecs.intValue())
-                .onServerAction(this::extractConflict);
+                .onServerAction(this.targets::extractConflict);
 
         this.updateOrderOfOutputSlots();
     }
@@ -457,7 +436,7 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
                 this.isFirstUpdate = false;
             }
 
-            this.updatePatternTargets();
+            this.targets.update();
         }
 
         super.detectAndSendChanges();
@@ -467,7 +446,7 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
      * Returns the providers the server last sent for the pattern in the output slot; client side only.
      */
     public PatternTargetList getClientTargets() {
-        return this.clientTargets;
+        return this.targets.getClientTargets();
     }
 
     /**
@@ -477,235 +456,18 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
         return this.patternSlotOUT.getStack();
     }
 
-    private void updatePatternTargets() {
-        final ItemStack pattern = this.patternSlotOUT.getStack();
-        // The query walks every provider of the network, so it runs only when the encoded pattern changes.
-        if (ItemStack.areItemStacksEqual(pattern, this.lastTargetPattern)) {
-            return;
-        }
-        this.lastTargetPattern = pattern == null ? null : pattern.copy();
-        this.lastTargets = Collections.emptyList();
-        this.lastTargetCards = Collections.emptyList();
-        this.lastConflicts = Collections.emptyList();
-
-        final IGridNode node = this.getNetworkNode();
-        final ICraftingPatternDetails details = pattern != null
-                && pattern.getItem() instanceof ICraftingPatternItem patternItem
-                        ? patternItem.getPatternForItem(pattern, this.getPlayerInv().player.worldObj)
-                        : null;
-        if (details == null || node == null || node.getGrid() == null) {
-            this.patternTargetsAction
-                    .send(new PatternTargetList(pattern != null, Collections.emptyList(), Collections.emptyList()));
-            return;
-        }
-
-        final EntityPlayer player = this.getPlayerInv().player;
-        final ItemStack card = capacityCard();
-        final Map<IGrid, Boolean> canBuild = new HashMap<>();
-        final List<PatternTargetQuery.Entry> shown = new ArrayList<>();
-        final List<Integer> cardSources = new ArrayList<>();
-        int availableCard = -1;
-        for (PatternTargetQuery.Entry entry : PatternTargetQuery.run(node.getGrid(), details).entries) {
-            if (entry.match == PatternMatch.NO_MATCH) {
-                continue;
-            }
-            int cardSource = PatternTargetList.Entry.CARD_NONE;
-            if (entry.freeSlots <= 0) {
-                if (card == null || PatternTargetQuery.findCapacityCardSlot(entry.provider, card) < 0) {
-                    continue;
-                }
-                // Looked up once, and only when a full interface could take a card.
-                if (availableCard < 0) {
-                    availableCard = this.findCapacityCardSource(card);
-                }
-                if (availableCard == PatternTargetList.Entry.CARD_NONE) {
-                    continue;
-                }
-                cardSource = availableCard;
-            }
-            // A grid behind a Pattern Repeater can deny BUILD; a row there would only fail on click.
-            if (canBuildOn(entry.provider, player, canBuild)) {
-                shown.add(entry);
-                cardSources.add(cardSource);
-            }
-        }
-        this.lastTargets = shown;
-        this.lastTargetCards = cardSources;
-
-        final List<PatternTargetQuery.Conflict> conflictsWithBuild = new ArrayList<>();
-        for (PatternTargetQuery.Conflict conflict : PatternTargetQuery.findConflicts(node.getGrid(), details)) {
-            if (canBuildOn(conflict.provider, player, canBuild)) {
-                conflictsWithBuild.add(conflict);
-            }
-        }
-        this.lastConflicts = conflictsWithBuild;
-        final Set<IInterfaceViewable> withSamePattern = Collections.newSetFromMap(new IdentityHashMap<>());
-        for (PatternTargetQuery.Conflict conflict : this.lastConflicts) {
-            if (conflict.sameRecipe) {
-                withSamePattern.add(conflict.provider);
-            }
-        }
-
-        final List<PatternTargetList.Entry> entries = new ArrayList<>(shown.size());
-        for (int i = 0; i < shown.size(); i++) {
-            final PatternTargetQuery.Entry entry = shown.get(i);
-            final IInterfaceViewable provider = entry.provider;
-            final ItemStack displayRep = provider.getDisplayRep();
-            final ItemStack icon = displayRep != null ? displayRep : provider.getSelfRep();
-            final DimensionalCoord location = provider.getLocation();
-            entries.add(
-                    new PatternTargetList.Entry(
-                            i,
-                            icon,
-                            provider.getRawName(),
-                            location.x,
-                            location.y,
-                            location.z,
-                            location.getDimension(),
-                            entry.match,
-                            entry.freeSlots,
-                            cardSources.get(i),
-                            withSamePattern.contains(provider)));
-        }
-
-        final List<PatternTargetList.Conflict> conflicts = new ArrayList<>(this.lastConflicts.size());
-        for (int i = 0; i < this.lastConflicts.size(); i++) {
-            final PatternTargetQuery.Conflict conflict = this.lastConflicts.get(i);
-            final IInterfaceViewable provider = conflict.provider;
-            final ItemStack displayRep = provider.getDisplayRep();
-            final DimensionalCoord location = provider.getLocation();
-            conflicts.add(
-                    new PatternTargetList.Conflict(
-                            i,
-                            displayRep != null ? displayRep : provider.getSelfRep(),
-                            provider.getRawName(),
-                            location.x,
-                            location.y,
-                            location.z,
-                            location.getDimension(),
-                            conflict.sameRecipe));
-        }
-        this.patternTargetsAction.send(new PatternTargetList(true, entries, conflicts));
+    /**
+     * Removes one encoded pattern from the output slot after it went into a provider.
+     */
+    void consumeEncodedPattern() {
+        this.patternSlotOUT.decrStackSize(1);
     }
 
     /**
-     * Returns whether the player has BUILD on the provider's grid, caching the answer per grid.
+     * Returns whether the player holds this permission on the terminal's grid while it has power.
      */
-    private static boolean canBuildOn(IInterfaceViewable provider, EntityPlayer player, Map<IGrid, Boolean> cache) {
-        final IGridNode providerNode = provider.getGridNode(ForgeDirection.UNKNOWN);
-        final IGrid providerGrid = providerNode == null ? null : providerNode.getGrid();
-        return providerGrid != null && cache.computeIfAbsent(
-                providerGrid,
-                g -> g.<ISecurityGrid>getCache(ISecurityGrid.class).hasPermission(player, SecurityPermissions.BUILD));
-    }
-
-    private void extractConflict(int index) {
-        final IGridNode node = this.getNetworkNode();
-        if (node == null || node.getGrid() == null
-                || index < 0
-                || index >= this.lastConflicts.size()
-                || !this.hasAccess(SecurityPermissions.BUILD, true)) {
-            return;
-        }
-
-        final EntityPlayer player = this.getPlayerInv().player;
-        final ItemStack extracted = PatternTargetQuery
-                .extractPattern(this.lastConflicts.get(index), node.getGrid(), player);
-        if (extracted == null) {
-            return;
-        }
-        if (!player.inventory.addItemStackToInventory(extracted)) {
-            player.entityDropItem(extracted, 0);
-        }
-        // The encoded pattern did not change, so the lists must be rebuilt by hand to drop the extracted one.
-        this.lastTargetPattern = null;
-    }
-
-    private void sendPatternToTarget(int index) {
-        final ItemStack pattern = this.patternSlotOUT.getStack();
-        final IGridNode node = this.getNetworkNode();
-        // The index points into the list built for lastTargetPattern, so a changed pattern makes it meaningless.
-        if (pattern == null || node == null
-                || node.getGrid() == null
-                || index < 0
-                || index >= this.lastTargets.size()
-                || this.lastTargets.get(index).match == PatternMatch.NOT_READY
-                || !ItemStack.areItemStacksEqual(pattern, this.lastTargetPattern)
-                || !this.hasAccess(SecurityPermissions.BUILD, true)) {
-            return;
-        }
-
-        final IInterfaceViewable provider = this.lastTargets.get(index).provider;
-        final EntityPlayer player = this.getPlayerInv().player;
-        if (this.lastTargetCards.get(index) != PatternTargetList.Entry.CARD_NONE) {
-            if (!this.installCapacityCard(provider, node.getGrid(), player)) {
-                return;
-            }
-            // The card changed the interface's free slots even if the pattern below fails to fit.
-            this.lastTargetPattern = null;
-        }
-        if (PatternTargetQuery.insertPattern(provider, node.getGrid(), player, pattern)) {
-            this.patternSlotOUT.decrStackSize(1);
-        }
-    }
-
-    private static ItemStack capacityCard() {
-        return AEApi.instance().definitions().materials().cardPatternCapacity().maybeStack(1).orNull();
-    }
-
-    private static boolean isCapacityCard(ItemStack stack, ItemStack card) {
-        return stack != null && stack.getItem() == card.getItem() && stack.getItemDamage() == card.getItemDamage();
-    }
-
-    private int findCapacityCardSource(ItemStack card) {
-        final InventoryPlayer inventory = this.getPlayerInv();
-        for (int i = 0; i < inventory.getSizeInventory(); i++) {
-            if (isCapacityCard(inventory.getStackInSlot(i), card)) {
-                return PatternTargetList.Entry.CARD_FROM_INVENTORY;
-            }
-        }
-        final IMEMonitor<IAEItemStack> monitor = this.getItemMonitor();
-        if (monitor != null && this.hasAccess(SecurityPermissions.EXTRACT, true)) {
-            final IAEItemStack simulated = monitor
-                    .extractItems(AEItemStack.create(card), Actionable.SIMULATE, this.getActionSource());
-            if (simulated != null && simulated.getStackSize() > 0) {
-                return PatternTargetList.Entry.CARD_FROM_NETWORK;
-            }
-        }
-        return PatternTargetList.Entry.CARD_NONE;
-    }
-
-    private boolean installCapacityCard(IInterfaceViewable provider, IGrid grid, EntityPlayer player) {
-        final ItemStack card = capacityCard();
-        // Checked before the card leaves the player or the network, so a refused click takes nothing.
-        if (card == null || !PatternTargetQuery.canModify(provider, grid, player)) {
-            return false;
-        }
-        final int slot = PatternTargetQuery.findCapacityCardSlot(provider, card);
-        if (slot < 0) {
-            return false;
-        }
-
-        final InventoryPlayer inventory = this.getPlayerInv();
-        for (int i = 0; i < inventory.getSizeInventory(); i++) {
-            if (isCapacityCard(inventory.getStackInSlot(i), card)) {
-                inventory.decrStackSize(i, 1);
-                PatternTargetQuery.installCapacityCard(provider, slot, card);
-                return true;
-            }
-        }
-
-        final IMEMonitor<IAEItemStack> monitor = this.getItemMonitor();
-        if (monitor == null || !this.hasAccess(SecurityPermissions.EXTRACT, true)) {
-            return false;
-        }
-        final IAEItemStack extracted = Platform
-                .poweredExtraction(this.getPowerSource(), monitor, AEItemStack.create(card), this.getActionSource());
-        if (extracted == null || extracted.getStackSize() <= 0) {
-            return false;
-        }
-        PatternTargetQuery.installCapacityCard(provider, slot, card);
-        return true;
+    boolean hasPermission(SecurityPermissions permission) {
+        return this.hasAccess(permission, true);
     }
 
     @Override

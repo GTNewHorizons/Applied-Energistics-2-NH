@@ -18,7 +18,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 import appeng.api.AEApi;
 import appeng.api.config.SecurityPermissions;
 import appeng.api.crafting.IPatternTarget;
-import appeng.api.crafting.IPatternTargetMatcher;
+import appeng.api.crafting.IPatternTargetKey;
 import appeng.api.crafting.PatternMatch;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
@@ -36,6 +36,7 @@ import appeng.me.GridAccessException;
 import appeng.me.cache.CraftingGridCache;
 import appeng.parts.misc.PartPatternRepeater;
 import appeng.parts.p2p.PartP2PInterface;
+import appeng.util.Platform;
 
 /**
  * Finds the pattern providers whose machine can run a pattern.
@@ -85,13 +86,13 @@ public final class PatternTargetQuery {
         }
 
         final List<IInterfaceViewable> providers = new ArrayList<>();
-        final List<List<Object>> keys = new ArrayList<>();
-        final Map<Class<?>, Set<Object>> keysByClass = new HashMap<>();
+        final List<List<IPatternTargetKey>> keys = new ArrayList<>();
+        final Map<IPatternTargetKey, PatternMatch> results = new HashMap<>();
         final Set<IInterfaceViewable> visited = new HashSet<>();
         final Set<Class<? extends IInterfaceViewable>> supported = AEApi.instance().registries().interfaceTerminal()
                 .getSupportedClasses();
 
-        for (IGrid currentGrid : collectReachableGrids(grid)) {
+        for (IGrid currentGrid : PartPatternRepeater.collectReachableGrids(grid)) {
             for (Class<? extends IInterfaceViewable> c : supported) {
                 for (IGridNode node : currentGrid.getMachines(c)) {
                     final IInterfaceViewable machine = (IInterfaceViewable) node.getMachine();
@@ -108,13 +109,13 @@ public final class PatternTargetQuery {
                         continue;
                     }
 
-                    final List<Object> memberKeys = new ArrayList<>();
+                    final List<IPatternTargetKey> memberKeys = new ArrayList<>();
                     for (IInterfaceViewable member : pushingMembers(machine)) {
                         final IPatternTarget target = member.getPatternTarget();
-                        final Object key = target == null ? null : target.getTargetKey();
+                        final IPatternTargetKey key = target == null ? null : target.getTargetKey();
                         memberKeys.add(key);
-                        if (key != null) {
-                            keysByClass.computeIfAbsent(key.getClass(), k -> new HashSet<>()).add(key);
+                        if (key != null && !results.containsKey(key)) {
+                            results.put(key, matchKey(key, pattern));
                         }
                     }
                     keys.add(memberKeys);
@@ -122,13 +123,7 @@ public final class PatternTargetQuery {
             }
         }
 
-        final Map<Object, PatternMatch> results = new HashMap<>();
-        int distinctKeys = 0;
-        for (Map.Entry<Class<?>, Set<Object>> e : keysByClass.entrySet()) {
-            distinctKeys += e.getValue().size();
-            results.putAll(matchKeys(e.getKey(), pattern, e.getValue()));
-        }
-
+        final int distinctKeys = results.size();
         final List<Entry> entries = new ArrayList<>(providers.size());
         for (int i = 0; i < providers.size(); i++) {
             final IInterfaceViewable provider = providers.get(i);
@@ -179,10 +174,11 @@ public final class PatternTargetQuery {
         final TileEntity tile = host.getTileEntity();
         final World world = tile.getWorldObj();
         for (ForgeDirection side : host.getTargets()) {
-            final int x = tile.xCoord + side.offsetX;
-            final int y = tile.yCoord + side.offsetY;
-            final int z = tile.zCoord + side.offsetZ;
-            if (world.blockExists(x, y, z) && world.getTileEntity(x, y, z) != null) {
+            if (Platform.getLoadedTileEntity(
+                    world,
+                    tile.xCoord + side.offsetX,
+                    tile.yCoord + side.offsetY,
+                    tile.zCoord + side.offsetZ) != null) {
                 return true;
             }
         }
@@ -192,13 +188,14 @@ public final class PatternTargetQuery {
     /**
      * Returns the weakest match among the member keys of one provider.
      */
-    private static PatternMatch combine(List<Object> memberKeys, Map<Object, PatternMatch> results) {
+    private static PatternMatch combine(List<IPatternTargetKey> memberKeys,
+            Map<IPatternTargetKey, PatternMatch> results) {
         if (memberKeys.isEmpty()) {
             return PatternMatch.UNKNOWN;
         }
         boolean notReady = false;
         boolean unknown = false;
-        for (Object key : memberKeys) {
+        for (IPatternTargetKey key : memberKeys) {
             final PatternMatch match;
             if (key == StackTypeMismatch.INSTANCE) {
                 match = PatternMatch.NO_MATCH;
@@ -226,22 +223,14 @@ public final class PatternTargetQuery {
         return unknown ? PatternMatch.UNKNOWN : PatternMatch.MATCH;
     }
 
-    @SuppressWarnings("unchecked")
-    private static Map<Object, PatternMatch> matchKeys(Class<?> keyClass, ICraftingPatternDetails pattern,
-            Set<Object> keys) {
-        final IPatternTargetMatcher<Object> matcher = (IPatternTargetMatcher<Object>) (IPatternTargetMatcher<?>) AEApi
-                .instance().registries().patternTargets().getMatcher(keyClass);
-        if (matcher == null) {
-            return Collections.emptyMap();
-        }
-
-        // A broken matcher from another mod must not take the query down with it.
+    private static PatternMatch matchKey(IPatternTargetKey key, ICraftingPatternDetails pattern) {
+        // A broken key from another mod must not take the query down with it.
         try {
-            final Map<Object, PatternMatch> results = matcher.match(pattern, Collections.unmodifiableSet(keys));
-            return results == null ? Collections.emptyMap() : results;
+            final PatternMatch match = key.match(pattern);
+            return match == null ? PatternMatch.UNKNOWN : match;
         } catch (RuntimeException e) {
-            AELog.error(e, "Pattern target matcher for " + keyClass.getName() + " failed");
-            return Collections.emptyMap();
+            AELog.error(e, "Pattern target key " + key.getClass().getName() + " failed");
+            return PatternMatch.UNKNOWN;
         }
     }
 
@@ -309,7 +298,7 @@ public final class PatternTargetQuery {
         }
 
         final List<Conflict> conflicts = new ArrayList<>();
-        for (IGrid currentGrid : collectReachableGrids(grid)) {
+        for (IGrid currentGrid : PartPatternRepeater.collectReachableGrids(grid)) {
             if (!(currentGrid.getCache(ICraftingGrid.class) instanceof CraftingGridCache craftingGrid)) {
                 continue;
             }
@@ -442,36 +431,23 @@ public final class PatternTargetQuery {
             return false;
         }
         final IGridNode node = provider.getGridNode(ForgeDirection.UNKNOWN);
-        if (node == null || !node.isActive() || !collectReachableGrids(grid).contains(node.getGrid())) {
+        if (node == null || !node.isActive()
+                || !PartPatternRepeater.collectReachableGrids(grid).contains(node.getGrid())) {
             return false;
         }
         final ISecurityGrid security = node.getGrid().getCache(ISecurityGrid.class);
         return security.hasPermission(player, SecurityPermissions.BUILD);
     }
 
-    // Same walk as ContainerInterfaceTerminal#collectReachableGrids.
-    private static Set<IGrid> collectReachableGrids(IGrid grid) {
-        final Set<IGrid> grids = new HashSet<>();
-        grids.add(grid);
-        collectRepeaterGrids(grid, grids);
-        return grids;
-    }
+    // Stands for a provider that cannot hold the pattern's stack types; combine() maps it to NO_MATCH.
+    private enum StackTypeMismatch implements IPatternTargetKey {
 
-    private static void collectRepeaterGrids(IGrid grid, Set<IGrid> grids) {
-        for (IGridNode node : grid.getMachines(PartPatternRepeater.class)) {
-            final PartPatternRepeater rep = (PartPatternRepeater) node.getMachine();
-            if (!rep.isProvider() || rep.getPair() == null || !node.isActive() || rep.getPair().isProvider()) continue;
-            final IGridNode n = rep.getPair().getGridNode();
-            if (n == null || !n.isActive()) continue;
-            final IGrid currentGrid = n.getGrid();
-            if (grids.add(currentGrid)) {
-                collectRepeaterGrids(currentGrid, grids);
-            }
+        INSTANCE;
+
+        @Override
+        public PatternMatch match(ICraftingPatternDetails pattern) {
+            return PatternMatch.NO_MATCH;
         }
-    }
-
-    private enum StackTypeMismatch {
-        INSTANCE
     }
 
     public static final class Conflict {

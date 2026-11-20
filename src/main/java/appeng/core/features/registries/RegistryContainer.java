@@ -17,7 +17,6 @@ import appeng.api.features.IInterfaceTerminalRegistry;
 import appeng.api.features.ILocatableRegistry;
 import appeng.api.features.IMatterCannonAmmoRegistry;
 import appeng.api.features.IP2PTunnelRegistry;
-import appeng.api.features.IPatternTargetRegistry;
 import appeng.api.features.IPlayerRegistry;
 import appeng.api.features.IRecipeHandlerRegistry;
 import appeng.api.features.IRegistryContainer;
@@ -46,7 +45,6 @@ public class RegistryContainer implements IRegistryContainer {
     private final ICellRegistry cell = new CellRegistry();
     private final IItemDisplayRegistry itemDisplay = new ItemDisplayRegistry();
     private final IInterfaceTerminalRegistry interfaceTerminalRegistry = new InterfaceTerminalRegistry();
-    private final IPatternTargetRegistry patternTargetRegistry = new PatternTargetRegistry();
     private final ILocatableRegistry locatable = new LocatableRegistry();
     private final ISpecialComparisonRegistry comparison = new SpecialComparisonRegistry();
     private final IWirelessTermRegistry wireless = new WirelessRegistry();
@@ -106,11 +104,6 @@ public class RegistryContainer implements IRegistryContainer {
     @Override
     public IInterfaceTerminalRegistry interfaceTerminal() {
         return this.interfaceTerminalRegistry;
-    }
-
-    @Override
-    public IPatternTargetRegistry patternTargets() {
-        return this.patternTargetRegistry;
     }
 
     @Override

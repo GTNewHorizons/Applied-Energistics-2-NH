@@ -9,9 +9,8 @@ import org.jspecify.annotations.Nullable;
 public interface IPatternTarget {
 
     /**
-     * Returns an immutable key with value equality for {@link IPatternTargetMatcher}, or null if the machine is
-     * unknown.
+     * Returns the key that checks patterns for this machine, or null if the machine is unknown.
      */
     @Nullable
-    Object getTargetKey();
+    IPatternTargetKey getTargetKey();
 }

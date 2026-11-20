@@ -35,7 +35,7 @@ public final class PatternTargetList {
                     buf.writeInt(entry.dim);
                     buf.writeByte(entry.match.ordinal());
                     buf.writeInt(entry.freeSlots);
-                    buf.writeByte(entry.cardSource);
+                    buf.writeByte(entry.cardSource.ordinal());
                     buf.writeBoolean(entry.hasSamePattern);
                 }
                 buf.writeInt(list.conflicts.size());
@@ -65,7 +65,7 @@ public final class PatternTargetList {
                                     buf.readInt(),
                                     PatternMatch.values()[buf.readByte()],
                                     buf.readInt(),
-                                    buf.readByte(),
+                                    CardSource.values()[buf.readByte()],
                                     buf.readBoolean()));
                 }
                 final int conflictCount = buf.readInt();
@@ -95,11 +95,16 @@ public final class PatternTargetList {
         this.conflicts = conflicts;
     }
 
-    public static final class Entry {
+    /**
+     * Where a Pattern Capacity Card comes from when the interface is full.
+     */
+    public enum CardSource {
+        NONE,
+        INVENTORY,
+        NETWORK
+    }
 
-        public static final int CARD_NONE = 0;
-        public static final int CARD_FROM_INVENTORY = 1;
-        public static final int CARD_FROM_NETWORK = 2;
+    public static final class Entry {
 
         /** Position in the server's list, sent back when the player picks this provider. */
         public final int index;
@@ -111,13 +116,13 @@ public final class PatternTargetList {
         public final int dim;
         public final PatternMatch match;
         public final int freeSlots;
-        /** Where a Pattern Capacity Card comes from when the interface is full; CARD_NONE if it has room. */
-        public final int cardSource;
+        /** Where a Pattern Capacity Card comes from when the interface is full; NONE if it has room. */
+        public final CardSource cardSource;
         /** True when this provider already holds a pattern with the same inputs and outputs. */
         public final boolean hasSamePattern;
 
         public Entry(int index, ItemStack icon, String rawName, int x, int y, int z, int dim, PatternMatch match,
-                int freeSlots, int cardSource, boolean hasSamePattern) {
+                int freeSlots, CardSource cardSource, boolean hasSamePattern) {
             this.index = index;
             this.icon = icon;
             this.rawName = rawName;

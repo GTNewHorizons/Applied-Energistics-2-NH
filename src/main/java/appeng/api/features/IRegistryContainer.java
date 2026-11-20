@@ -79,11 +79,6 @@ public interface IRegistryContainer {
     IInterfaceTerminalRegistry interfaceTerminal();
 
     /**
-     * Allows you to register matchers that tell which pattern targets can run a pattern.
-     */
-    IPatternTargetRegistry patternTargets();
-
-    /**
      * get access to the locatable registry
      */
     ILocatableRegistry locatable();

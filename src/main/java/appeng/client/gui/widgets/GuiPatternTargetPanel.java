@@ -1,6 +1,7 @@
 package appeng.client.gui.widgets;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -85,6 +86,10 @@ public class GuiPatternTargetPanel {
     private List<String> conflictTitle = Collections.emptyList();
     private boolean dragging;
 
+    private PatternTargetList layoutList;
+    private int[] layoutInputs;
+    private final List<int[]> layoutBlocked = new ArrayList<>();
+
     public GuiPatternTargetPanel(AEBaseGui gui, Actions actions) {
         this.gui = gui;
         this.actions = actions;
@@ -104,7 +109,7 @@ public class GuiPatternTargetPanel {
         this.entries.sort(
                 Comparator.comparingInt((PatternTargetList.Entry e) -> statusOrder(e.match))
                         .thenComparing(e -> e.hasSamePattern)
-                        .thenComparingInt(e -> e.cardSource == PatternTargetList.Entry.CARD_NONE ? 0 : 1)
+                        .thenComparingInt(e -> e.cardSource == PatternTargetList.CardSource.NONE ? 0 : 1)
                         .thenComparing(GuiPatternTargetPanel::displayName));
         this.scrollbar.setCurrentScroll(0);
     }
@@ -123,6 +128,9 @@ public class GuiPatternTargetPanel {
      */
     public void layout(int guiLeft, int guiTop, int guiHeight, int screenHeight, int buttonsBottom,
             List<int[]> blocked) {
+        if (!this.layoutChanged(guiLeft, guiTop, guiHeight, screenHeight, buttonsBottom, blocked)) {
+            return;
+        }
         this.place(guiLeft, guiTop, guiHeight, screenHeight, buttonsBottom + BUTTON_GAP, 0, blocked);
         int availableHeight = this.height;
         int conflictHeight = this.conflictHeight();
@@ -151,6 +159,35 @@ public class GuiPatternTargetPanel {
         this.scrollbar.setWidth(12);
         this.scrollbar.setHeight(this.listHeight - 2);
         this.scrollbar.setRange(0, Math.max(0, this.entries.size() - this.visibleCards), 1);
+    }
+
+    // Remembers the inputs of the last layout and returns whether these differ, so the panel is placed only on change.
+    private boolean layoutChanged(int guiLeft, int guiTop, int guiHeight, int screenHeight, int buttonsBottom,
+            List<int[]> blocked) {
+        final int[] inputs = { guiLeft, guiTop, guiHeight, screenHeight, buttonsBottom };
+        if (this.layoutList == this.list && Arrays.equals(inputs, this.layoutInputs)
+                && sameRects(blocked, this.layoutBlocked)) {
+            return false;
+        }
+        this.layoutList = this.list;
+        this.layoutInputs = inputs;
+        this.layoutBlocked.clear();
+        for (int[] rect : blocked) {
+            this.layoutBlocked.add(rect.clone());
+        }
+        return true;
+    }
+
+    private static boolean sameRects(List<int[]> a, List<int[]> b) {
+        if (a.size() != b.size()) {
+            return false;
+        }
+        for (int i = 0; i < a.size(); i++) {
+            if (!Arrays.equals(a.get(i), b.get(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // Sets x, width and y, and the room down to the screen's bottom or the first blocked rectangle in height.
@@ -252,9 +289,9 @@ public class GuiPatternTargetPanel {
                 lines.add(GuiText.HoldShiftClick_HIGHLIGHT_INTERFACE.getLocal());
                 return lines;
             }
-            if (entry.cardSource == PatternTargetList.Entry.CARD_FROM_INVENTORY) {
+            if (entry.cardSource == PatternTargetList.CardSource.INVENTORY) {
                 lines.add(GuiText.PatternTargetsCardFromInventory.getLocal());
-            } else if (entry.cardSource == PatternTargetList.Entry.CARD_FROM_NETWORK) {
+            } else if (entry.cardSource == PatternTargetList.CardSource.NETWORK) {
                 lines.add(GuiText.PatternTargetsCardFromNetwork.getLocal());
             } else {
                 lines.add(GuiText.PatternTargetsFreeSlots.getLocal(entry.freeSlots));
@@ -446,7 +483,7 @@ public class GuiPatternTargetPanel {
         if (entry.hasSamePattern) {
             room = GuiText.PatternTargetsHasSame.getLocal();
             roomColor = ColorUtils.patternTargetTextHasSame.getColor();
-        } else if (entry.cardSource != PatternTargetList.Entry.CARD_NONE) {
+        } else if (entry.cardSource != PatternTargetList.CardSource.NONE) {
             room = GuiText.PatternTargetsNeedsCard.getLocal();
         } else {
             room = GuiText.PatternTargetsFree.getLocal(entry.freeSlots);
