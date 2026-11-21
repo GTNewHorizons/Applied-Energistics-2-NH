@@ -184,4 +184,9 @@ public class P2PCache implements IGridCache {
     public PartP2PTunnel getInput(final long freq) {
         return this.inputs.get(freq);
     }
+
+    public boolean isRegistered(final PartP2PTunnel<?> t) {
+        final long freq = t.getFrequency();
+        return t.isOutput() ? this.outputs.containsEntry(freq, t) : this.inputs.get(freq) == t;
+    }
 }
