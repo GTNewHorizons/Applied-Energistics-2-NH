@@ -80,6 +80,8 @@ public class PathingCalculation {
      * Nodes that have been granted a channel during the BFS pass.
      */
     private final Set<GridNode> channelNodes = new HashSet<>();
+    /** Failed specifically because a cable or controller face had no channel capacity left. */
+    private final Set<GridNode> capacityRejectedNodes = new HashSet<>();
     /**
      * Tracks the total number of used channels.
      */
@@ -219,6 +221,7 @@ public class PathingCalculation {
 
         final ControllerFace controllerFace = this.controllerFaces.get(start);
         if (!controllerFace.canUseChannel()) {
+            capacityRejectedNodes.add(start);
             return false;
         }
 
@@ -226,6 +229,7 @@ public class PathingCalculation {
         GridNode pi = start;
         while (pi != null) {
             if (channelBottlenecks.getOrDefault(pi, 0) >= pi.getMaxChannels()) {
+                capacityRejectedNodes.add(start);
                 return false;
             }
 
@@ -322,6 +326,10 @@ public class PathingCalculation {
         for (var multiblockNode : multiblocksWithChannel) {
             multiblockNode.incrementChannelCount(1);
         }
+    }
+
+    public Set<GridNode> getCapacityRejectedNodes() {
+        return java.util.Collections.unmodifiableSet(capacityRejectedNodes);
     }
 
     public int getChannelsInUse() {
