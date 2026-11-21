@@ -2,10 +2,6 @@ package thaumicenergistics.common;
 
 import static thaumicenergistics.common.storage.AEEssentiaStackType.ESSENTIA_STACK_TYPE;
 
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-
 import appeng.api.AEApi;
 import appeng.api.storage.data.AEStackTypeRegistry;
 import appeng.core.BuildTags;
@@ -77,22 +73,6 @@ public class ThaumicEnergistics {
      * Configuration.
      */
     public static IThEConfig config;
-
-    /**
-     * Creative tab.
-     */
-    public static CreativeTabs ThETab = new CreativeTabs("ThaumicEnergistics") {
-
-        @Override
-        public ItemStack getIconItemStack() {
-            return ThEApi.instance().blocks().InfusionProvider.getStack();
-        }
-
-        @Override
-        public Item getTabIconItem() {
-            return ThEApi.instance().blocks().InfusionProvider.getItem();
-        }
-    };
 
     /**
      * Gets what state/phase of loading that ThE has <strong>completed</strong>.<br>
