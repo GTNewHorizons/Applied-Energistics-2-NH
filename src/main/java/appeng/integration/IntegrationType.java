@@ -63,7 +63,9 @@ public enum IntegrationType {
 
     Jabba(IntegrationSide.BOTH, "Jabba", "JABBA"),
 
-    ThaumicTinkerer(IntegrationSide.BOTH, "Thaumic Tinkerer", "ThaumicTinkerer");
+    ThaumicTinkerer(IntegrationSide.BOTH, "Thaumic Tinkerer", "ThaumicTinkerer"),
+
+    LiquidLogged(IntegrationSide.BOTH, "LiquidLogged", "liquidlogged");
 
     public final IntegrationSide side;
     public final String dspName;

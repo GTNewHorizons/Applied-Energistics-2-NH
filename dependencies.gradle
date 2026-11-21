@@ -3,7 +3,7 @@
 dependencies {
     implementation('com.github.GTNewHorizons:NotEnoughItems:2.9.8-GTNH:dev')
     implementation('com.github.GTNewHorizons:CodeChickenCore:1.5.1:dev')
-    implementation("com.github.GTNewHorizons:GTNHLib:0.12.4:dev")
+    implementation("com.github.GTNewHorizons:GTNHLib:0.12.5:dev")
     implementation('curse.maven:cofh-core-69162:2388751')
 
     compileOnlyApi('com.github.GTNewHorizons:Angelica:2.2.46:dev')
@@ -48,6 +48,7 @@ dependencies {
     compileOnly(rfg.deobf("curse.maven:thaumcraft-nei-plugin-225095:2241913")) { transitive = false }
     compileOnly("curse.maven:thermal-expansion-69163:2388759") { transitive = false }
     compileOnly("com.github.GTNewHorizons:AspectRecipeIndex:1.2.2:dev") { transitive = false }
+    compileOnly("com.github.GTNewHorizons:LiquidLogged:0.2.3:dev") { transitive = false }
 
     testImplementation('junit:junit:4.12')
     functionalTestImplementation(platform('org.junit:junit-bom:5.9.2'))
@@ -63,6 +64,7 @@ dependencies {
     functionalTestRuntimeOnly('com.github.GTNewHorizons:ForgeMultipart:2.0.0:dev') {transitive = false}
 
     devOnlyNonPublishable("com.github.GTNewHorizons:Horizon-QA:0.15.0:dev")
+    devOnlyNonPublishable("com.github.GTNewHorizons:LiquidLogged:0.2.3:dev")
 
     runtimeOnlyNonPublishable("com.github.GTNewHorizons:Postea:1.3.0:dev")
     runtimeOnlyNonPublishable('com.github.GTNewHorizons:waila:1.20.0:dev') {transitive = false}
