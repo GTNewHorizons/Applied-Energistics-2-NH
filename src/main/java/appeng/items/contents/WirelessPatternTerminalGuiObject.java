@@ -29,6 +29,9 @@ import appeng.tile.inventory.InvOperation;
 public class WirelessPatternTerminalGuiObject extends WirelessTerminalGuiObject
         implements IIAEStackInventory, IPatternTerminalEx {
 
+    private static final String PATTERN_TAG = "pattern";
+    private static final String PATTERN_EX_TAG = "pattern_ex";
+
     int craftingInvSize;
     int outputInvSize;
     IAEStackInventory crafting;
@@ -41,17 +44,17 @@ public class WirelessPatternTerminalGuiObject extends WirelessTerminalGuiObject
     private boolean substitute = false;
     private boolean beSubstitute = false;
     private final String nbtPrefix;
-    private final int mode;
+    private final boolean ex;
 
     private boolean inverted;
     private int activePage;
 
     public WirelessPatternTerminalGuiObject(IWirelessTermHandler wh, ItemStack is, EntityPlayer ep, World w, int x,
-            int y, int z) {
+            int y, int z, boolean ex) {
         super(wh, is, ep, w, x, y, z);
-        this.mode = y != Integer.MIN_VALUE ? y : getMode();
-        this.nbtPrefix = mode == 1 ? "pattern" : "pattern_ex"; // ...
-        this.craftingMode = mode == 1;
+        this.ex = ex;
+        this.nbtPrefix = ex ? PATTERN_EX_TAG : PATTERN_TAG;
+        this.craftingMode = !ex;
     }
 
     public void setInventorySize(int inputs, int outputs) {
@@ -65,7 +68,7 @@ public class WirelessPatternTerminalGuiObject extends WirelessTerminalGuiObject
         output = new IAEStackInventory(this, outputInvSize, StorageName.CRAFTING_OUTPUT);
 
         final NBTTagCompound tag = getItemStack().getTagCompound().getCompoundTag(this.nbtPrefix);
-        if (mode == 1) this.craftingMode = tag.getBoolean("crafting");
+        if (!this.ex) this.craftingMode = tag.getBoolean("crafting");
         this.substitute = tag.getBoolean("substitute");
         this.beSubstitute = tag.getBoolean("beSubstitute");
         this.inverted = tag.getBoolean("inverted");
@@ -78,11 +81,11 @@ public class WirelessPatternTerminalGuiObject extends WirelessTerminalGuiObject
     @Override
     public void writeInventory() {
         final NBTTagCompound tag = new NBTTagCompound();
-        if (mode == 1) tag.setBoolean("crafting", this.craftingMode);
+        if (!this.ex) tag.setBoolean("crafting", this.craftingMode);
         tag.setBoolean("substitute", this.substitute);
         tag.setBoolean("beSubstitute", this.beSubstitute);
 
-        if (this.mode == 2) {
+        if (this.ex) {
             tag.setBoolean("inverted", this.inverted);
             tag.setInteger("activePage", this.activePage);
         }

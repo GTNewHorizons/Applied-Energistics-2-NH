@@ -19,7 +19,6 @@ import com.glodblock.github.common.tile.TileSuperStockReplenisher;
 import com.glodblock.github.inventory.InventoryHandler;
 import com.glodblock.github.inventory.gui.GuiType;
 import com.glodblock.github.util.BlockPos;
-import com.glodblock.github.util.UltraTerminalModes;
 import com.glodblock.github.util.Util;
 
 import appeng.container.AEBaseContainer;
@@ -28,6 +27,7 @@ import appeng.container.PrimaryGui;
 import appeng.container.interfaces.IContainerSubGui;
 import appeng.helpers.ICustomButtonProvider;
 import appeng.util.Platform;
+import cpw.mods.fml.common.network.ByteBufUtils;
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
@@ -35,15 +35,15 @@ import io.netty.buffer.ByteBuf;
 
 public class CPacketSwitchGuis implements IMessage {
 
-    private UltraTerminalModes mode;
+    private String modeId;
     private boolean switchTerminal;
 
-    public CPacketSwitchGuis(UltraTerminalModes mode) {
-        this(mode, false);
+    public CPacketSwitchGuis(String modeId) {
+        this(modeId, false);
     }
 
-    public CPacketSwitchGuis(UltraTerminalModes mode, boolean switchTerminal) {
-        this.mode = mode;
+    public CPacketSwitchGuis(String modeId, boolean switchTerminal) {
+        this.modeId = modeId;
         this.switchTerminal = switchTerminal;
     }
 
@@ -53,14 +53,13 @@ public class CPacketSwitchGuis implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf byteBuf) {
-        final int ord = byteBuf.readInt();
-        mode = ord != -1 ? UltraTerminalModes.VALUES[ord] : null;
+        modeId = ByteBufUtils.readUTF8String(byteBuf);
         switchTerminal = byteBuf.readBoolean();
     }
 
     @Override
     public void toBytes(ByteBuf byteBuf) {
-        byteBuf.writeInt(mode != null ? mode.ordinal() : -1);
+        ByteBufUtils.writeUTF8String(byteBuf, modeId != null ? modeId : "");
         byteBuf.writeBoolean(this.switchTerminal);
     }
 
@@ -77,13 +76,10 @@ public class CPacketSwitchGuis implements IMessage {
             if (message.switchTerminal) {
                 ImmutablePair<Integer, ItemStack> temp = getTerminalToSwitch(player, cont);
                 if (temp != null && temp.getRight().getItem() instanceof ItemWirelessUltraTerminal iwut) {
-                    if (message.mode != null && cont instanceof AEBaseContainer abc) {
-                        abc.setSwitchAbleGuiNext(message.mode.ordinal());
-
-                    }
-                    iwut.switchTerminal(player, temp, message.mode);
+                    final String modeId = message.modeId == null || message.modeId.isEmpty() ? null : message.modeId;
+                    iwut.switchTerminal(player, temp, modeId);
                     if (player.openContainer instanceof AEBaseContainer abc) {
-                        if (abc.getTarget() instanceof ICustomButtonProvider icbp) {
+                        if (abc.getTarget() instanceof ICustomButtonProvider icbp && icbp.getDataObject() != null) {
                             FluidCraft.proxy.netHandler
                                     .sendTo(new SPacketCustomButtonUpdate(icbp.getDataObject()), player);
                         }
@@ -122,15 +118,15 @@ public class CPacketSwitchGuis implements IMessage {
         private static ImmutablePair<Integer, ItemStack> getTerminalToSwitch(EntityPlayerMP player, Container cont) {
             if (cont instanceof AEBaseContainer aeBaseContainer) {
                 final int slot = aeBaseContainer.getTargetSlotIndex();
-                if (slot == Integer.MIN_VALUE) return null;
-
-                final ItemStack terminal = Platform.getItemFromPlayerInventoryBySlotIndex(player, slot);
-                return terminal != null && terminal.getItem() instanceof ItemWirelessUltraTerminal
-                        ? new ImmutablePair<>(slot, terminal)
-                        : null;
+                if (slot != Integer.MIN_VALUE) {
+                    final ItemStack terminal = Platform.getItemFromPlayerInventoryBySlotIndex(player, slot);
+                    if (terminal != null && terminal.getItem() instanceof ItemWirelessUltraTerminal) {
+                        return new ImmutablePair<>(slot, terminal);
+                    }
+                }
             }
 
-            // Global terminal hotkeys have no open item GUI from which to obtain an exact slot.
+            // hotkeys and the gui of another terminal have no open ultra terminal to take the slot from
             return Util.getUltraWirelessTerm(player);
         }
     }

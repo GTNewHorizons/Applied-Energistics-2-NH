@@ -1,6 +1,5 @@
 package com.glodblock.github.common.item;
 
-import static com.glodblock.github.common.item.ItemWirelessUltraTerminal.MODE;
 import static com.glodblock.github.loader.recipe.WirelessTerminalEnergyRecipe.getEnergyCard;
 import static com.glodblock.github.loader.recipe.WirelessTerminalQuantumBridgeRecipe.getQuantumBridgeCard;
 import static com.glodblock.github.util.Util.DimensionalCoordSide.hasEnergyCard;
@@ -10,41 +9,31 @@ import java.util.List;
 
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
-import net.minecraftforge.common.util.ForgeDirection;
 
-import com.glodblock.github.inventory.InventoryHandler;
-import com.glodblock.github.inventory.gui.GuiType;
+import org.jspecify.annotations.Nullable;
+
 import com.glodblock.github.inventory.item.IItemInventory;
-import com.glodblock.github.util.BlockPos;
 import com.glodblock.github.util.NameConst;
-import com.glodblock.github.util.UltraTerminalModes;
+import com.glodblock.github.util.Util;
 
 import appeng.api.AEApi;
+import appeng.api.features.IUltraTerminalType;
 import appeng.api.features.IWirelessTermHandler;
 import appeng.api.implementations.guiobjects.IGuiItem;
 import appeng.api.implementations.guiobjects.IGuiItemObject;
-import appeng.core.sync.GuiBridge;
-import appeng.helpers.WirelessTerminalGuiObject;
+import appeng.core.localization.PlayerMessages;
 import appeng.items.tools.powered.ToolWirelessTerminal;
-import appeng.util.Platform;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-public class ItemBaseWirelessTerminal extends ToolWirelessTerminal implements IItemInventory, IGuiItem {
+public abstract class ItemBaseWirelessTerminal extends ToolWirelessTerminal implements IItemInventory, IGuiItem {
 
-    protected Object type;
     public static String infinityBoosterCard = "infinityBoosterCard";
     public static String infinityEnergyCard = "InfinityEnergyCard";
-
-    public ItemBaseWirelessTerminal(Object t) {
-        super();
-        this.type = t;
-    }
 
     @Override
     public ItemStack onItemRightClick(final ItemStack item, final World w, final EntityPlayer player) {
@@ -94,58 +83,80 @@ public class ItemBaseWirelessTerminal extends ToolWirelessTerminal implements II
         return new ItemStack(this, 1);
     }
 
-    @Override
-    public Object getInventory(ItemStack stack, World world, int x, int y, int z, EntityPlayer player) {
-        return null;
+    /**
+     * @return the terminal type this item opens, or null if it is not registered.
+     */
+    @Nullable
+    protected abstract IUltraTerminalType getTerminalType(ItemStack is);
+
+    /**
+     * @return the registered terminal type with the given id, or null if it is not registered.
+     */
+    @Nullable
+    protected static IUltraTerminalType findTerminalType(final String id) {
+        return AEApi.instance().registries().ultraTerminal().getById(id);
     }
 
-    public static UltraTerminalModes getMode(ItemStack is) {
-        Item item = is.getItem();
-        if (item instanceof ItemWirelessUltraTerminal) {
-            if (!is.hasTagCompound()) is.setTagCompound(new NBTTagCompound());
-            return UltraTerminalModes.VALUES[is.getTagCompound().getInteger(MODE)];
-        } else if (item instanceof ItemWirelessPatternTerminal) {
-            return UltraTerminalModes.PATTERN;
-        } else if (item instanceof ItemWirelessInterfaceTerminal) {
-            return UltraTerminalModes.INTERFACE;
-        } else if (item instanceof ItemWirelessLevelTerminal) {
-            return UltraTerminalModes.LEVEL;
-        } else {
-            return UltraTerminalModes.INTERFACE; // any wireless gui object will fit
+    /**
+     * @return true if this item may open the given terminal.
+     */
+    protected boolean canOpen(final ItemStack is, final IUltraTerminalType type) {
+        return true;
+    }
+
+    /**
+     * @param index registry index of the terminal to open, or {@link Integer#MIN_VALUE} for the selected terminal.
+     */
+    @Nullable
+    protected IUltraTerminalType getGuiType(final ItemStack is, final int index) {
+        final IUltraTerminalType indexed = AEApi.instance().registries().ultraTerminal().getByIndex(index);
+        if (indexed != null && canOpen(is, indexed)) {
+            return indexed;
         }
+        return getTerminalType(is);
     }
 
-    public static void setMode(ItemStack is, UltraTerminalModes utm) {
-        is.getTagCompound().setInteger(MODE, utm.ordinal());
+    @Override
+    public Object getInventory(final ItemStack stack, final World world, final int x, final int y, final int z,
+            final EntityPlayer player) {
+        return createItemInventory(stack, x, player, getTerminalType(stack));
+    }
+
+    /**
+     * Builds the item inventory host of the given terminal, exceptions are reported to the player instead of crashing
+     * the gui.
+     */
+    @Nullable
+    protected static Object createItemInventory(final ItemStack stack, final int slotIndex, final EntityPlayer player,
+            final @Nullable IUltraTerminalType type) {
+        if (type == null) {
+            return null;
+        }
+        try {
+            return type.createItemInventory(stack, slotIndex, Util.getWirelessGrid(stack), player);
+        } catch (final Exception e) {
+            player.addChatMessage(PlayerMessages.OutOfRange.toChat());
+            return null;
+        }
     }
 
     @Override
     public void openGui(final ItemStack is, final World w, final EntityPlayer player, final Object mode) {
-        final GuiBridge aeGui;
-        Item item = is.getItem();
-        if (item instanceof ItemWirelessPatternTerminal) {
-            aeGui = GuiBridge.GUI_PATTERN_TERMINAL;
-        } else if (item instanceof ItemWirelessInterfaceTerminal) {
-            aeGui = GuiBridge.GUI_INTERFACE_TERMINAL;
-        } else if (item instanceof ItemWirelessLevelTerminal) {
-            InventoryHandler.openGui(
-                    player,
-                    w,
-                    new BlockPos(player.inventory.currentItem, 0, 0),
-                    ForgeDirection.UNKNOWN,
-                    GuiType.WIRELESS_LEVEL_TERMINAL);
-            return;
-        } else {
-            aeGui = GuiBridge.GUI_INTERFACE_TERMINAL; // any wireless gui object will fit
+        final IUltraTerminalType type = getTerminalType(is);
+        if (type != null) {
+            type.openGui(player, is, player.inventory.currentItem);
         }
-        Platform.openGUI(player, null, null, aeGui);
     }
 
     @Override
-    public IGuiItemObject getGuiObject(ItemStack is, World world, EntityPlayer p, int x, int y, int z) {
+    public IGuiItemObject getGuiObject(final ItemStack is, final World world, final EntityPlayer p, final int x,
+            final int y, final int z) {
         final IWirelessTermHandler wh = AEApi.instance().registries().wireless().getWirelessTerminalHandler(is);
-        if (wh == null) return null;
-        return new WirelessTerminalGuiObject(wh, is, p, world, x, y, z);
+        if (wh == null) {
+            return null;
+        }
+        final IUltraTerminalType type = getGuiType(is, y);
+        return type == null ? null : type.createGuiObject(wh, is, p, world, x, y, z);
     }
 
     @Override

@@ -2,7 +2,6 @@ package net.p455w0rd.wirelesscraftingterminal.common.utils;
 
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.p455w0rd.wirelesscraftingterminal.api.IWirelessCraftingTerminalItem;
 import net.p455w0rd.wirelesscraftingterminal.items.ItemMagnet;
@@ -28,27 +27,63 @@ public class RandomUtils {
         return PlayerInventoryUtil.findWirelessTerminal(playerInv.player, RandomUtils::isWirelessCraftingTerminal);
     }
 
-    public static boolean isWirelessCraftingTerminal(@Nullable ItemStack is) {
-        return is != null && is.getItem() instanceof IWirelessCraftingTerminalItem;
+    public static @Nullable IntObjectPair<ItemStack> getWirelessTermWithMagnet(InventoryPlayer playerInv) {
+        return PlayerInventoryUtil.findWirelessTerminal(playerInv.player, RandomUtils::hasInstalledMagnet);
     }
 
-    public static ItemStack getMagnet(InventoryPlayer playerInv) {
+    public static boolean isWirelessCraftingTerminal(@Nullable ItemStack is) {
+        return is != null && is.getItem() instanceof IWirelessCraftingTerminalItem terminal
+                && terminal.isWirelessCraftingEnabled(is);
+    }
+
+    /**
+     * @return the magnet card installed in the given terminal, or null if there is none
+     */
+    public static @Nullable ItemStack getInstalledMagnet(@Nullable ItemStack terminal) {
+        if (!RandomUtils.isWirelessCraftingTerminal(terminal) || !terminal.hasTagCompound()) {
+            return null;
+        }
+        final NBTTagList tagList = terminal.getTagCompound().getTagList("MagnetSlot", 10);
+        final ItemStack magnetItem = ItemStack.loadItemStackFromNBT(tagList.getCompoundTagAt(0));
+        return magnetItem != null && magnetItem.getItem() instanceof ItemMagnet ? magnetItem : null;
+    }
+
+    /**
+     * @return true if the given terminal has a magnet card installed
+     */
+    public static boolean hasInstalledMagnet(@Nullable ItemStack terminal) {
+        return getInstalledMagnet(terminal) != null;
+    }
+
+    /**
+     * Writes the mode (item damage) to the magnet card installed in the given terminal.
+     *
+     * @return true if a magnet card is installed and has been updated
+     */
+    public static boolean setInstalledMagnetMode(@Nullable ItemStack terminal, final int mode) {
+        if (!hasInstalledMagnet(terminal)) {
+            return false;
+        }
+        terminal.getTagCompound().getTagList("MagnetSlot", 10).getCompoundTagAt(0).setShort("Damage", (short) mode);
+        return true;
+    }
+
+    public static @Nullable ItemStack getMagnet(@Nullable InventoryPlayer playerInv) {
         // Is player holding a Magnet Card?
-        if (playerInv.player != null && playerInv.player.getHeldItem() != null
-                && playerInv.player.getHeldItem().getItem() instanceof ItemMagnet) {
-            return playerInv.player.getHeldItem();
+        if (playerInv == null || playerInv.player == null) {
+            return null;
+        }
+        final ItemStack held = playerInv.player.getHeldItem();
+        if (held != null && held.getItem() instanceof ItemMagnet) {
+            return held;
         }
         // if not true, try to return first magnet card from first
         // wireless term that has a MagnetCard installed
-        ItemStack wirelessTerm = getWirelessTerm(playerInv);
-        if (wirelessTerm != null && wirelessTerm.getItem() instanceof IWirelessCraftingTerminalItem) {
-            NBTTagCompound nbtTC = wirelessTerm.getTagCompound();
-            if (nbtTC.hasKey("MagnetSlot")) {
-                NBTTagList magnetSlot = nbtTC.getTagList("MagnetSlot", 10);
-                ItemStack magnetItem = ItemStack.loadItemStackFromNBT(magnetSlot.getCompoundTagAt(0));
-                if (magnetItem != null && magnetItem.getItem() instanceof ItemMagnet) {
-                    return magnetItem;
-                }
+        final IntObjectPair<ItemStack> terminal = getWirelessTermWithMagnet(playerInv);
+        if (terminal != null) {
+            final ItemStack magnetItem = getInstalledMagnet(terminal.second());
+            if (magnetItem != null) {
+                return magnetItem;
             }
         }
         // No wireless crafting terminal with Magnet Card installed,
@@ -77,18 +112,6 @@ public class RandomUtils {
                 if (magnetItem.getTagCompound().hasKey("Initialized")) {
                     return magnetItem.getTagCompound().getBoolean("Initialized");
                 }
-            }
-        }
-        return false;
-    }
-
-    public static boolean isMagnetInstalled(InventoryPlayer ip) {
-        NBTTagCompound magnetNBTForm = RandomUtils.getWirelessTerm(ip).getTagCompound().getTagList("MagnetSlot", 10)
-                .getCompoundTagAt(0);
-        if (magnetNBTForm != null) {
-            ItemStack magnetItem = ItemStack.loadItemStackFromNBT(magnetNBTForm);
-            if (magnetItem != null && magnetItem.getItem() instanceof ItemMagnet) {
-                return true;
             }
         }
         return false;

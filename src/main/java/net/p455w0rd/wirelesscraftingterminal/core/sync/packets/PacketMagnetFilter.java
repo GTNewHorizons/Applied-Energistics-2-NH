@@ -6,7 +6,6 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.p455w0rd.wirelesscraftingterminal.common.utils.RandomUtils;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.WCTPacket;
 import net.p455w0rd.wirelesscraftingterminal.core.sync.network.INetworkInfo;
-import net.p455w0rd.wirelesscraftingterminal.items.ItemMagnet;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -38,29 +37,27 @@ public class PacketMagnetFilter extends WCTPacket {
 
     @Override
     public void serverPacketData(final INetworkInfo manager, final WCTPacket packet, final EntityPlayer player) {
-        ItemStack magnetItem = RandomUtils.getMagnet(player.inventory);
+        final ItemStack magnetItem = RandomUtils.getMagnet(player.inventory);
 
-        if (!(magnetItem.getItem() instanceof ItemMagnet)) {
-            return;
-        }
         if (magnetItem != null) {
             if (!magnetItem.hasTagCompound()) {
                 magnetItem.setTagCompound(new NBTTagCompound());
             }
+            final NBTTagCompound tag = magnetItem.getTagCompound();
             if (this.whichMode == 0) {
-                magnetItem.getTagCompound().setBoolean("Initialized", this.modeValue);
+                tag.setBoolean("Initialized", this.modeValue);
             }
-            if (this.whichMode == 1) {
-                magnetItem.getTagCompound().setBoolean("Whitelisting", this.modeValue);
-            } else if (this.whichMode == 2) {
-                magnetItem.getTagCompound().setBoolean("IgnoreNBT", this.modeValue);
-            } else if (this.whichMode == 3) {
-                magnetItem.getTagCompound().setBoolean("IgnoreMeta", this.modeValue);
-            } else if (this.whichMode == 4) {
-                magnetItem.getTagCompound().setBoolean("UseOreDict", this.modeValue);
-            } else {
+            final String key = switch (this.whichMode) {
+                case 1 -> "Whitelisting";
+                case 2 -> "IgnoreNBT";
+                case 3 -> "IgnoreMeta";
+                case 4 -> "UseOreDict";
+                default -> null;
+            };
+            if (key == null) {
                 return;
             }
+            tag.setBoolean(key, this.modeValue);
         }
     }
 }
