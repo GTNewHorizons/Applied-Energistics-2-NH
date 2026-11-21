@@ -8,6 +8,7 @@ import thaumcraft.api.ThaumcraftApi;
 import thaumcraft.api.aspects.Aspect;
 import thaumcraft.api.aspects.AspectList;
 import thaumcraft.api.research.ResearchPage;
+import thaumcraft.common.config.ConfigBlocks;
 import thaumicenergistics.api.IThEConfig;
 import thaumicenergistics.api.ThEApi;
 import thaumicenergistics.common.integration.tc.VisCraftingHelper;
@@ -113,8 +114,10 @@ public class FeatureAutocrafting_Arcane extends ThEThaumcraftResearchFeature {
         assemblerAspects.add(Aspect.CRYSTAL, 8);
 
         // Set Assembler recipe
-        ItemStack[] assemblerRecipe = { CraftingScepter, cdi.AirShard, cdi.EarthShard, cdi.WaterShard,
-                cdi.BallanceShard, cdi.OrderShard, cdi.EntropyShard, cdi.FireShard };
+        ItemStack[] assemblerRecipe = { CraftingScepter, new ItemStack(ConfigBlocks.blockCrystal, 1, 0),
+                new ItemStack(ConfigBlocks.blockCrystal, 1, 3), new ItemStack(ConfigBlocks.blockCrystal, 1, 2),
+                new ItemStack(ConfigBlocks.blockCrystal, 1, 6), new ItemStack(ConfigBlocks.blockCrystal, 1, 4),
+                new ItemStack(ConfigBlocks.blockCrystal, 1, 5), new ItemStack(ConfigBlocks.blockCrystal, 1, 1) };
 
         // Register Assembler
         RecipeRegistry.BLOCK_ARCANE_ASSEMBLER = ThaumcraftApi.addInfusionCraftingRecipe(
