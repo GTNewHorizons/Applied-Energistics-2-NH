@@ -203,25 +203,8 @@ public class ContainerOptimizePatterns extends ContainerSubGui {
         return h.getActionableNode().getGrid();
     }
 
-    private void fletchRepeaters(final IGrid grid, final Set<IGrid> gridSet) {
-        for (IGridNode node : grid.getMachines(PartPatternRepeater.class)) {
-            final PartPatternRepeater rep = (PartPatternRepeater) node.getMachine();
-            if (!rep.isProvider() || rep.getPair() == null || !node.isActive() || rep.getPair().isProvider()) continue;
-            final IGridNode n = rep.getPair().getGridNode();
-            if (n == null || !n.isActive()) continue;
-            final IGrid currentGrid = n.getGrid();
-            if (!gridSet.contains(currentGrid)) {
-                gridSet.add(currentGrid);
-                this.fletchRepeaters(currentGrid, gridSet);
-            }
-        }
-    }
-
     private Set<IGrid> collectReachableGrids(final IGrid grid) {
-        final Set<IGrid> gridSet = new HashSet<>();
-        gridSet.add(grid);
-        this.fletchRepeaters(grid, gridSet);
-        return gridSet;
+        return PartPatternRepeater.collectReachableGrids(grid);
     }
 
     public void switchToOriginalGUI() {

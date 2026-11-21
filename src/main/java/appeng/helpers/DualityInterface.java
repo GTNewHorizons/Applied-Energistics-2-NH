@@ -66,7 +66,9 @@ import appeng.api.config.LockCraftingMode;
 import appeng.api.config.Settings;
 import appeng.api.config.Upgrades;
 import appeng.api.config.YesNo;
+import appeng.api.crafting.CraftingMachineTarget;
 import appeng.api.crafting.ICraftingIconProvider;
+import appeng.api.crafting.IPatternTarget;
 import appeng.api.implementations.ICraftingPatternItem;
 import appeng.api.implementations.IUpgradeableHost;
 import appeng.api.implementations.tiles.ICraftingMachine;
@@ -1666,6 +1668,38 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
                     }
                     return icon;
                 }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the target of the first adjacent machine that describes itself, or null if none does.
+     */
+    @Nullable
+    public IPatternTarget getPatternTarget() {
+        final TileEntity hostTile = this.iHost.getTileEntity();
+        final World hostWorld = hostTile.getWorldObj();
+
+        for (final ForgeDirection direction : this.iHost.getTargets()) {
+            final TileEntity directedTile = Platform.getLoadedTileEntity(
+                    hostWorld,
+                    hostTile.xCoord + direction.offsetX,
+                    hostTile.yCoord + direction.offsetY,
+                    hostTile.zCoord + direction.offsetZ);
+            if (directedTile == null) {
+                continue;
+            }
+
+            final IPatternTarget target = getCapability(directedTile, IPatternTarget.class);
+            if (target != null) {
+                return target;
+            }
+
+            // acceptsPlans() only says whether the machine is idle right now, so the type alone decides.
+            if (directedTile instanceof ICraftingMachine) {
+                return CraftingMachineTarget.INSTANCE;
             }
         }
 

@@ -12,6 +12,7 @@ package appeng.client.gui.implementations;
 
 import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 
+import java.util.Collections;
 import java.util.List;
 
 import net.minecraft.client.gui.GuiButton;
@@ -38,20 +39,27 @@ import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
+import appeng.api.util.DimensionalCoord;
 import appeng.client.gui.slots.VirtualMEPatternSlot;
 import appeng.client.gui.slots.VirtualMEPhantomSlot;
 import appeng.client.gui.slots.VirtualMESlot;
 import appeng.client.gui.widgets.GuiImgButton;
+import appeng.client.gui.widgets.GuiPatternTargetPanel;
 import appeng.client.gui.widgets.GuiTabButton;
+import appeng.client.render.highlighter.BlockPosHighlighter;
 import appeng.container.implementations.ContainerPatternTerm;
 import appeng.container.slot.AppEngSlot;
 import appeng.container.slot.SlotRestrictedInput;
 import appeng.core.localization.ButtonToolTips;
 import appeng.core.localization.ColorUtils;
 import appeng.core.localization.GuiText;
+import appeng.core.localization.PlayerMessages;
 import appeng.core.sync.GuiBridge;
 import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketSwitchGuis;
+import appeng.integration.IntegrationRegistry;
+import appeng.integration.IntegrationType;
+import appeng.integration.modules.NEIHelpers.NEIWidgetBounds;
 
 public class GuiPatternTerm extends GuiMEMonitorable {
 
@@ -80,6 +88,32 @@ public class GuiPatternTerm extends GuiMEMonitorable {
     private boolean craftingMode;
     @NonNull
     private IAEItemStack blankPatternView = IPatternTerminal.createBlankPattern().setStackSize(0);
+    private final GuiPatternTargetPanel targetPanel = new GuiPatternTargetPanel(
+            this,
+            new GuiPatternTargetPanel.Actions() {
+
+                @Override
+                public void sendToTarget(int index) {
+                    GuiPatternTerm.this.container.sendToTargetAction.send(index);
+                }
+
+                @Override
+                public void extractConflict(int index) {
+                    GuiPatternTerm.this.container.extractConflictAction.send(index);
+                }
+
+                @Override
+                public void highlight(int x, int y, int z, int dim, String name) {
+                    BlockPosHighlighter.highlightBlocks(
+                            GuiPatternTerm.this.mc.thePlayer,
+                            Collections.singletonList(new DimensionalCoord(x, y, z, dim)),
+                            name,
+                            PlayerMessages.MachineHighlighted.getUnlocalized(),
+                            PlayerMessages.MachineInOtherDim.getUnlocalized());
+                    // Same as the Interface Terminal: the outline is drawn in the world, behind the closed GUI.
+                    GuiPatternTerm.this.closeGui();
+                }
+            });
 
     public GuiPatternTerm(final InventoryPlayer inventoryPlayer, final ITerminalHost te,
             final ContainerPatternTerm containerPatternTerm) {
@@ -95,6 +129,10 @@ public class GuiPatternTerm extends GuiMEMonitorable {
 
     @Override
     protected void mouseClicked(final int xCoord, final int yCoord, final int btn) {
+        // The panel lies outside the GUI, where a click would otherwise drop the held item.
+        if (this.targetPanel.mouseClicked(xCoord - this.guiLeft, yCoord - this.guiTop, btn)) {
+            return;
+        }
 
         if (btn == 2 && doubleBtn.mousePressed(this.mc, xCoord, yCoord)) { //
             NetworkHandler.instance.sendToServer(new PacketSwitchGuis(GuiBridge.GUI_PATTERN_MULTI));
@@ -299,6 +337,69 @@ public class GuiPatternTerm extends GuiMEMonitorable {
         super.drawFG(offsetX, offsetY, mouseX, mouseY);
 
         drawTitle();
+        this.drawTargetPanel(mouseX - offsetX, mouseY - offsetY);
+    }
+
+    private void drawTargetPanel(final int mouseX, final int mouseY) {
+        this.targetPanel.setList(this.container.getClientTargets());
+        if (!this.targetPanel.isVisible()) {
+            return;
+        }
+        this.targetPanel.setPatternIcon(this.container.getEncodedPattern());
+        this.targetPanel.layout(
+                this.guiLeft,
+                this.guiTop,
+                this.ySize,
+                this.height,
+                this.leftButtonsBottom(),
+                IntegrationRegistry.INSTANCE.isEnabled(IntegrationType.NEI) ? NEIWidgetBounds.controls()
+                        : Collections.emptyList());
+        this.targetPanel.draw(mouseX, mouseY);
+        final List<String> tooltip = this.targetPanel.getTooltip(mouseX, mouseY);
+        if (tooltip != null) {
+            this.drawHoveringText(tooltip, mouseX, mouseY, this.fontRendererObj);
+        }
+    }
+
+    // Addons add their own buttons to the left column, so its height is read from the buttons themselves.
+    private int leftButtonsBottom() {
+        int bottom = 0;
+        for (final GuiButton button : this.buttonList) {
+            if (button.visible && button.xPosition + button.width <= this.guiLeft) {
+                bottom = Math.max(bottom, button.yPosition + button.height - this.guiTop);
+            }
+        }
+        return bottom;
+    }
+
+    @Override
+    protected void mouseClickMove(final int x, final int y, final int c, final long d) {
+        if (this.targetPanel.mouseDragged(y - this.guiTop)) {
+            return;
+        }
+        super.mouseClickMove(x, y, c, d);
+    }
+
+    @Override
+    protected void mouseMovedOrUp(final int mouseX, final int mouseY, final int state) {
+        if (state >= 0) {
+            this.targetPanel.mouseReleased();
+        }
+        super.mouseMovedOrUp(mouseX, mouseY, state);
+    }
+
+    @Override
+    protected boolean mouseWheelEvent(final int x, final int y, final int wheel) {
+        if (this.targetPanel.mouseWheel(x - this.guiLeft, y - this.guiTop, wheel)) {
+            return true;
+        }
+        return super.mouseWheelEvent(x, y, wheel);
+    }
+
+    @Override
+    public boolean hideItemPanelSlot(final int x, final int y, final int w, final int h) {
+        return this.targetPanel.intersects(x - this.guiLeft, y - this.guiTop, w, h)
+                || super.hideItemPanelSlot(x, y, w, h);
     }
 
     protected void drawTitle() {

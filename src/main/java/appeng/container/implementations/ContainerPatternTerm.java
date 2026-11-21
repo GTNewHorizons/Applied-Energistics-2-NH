@@ -30,6 +30,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 import appeng.api.AEApi;
 import appeng.api.config.Actionable;
+import appeng.api.config.SecurityPermissions;
 import appeng.api.networking.security.MachineSource;
 import appeng.api.parts.IPatternTerminal;
 import appeng.api.storage.IMEMonitor;
@@ -53,6 +54,7 @@ import appeng.container.sync.handlers.AEStackInventorySyncHandler;
 import appeng.container.sync.handlers.BooleanSyncHandler;
 import appeng.core.sync.GuiBridge;
 import appeng.core.sync.packets.PacketPatternSlot;
+import appeng.crafting.target.PatternTargetList;
 import appeng.helpers.IContainerCraftingPacket;
 import appeng.items.contents.WirelessPatternTerminalGuiObject;
 import appeng.items.storage.ItemViewCell;
@@ -94,6 +96,11 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
     public final ActionHandler<Boolean> encodeAndMoveToInventoryAction;
     public final ActionHandler<Void> clearAction;
     public final ActionHandler<Integer> doubleAction;
+    public final ActionHandler<PatternTargetList> patternTargetsAction;
+    public final ActionHandler<Integer> sendToTargetAction;
+    public final ActionHandler<Integer> extractConflictAction;
+
+    private final PatternTargetController targets = new PatternTargetController(this);
 
     public ContainerPatternTerm(final InventoryPlayer ip, final ITerminalHost monitorable) {
         this(ip, monitorable, true);
@@ -199,6 +206,12 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
                 .onServerAction(this::encodeAndMoveToInventory);
         this.clearAction = sync.actionC2S("clear").onServerAction(this::clear);
         this.doubleAction = sync.actionC2S("double", StreamCodecs.intValue()).onServerAction(this::doubleStacks);
+        this.patternTargetsAction = sync.actionS2C("patternTargets", PatternTargetList.CODEC)
+                .onClientAction(this.targets::setClientTargets);
+        this.sendToTargetAction = sync.actionC2S("sendToTarget", StreamCodecs.intValue())
+                .onServerAction(this.targets::sendToTarget);
+        this.extractConflictAction = sync.actionC2S("extractConflict", StreamCodecs.intValue())
+                .onServerAction(this.targets::extractConflict);
 
         this.updateOrderOfOutputSlots();
     }
@@ -422,9 +435,39 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
                 }
                 this.isFirstUpdate = false;
             }
+
+            this.targets.update();
         }
 
         super.detectAndSendChanges();
+    }
+
+    /**
+     * Returns the providers the server last sent for the pattern in the output slot; client side only.
+     */
+    public PatternTargetList getClientTargets() {
+        return this.targets.getClientTargets();
+    }
+
+    /**
+     * Returns the encoded pattern in the output slot, or null.
+     */
+    public ItemStack getEncodedPattern() {
+        return this.patternSlotOUT.getStack();
+    }
+
+    /**
+     * Removes one encoded pattern from the output slot after it went into a provider.
+     */
+    void consumeEncodedPattern() {
+        this.patternSlotOUT.decrStackSize(1);
+    }
+
+    /**
+     * Returns whether the player holds this permission on the terminal's grid while it has power.
+     */
+    boolean hasPermission(SecurityPermissions permission) {
+        return this.hasAccess(permission, true);
     }
 
     @Override
