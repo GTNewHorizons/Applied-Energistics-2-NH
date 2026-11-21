@@ -17,10 +17,17 @@ This project is a GTNH fork of Applied Energistics 2 for Minecraft 1.7.10
 The following addons are bundled into AE2NH and no longer need to be installed separately.
 
 * AE2FluidCraft-Rework
+* BetterP2P
 * Not Enough Energistics
 * Thaumic Energistics
   - Only loaded when Thaumcraft is installed. Without Thaumcraft, it is skipped and AE2NH works as if it were not bundled.
 * Wireless Crafting Terminal
+
+## Contribution
+
+For contributing guidelines, development setup, and code style, please refer to the [GTNH Development guide](https://wiki.gtnewhorizons.com/wiki/Development).
+Also, make sure you are familiar with the general [GTNH Contribution Guidelines](https://github.com/GTNewHorizons/.github/blob/master/CONTRIBUTING.md).
+If you are planning a major change, please discuss it with us first so your time is not wasted.
 
 ## License
 
@@ -69,11 +76,21 @@ Merged from [Wireless Crafting Terminal](https://github.com/p455w0rd/WirelessCra
 * (c) TheRealp455w0rd et al
 * [![License](https://img.shields.io/badge/License-LGPLv3-blue.svg?style=flat-square)](archive/original-wct-license-notice.txt)
 
-## Contribution
+### BetterP2P
 
-For contributing guidelines, development setup, and code style, please refer to the [GTNH Development guide](https://wiki.gtnewhorizons.com/wiki/Development).
-Also, make sure you are familiar with the general [GTNH Contribution Guidelines](https://github.com/GTNewHorizons/.github/blob/master/CONTRIBUTING.md).
-If you are planning a major change, please discuss it with us first so your time is not wasted.
+Merged from [BetterP2P](https://github.com/GTNewHorizons/BetterP2P), the 1.7.10 port of [BetterP2P](https://github.com/LasmGratel/BetterP2P) by Lasm Gratel.
+Relicensed from GPLv3 with the consent of its copyright holders, see [the relicensing notice](archive/betterp2p-relicense/README.txt).
+
+* Code
+  - (c) Lasm Gratel, GlodBlock et al
+  - [![License](https://img.shields.io/badge/License-LGPLv3-blue.svg?style=flat-square)](archive/betterp2p-relicense/README.txt)
+* Textures and other assets in `assets/betterp2p`
+  - (c) Lasm Gratel et al
+  - [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%203.0-yellow.svg?style=flat-square)](https://creativecommons.org/licenses/by-nc-sa/3.0/)
+* Block outline rendering based on [Cyclic](https://github.com/Lothrazar/Cyclic) by Lothrazar
+  - [![License](https://img.shields.io/badge/License-MIT-red.svg?style=flat-square)](archive/original-betterp2p-cyclic-license.txt)
+* Outline rendering based on [Not Enough Wands](https://github.com/romelo333/notenoughwands1.8.8) by romelo333
+  - [![License](https://img.shields.io/badge/License-MIT-red.svg?style=flat-square)](archive/original-betterp2p-notenoughwands-license.txt)
 
 ## Credits
 
