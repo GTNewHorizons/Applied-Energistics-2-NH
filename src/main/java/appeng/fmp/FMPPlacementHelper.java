@@ -65,9 +65,7 @@ public class FMPPlacementHelper implements IPartHost {
     }
 
     private CableBusPart getPart() {
-        final scala.collection.Iterator<TMultiPart> i = this.myMP.partList().iterator();
-        while (i.hasNext()) {
-            final TMultiPart p = i.next();
+        for (final TMultiPart p : this.myMP.jPartList()) {
             if (p instanceof CableBusPart) {
                 this.myPart = (CableBusPart) p;
             }
@@ -89,9 +87,7 @@ public class FMPPlacementHelper implements IPartHost {
 
     private void removePart() {
         if (this.myPart.isEmpty()) {
-            final scala.collection.Iterator<TMultiPart> i = this.myMP.partList().iterator();
-            while (i.hasNext()) {
-                final TMultiPart p = i.next();
+            for (final TMultiPart p : this.myMP.jPartList()) {
                 if (p == this.myPart) {
                     this.myMP = this.myMP.remPart(this.myPart);
                     break;

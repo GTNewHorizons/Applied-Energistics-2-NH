@@ -64,7 +64,6 @@ import codechicken.multipart.NormalOcclusionTest;
 import codechicken.multipart.NormallyOccludedPart;
 import codechicken.multipart.TMultiPart;
 import codechicken.multipart.TileMultipart;
-import codechicken.multipart.scalatraits.TIInventoryTile;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -564,8 +563,9 @@ public class CableBusPart extends JCuboidPart implements JNormalOcclusion, IMask
 
     @Override
     public void notifyNeighbors() {
-        if (this.tile() instanceof TIInventoryTile) {
-            ((TIInventoryTile) this.tile()).rebuildSlotMap();
+        final TileMultipart tile = this.tile();
+        if (tile != null) {
+            tile.refreshInventorySlots();
         }
 
         if (this.world() != null && this.world().blockExists(this.x(), this.y(), this.z())
