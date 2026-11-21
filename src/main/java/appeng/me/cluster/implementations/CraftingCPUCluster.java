@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -31,7 +30,6 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -1265,18 +1263,11 @@ public class CraftingCPUCluster implements IAECluster, ICraftingCPU {
         }
 
         try {
-            long missingCount = missingStack.getStackSize();
-            IChatComponent missingItem = missingStack.getChatComponent();
-            missingItem.getChatStyle().setColor(EnumChatFormatting.GOLD);
-
-            String missingCountText = EnumChatFormatting.RED
-                    + NumberFormat.getNumberInstance(Locale.getDefault()).format(missingCount)
-                    + EnumChatFormatting.RESET;
             playerSource.player.addChatMessage(
                     new ChatComponentTranslation(
                             PlayerMessages.CraftingItemsWentMissing.getUnlocalized(),
-                            missingCountText,
-                            missingItem));
+                            Platform.formatChatCount(missingStack.getStackSize()),
+                            Platform.formatChatStackName(missingStack)));
         } catch (Exception ex) {
             AELog.error(ex, "Could not notify player of crafting failure");
         }

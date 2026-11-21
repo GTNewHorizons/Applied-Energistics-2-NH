@@ -206,6 +206,7 @@ public enum GuiText implements Localization {
     Missing,
     CraftingStepLimitExceeded,
     CraftingSizeLimitExceeded,
+    CraftingIngredientsKeptChanging,
     NoCraftingTreeReceived,
     RequestedItem,
     SimulationIncomplete,

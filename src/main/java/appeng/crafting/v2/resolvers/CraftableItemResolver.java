@@ -768,6 +768,9 @@ public class CraftableItemResolver implements CraftingRequestResolver {
         // the simulate missing action is causing the crafting calc to fail prematurely without exhausting every branch
         // use fallback only if there are no other path in higher up branches
         if (request.parentRequest == null) return true;
+        // a request reopened in a finished plan has no other paths left, without the fallback the request itself
+        // would show up as missing instead of the ingredients its pattern is missing
+        if (context.isReopeningRequest()) return true;
         boolean found = false;
         RequestInProcessing liveRequestCurrent = context.getLiveRequest(request);
         if (liveRequestCurrent != null && !liveRequestCurrent.isRemainingResolversAllSimulated()) return false;
