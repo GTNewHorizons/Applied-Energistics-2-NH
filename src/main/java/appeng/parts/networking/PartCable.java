@@ -46,6 +46,7 @@ import appeng.client.render.BlockRenderInfo;
 import appeng.client.texture.CableBusTextures;
 import appeng.client.texture.FlippableIcon;
 import appeng.client.texture.TextureUtils;
+import appeng.core.AEConfig;
 import appeng.items.parts.ItemMultiPart;
 import appeng.me.GridAccessException;
 import appeng.parts.AEBasePart;
@@ -372,9 +373,11 @@ public class PartCable extends AEBasePart implements IPartCable {
                             final int usedChannels = gc.getUsedChannels();
                             if (this.getProxy().getNode().hasFlag(GridFlags.DENSE_CAPACITY)
                                     && gc.getOtherSide(this.getProxy().getNode()).hasFlag(GridFlags.DENSE_CAPACITY)) {
-                                sideOut |= (Math.min(usedChannels, 32) / 4) << (4 * thisSide.ordinal());
+                                sideOut |= getChannelLights(usedChannels, AEConfig.instance.denseCableChannelCapacity)
+                                        << (4 * thisSide.ordinal());
                             } else {
-                                sideOut |= Math.min(usedChannels, 8) << (4 * thisSide.ordinal());
+                                sideOut |= getChannelLights(usedChannels, AEConfig.instance.normalCableChannelCapacity)
+                                        << (4 * thisSide.ordinal());
                             }
                         }
                     }
@@ -390,9 +393,11 @@ public class PartCable extends AEBasePart implements IPartCable {
 
                     final int usedChannels = gc.getUsedChannels();
                     if (isTier2a && isTier2b) {
-                        sideOut |= (Math.min(usedChannels, 32) / 4) << (4 * side.ordinal());
+                        sideOut |= getChannelLights(usedChannels, AEConfig.instance.denseCableChannelCapacity)
+                                << (4 * side.ordinal());
                     } else {
-                        sideOut |= Math.min(usedChannels, 8) << (4 * side.ordinal());
+                        sideOut |= getChannelLights(usedChannels, AEConfig.instance.normalCableChannelCapacity)
+                                << (4 * side.ordinal());
                     }
                     cs |= (1 << side.ordinal());
                 }
@@ -409,6 +414,10 @@ public class PartCable extends AEBasePart implements IPartCable {
 
         data.writeByte((byte) cs);
         data.writeInt(sideOut);
+    }
+
+    private static int getChannelLights(final int usedChannels, final int capacity) {
+        return Math.min(usedChannels, capacity) * 8 / capacity;
     }
 
     @Override
