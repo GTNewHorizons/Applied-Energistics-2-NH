@@ -1,79 +1,64 @@
-package com.projecturanus.betterp2p.network.packet
+package com.projecturanus.betterp2p.network.packet;
 
-import net.minecraft.tileentity.TileEntity
-import net.minecraft.world.World
-import net.minecraftforge.common.DimensionManager
+import net.minecraft.entity.player.EntityPlayerMP;
 
-import com.projecturanus.betterp2p.network.ModNetwork
-import com.projecturanus.betterp2p.network.data.P2PLocation
-import com.projecturanus.betterp2p.network.data.readP2PLocation
-import com.projecturanus.betterp2p.network.data.writeP2PLocation
+import org.jspecify.annotations.Nullable;
 
-import appeng.api.networking.IGridHost
-import appeng.api.parts.IPartHost
-import appeng.parts.p2p.PartP2PTunnel
-import com.projecturanus.betterp2p.network.data.toLoc
-import cpw.mods.fml.common.network.simpleimpl.IMessage
-import cpw.mods.fml.common.network.simpleimpl.IMessageHandler
-import cpw.mods.fml.common.network.simpleimpl.MessageContext
-import io.netty.buffer.ByteBuf
+import com.projecturanus.betterp2p.network.ModNetwork;
+import com.projecturanus.betterp2p.network.data.GridServerCache;
+import com.projecturanus.betterp2p.network.data.P2PLocation;
 
-/**
- * Client->Server packet for rename operation
- */
-class C2SRenameP2P(var p2p: P2PLocation? = null, var name: String = ""): IMessage {
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import io.netty.buffer.ByteBuf;
 
-    override fun fromBytes(buf: ByteBuf) {
-        p2p = readP2PLocation(buf)
-        val length = buf.readInt()
-        val nameB = StringBuilder()
-        for (i in 0 until length) {
-            nameB.append(buf.readChar())
-        }
-        name = nameB.toString()
+public class C2SRenameP2P implements IMessage {
+
+    private @Nullable P2PLocation p2p;
+    private String name = "";
+
+    public C2SRenameP2P() {}
+
+    public C2SRenameP2P(P2PLocation p2p, String name) {
+        this.p2p = p2p;
+        this.name = name;
     }
 
-    override fun toBytes(buf: ByteBuf) {
-        writeP2PLocation(buf, p2p!!)
-        buf.writeInt(name.length)
-        for (c in name) {
-            buf.writeChar(c.code)
+    @Override
+    public void fromBytes(ByteBuf buf) {
+        p2p = P2PLocation.read(buf);
+        int length = buf.readInt();
+        StringBuilder nameBuilder = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            nameBuilder.append(buf.readChar());
+        }
+        name = nameBuilder.toString();
+    }
+
+    @Override
+    public void toBytes(ByteBuf buf) {
+        p2p.write(buf);
+        buf.writeInt(name.length());
+        for (int i = 0; i < name.length(); i++) {
+            buf.writeChar(name.charAt(i));
         }
     }
-}
 
-/**
- * Handler for renaming p2p tunnels.
- */
-class ServerRenameP2PTunnel : IMessageHandler<C2SRenameP2P, IMessage?> {
-    override fun onMessage(message: C2SRenameP2P, ctx: MessageContext): IMessage? {
-        if (message.p2p == null) {
-            return null
-        }
+    public static class Handler implements IMessageHandler<C2SRenameP2P, IMessage> {
 
-        val world: World = DimensionManager.getWorld(message.p2p!!.dim)
-        val te: TileEntity = world.getTileEntity(message.p2p!!.x, message.p2p!!.y, message.p2p!!.z)
-        val state = ModNetwork.playerState[ctx.serverHandler.playerEntity.uniqueID] ?: return null
-        val facing = message.p2p!!.facing
-        if (te is IGridHost && te.getGridNode(facing) != null) {
-            val partTunnel = (te as IPartHost).getPart(facing)
-
-            if (partTunnel is PartP2PTunnel<*>) {
-                partTunnel.customName = message.name
-                val input: PartP2PTunnel<*> = if (partTunnel.isOutput) {
-                    partTunnel.input
-                } else {
-                    partTunnel
-                }
-                // Mark all dirty.
-                input.outputs.forEach {
-                    state.gridCache.markDirty(it.toLoc(), it)
-                }
-                state.gridCache.markDirty(input.toLoc(), input)
-
-                ModNetwork.requestP2PUpdate(ctx.serverHandler.playerEntity)
+        @Override
+        public @Nullable IMessage onMessage(C2SRenameP2P message, MessageContext ctx) {
+            P2PLocation loc = message.p2p;
+            if (loc == null) {
+                return null;
             }
+            EntityPlayerMP player = ctx.getServerHandler().playerEntity;
+            GridServerCache cache = ModNetwork.getGridCache(player);
+            if (cache != null && cache.renameP2P(loc, message.name)) {
+                ModNetwork.requestP2PUpdate(player);
+            }
+            return null;
         }
-        return null
     }
 }

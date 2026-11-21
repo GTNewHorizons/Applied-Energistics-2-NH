@@ -96,8 +96,7 @@
         "logoFile":"",
         "screenshots":[],
         "dependencies":[
-         "appliedenergistics2",
-         "forgelin"
+         "appliedenergistics2"
         ]
     }
 ]

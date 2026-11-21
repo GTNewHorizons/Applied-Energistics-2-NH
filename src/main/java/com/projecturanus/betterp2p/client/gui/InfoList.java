@@ -1,153 +1,153 @@
-package com.projecturanus.betterp2p.client.gui
+package com.projecturanus.betterp2p.client.gui;
 
-import com.projecturanus.betterp2p.client.gui.widget.WidgetScrollBar
-import com.projecturanus.betterp2p.network.data.P2PLocation
-import kotlin.reflect.KProperty0
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.function.Supplier;
 
-/**
- * InfoList
- * Dedicated list to hold "InfoWrappers". Internally, stores
- * them in a HashMap. This is an opaque type, and access to
- * it is restricted. External access is instead directed to
- * a sorted view and a filtered view of the internal map.
- */
-class InfoList (initList: Collection<InfoWrapper>,
-                private val search: KProperty0<String>) {
+import org.jspecify.annotations.Nullable;
 
-    /**
-     * The master map, acts as the source of truth for all items
-     * in this list.
-     */
-    private val masterMap: HashMap<P2PLocation, InfoWrapper> = hashMapOf()
+import com.projecturanus.betterp2p.client.gui.InfoFilter.Filter;
+import com.projecturanus.betterp2p.client.gui.widget.WidgetScrollBar;
+import com.projecturanus.betterp2p.network.data.P2PLocation;
 
-    /**
-     * Sorted view of the master map. This is resorted whenever
-     * the map is updated.
-     */
-    val sorted: MutableList<InfoWrapper> = mutableListOf()
+public class InfoList {
 
-    /**
-     * Filtered view of the sorted view (not the master map)
-     */
-    var filtered: List<InfoWrapper> = listOf()
+    private final Map<P2PLocation, InfoWrapper> masterMap = new HashMap<>();
+    private final List<InfoWrapper> sorted = new ArrayList<>();
+    private List<InfoWrapper> filtered = Collections.emptyList();
+    private final InfoFilter filter = new InfoFilter();
+    private final Supplier<String> search;
+    private @Nullable P2PLocation selectedEntry;
 
-    private val filter: InfoFilter = InfoFilter()
-
-    /**
-     * Binding to the search string in the text box
-     */
-    private val searchStr: String
-        get() = search.get()
-
-    val selectedInfo: InfoWrapper?
-        get() {
-            return if (selectedEntry == null) {
-                null
-            } else {
-                masterMap[selectedEntry]
-            }
-       }
-
-    var selectedEntry: P2PLocation? = null
-
-    val size: Int
-        get() = masterMap.size
-
-    init {
-        initList.forEach { masterMap[it.loc] = it }
-    }
-
-    fun resort() {
-        sorted.sortBy {
-            if (it.loc == selectedEntry) {
-                -2 // Put the selected p2p at the front
-                // Non-Zero frequencies
-            } else if (it.frequency != 0L && it.frequency == selectedInfo?.frequency && !it.output) {
-                -3 // Put input at the beginning
-            } else if (it.frequency != 0.toLong() && it.frequency == selectedInfo?.frequency) {
-                -1 // Put same frequency at the front
-            } else {
-                // Frequencies from lowest to highest
-                it.frequency + Short.MAX_VALUE
-            }
+    public InfoList(Collection<InfoWrapper> initList, Supplier<String> search) {
+        this.search = search;
+        for (InfoWrapper info : initList) {
+            masterMap.put(info.loc, info);
         }
     }
 
-    /**
-     * Updates the filtered list.
-     */
-    fun refilter() {
-        filter.updateFilter(searchStr.lowercase())
-        filtered = sorted.filter {
-            if (it.loc == selectedEntry) {
-                return@filter true
+    public List<InfoWrapper> getSorted() {
+        return sorted;
+    }
+
+    public List<InfoWrapper> getFiltered() {
+        return filtered;
+    }
+
+    public @Nullable P2PLocation getSelectedEntry() {
+        return selectedEntry;
+    }
+
+    public @Nullable InfoWrapper getSelectedInfo() {
+        return selectedEntry == null ? null : masterMap.get(selectedEntry);
+    }
+
+    public int size() {
+        return masterMap.size();
+    }
+
+    private void resort() {
+        InfoWrapper selected = getSelectedInfo();
+        sorted.sort(Comparator.comparingLong(info -> {
+            if (info.loc.equals(selectedEntry)) {
+                return -2;
             }
-            for ((f, strs) in filter.activeFilters) {
-                if(!f.filter(it, strs?.toList())) {
-                    return@filter false
-                }
+            if (isSameFrequency(info, selected)) {
+                return info.output ? -1 : -3;
             }
-            true
-        }.sortedBy {
-            when {
-                it.loc == selectedEntry -> Long.MIN_VALUE + 1
-                it.frequency != 0L && it.frequency == selectedInfo?.frequency && !it.output -> Long.MIN_VALUE
-                // Put the same frequency to the front
-                it.frequency != 0.toLong() && it.frequency == selectedInfo?.frequency -> Long.MIN_VALUE + 2
-                filter.activeFilters.containsKey(Filter.NAME) -> {
-                    var hits = 0L
-                    var name = it.name
-                    for (f in filter.activeFilters[Filter.NAME]!!) {
-                        if (name.contains(f, true)) {
-                            hits += 1
-                            name = name.replaceFirst(f, "", true)
-                        }
-                    }
-                    -(hits * hits) + name.length
-                }
-                else -> it.frequency + Short.MAX_VALUE - (if (it.output) 0 else 1)
+            return info.getFrequency() + Short.MAX_VALUE;
+        }));
+    }
+
+    public void refilter() {
+        filter.updateFilter(search.get().toLowerCase(Locale.ROOT));
+        Map<Filter, @Nullable List<String>> activeFilters = filter.getActiveFilters();
+
+        List<InfoWrapper> result = new ArrayList<>();
+        for (InfoWrapper info : sorted) {
+            if (info.loc.equals(selectedEntry) || matchesAll(info, activeFilters)) {
+                result.add(info);
             }
         }
+
+        InfoWrapper selected = getSelectedInfo();
+        List<String> names = activeFilters.get(Filter.NAME);
+        result.sort(Comparator.comparingLong(info -> filteredSortKey(info, selected, names)));
+        filtered = result;
     }
 
-    /**
-     * Updates the sorted list and applies the filter again.
-     */
-    fun refresh() {
-        sorted.clear()
-        sorted.addAll(masterMap.values)
-        resort()
-        refilter()
+    private static boolean matchesAll(InfoWrapper info, Map<Filter, @Nullable List<String>> activeFilters) {
+        for (Map.Entry<Filter, @Nullable List<String>> entry : activeFilters.entrySet()) {
+            if (!entry.getKey().test(info, entry.getValue())) {
+                return false;
+            }
+        }
+        return true;
     }
 
-    /**
-     * Completely refresh the master list.
-     */
-    fun rebuild(updateList: Collection<InfoWrapper>, scrollbar: WidgetScrollBar, numEntries: Int) {
-        masterMap.clear()
-        updateList.forEach { masterMap[it.loc] = it }
-        sorted.clear()
-        sorted.addAll(masterMap.values)
-        resort()
-        // TODO: Extend the filtering mechanism.
-        refilter()
-        scrollbar.setRange(0, masterMap.size.coerceIn(0, (masterMap.size - numEntries).coerceAtLeast(0)), 23)
+    private long filteredSortKey(InfoWrapper info, @Nullable InfoWrapper selected, @Nullable List<String> names) {
+        if (info.loc.equals(selectedEntry)) {
+            return Long.MIN_VALUE + 1;
+        }
+        if (isSameFrequency(info, selected)) {
+            return info.output ? Long.MIN_VALUE + 2 : Long.MIN_VALUE;
+        }
+        if (names != null) {
+            long hits = 0;
+            String name = info.name;
+            for (String f : names) {
+                int index = indexOfIgnoreCase(name, f);
+                if (index >= 0) {
+                    hits++;
+                    name = name.substring(0, index) + name.substring(index + f.length());
+                }
+            }
+            return -(hits * hits) + name.length();
+        }
+        return info.getFrequency() + Short.MAX_VALUE - (info.output ? 0 : 1);
     }
 
-    /**
-     * Updates the master list and sends the changes downstream to sorted/filtered.
-     */
-    fun update(updateList: Collection<InfoWrapper>, scrollbar: WidgetScrollBar, numEntries: Int) {
-        updateList.forEach { masterMap[it.loc] = it }
-        sorted.clear()
-        sorted.addAll(masterMap.values)
-        resort()
-        // TODO: Extend the filtering mechanism.
-        refilter()
-        scrollbar.setRange(0, masterMap.size.coerceIn(0, (masterMap.size - numEntries).coerceAtLeast(0)), 23)
+    private static boolean isSameFrequency(InfoWrapper info, @Nullable InfoWrapper selected) {
+        return info.getFrequency() != 0L && selected != null && info.getFrequency() == selected.getFrequency();
     }
 
-    fun select(which: P2PLocation?) {
-        selectedEntry = masterMap.getOrDefault(which, null)?.loc
+    private static int indexOfIgnoreCase(String s, String target) {
+        for (int i = 0; i + target.length() <= s.length(); i++) {
+            if (s.regionMatches(true, i, target, 0, target.length())) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public void refresh() {
+        sorted.clear();
+        sorted.addAll(masterMap.values());
+        resort();
+        refilter();
+    }
+
+    public void rebuild(Collection<InfoWrapper> updateList, WidgetScrollBar scrollbar, int numEntries) {
+        masterMap.clear();
+        update(updateList, scrollbar, numEntries);
+    }
+
+    public void update(Collection<InfoWrapper> updateList, WidgetScrollBar scrollbar, int numEntries) {
+        for (InfoWrapper info : updateList) {
+            masterMap.put(info.loc, info);
+        }
+        refresh();
+        scrollbar.setRange(0, Math.max(0, masterMap.size() - numEntries));
+    }
+
+    public void select(@Nullable P2PLocation which) {
+        InfoWrapper info = which == null ? null : masterMap.get(which);
+        selectedEntry = info != null ? info.loc : null;
     }
 }

@@ -1,21 +1,21 @@
-package com.projecturanus.betterp2p.util.p2p
+package com.projecturanus.betterp2p.util.p2p;
 
-import net.minecraft.item.ItemStack
-import net.minecraft.util.IIcon
+import net.minecraft.item.ItemStack;
 
-import appeng.parts.p2p.PartP2PTunnel
+import appeng.parts.p2p.PartP2PTunnel;
 
-/**
- * Common tunnel info to be used on server
- */
-open class TunnelInfo(val index: Int, val stack: ItemStack, val clazz: Class<out PartP2PTunnel<*>>) {
-    val dispName: String =
-        stack.item.getItemStackDisplayName(stack).split(" - ").getOrNull(1) ?: "§c<Unknown P2P Type>"
+public class TunnelInfo {
+
+    public final int index;
+    public final ItemStack stack;
+    public final Class<? extends PartP2PTunnel<?>> clazz;
+    public final String dispName;
+
+    public TunnelInfo(int index, ItemStack stack, Class<? extends PartP2PTunnel<?>> clazz) {
+        this.index = index;
+        this.stack = stack;
+        this.clazz = clazz;
+        String[] parts = stack.getItem().getItemStackDisplayName(stack).split(" - ", -1);
+        this.dispName = parts.length > 1 ? parts[1] : "§c<Unknown P2P Type>";
+    }
 }
-
-/**
- * Client tunnel info contains icon info too. Because textures are not
- * loaded until after postInit, we need to use a supplier, unfortunately.
- */
-class ClientTunnelInfo(index: Int, stack: ItemStack, clazz: Class<out PartP2PTunnel<*>>,
-                       val icon: () -> IIcon): TunnelInfo(index, stack, clazz)

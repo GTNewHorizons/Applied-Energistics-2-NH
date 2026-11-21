@@ -1,45 +1,52 @@
-package com.projecturanus.betterp2p
+package com.projecturanus.betterp2p;
 
-import appeng.core.BuildTags
-import com.projecturanus.betterp2p.config.BetterP2PConfig
-import com.projecturanus.betterp2p.item.ItemAdvancedMemoryCard
-import com.projecturanus.betterp2p.network.ModNetwork
-import cpw.mods.fml.common.Mod
-import cpw.mods.fml.common.SidedProxy
-import cpw.mods.fml.common.event.FMLPostInitializationEvent
-import cpw.mods.fml.common.event.FMLPreInitializationEvent
-import cpw.mods.fml.common.event.FMLServerStoppedEvent
-import cpw.mods.fml.common.registry.GameRegistry
-import net.minecraftforge.common.config.Configuration
-import org.apache.logging.log4j.Logger
+import net.minecraftforge.common.config.Configuration;
 
-const val MODID = "betterp2p"
+import org.apache.logging.log4j.Logger;
+
+import com.projecturanus.betterp2p.config.BetterP2PConfig;
+import com.projecturanus.betterp2p.item.ItemAdvancedMemoryCard;
+import com.projecturanus.betterp2p.network.ModNetwork;
+
+import appeng.core.BuildTags;
+import cpw.mods.fml.common.Mod;
+import cpw.mods.fml.common.SidedProxy;
+import cpw.mods.fml.common.event.FMLPostInitializationEvent;
+import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.event.FMLServerStoppedEvent;
+import cpw.mods.fml.common.registry.GameRegistry;
 
 /**
- * Better P2P is created by LasmGratel.
- * GlodBlock backported this to 1.7.10
+ * Better P2P is created by LasmGratel. GlodBlock backported this to 1.7.10
  */
-@Mod(modid = MODID, version = BuildTags.VERSION, modLanguageAdapter = "net.shadowfacts.forgelin.KotlinAdapter", dependencies = "required-after:appliedenergistics2;required-after:forgelin")
-object BetterP2P {
+@Mod(modid = BetterP2P.MODID, version = BuildTags.VERSION, dependencies = "required-after:appliedenergistics2")
+public class BetterP2P {
 
-    lateinit var logger: Logger
-    @SidedProxy(serverSide = "com.projecturanus.betterp2p.CommonProxy", clientSide = "com.projecturanus.betterp2p.ClientProxy")
-    lateinit var proxy: CommonProxy
+    public static final String MODID = "betterp2p";
+
+    public static Logger logger;
+
+    @SidedProxy(
+            serverSide = "com.projecturanus.betterp2p.CommonProxy",
+            clientSide = "com.projecturanus.betterp2p.ClientProxy",
+            modId = BetterP2P.MODID)
+    public static CommonProxy proxy;
+
     @Mod.EventHandler
-    fun preInit(event: FMLPreInitializationEvent) {
-        logger = event.modLog
-        ModNetwork.registerNetwork()
-        BetterP2PConfig.loadConfig(Configuration(event.suggestedConfigurationFile))
-        GameRegistry.registerItem(ItemAdvancedMemoryCard, "advanced_memory_card", MODID)
+    public void preInit(FMLPreInitializationEvent event) {
+        logger = event.getModLog();
+        ModNetwork.registerNetwork();
+        BetterP2PConfig.loadConfig(new Configuration(event.getSuggestedConfigurationFile()));
+        GameRegistry.registerItem(ItemAdvancedMemoryCard.INSTANCE, "advanced_memory_card", MODID);
     }
 
     @Mod.EventHandler
-    fun postInit(event: FMLPostInitializationEvent) {
-        proxy.postInit()
+    public void postInit(FMLPostInitializationEvent event) {
+        proxy.postInit();
     }
 
     @Mod.EventHandler
-    fun onServerStopped(event: FMLServerStoppedEvent) {
-        ModNetwork.stop()
+    public void onServerStopped(FMLServerStoppedEvent event) {
+        ModNetwork.stop();
     }
 }

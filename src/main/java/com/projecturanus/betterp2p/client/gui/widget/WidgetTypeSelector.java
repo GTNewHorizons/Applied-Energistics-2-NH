@@ -1,97 +1,120 @@
-package com.projecturanus.betterp2p.client.gui.widget
+package com.projecturanus.betterp2p.client.gui.widget;
 
-import com.projecturanus.betterp2p.client.gui.GuiAdvancedMemoryCard
-import com.projecturanus.betterp2p.client.gui.drawBlockIcon
-import com.projecturanus.betterp2p.network.data.TUNNEL_ANY
-import com.projecturanus.betterp2p.util.p2p.ClientTunnelInfo
-import com.projecturanus.betterp2p.util.p2p.TunnelInfo
-import net.minecraft.client.gui.GuiScreen
-import net.minecraft.client.resources.I18n
-import net.minecraft.init.Blocks
-import kotlin.math.min
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-const val ICONS_PER_ROW = 5
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.resources.I18n;
+import net.minecraft.init.Blocks;
 
-/**
- * Select a type.
- */
-class WidgetTypeSelector(var x: Int, var y: Int,
-                         val p2pTypes: List<ClientTunnelInfo>): Widget() {
-    var visible = false
-    val width: Int
-    val height: Int
-    var hoveredIdx: Int = 0
-    var useAny = false
-    /**
-     * Feeds the input into this parent.
-     */
-    lateinit var parent: ITypeReceiver
-    private val translated: List<List<String>>
+import com.projecturanus.betterp2p.client.gui.GuiAdvancedMemoryCard;
+import com.projecturanus.betterp2p.client.gui.GuiHelper;
+import com.projecturanus.betterp2p.util.p2p.ClientTunnelInfo;
 
-    init {
-        val typeCount = p2pTypes.size //we'll use 5 icons per row?
-        width = min(ICONS_PER_ROW, typeCount) * 18 + 8
-        height = (typeCount + ICONS_PER_ROW - 1) * 18 / ICONS_PER_ROW + 8
-        val list = p2pTypes.map { listOf(it.dispName) }.toMutableList()
-        list.add(listOf(I18n.format("gui.advanced_memory_card.types.any")))
-        translated = list
+public class WidgetTypeSelector {
+
+    private static final int ICONS_PER_ROW = 5;
+    private static final int ICON_SIZE = 18;
+
+    private int x;
+    private int y;
+    private final List<ClientTunnelInfo> p2pTypes;
+    private final int width;
+    private final int height;
+    private final List<List<String>> translated = new ArrayList<>();
+    private boolean visible;
+    private int hoveredIdx;
+    private boolean useAny;
+    private ITypeReceiver parent;
+
+    public WidgetTypeSelector(int x, int y, List<ClientTunnelInfo> p2pTypes, ITypeReceiver parent) {
+        this.x = x;
+        this.y = y;
+        this.p2pTypes = p2pTypes;
+        this.parent = parent;
+        int typeCount = p2pTypes.size();
+        width = Math.min(ICONS_PER_ROW, typeCount) * ICON_SIZE + 8;
+        height = (typeCount + ICONS_PER_ROW - 1) * ICON_SIZE / ICONS_PER_ROW + 8;
+        for (ClientTunnelInfo type : p2pTypes) {
+            translated.add(Collections.singletonList(type.dispName));
+        }
+        translated.add(Collections.singletonList(I18n.format("gui.advanced_memory_card.types.any")));
     }
 
-    fun render(gui: GuiAdvancedMemoryCard, mouseX: Int, mouseY: Int, partialTicks: Float) {
-        // Background
-        GuiScreen.drawRect(x, y, x + width, y + height, 0xAA000000.toInt())
-        hoveredIdx = -1
-        for ((i, type) in p2pTypes.withIndex()) {
-            val iconPosX = x + 4 + (i % ICONS_PER_ROW) * 18
-            val iconPosY = y + 4 + (i / ICONS_PER_ROW) * 18
-            val iconHover = mouseX > iconPosX && mouseX < iconPosX + 18 && mouseY > iconPosY && mouseY < iconPosY + 18
-            if (iconHover) {
-                hoveredIdx = i
-                GuiScreen.drawRect(iconPosX, iconPosY, iconPosX + 18, iconPosY + 18, 0xFF00FF00.toInt())
-            }
-            drawBlockIcon(gui.mc, type.icon(), type.stack.iconIndex,
-                x = iconPosX + 1,
-                y = iconPosY + 1)
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+    }
+
+    public void setUseAny(boolean useAny) {
+        this.useAny = useAny;
+    }
+
+    public ITypeReceiver getParent() {
+        return parent;
+    }
+
+    public void setParent(ITypeReceiver parent) {
+        this.parent = parent;
+    }
+
+    public void render(GuiAdvancedMemoryCard gui, int mouseX, int mouseY, float partialTicks) {
+        GuiScreen.drawRect(x, y, x + width, y + height, 0xAA000000);
+        hoveredIdx = -1;
+        for (int i = 0; i < p2pTypes.size(); i++) {
+            ClientTunnelInfo type = p2pTypes.get(i);
+            drawSlot(gui, i, mouseX, mouseY);
+            GuiHelper
+                    .drawBlockIcon(gui.mc, type.getIcon(), type.stack.getIconIndex(), getIconX(i) + 1, getIconY(i) + 1);
         }
         if (useAny) {
-            val iconPosX = x + 4 + (p2pTypes.size % ICONS_PER_ROW) * 18
-            val iconPosY = y + 4 + (p2pTypes.size / ICONS_PER_ROW) * 18
-            val iconHover = mouseX > iconPosX && mouseX < iconPosX + 18 && mouseY > iconPosY && mouseY < iconPosY + 18
-            if (iconHover) {
-                hoveredIdx = p2pTypes.size
-                GuiScreen.drawRect(iconPosX, iconPosY, iconPosX + 18, iconPosY + 18, 0xFF00FF00.toInt())
-            }
-            drawBlockIcon(gui.mc, Blocks.coal_block.getIcon(0, 0), p2pTypes[0].stack.iconIndex,
-                    x = iconPosX + 1,
-                    y = iconPosY + 1)
-            gui.mc.fontRenderer.drawString("?", iconPosX + 6, iconPosY + 6, 0xFFFF0000.toInt())
+            int i = p2pTypes.size();
+            drawSlot(gui, i, mouseX, mouseY);
+            GuiHelper.drawBlockIcon(
+                    gui.mc,
+                    Blocks.coal_block.getIcon(0, 0),
+                    p2pTypes.get(0).stack.getIconIndex(),
+                    getIconX(i) + 1,
+                    getIconY(i) + 1);
+            gui.mc.fontRenderer.drawString("?", getIconX(i) + 6, getIconY(i) + 6, 0xFFFF0000);
         }
         if (hoveredIdx != -1) {
-            gui.drawHoveringText(translated[hoveredIdx], mouseX, mouseY, gui.mc.fontRenderer)
+            gui.drawHoveringText(translated.get(hoveredIdx), mouseX, mouseY, gui.mc.fontRenderer);
         }
     }
 
-    fun setPos(x: Int, y: Int) {
-        this.x = x
-        this.y = y
+    private void drawSlot(GuiAdvancedMemoryCard gui, int i, int mouseX, int mouseY) {
+        int iconX = getIconX(i);
+        int iconY = getIconY(i);
+        if (mouseX > iconX && mouseX < iconX + ICON_SIZE && mouseY > iconY && mouseY < iconY + ICON_SIZE) {
+            hoveredIdx = i;
+            GuiScreen.drawRect(iconX, iconY, iconX + ICON_SIZE, iconY + ICON_SIZE, 0xFF00FF00);
+        }
     }
 
-    fun mousePressed(mouseX: Int, mouseY: Int, mouseButton: Int) {
+    private int getIconX(int i) {
+        return x + 4 + (i % ICONS_PER_ROW) * ICON_SIZE;
+    }
+
+    private int getIconY(int i) {
+        return y + 4 + (i / ICONS_PER_ROW) * ICON_SIZE;
+    }
+
+    public void setPos(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    public void mousePressed(int mouseX, int mouseY, int mouseButton) {
         if (mouseX > x && mouseX < x + width && mouseY > y && mouseY < y + height) {
-            // now check which one we clicked on
-            if (hoveredIdx == -1) return
-            parent.accept(p2pTypes.getOrNull(hoveredIdx))
+            if (hoveredIdx == -1) return;
+            parent.accept(hoveredIdx < p2pTypes.size() ? p2pTypes.get(hoveredIdx) : null);
         } else {
-            this.visible = false
+            visible = false;
         }
     }
-}
-
-interface ITypeReceiver {
-
-    fun accept(type: ClientTunnelInfo?)
-
-    fun x(): Int
-
-    fun y(): Int
 }

@@ -1,35 +1,41 @@
-package com.projecturanus.betterp2p.network.packet
+package com.projecturanus.betterp2p.network.packet;
 
-import com.projecturanus.betterp2p.network.ModNetwork
-import com.projecturanus.betterp2p.network.data.TUNNEL_ANY
+import org.jspecify.annotations.Nullable;
 
-import cpw.mods.fml.common.network.simpleimpl.IMessage
-import cpw.mods.fml.common.network.simpleimpl.IMessageHandler
-import cpw.mods.fml.common.network.simpleimpl.MessageContext
-import io.netty.buffer.ByteBuf
+import com.projecturanus.betterp2p.network.ModNetwork;
+import com.projecturanus.betterp2p.network.data.MemoryInfo;
 
-/**
- * Send a request to the server to refresh the p2p list with the given type. This must be validated
- * by the server side. This is a full refresh (not just an update).
- */
-class C2SRefreshP2PList(var type: Int = TUNNEL_ANY): IMessage {
-    override fun fromBytes(buf: ByteBuf) {
-        type = buf.readByte().toInt()
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import io.netty.buffer.ByteBuf;
+
+public class C2SRefreshP2PList implements IMessage {
+
+    private int type = MemoryInfo.TUNNEL_ANY;
+
+    public C2SRefreshP2PList() {}
+
+    public C2SRefreshP2PList(int type) {
+        this.type = type;
     }
 
-    override fun toBytes(buf: ByteBuf) {
-        buf.writeByte(type)
+    @Override
+    public void fromBytes(ByteBuf buf) {
+        type = buf.readByte();
     }
-}
 
-/**
- * Server handler.
- * Handler on server side
- */
-class ServerRefreshP2PListHandler : IMessageHandler<C2SRefreshP2PList, IMessage?> {
-    override fun onMessage(message: C2SRefreshP2PList, ctx: MessageContext): IMessage? {
-        ModNetwork.requestP2PList(ctx.serverHandler.playerEntity, message.type)
+    @Override
+    public void toBytes(ByteBuf buf) {
+        buf.writeByte(type);
+    }
 
-        return null
+    public static class Handler implements IMessageHandler<C2SRefreshP2PList, IMessage> {
+
+        @Override
+        public @Nullable IMessage onMessage(C2SRefreshP2PList message, MessageContext ctx) {
+            ModNetwork.requestP2PList(ctx.getServerHandler().playerEntity, message.type);
+            return null;
+        }
     }
 }

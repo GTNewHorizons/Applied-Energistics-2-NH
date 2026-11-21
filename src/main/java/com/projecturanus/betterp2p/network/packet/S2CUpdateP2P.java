@@ -1,62 +1,62 @@
-package com.projecturanus.betterp2p.network.packet
+package com.projecturanus.betterp2p.network.packet;
 
-import net.minecraft.client.Minecraft
+import java.util.Collections;
+import java.util.List;
 
-import com.projecturanus.betterp2p.client.gui.GuiAdvancedMemoryCard
-import com.projecturanus.betterp2p.network.data.P2PInfo
-import com.projecturanus.betterp2p.network.data.readP2PInfo
-import com.projecturanus.betterp2p.network.data.writeP2PInfo
+import net.minecraft.client.Minecraft;
 
-import cpw.mods.fml.common.network.simpleimpl.IMessage
-import cpw.mods.fml.common.network.simpleimpl.IMessageHandler
-import cpw.mods.fml.common.network.simpleimpl.MessageContext
-import cpw.mods.fml.relauncher.Side
-import cpw.mods.fml.relauncher.SideOnly
-import io.netty.buffer.ByteBuf
+import org.jspecify.annotations.Nullable;
 
-/**
- * Server -> Client packet for sending P2P updates. More lightweight than OpenGui.
- */
-class S2CUpdateP2P(var infos: List<P2PInfo> = emptyList(), var clear: Boolean = false): IMessage {
-    override fun fromBytes(buf: ByteBuf) {
-        val length = buf.readInt()
-        val list = ArrayList<P2PInfo>(length)
+import com.projecturanus.betterp2p.client.gui.GuiAdvancedMemoryCard;
+import com.projecturanus.betterp2p.network.data.P2PInfo;
 
-        for (i in 0 until length) {
-            val info = readP2PInfo(buf)
-
-            if (info != null) {
-                list.add(info)
-            }
-        }
-
-        infos = list
-        clear = buf.readBoolean()
-    }
-
-    override fun toBytes(buf: ByteBuf) {
-        buf.writeInt(infos.size)
-        infos.forEach { writeP2PInfo(buf, it) }
-        buf.writeBoolean(clear)
-    }
-}
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import io.netty.buffer.ByteBuf;
 
 /**
- * Handler on client side for updating P2Ps.
+ * Sends changed P2P tunnels, or the whole list when {@code clear} is set.
  */
-class ClientUpdateP2PHandler : IMessageHandler<S2CUpdateP2P, IMessage?> {
-    @SideOnly(Side.CLIENT)
-    override fun onMessage(message: S2CUpdateP2P, ctx: MessageContext): IMessage? {
-        val gui = Minecraft.getMinecraft().currentScreen
+public class S2CUpdateP2P implements IMessage {
 
-        if (gui is GuiAdvancedMemoryCard) {
-            if (message.clear) {
-                gui.refreshInfo(message.infos)
-            } else {
-                gui.updateInfo(message.infos)
+    private List<P2PInfo> infos = Collections.emptyList();
+    private boolean clear;
+
+    public S2CUpdateP2P() {}
+
+    public S2CUpdateP2P(List<P2PInfo> infos, boolean clear) {
+        this.infos = infos;
+        this.clear = clear;
+    }
+
+    @Override
+    public void fromBytes(ByteBuf buf) {
+        infos = P2PInfo.readList(buf);
+        clear = buf.readBoolean();
+    }
+
+    @Override
+    public void toBytes(ByteBuf buf) {
+        P2PInfo.writeList(buf, infos);
+        buf.writeBoolean(clear);
+    }
+
+    public static class Handler implements IMessageHandler<S2CUpdateP2P, IMessage> {
+
+        @Override
+        @SideOnly(Side.CLIENT)
+        public @Nullable IMessage onMessage(S2CUpdateP2P message, MessageContext ctx) {
+            if (Minecraft.getMinecraft().currentScreen instanceof GuiAdvancedMemoryCard gui) {
+                if (message.clear) {
+                    gui.refreshInfo(message.infos);
+                } else {
+                    gui.updateInfo(message.infos);
+                }
             }
+            return null;
         }
-
-        return null
     }
 }

@@ -1,24 +1,28 @@
-package com.projecturanus.betterp2p.network.packet
+package com.projecturanus.betterp2p.network.packet;
 
-import com.projecturanus.betterp2p.network.ModNetwork
+import org.jspecify.annotations.Nullable;
 
-import cpw.mods.fml.common.network.simpleimpl.IMessage
-import cpw.mods.fml.common.network.simpleimpl.IMessageHandler
-import cpw.mods.fml.common.network.simpleimpl.MessageContext
-import io.netty.buffer.ByteBuf
+import com.projecturanus.betterp2p.network.ModNetwork;
 
-class C2SCloseGui : IMessage {
-    override fun fromBytes(buf: ByteBuf) {
-    }
+import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import io.netty.buffer.ByteBuf;
 
-    override fun toBytes(buf: ByteBuf) {
-    }
-}
+public class C2SCloseGui implements IMessage {
 
-class ServerCloseGuiHandler : IMessageHandler<C2SCloseGui, IMessage?> {
-    override fun onMessage(message: C2SCloseGui, ctx: MessageContext): IMessage? {
-        ModNetwork.playerState.remove(ctx.serverHandler.playerEntity.uniqueID)
+    @Override
+    public void fromBytes(ByteBuf buf) {}
 
-        return null
+    @Override
+    public void toBytes(ByteBuf buf) {}
+
+    public static class Handler implements IMessageHandler<C2SCloseGui, IMessage> {
+
+        @Override
+        public @Nullable IMessage onMessage(C2SCloseGui message, MessageContext ctx) {
+            ModNetwork.removeConnection(ctx.getServerHandler().playerEntity);
+            return null;
+        }
     }
 }

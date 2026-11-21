@@ -1,16 +1,15 @@
-package com.projecturanus.betterp2p.config
+package com.projecturanus.betterp2p.config;
 
-import net.minecraftforge.common.config.Configuration
+import net.minecraftforge.common.config.Configuration;
 
-object BetterP2PConfig {
-    val client = ClientConfig()
+public final class BetterP2PConfig {
 
-    fun loadConfig(config: Configuration) {
-        config.load()
-        client.autoRefresh = config.getBoolean("autoRefresh", "client", true, "Auto refresh the P2P status")
-    }
+    public static boolean autoRefresh = true;
 
-    class ClientConfig {
-        var autoRefresh: Boolean = true
+    private BetterP2PConfig() {}
+
+    public static void loadConfig(Configuration config) {
+        config.load();
+        autoRefresh = config.getBoolean("autoRefresh", "client", true, "Auto refresh the P2P status");
     }
 }

@@ -5,7 +5,6 @@ dependencies {
     implementation('com.github.GTNewHorizons:CodeChickenCore:1.5.1:dev')
     implementation("com.github.GTNewHorizons:GTNHLib:0.12.5:dev")
     implementation('curse.maven:cofh-core-69162:2388751')
-    api('com.github.GTNewHorizons:Forgelin:2.1.0-GTNH')
 
     compileOnlyApi('com.github.GTNewHorizons:Angelica:2.2.46:dev')
     compileOnlyApi('com.github.GTNewHorizons:EnderCore:0.6.0:dev') {transitive = false}

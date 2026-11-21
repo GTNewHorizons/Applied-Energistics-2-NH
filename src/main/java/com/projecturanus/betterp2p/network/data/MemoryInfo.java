@@ -1,58 +1,85 @@
-package com.projecturanus.betterp2p.network.data
+package com.projecturanus.betterp2p.network.data;
 
-import com.projecturanus.betterp2p.client.gui.widget.GuiScale
-import com.projecturanus.betterp2p.item.BetterMemoryCardModes
+import org.jspecify.annotations.Nullable;
 
-import io.netty.buffer.ByteBuf
+import com.projecturanus.betterp2p.client.gui.widget.GuiScale;
+import com.projecturanus.betterp2p.item.BetterMemoryCardModes;
 
-/**
- * Using `-1` to represent any tunnel type.
- */
-const val TUNNEL_ANY: Int = -1
+import io.netty.buffer.ByteBuf;
 
-/**
- * A data class for serializing p2p
- * @param selectedEntry Points to the index of the selected p2p in the list.
- * @param frequency Selected Frequency. 0 = not selected
- * @param mode The mode
- * @param guiScale The saved gui scale
- * @param type The P2P type, indexed in TunnelInfo.kt
- */
-data class MemoryInfo(
-        var selectedEntry: P2PLocation? = null,
-        var frequency: Long = 0,
-        var mode: BetterMemoryCardModes = BetterMemoryCardModes.OUTPUT,
-        var guiScale: GuiScale = GuiScale.DYNAMIC,
-        var type: Int = TUNNEL_ANY)
-fun readMemoryInfo(buf: ByteBuf): MemoryInfo {
-    var selectedEntry: P2PLocation? = null
-    if (buf.readBoolean()) {
-        selectedEntry = readP2PLocation(buf)
+public final class MemoryInfo {
+
+    public static final int TUNNEL_ANY = -1;
+
+    private @Nullable P2PLocation selectedEntry;
+    /** 0 means no frequency is selected. */
+    private final long frequency;
+    private final BetterMemoryCardModes mode;
+    private final GuiScale guiScale;
+    /** Index of {@link com.projecturanus.betterp2p.util.p2p.TunnelInfo}, or {@link #TUNNEL_ANY}. */
+    private int type;
+
+    public MemoryInfo() {
+        this(null, 0, BetterMemoryCardModes.OUTPUT, GuiScale.DYNAMIC, TUNNEL_ANY);
     }
-    val frequency = buf.readLong()
-    val mode = try {
-        BetterMemoryCardModes.values()[buf.readInt()]
-    } catch (e: Exception) {
-        BetterMemoryCardModes.OUTPUT
-    }
-    val guiScale = try {
-        GuiScale.values()[buf.readByte().toInt()]
-    } catch (e: ArrayIndexOutOfBoundsException) {
-        GuiScale.DYNAMIC
-    }
-    val type = buf.readByte().toInt()
-    return MemoryInfo(selectedEntry, frequency, mode, guiScale, type)
-}
 
-fun writeMemoryInfo(buf: ByteBuf, info: MemoryInfo) {
-    val hasSelected = info.selectedEntry != null
-
-    buf.writeBoolean(hasSelected)
-    if (hasSelected) {
-        writeP2PLocation(buf, info.selectedEntry!!)
+    public MemoryInfo(@Nullable P2PLocation selectedEntry, long frequency, BetterMemoryCardModes mode,
+            GuiScale guiScale, int type) {
+        this.selectedEntry = selectedEntry;
+        this.frequency = frequency;
+        this.mode = mode;
+        this.guiScale = guiScale;
+        this.type = type;
     }
-    buf.writeLong(info.frequency)
-    buf.writeInt(info.mode.ordinal)
-    buf.writeByte(info.guiScale.ordinal)
-    buf.writeByte(info.type)
+
+    public @Nullable P2PLocation getSelectedEntry() {
+        return selectedEntry;
+    }
+
+    public void setSelectedEntry(@Nullable P2PLocation selectedEntry) {
+        this.selectedEntry = selectedEntry;
+    }
+
+    public long getFrequency() {
+        return frequency;
+    }
+
+    public BetterMemoryCardModes getMode() {
+        return mode;
+    }
+
+    public GuiScale getGuiScale() {
+        return guiScale;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public void setType(int type) {
+        this.type = type;
+    }
+
+    public static MemoryInfo read(ByteBuf buf) {
+        P2PLocation selectedEntry = null;
+        if (buf.readBoolean()) {
+            selectedEntry = P2PLocation.read(buf);
+        }
+        long frequency = buf.readLong();
+        BetterMemoryCardModes mode = BetterMemoryCardModes.fromOrdinal(buf.readInt());
+        GuiScale guiScale = GuiScale.fromOrdinal(buf.readByte());
+        int type = buf.readByte();
+        return new MemoryInfo(selectedEntry, frequency, mode, guiScale, type);
+    }
+
+    public void write(ByteBuf buf) {
+        buf.writeBoolean(selectedEntry != null);
+        if (selectedEntry != null) {
+            selectedEntry.write(buf);
+        }
+        buf.writeLong(frequency);
+        buf.writeInt(mode.ordinal());
+        buf.writeByte(guiScale.ordinal());
+        buf.writeByte(type);
+    }
 }

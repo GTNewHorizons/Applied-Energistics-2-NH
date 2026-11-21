@@ -1,75 +1,87 @@
-package com.projecturanus.betterp2p.client.gui.widget
+package com.projecturanus.betterp2p.client.gui.widget;
 
-import com.projecturanus.betterp2p.client.gui.GUI_TEX_HEIGHT
-import com.projecturanus.betterp2p.client.gui.GUI_WIDTH
-import com.projecturanus.betterp2p.client.gui.GuiAdvancedMemoryCard
-import com.projecturanus.betterp2p.client.gui.drawTexturedQuad
-import net.minecraft.client.Minecraft
-import net.minecraft.client.gui.GuiButton
-import net.minecraft.client.renderer.OpenGlHelper
-import net.minecraft.client.renderer.Tessellator
-import org.lwjgl.opengl.GL11
+import java.util.Collections;
+import java.util.List;
 
-/**
- * Widget button for stuff.
- * @param x
- * @param y
- * @param width
- * @param height
- * @param hoverText - unlocalized text to display when mouse hovering
- */
-abstract class WidgetButton(val gui: GuiAdvancedMemoryCard, x: Int, y: Int, width: Int, height: Int):
-    GuiButton(0, x, y, width, height, "") {
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.renderer.OpenGlHelper;
+import net.minecraft.client.renderer.Tessellator;
 
-    private var texX = 0.0
-    private var texY = 0.0
-    var hoverText: List<String> = listOf()
+import org.lwjgl.opengl.GL11;
 
-    abstract fun mousePressed(mouseX: Int, mouseY: Int, button: Int): Boolean
+import com.projecturanus.betterp2p.client.gui.GuiAdvancedMemoryCard;
+import com.projecturanus.betterp2p.client.gui.GuiHelper;
 
-    open fun draw(mc: Minecraft, mouseX: Int, mouseY: Int, partialTicks: Float) {
-        val tessellator = Tessellator.instance
-        drawBG(tessellator, mouseX, mouseY, partialTicks)
-        // Draw button icon
-        drawTexturedQuad(tessellator, xPosition + 1.0, yPosition + 1.0,
-            xPosition + width - 1.0, yPosition + height - 1.0,
-            u0 = texX / GUI_WIDTH, v0 = texY / GUI_TEX_HEIGHT,
-            u1 = (texX + width) / GUI_WIDTH, v1 = (texY + height) / GUI_TEX_HEIGHT)
+public abstract class WidgetButton extends GuiButton {
+
+    protected final GuiAdvancedMemoryCard gui;
+    private double texX;
+    private double texY;
+    private List<String> hoverText = Collections.emptyList();
+
+    public WidgetButton(GuiAdvancedMemoryCard gui, int x, int y, int width, int height) {
+        super(0, x, y, width, height, "");
+        this.gui = gui;
     }
 
-    open fun drawBG(tessellator: Tessellator, mouseX: Int, mouseY: Int, partialTicks: Float) {
-        gui.bindTexture(gui.background)
-        GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f)
-        field_146123_n = mouseX >= xPosition && mouseY >= yPosition && mouseX < xPosition + width && mouseY < yPosition + height
-        val k = getHoverState(field_146123_n)
-        GL11.glEnable(GL11.GL_BLEND)
-        OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, 1, 0)
-        // Draw button backdrop
-        drawTexturedQuad(tessellator,
-                x0 = xPosition.toDouble(),
-                y0 = yPosition.toDouble(),
-                x1 = (xPosition + width).toDouble(),
-                y1 = (yPosition + height).toDouble(),
-                u0 = (32.0 * k) / GUI_WIDTH, v0 = (232.0) / GUI_TEX_HEIGHT,
-                u1 = (32.0 * (k + 1)) / GUI_WIDTH, v1 = (232.0 + height) / GUI_TEX_HEIGHT)
+    public abstract boolean mousePressed(int mouseX, int mouseY, int button);
+
+    public void draw(Minecraft mc, int mouseX, int mouseY, float partialTicks) {
+        Tessellator tessellator = Tessellator.instance;
+        drawBG(tessellator, mouseX, mouseY, partialTicks);
+        GuiHelper.drawTexturedQuad(
+                tessellator,
+                xPosition + 1.0,
+                yPosition + 1.0,
+                xPosition + width - 1.0,
+                yPosition + height - 1.0,
+                texX / GuiAdvancedMemoryCard.GUI_WIDTH,
+                texY / GuiAdvancedMemoryCard.GUI_TEX_HEIGHT,
+                (texX + width) / GuiAdvancedMemoryCard.GUI_WIDTH,
+                (texY + height) / GuiAdvancedMemoryCard.GUI_TEX_HEIGHT);
     }
 
-    fun setPosition(x: Int, y: Int) {
-        this.xPosition = x
-        this.yPosition = y
+    protected void drawBG(Tessellator tessellator, int mouseX, int mouseY, float partialTicks) {
+        gui.bindTexture(GuiAdvancedMemoryCard.BACKGROUND);
+        GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+        field_146123_n = mouseX >= xPosition && mouseY >= yPosition
+                && mouseX < xPosition + width
+                && mouseY < yPosition + height;
+        int k = getHoverState(field_146123_n);
+        GL11.glEnable(GL11.GL_BLEND);
+        OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, 1, 0);
+        GuiHelper.drawTexturedQuad(
+                tessellator,
+                xPosition,
+                yPosition,
+                xPosition + width,
+                yPosition + height,
+                (32.0 * k) / GuiAdvancedMemoryCard.GUI_WIDTH,
+                232.0 / GuiAdvancedMemoryCard.GUI_TEX_HEIGHT,
+                (32.0 * (k + 1)) / GuiAdvancedMemoryCard.GUI_WIDTH,
+                (232.0 + height) / GuiAdvancedMemoryCard.GUI_TEX_HEIGHT);
     }
 
-    fun setTexCoords(x: Double, y: Double) {
-        this.texX = x
-        this.texY = y
+    public List<String> getHoverText() {
+        return hoverText;
     }
 
-    fun setSize(width: Int, height: Int) {
-        this.width = width
-        this.height = height
+    public void setHoverText(List<String> hoverText) {
+        this.hoverText = hoverText;
     }
 
-    fun isHovering(mouseX: Int, mouseY: Int): Boolean {
-        return mouseX > xPosition && mouseX < xPosition + width && mouseY > yPosition && mouseY < yPosition + height
+    public void setPosition(int x, int y) {
+        this.xPosition = x;
+        this.yPosition = y;
+    }
+
+    public void setTexCoords(double x, double y) {
+        this.texX = x;
+        this.texY = y;
+    }
+
+    public boolean isHovering(int mouseX, int mouseY) {
+        return mouseX > xPosition && mouseX < xPosition + width && mouseY > yPosition && mouseY < yPosition + height;
     }
 }
