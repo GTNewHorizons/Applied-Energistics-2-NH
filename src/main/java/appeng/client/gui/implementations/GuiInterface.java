@@ -14,6 +14,10 @@ import static appeng.util.item.AEFluidStackType.FLUID_STACK_TYPE;
 
 import java.util.Arrays;
 
+import appeng.api.storage.StorageName;
+import appeng.container.slot.OptionalSlotFake;
+import appeng.core.sync.packets.PacketPatternValueSet;
+import appeng.util.item.AEItemStack;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Slot;
@@ -374,5 +378,24 @@ public class GuiInterface extends GuiUpgradeable {
         if (this.fuzzyMode != null) {
             this.fuzzyMode.setVisibility(this.bc.getInstalledUpgrades(Upgrades.FUZZY) > 0);
         }
+    }
+
+    @Override
+    protected void handleMouseClick(final Slot slot, final int slotIdx, final int clickedButton, final int clickType) {
+        if (slot instanceof OptionalSlotFake config && config.isEnabled()
+                && clickedButton == this.mc.gameSettings.keyBindPickBlock.getKeyCode() + 100) {
+            final ItemStack stack = config.getStack();
+            if (stack != null) {
+                NetworkHandler.instance.sendToServer(new PacketSwitchGuis(GuiBridge.GUI_PATTERN_VALUE_AMOUNT));
+                NetworkHandler.instance.sendToServer(
+                        new PacketPatternValueSet(
+                                AEItemStack.create(stack),
+                                StorageName.CONFIG,
+                                config.getSlotIndex(),
+                                true));
+            }
+            return;
+        }
+        super.handleMouseClick(slot, slotIdx, clickedButton, clickType);
     }
 }

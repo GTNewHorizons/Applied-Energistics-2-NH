@@ -12,6 +12,11 @@ package appeng.container.implementations;
 
 import java.util.ArrayList;
 
+import appeng.api.storage.StorageName;
+import appeng.api.storage.data.IAEItemStack;
+import appeng.api.storage.data.IAEStack;
+import appeng.container.interfaces.IVirtualSlotSource;
+import appeng.tile.inventory.AppEngInternalAEInventory;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.IInventory;
@@ -44,7 +49,7 @@ import appeng.me.cache.CraftingGridCache;
 import appeng.util.PatternMultiplierHelper;
 import appeng.util.Platform;
 
-public class ContainerInterface extends ContainerUpgradeable implements IOptionalSlotHost {
+public class ContainerInterface extends ContainerUpgradeable implements IOptionalSlotHost, IVirtualSlotSource {
 
     private final DualityInterface myDuality;
     private final IAEStackType<?>[] supportedStackTypes;
@@ -160,6 +165,20 @@ public class ContainerInterface extends ContainerUpgradeable implements IOptiona
             if (te != null) Platform.spawnDrops(te.getWorldObj(), te.xCoord, te.yCoord, te.zCoord, drops);
         }
         super.detectAndSendChanges();
+    }
+
+    @Override
+    public void updateVirtualSlot(StorageName invName, int slotId, IAEStack<?> aes) {
+        if (invName != StorageName.CONFIG || !(aes instanceof IAEItemStack requested)) return;
+        if (slotId < 0 || slotId >= DualityInterface.NUMBER_OF_CONFIG_SLOTS) return;
+
+        final AppEngInternalAEInventory config = this.myDuality.getConfig();
+        final IAEItemStack current = config.getAEStackInSlot(slotId);
+        if (current == null || !current.isSameType(requested)) return;
+
+        final ItemStack stack = requested.getItemStack();
+        stack.stackSize = (int) Math.max(1, Math.min(requested.getStackSize(), Math.min(64, stack.getMaxStackSize())));
+        config.setInventorySlotContents(slotId, stack);
     }
 
     private ArrayList<ItemStack> getRemovedPatterns() {
