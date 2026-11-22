@@ -23,7 +23,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.IIcon;
 import net.minecraftforge.common.util.ForgeDirection;
-import org.jspecify.annotations.NonNull;
+
 import org.jspecify.annotations.Nullable;
 
 import appeng.api.networking.IGridNode;
