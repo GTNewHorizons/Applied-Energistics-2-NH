@@ -177,7 +177,9 @@ public class ContainerInterface extends ContainerUpgradeable implements IOptiona
         if (current == null || !current.isSameType(requested)) return;
 
         final ItemStack stack = requested.getItemStack();
-        stack.stackSize = (int) Math.max(1, Math.min(requested.getStackSize(), Math.min(64, stack.getMaxStackSize())));
+        stack.stackSize = (int) Math.max(
+                1,
+                Math.min(requested.getStackSize(), Math.min(config.getInventoryStackLimit(), stack.getMaxStackSize())));
         config.setInventorySlotContents(slotId, stack);
     }
 

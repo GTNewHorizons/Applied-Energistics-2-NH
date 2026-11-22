@@ -382,8 +382,9 @@ public class GuiInterface extends GuiUpgradeable {
 
     @Override
     protected void handleMouseClick(final Slot slot, final int slotIdx, final int clickedButton, final int clickType) {
-        if (slot instanceof OptionalSlotFake config && config.isEnabled()
-                && clickedButton == this.mc.gameSettings.keyBindPickBlock.getKeyCode() + 100) {
+        if (clickType == 3 && slot instanceof OptionalSlotFake config
+                && config.isEnabled()
+                && this.mc.thePlayer.inventory.getItemStack() == null) {
             final ItemStack stack = config.getStack();
             if (stack != null) {
                 NetworkHandler.instance.sendToServer(new PacketSwitchGuis(GuiBridge.GUI_PATTERN_VALUE_AMOUNT));
