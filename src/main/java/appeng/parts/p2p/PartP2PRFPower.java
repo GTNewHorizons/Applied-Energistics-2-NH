@@ -52,7 +52,7 @@ public final class PartP2PRFPower extends PartP2PTunnelRouted<PartP2PRFPower>
 
     @Override
     public P2PTransportPolicy getTransportPolicy() {
-        return P2PTransportPolicy.ONE_WAY_PUSH;
+        return P2PTransportPolicy.ONE_WAY_PUSH_PULL;
     }
 
     @Override

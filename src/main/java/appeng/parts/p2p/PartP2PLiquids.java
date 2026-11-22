@@ -55,7 +55,7 @@ public class PartP2PLiquids extends PartP2PTunnelRouted<PartP2PLiquids> implemen
 
     @Override
     public P2PTransportPolicy getTransportPolicy() {
-        return P2PTransportPolicy.TWO_WAY_PUSH;
+        return P2PTransportPolicy.TWO_WAY_PUSH_PULL;
     }
 
     @Override
