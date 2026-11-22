@@ -104,7 +104,7 @@ public class PacketCraftRequest extends AppEngPacket {
 
                 final IAEStack<?> item = cca.getItemToCraft();
                 if (!setCraftingAmount(g, item)) {
-                    player.addChatMessage(PlayerMessages.CraftingIngredientsAlreadyAvailable.toChat());
+                    player.addChatMessage(PlayerMessages.CraftingAmountAlreadyAvailable.toChat());
                     return;
                 }
 
