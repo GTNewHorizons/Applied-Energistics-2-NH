@@ -10,6 +10,9 @@ import appeng.api.networking.security.BaseActionSource;
 import appeng.api.storage.IExternalStorageHandler;
 import appeng.api.storage.IMEInventory;
 import appeng.api.storage.data.IAEStackType;
+import appeng.integration.IntegrationRegistry;
+import appeng.integration.IntegrationType;
+import appeng.integration.abstraction.IGT;
 import appeng.me.storage.MEMonitorIFluidHandler;
 
 // This handler is too generic, so it will overlap other mods' fluid handler.
@@ -27,6 +30,11 @@ public class AEFluidTankHandler implements IExternalStorageHandler {
     @SuppressWarnings("rawtypes")
     public IMEInventory getInventory(TileEntity te, ForgeDirection d, IAEStackType<?> type, BaseActionSource src) {
         if (type == FLUID_STACK_TYPE) {
+            final IGT gt = IntegrationRegistry.INSTANCE.getInstanceIfEnabled(IntegrationType.GT);
+            if (gt != null) {
+                final MEMonitorIFluidHandler pipeStorage = gt.getFluidPipeStorage(te, d);
+                if (pipeStorage != null) return pipeStorage;
+            }
             return new MEMonitorIFluidHandler((IFluidHandler) te, d);
         }
         return null;

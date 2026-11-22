@@ -14,7 +14,11 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import appeng.me.storage.MEMonitorIFluidHandler;
+
 public interface IGT {
+
+    MEMonitorIFluidHandler getFluidPipeStorage(TileEntity tile, ForgeDirection side);
 
     boolean isGTMachine(TileEntity te);
 

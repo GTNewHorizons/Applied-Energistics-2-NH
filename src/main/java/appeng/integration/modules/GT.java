@@ -12,9 +12,12 @@ import appeng.integration.IntegrationHelper;
 import appeng.integration.IntegrationRegistry;
 import appeng.integration.IntegrationType;
 import appeng.integration.abstraction.IGT;
+import appeng.me.storage.MEMonitorIFluidHandler;
 import appeng.spatial.NBTSpatialHandler;
 import cpw.mods.fml.common.Loader;
 import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
+import gregtech.api.metatileentity.BaseMetaPipeEntity;
+import gregtech.api.metatileentity.implementations.MTEFluidPipe;
 import gregtech.api.util.ColoredBlockContainer;
 
 public class GT implements IIntegrationModule, IGT {
@@ -41,6 +44,15 @@ public class GT implements IIntegrationModule, IGT {
     @Override
     public void postInit() {
         AEApi.instance().registries().movable().addHandler(new NBTSpatialHandler(IGregTechTileEntity.class));
+    }
+
+    @Override
+    public MEMonitorIFluidHandler getFluidPipeStorage(TileEntity tile, ForgeDirection side) {
+        if (side != ForgeDirection.UNKNOWN && tile instanceof BaseMetaPipeEntity pipeTile
+                && pipeTile.getMetaTileEntity() instanceof MTEFluidPipe) {
+            return GregTechPipeFluidStorage.createMonitor(pipeTile, side);
+        }
+        return null;
     }
 
     @Override

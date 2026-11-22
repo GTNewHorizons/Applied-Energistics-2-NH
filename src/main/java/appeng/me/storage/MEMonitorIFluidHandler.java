@@ -151,6 +151,12 @@ public class MEMonitorIFluidHandler implements IStorageBusMonitor<IAEFluidStack>
         return FLUID_STACK_TYPE;
     }
 
+    // Most Forge handlers expose one output tank. An adapter with independently
+    // addressable tanks can override this probe to check the reported fluid.
+    protected boolean canExtractFromTank(FluidTankInfo tank) {
+        return this.handler.drain(this.side, 1, false) != null;
+    }
+
     // *Decompiled Stuff*//
 
     @Override
@@ -160,7 +166,7 @@ public class MEMonitorIFluidHandler implements IStorageBusMonitor<IAEFluidStack>
 
         if (tankProperties != null) {
             for (FluidTankInfo tankProperty : tankProperties) {
-                if (this.mode != StorageFilter.EXTRACTABLE_ONLY || this.handler.drain(this.side, 1, false) != null) {
+                if (this.mode != StorageFilter.EXTRACTABLE_ONLY || this.canExtractFromTank(tankProperty)) {
                     currentlyOnStorage.add(AEFluidStack.create(tankProperty.fluid));
                 }
             }
