@@ -12,11 +12,6 @@ package appeng.container.implementations;
 
 import java.util.ArrayList;
 
-import appeng.api.storage.StorageName;
-import appeng.api.storage.data.IAEItemStack;
-import appeng.api.storage.data.IAEStack;
-import appeng.container.interfaces.IVirtualSlotSource;
-import appeng.tile.inventory.AppEngInternalAEInventory;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.IInventory;
@@ -34,9 +29,13 @@ import appeng.api.config.Upgrades;
 import appeng.api.config.YesNo;
 import appeng.api.implementations.ICraftingPatternItem;
 import appeng.api.networking.crafting.ICraftingPatternDetails;
+import appeng.api.storage.StorageName;
+import appeng.api.storage.data.IAEItemStack;
+import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.util.IConfigManager;
 import appeng.container.guisync.GuiSync;
+import appeng.container.interfaces.IVirtualSlotSource;
 import appeng.container.slot.IOptionalSlotHost;
 import appeng.container.slot.OptionalSlotFake;
 import appeng.container.slot.OptionalSlotRestrictedInput;
@@ -46,6 +45,7 @@ import appeng.helpers.DualityInterface;
 import appeng.helpers.IInterfaceHost;
 import appeng.helpers.InventoryAction;
 import appeng.me.cache.CraftingGridCache;
+import appeng.tile.inventory.AppEngInternalAEInventory;
 import appeng.util.PatternMultiplierHelper;
 import appeng.util.Platform;
 

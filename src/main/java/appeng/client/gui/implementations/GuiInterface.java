@@ -14,10 +14,6 @@ import static appeng.util.item.AEFluidStackType.FLUID_STACK_TYPE;
 
 import java.util.Arrays;
 
-import appeng.api.storage.StorageName;
-import appeng.container.slot.OptionalSlotFake;
-import appeng.core.sync.packets.PacketPatternValueSet;
-import appeng.util.item.AEItemStack;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.inventory.Slot;
@@ -36,12 +32,14 @@ import appeng.api.config.LockCraftingMode;
 import appeng.api.config.Settings;
 import appeng.api.config.Upgrades;
 import appeng.api.config.YesNo;
+import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStackType;
 import appeng.client.gui.widgets.GuiImgButton;
 import appeng.client.gui.widgets.GuiSimpleImgButton;
 import appeng.client.gui.widgets.GuiTabButton;
 import appeng.client.gui.widgets.GuiToggleButton;
 import appeng.container.implementations.ContainerInterface;
+import appeng.container.slot.OptionalSlotFake;
 import appeng.container.slot.OptionalSlotRestrictedInput;
 import appeng.core.AEConfig;
 import appeng.core.AELog;
@@ -52,10 +50,12 @@ import appeng.core.sync.GuiBridge;
 import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketConfigButton;
 import appeng.core.sync.packets.PacketInventoryAction;
+import appeng.core.sync.packets.PacketPatternValueSet;
 import appeng.core.sync.packets.PacketSwitchGuis;
 import appeng.core.sync.packets.PacketValueConfig;
 import appeng.helpers.IInterfaceHost;
 import appeng.helpers.InventoryAction;
+import appeng.util.item.AEItemStack;
 
 public class GuiInterface extends GuiUpgradeable {
 
