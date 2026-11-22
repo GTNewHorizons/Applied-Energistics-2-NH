@@ -75,14 +75,15 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
     private boolean viewed;
     private @Nullable PartP2PItems owner;
     private @Nullable IInventoryRouter<PartP2PItems> router;
-    private final IInventoryRouter.SlotView<PartP2PItems> rawSlotView = new IInventoryRouter.SlotView<>();
-    private final SlotView slotView = new SlotView();
     private long invOffset;
     private boolean busy;
     private boolean rebuildQueued;
     private boolean loopBlocked;
 
     private int viewSize;
+
+    private final IInventoryRouter.SlotView<PartP2PItems> rawSlotView = new IInventoryRouter.SlotView<>();
+    private final SlotView slotView = new SlotView();
 
     public PartP2PItems(final ItemStack is) {
         super(is);

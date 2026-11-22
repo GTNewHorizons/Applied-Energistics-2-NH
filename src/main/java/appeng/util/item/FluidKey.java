@@ -10,13 +10,13 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @NullMarked
-public class FluidKey {
+public final class FluidKey {
 
     final Fluid fluid;
     final @Nullable NBTTagCompound tag;
 
     FluidKey(final FluidStack stack) {
-        this.fluid = stack.getFluid();
+        this.fluid = Objects.requireNonNull(stack.getFluid());
         this.tag = stack.tag == null ? null : (NBTTagCompound) stack.tag.copy();
     }
 
@@ -31,7 +31,7 @@ public class FluidKey {
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(final @Nullable Object o) {
         return o instanceof FluidKey k && k.fluid == this.fluid && Objects.equals(k.tag, this.tag);
     }
 
