@@ -5,11 +5,14 @@ import java.util.Objects;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidStack;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
+@NullMarked
 public class FluidKey {
 
     final Fluid fluid;
-    final NBTTagCompound tag;
+    final @Nullable NBTTagCompound tag;
 
     FluidKey(final FluidStack stack) {
         this.fluid = stack.getFluid();

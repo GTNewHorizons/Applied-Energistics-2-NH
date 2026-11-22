@@ -10,7 +10,9 @@ import appeng.me.GridAccessException;
 import appeng.util.p2p.P2PRoute;
 import appeng.util.p2p.P2PSideAccess;
 import appeng.util.p2p.P2PTransportPolicy;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 public abstract class PartP2PTunnelRouted<T extends PartP2PTunnelRouted<T>> extends PartP2PTunnelNormal<T> {
 
     public PartP2PTunnelRouted(final ItemStack is) {

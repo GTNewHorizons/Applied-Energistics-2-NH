@@ -23,7 +23,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.IIcon;
 import net.minecraftforge.common.util.ForgeDirection;
-
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import appeng.api.networking.IGridNode;
@@ -153,6 +153,9 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
 
         if (this.loopsBackToThis()) {
             this.loopBlocked = true;
+            if (target.tile() instanceof IInventory inv) {
+                this.boundLayout = this.readLayout(inv).clone();
+            }
             return null;
         }
 
