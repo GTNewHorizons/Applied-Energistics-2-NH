@@ -1,5 +1,8 @@
 package appeng.util.p2p;
 
+import org.jspecify.annotations.NullMarked;
+
+@NullMarked
 public class P2PTransportPolicy {
 
     public static final P2PTransportPolicy ONE_WAY_PUSH = new P2PTransportPolicy(

@@ -1,10 +1,14 @@
 package appeng.util.p2p;
 
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
+@NullMarked
 public interface IInventoryRouter<T> {
 
     final class SlotView<T> {
 
-        public T provider;
+        public @Nullable T provider;
         public int size;
         public int slot;
         public boolean canInsert;

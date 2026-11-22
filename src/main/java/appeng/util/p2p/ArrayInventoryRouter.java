@@ -3,11 +3,15 @@ package appeng.util.p2p;
 import java.util.ArrayList;
 import java.util.Map;
 
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
-public class ArrayInventoryRouter<T extends IRoutedTunnel> implements IInventoryRouter<T> {
+@NullMarked
+public class ArrayInventoryRouter<T extends IInventoryRoutedMember> implements IInventoryRouter<T> {
 
     private enum ViewType {
         ALL,
@@ -32,10 +36,10 @@ public class ArrayInventoryRouter<T extends IRoutedTunnel> implements IInventory
     private final ArrayList<T> table = new ArrayList<>(); // input always come first, even if empty
     private final IntArrayList cumSum = new IntArrayList();
 
-    private int min1StackLimit = Integer.MAX_VALUE;
-    private int min2StackLimit = Integer.MAX_VALUE;
-    private int inputStackLimit = Integer.MAX_VALUE;
-    private T minMember;
+    private long min1StackLimit = Long.MAX_VALUE;
+    private long min2StackLimit = Long.MAX_VALUE;
+    private long inputStackLimit = Long.MAX_VALUE;
+    private @Nullable T minMember;
     private boolean stackLimitChanged;
 
     public ArrayInventoryRouter(T input, P2PTransportPolicy policy) {
@@ -118,7 +122,7 @@ public class ArrayInventoryRouter<T extends IRoutedTunnel> implements IInventory
             refreshStackLimits();
             stackLimitChanged = false;
         }
-        final int limit;
+        final long limit;
         if (viewer == input) {
             limit = policy.inputReachesOutputs() ? (viewer == minMember ? min2StackLimit : min1StackLimit) : 64;
         } else {
@@ -130,15 +134,18 @@ public class ArrayInventoryRouter<T extends IRoutedTunnel> implements IInventory
                 limit = 64;
             }
         }
-        return limit == Integer.MAX_VALUE ? 64 : limit;
+        return limit == Long.MAX_VALUE ? 64 : (int) limit;
     }
 
     private void refreshStackLimits() {
-        min1StackLimit = Integer.MAX_VALUE;
-        min2StackLimit = Integer.MAX_VALUE;
-        inputStackLimit = Integer.MAX_VALUE;
+        min1StackLimit = Long.MAX_VALUE;
+        min2StackLimit = Long.MAX_VALUE;
+        inputStackLimit = Long.MAX_VALUE;
         minMember = null;
         for (final T member : members.keySet()) {
+            if (member.getTargetInventorySize() == 0) {
+                continue;
+            }
             final int limit = member.getTargetInventoryStackLimit();
             if (member == input) {
                 inputStackLimit = limit;

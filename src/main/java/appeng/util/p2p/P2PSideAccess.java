@@ -1,5 +1,8 @@
 package appeng.util.p2p;
 
+import org.jspecify.annotations.NullMarked;
+
+@NullMarked
 public class P2PSideAccess {
 
     private final P2PRoute insert;

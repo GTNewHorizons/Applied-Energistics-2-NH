@@ -24,7 +24,7 @@ import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.IIcon;
 import net.minecraftforge.common.util.ForgeDirection;
 
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.events.MENetworkBootingStatusChange;
@@ -48,8 +48,8 @@ import appeng.util.inv.IInventoryWrapper;
 import appeng.util.inv.WrapperBCPipe;
 import appeng.util.inv.WrapperMCISidedInventory;
 import appeng.util.p2p.ArrayInventoryRouter;
+import appeng.util.p2p.IInventoryRoutedMember;
 import appeng.util.p2p.IInventoryRouter;
-import appeng.util.p2p.IRoutedTunnel;
 import appeng.util.p2p.P2PTransportPolicy;
 import appeng.util.target.TileTarget;
 import appeng.util.target.TileTargetCache;
@@ -60,7 +60,7 @@ import cpw.mods.fml.relauncher.SideOnly;
 
 @Interface(iface = "buildcraft.api.transport.IPipeConnection", iname = IntegrationType.BuildCraftTransport)
 public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
-        implements IPipeConnection, ISidedInventory, IGridTickable, IRoutedTunnel {
+        implements IPipeConnection, ISidedInventory, IGridTickable, IInventoryRoutedMember {
 
     /** The target wrapped into the router's view, or null if none was. */
     private @Nullable TileTarget boundTarget;
@@ -70,16 +70,17 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
      */
     private int @Nullable [] boundLayout;
     private final TileTargetCache targetCache = new TileTargetCache();
-    private IInventory cachedTargetInv;
+    private @Nullable IInventory cachedTargetInv;
 
     private boolean viewed;
-    private PartP2PItems owner;
-    private IInventoryRouter<PartP2PItems> router;
+    private @Nullable PartP2PItems owner;
+    private @Nullable IInventoryRouter<PartP2PItems> router;
     private final IInventoryRouter.SlotView<PartP2PItems> rawSlotView = new IInventoryRouter.SlotView<>();
     private final SlotView slotView = new SlotView();
     private long invOffset;
     private boolean busy;
     private boolean rebuildQueued;
+    private boolean loopBlocked;
 
     private int viewSize;
 
@@ -116,7 +117,12 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
      */
     private boolean hasTargetExpired() {
         final TileTarget target = this.boundTarget;
-        if (target != null) return !target.isCompositionCurrent();
+        if (target != null) {
+            if (!target.isCompositionCurrent()) {
+                return true;
+            }
+            return this.loopBlocked && !this.loopsBackToThis();
+        }
         return this.targetCache.isWaitingForChunk() && this.resolveOutputTarget() != null;
     }
 
@@ -139,8 +145,14 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         final TileTarget target = this.resolveOutputTarget();
         this.boundTarget = target;
         this.boundLayout = null;
+        this.loopBlocked = false;
 
-        if (target == null || loopsBackToThis()) {
+        if (target == null) {
+            return null;
+        }
+
+        if (this.loopsBackToThis()) {
+            this.loopBlocked = true;
             return null;
         }
 
@@ -411,12 +423,14 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
 
     @Override
     public int getTargetInventorySize() {
-        return this.cachedTargetInv == null ? 0 : this.cachedTargetInv.getSizeInventory();
+        final IInventory inv = this.getValidTarget();
+        return inv == null ? 0 : inv.getSizeInventory();
     }
 
     @Override
     public int getTargetInventoryStackLimit() {
-        return this.cachedTargetInv == null ? Integer.MAX_VALUE : this.cachedTargetInv.getInventoryStackLimit();
+        final IInventory inv = this.getValidTarget();
+        return inv == null ? Integer.MAX_VALUE : inv.getInventoryStackLimit();
     }
 
     @Override
@@ -475,20 +489,21 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
             return null;
         }
         PartP2PItems provider = this.rawSlotView.provider;
-        if (provider.owner != this.owner) {
+        if (provider == null || provider.owner != this.owner) {
             return null;
         }
-        if (provider.boundTarget == null || provider.getTile().isInvalid()
-                || !provider.boundTarget.isValid()
-                || provider.cachedTargetInv == null) {
-            provider.refreshTarget();
+        final IInventory providerInv = provider.getValidTarget();
+        if (providerInv == null) {
+            if (!this.owner.rebuildQueued) {
+                provider.refreshTarget();
+            }
             return null;
         }
-        if (provider.cachedTargetInv.getSizeInventory() != this.rawSlotView.size) {
+        if (providerInv.getSizeInventory() != this.rawSlotView.size) {
             this.owner.scheduleRebuild();
             return null;
         }
-        this.slotView.inv = provider.cachedTargetInv;
+        this.slotView.inv = providerInv;
         this.slotView.slot = this.rawSlotView.slot;
         this.slotView.canExtract = this.rawSlotView.canExtract;
         this.slotView.canInsert = this.rawSlotView.canInsert;
@@ -566,6 +581,15 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         if (this.owner != null) {
             this.owner.scheduleRebuild();
         }
+    }
+
+    private @Nullable IInventory getValidTarget() {
+        final IInventory inv = this.cachedTargetInv;
+        final TileTarget target = this.boundTarget;
+        if (inv == null || target == null || !target.isValid() || this.getTile().isInvalid()) {
+            return null;
+        }
+        return inv;
     }
 
     private void createRouter() {
