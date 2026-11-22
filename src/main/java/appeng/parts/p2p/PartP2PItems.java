@@ -477,34 +477,35 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         return loopsBackTo(this, new HashSet<>());
     }
 
-    private IInventoryRouter<PartP2PItems> getOwnerRouter() {
+    private @Nullable IInventoryRouter<PartP2PItems> getOwnerRouter() {
         return owner == null ? null : owner.router;
     }
 
-    private SlotView getSlotView(final int slot) {
+    private @Nullable SlotView getSlotView(final int slot) {
         this.viewed = true;
 
+        final PartP2PItems owner = this.owner;
         final IInventoryRouter<PartP2PItems> router = getOwnerRouter();
         final TileEntity te = this.getTile();
-        if (router == null || te == null || te.getWorldObj() == null) {
+        if (owner == null || router == null || te == null || te.getWorldObj() == null) {
             return null;
         }
         if (!router.resolve(this, slot, this.invOffset, this.rawSlotView)) {
             return null;
         }
         PartP2PItems provider = this.rawSlotView.provider;
-        if (provider == null || provider.owner != this.owner) {
+        if (provider == null || provider.owner != owner) {
             return null;
         }
         final IInventory providerInv = provider.getValidTarget();
         if (providerInv == null) {
-            if (!this.owner.rebuildQueued) {
+            if (!owner.rebuildQueued) {
                 provider.refreshTarget();
             }
             return null;
         }
         if (providerInv.getSizeInventory() != this.rawSlotView.size) {
-            this.owner.scheduleRebuild();
+            owner.scheduleRebuild();
             return null;
         }
         this.slotView.inv = providerInv;
@@ -537,7 +538,7 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
         }
     }
 
-    private PartP2PItems findOwner() {
+    private @Nullable PartP2PItems findOwner() {
         if (!this.getProxy().isActive() || this.getFrequency() == 0) {
             return null;
         }
