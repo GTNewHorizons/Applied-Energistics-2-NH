@@ -207,6 +207,11 @@ public abstract class GuiAmount extends GuiSub {
         }
     }
 
+    protected void updateAmountText(final long amount) {
+        this.amountTextField.setText(Long.toString(amount));
+        this.amountTextField.setCursorPositionEnd();
+    }
+
     protected void addAmount(final int i) {
         long resultL = getAmountLong();
 
@@ -219,29 +224,26 @@ public abstract class GuiAmount extends GuiSub {
             resultL = 1;
         }
 
-        this.amountTextField.setText(Long.toString(resultL));
-        this.amountTextField.setCursorPositionEnd();
+        updateAmountText(resultL);
     }
 
     protected int getAmount() {
         String out = this.amountTextField.getText();
-        double resultD = Calculator.conversion(out);
-
-        if (resultD <= 0 || Double.isNaN(resultD)) {
-            return 0;
-        } else {
-            return (int) ArithHelper.round(resultD, 0);
-        }
+        return (int) parseAmountFromText(out);
     }
 
     protected long getAmountLong() {
         String out = this.amountTextField.getText();
-        double resultD = Calculator.conversion(out);
+        return (long) parseAmountFromText(out);
+    }
+
+    protected double parseAmountFromText(String amountText) {
+        double resultD = Calculator.conversion(amountText);
 
         if (resultD <= 0 || Double.isNaN(resultD)) {
             return 0;
         } else {
-            return (long) ArithHelper.round(resultD, 0);
+            return ArithHelper.round(resultD, 0);
         }
     }
 

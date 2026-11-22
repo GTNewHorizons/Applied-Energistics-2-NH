@@ -18,6 +18,7 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
 import appeng.api.config.ActionItems;
+import appeng.api.config.AmountMode;
 import appeng.api.config.CraftingMode;
 import appeng.api.config.Settings;
 import appeng.api.storage.ITerminalHost;
@@ -191,6 +192,7 @@ public class GuiCraftAmount extends GuiAmount implements IVirtualSlotHolder {
                 NetworkHandler.instance.sendToServer(
                         new PacketCraftRequest(
                                 getAmountLong(),
+                                getAmountMode(),
                                 isShiftKeyDown(),
                                 isCtrlKeyDown(),
                                 (CraftingMode) this.craftingMode.getCurrentValue(),
@@ -219,6 +221,29 @@ public class GuiCraftAmount extends GuiAmount implements IVirtualSlotHolder {
                 field.mouseClicked(xCoord, yCoord, btn);
             }
         }
+    }
+
+    @Override
+    protected double parseAmountFromText(String amountText) {
+        String input = amountText;
+
+        if (input.startsWith("=")) {
+            input = input.substring(1);
+        }
+
+        return super.parseAmountFromText(input);
+    }
+
+    @Override
+    protected void updateAmountText(final long amount) {
+        final boolean matchTotal = (getAmountMode() == AmountMode.MATCH_TOTAL);
+
+        this.amountTextField.setText((matchTotal ? "=" : "") + amount);
+        this.amountTextField.setCursorPositionEnd();
+    }
+
+    private AmountMode getAmountMode() {
+        return this.amountTextField.getText().startsWith("=") ? AmountMode.MATCH_TOTAL : AmountMode.CRAFT;
     }
 
     private void initializeControlValueFields() {
