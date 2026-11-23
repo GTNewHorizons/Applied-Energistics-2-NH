@@ -66,7 +66,6 @@ public class GuiCraftAmount extends GuiAmount implements IVirtualSlotHolder {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void initGui() {
         super.initGui();
 
@@ -143,9 +142,9 @@ public class GuiCraftAmount extends GuiAmount implements IVirtualSlotHolder {
 
         try {
 
-            int resultI = getAmount();
+            long resultL = getAmountLong();
 
-            this.nextBtn.enabled = resultI > 0;
+            this.nextBtn.enabled = resultL > 0;
         } catch (final NumberFormatException e) {
             this.nextBtn.enabled = false;
         }
@@ -221,6 +220,12 @@ public class GuiCraftAmount extends GuiAmount implements IVirtualSlotHolder {
                 field.mouseClicked(xCoord, yCoord, btn);
             }
         }
+    }
+
+    @Override
+    protected int getMaxAmountLength() {
+        // Extra room for '=' character
+        return super.getMaxAmountLength() + 1;
     }
 
     @Override
