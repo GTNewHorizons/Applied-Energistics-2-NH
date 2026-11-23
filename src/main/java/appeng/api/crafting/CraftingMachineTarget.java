@@ -5,14 +5,9 @@ import appeng.api.networking.crafting.ICraftingPatternDetails;
 /**
  * Pattern target of anything that runs crafting table patterns, such as a Molecular Assembler.
  */
-public enum CraftingMachineTarget implements IPatternTargetKeyProvider, IPatternTargetKey {
+public enum CraftingMachineTarget implements IPatternTargetKey {
 
     INSTANCE;
-
-    @Override
-    public IPatternTargetKey getTargetKey() {
-        return this;
-    }
 
     /**
      * Matches crafting table patterns and rejects processing patterns.

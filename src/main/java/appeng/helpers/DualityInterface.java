@@ -66,9 +66,10 @@ import appeng.api.config.LockCraftingMode;
 import appeng.api.config.Settings;
 import appeng.api.config.Upgrades;
 import appeng.api.config.YesNo;
-import appeng.api.crafting.CraftingMachineTarget;
 import appeng.api.crafting.ICraftingIconProvider;
+import appeng.api.crafting.IPatternTargetKey;
 import appeng.api.crafting.IPatternTargetKeyProvider;
+import appeng.api.crafting.PatternMatch;
 import appeng.api.implementations.ICraftingPatternItem;
 import appeng.api.implementations.IUpgradeableHost;
 import appeng.api.implementations.tiles.ICraftingMachine;
@@ -148,6 +149,7 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
     public static final int NUMBER_OF_PATTERN_SLOTS = 9;
 
     private static final Collection<Block> BAD_BLOCKS = new HashSet<>(100);
+    private static final IPatternTargetKey UNKNOWN_PATTERN_TARGET = pattern -> PatternMatch.UNKNOWN;
     private final int[] sides = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
     private final IAEItemStack[] requireWork = { null, null, null, null, null, null, null, null, null };
     private final MultiCraftingTracker craftingTracker;
@@ -1674,13 +1676,11 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
         return null;
     }
 
-    /**
-     * Returns the target of the first adjacent machine that describes itself, or null if none does.
-     */
-    @Nullable
-    public IPatternTargetKeyProvider getPatternTarget() {
+    /** Returns the target keys for the faces this interface can push to. */
+    public List<IPatternTargetKey> getPatternTargetKeys() {
         final TileEntity hostTile = this.iHost.getTileEntity();
         final World hostWorld = hostTile.getWorldObj();
+        final List<IPatternTargetKey> keys = new ArrayList<>();
 
         for (final ForgeDirection direction : this.iHost.getTargets()) {
             final TileEntity directedTile = Platform.getLoadedTileEntity(
@@ -1692,21 +1692,18 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
                 continue;
             }
 
-            final IPatternTargetKeyProvider target = getCapability(
-                    directedTile,
-                    IPatternTargetKeyProvider.class,
-                    direction.getOpposite());
+            final ForgeDirection face = direction.getOpposite();
+            final IPatternTargetKeyProvider target = getCapability(directedTile, IPatternTargetKeyProvider.class, face);
             if (target != null) {
-                return target;
-            }
-
-            // acceptsPlans() only says whether the machine is idle right now, so the type alone decides.
-            if (directedTile instanceof ICraftingMachine) {
-                return CraftingMachineTarget.INSTANCE;
-            }
+                final IPatternTargetKey key = target.getTargetKey();
+                keys.add(key == null ? UNKNOWN_PATTERN_TARGET : key);
+            } else if (directedTile instanceof ICraftingMachine
+                    || InventoryAdaptor.getAdaptor(directedTile, face) != null) {
+                        keys.add(UNKNOWN_PATTERN_TARGET);
+                    }
         }
 
-        return null;
+        return keys;
     }
 
     @Override

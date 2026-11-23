@@ -11,6 +11,7 @@
 package appeng.helpers;
 
 import java.util.EnumSet;
+import java.util.List;
 
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
@@ -21,7 +22,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 import appeng.api.config.Settings;
 import appeng.api.config.Upgrades;
 import appeng.api.config.YesNo;
-import appeng.api.crafting.IPatternTargetKeyProvider;
+import appeng.api.crafting.IPatternTargetKey;
 import appeng.api.implementations.IUpgradeableHost;
 import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.crafting.ICraftingRequester;
@@ -95,7 +96,7 @@ public interface IInterfaceHost extends ICraftingProvider, IUpgradeableHost, ICr
     }
 
     @Override
-    default IPatternTargetKeyProvider getPatternTarget() {
-        return getInterfaceDuality().getPatternTarget();
+    default List<IPatternTargetKey> getPatternTargetKeys() {
+        return getInterfaceDuality().getPatternTargetKeys();
     }
 }

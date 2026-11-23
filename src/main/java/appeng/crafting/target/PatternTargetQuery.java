@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -18,7 +19,6 @@ import net.minecraftforge.common.util.ForgeDirection;
 import appeng.api.AEApi;
 import appeng.api.config.SecurityPermissions;
 import appeng.api.crafting.IPatternTargetKey;
-import appeng.api.crafting.IPatternTargetKeyProvider;
 import appeng.api.crafting.PatternMatch;
 import appeng.api.implementations.ICraftingPatternItem;
 import appeng.api.networking.IGrid;
@@ -86,8 +86,7 @@ public final class PatternTargetQuery {
             }
         }
 
-        final List<IInterfaceViewable> providers = new ArrayList<>();
-        final List<List<IPatternTargetKey>> keys = new ArrayList<>();
+        final List<Entry> entries = new ArrayList<>();
         final Map<IPatternTargetKey, PatternMatch> results = new HashMap<>();
         final Set<IInterfaceViewable> visited = new HashSet<>();
         final Set<Class<? extends IInterfaceViewable>> supported = AEApi.instance().registries().interfaceTerminal()
@@ -104,34 +103,15 @@ public final class PatternTargetQuery {
                         continue;
                     }
 
-                    providers.add(machine);
-                    if (!supportsAll(machine.getSupportedStackTypes(), neededTypes)) {
-                        keys.add(Collections.singletonList(StackTypeMismatch.INSTANCE));
-                        continue;
-                    }
-
-                    final List<IPatternTargetKey> memberKeys = new ArrayList<>();
-                    for (IInterfaceViewable member : pushingMembers(machine)) {
-                        final IPatternTargetKeyProvider target = member.getPatternTarget();
-                        final IPatternTargetKey key = target == null ? null : target.getTargetKey();
-                        memberKeys.add(key);
-                        if (key != null && !results.containsKey(key)) {
-                            results.put(key, matchKey(key, pattern));
-                        }
-                    }
-                    keys.add(memberKeys);
+                    final PatternMatch match = supportsAll(machine.getSupportedStackTypes(), neededTypes)
+                            ? matchProvider(machine, pattern, results)
+                            : PatternMatch.NO_MATCH;
+                    entries.add(new Entry(machine, match, countFreeSlots(machine)));
                 }
             }
         }
 
-        final int distinctKeys = results.size();
-        final List<Entry> entries = new ArrayList<>(providers.size());
-        for (int i = 0; i < providers.size(); i++) {
-            final IInterfaceViewable provider = providers.get(i);
-            entries.add(new Entry(provider, combine(keys.get(i), results), countFreeSlots(provider)));
-        }
-
-        return new Result(entries, distinctKeys, System.nanoTime() - start);
+        return new Result(entries, results.size(), System.nanoTime() - start);
     }
 
     private static boolean isLinkedTunnelOutput(IInterfaceViewable machine) {
@@ -186,26 +166,16 @@ public final class PatternTargetQuery {
         return false;
     }
 
-    /**
-     * Returns the weakest match among the member keys of one provider.
-     */
-    private static PatternMatch combine(List<IPatternTargetKey> memberKeys,
+    private static PatternMatch matchProvider(IInterfaceViewable provider, ICraftingPatternDetails pattern,
             Map<IPatternTargetKey, PatternMatch> results) {
-        if (memberKeys.isEmpty()) {
+        final List<IInterfaceViewable> members = pushingMembers(provider);
+        if (members.isEmpty()) {
             return PatternMatch.UNKNOWN;
         }
         boolean notReady = false;
         boolean unknown = false;
-        for (IPatternTargetKey key : memberKeys) {
-            final PatternMatch match;
-            if (key == StackTypeMismatch.INSTANCE) {
-                match = PatternMatch.NO_MATCH;
-            } else if (key == null) {
-                match = PatternMatch.UNKNOWN;
-            } else {
-                match = results.getOrDefault(key, PatternMatch.UNKNOWN);
-            }
-            switch (match) {
+        for (IInterfaceViewable member : members) {
+            switch (matchFaces(member.getPatternTargetKeys(), pattern, results)) {
                 case NO_MATCH:
                     return PatternMatch.NO_MATCH;
                 case NOT_READY:
@@ -222,6 +192,31 @@ public final class PatternTargetQuery {
             return PatternMatch.NOT_READY;
         }
         return unknown ? PatternMatch.UNKNOWN : PatternMatch.MATCH;
+    }
+
+    private static PatternMatch matchFaces(List<IPatternTargetKey> keys, ICraftingPatternDetails pattern,
+            Map<IPatternTargetKey, PatternMatch> results) {
+        boolean unknown = keys.isEmpty();
+        boolean notReady = false;
+        // A provider can use any of its faces, but each P2P member must be checked separately.
+        for (IPatternTargetKey key : keys) {
+            switch (results.computeIfAbsent(key, k -> matchKey(k, pattern))) {
+                case MATCH:
+                    return PatternMatch.MATCH;
+                case UNKNOWN:
+                    unknown = true;
+                    break;
+                case NOT_READY:
+                    notReady = true;
+                    break;
+                default:
+                    break;
+            }
+        }
+        if (unknown) {
+            return PatternMatch.UNKNOWN;
+        }
+        return notReady ? PatternMatch.NOT_READY : PatternMatch.NO_MATCH;
     }
 
     private static PatternMatch matchKey(IPatternTargetKey key, ICraftingPatternDetails pattern) {
@@ -298,7 +293,7 @@ public final class PatternTargetQuery {
             return Collections.emptyList();
         }
 
-        final List<Conflict> conflicts = new ArrayList<>();
+        final Map<IInterfaceViewable, Set<ICraftingPatternDetails>> candidates = new LinkedHashMap<>();
         for (IGrid currentGrid : PartPatternRepeater.collectReachableGrids(grid)) {
             if (!(currentGrid.getCache(ICraftingGrid.class) instanceof CraftingGridCache craftingGrid)) {
                 continue;
@@ -316,11 +311,13 @@ public final class PatternTargetQuery {
                             ? rowProvider(viewable)
                             : null;
                     if (provider != null) {
-                        addConflict(conflicts, provider, details, sameRecipe(details, pattern));
+                        candidates.computeIfAbsent(provider, p -> new HashSet<>()).add(details);
                     }
                 }
             }
         }
+        final List<Conflict> conflicts = new ArrayList<>();
+        candidates.forEach((provider, details) -> addConflicts(conflicts, provider, details, pattern));
         return conflicts;
     }
 
@@ -339,8 +336,8 @@ public final class PatternTargetQuery {
         return removed;
     }
 
-    private static void addConflict(List<Conflict> conflicts, IInterfaceViewable provider,
-            ICraftingPatternDetails details, boolean sameRecipe) {
+    private static void addConflicts(List<Conflict> conflicts, IInterfaceViewable provider,
+            Set<ICraftingPatternDetails> candidates, ICraftingPatternDetails pattern) {
         final IInventory patterns = provider.getPatterns();
         final TileEntity tile = provider.getTileEntity();
         if (patterns == null || tile == null || tile.getWorldObj() == null) {
@@ -349,15 +346,11 @@ public final class PatternTargetQuery {
         final int slots = Math.min(provider.numSlots(), patterns.getSizeInventory());
         for (int i = 0; i < slots; i++) {
             final ItemStack stack = patterns.getStackInSlot(i);
-            if (stack != null && stack.getItem() instanceof ICraftingPatternItem item
-                    && details.equals(item.getPatternForItem(stack, tile.getWorldObj()))) {
-                for (Conflict known : conflicts) {
-                    if (known.provider == provider && known.slot == i) {
-                        return;
-                    }
+            if (stack != null && stack.getItem() instanceof ICraftingPatternItem item) {
+                final ICraftingPatternDetails details = item.getPatternForItem(stack, tile.getWorldObj());
+                if (details != null && candidates.contains(details)) {
+                    conflicts.add(new Conflict(provider, i, stack.copy(), sameRecipe(details, pattern)));
                 }
-                conflicts.add(new Conflict(provider, i, stack.copy(), sameRecipe));
-                return;
             }
         }
     }
@@ -440,17 +433,6 @@ public final class PatternTargetQuery {
         }
         final ISecurityGrid security = node.getGrid().getCache(ISecurityGrid.class);
         return security.hasPermission(player, SecurityPermissions.BUILD);
-    }
-
-    // Stands for a provider that cannot hold the pattern's stack types; combine() maps it to NO_MATCH.
-    private enum StackTypeMismatch implements IPatternTargetKey {
-
-        INSTANCE;
-
-        @Override
-        public PatternMatch match(ICraftingPatternDetails pattern) {
-            return PatternMatch.NO_MATCH;
-        }
     }
 
     public static final class Conflict {

@@ -8,6 +8,8 @@ import appeng.api.networking.crafting.ICraftingPatternDetails;
  */
 public interface IPatternTargetKey {
 
+    IPatternTargetKey NOT_READY = pattern -> PatternMatch.NOT_READY;
+
     /**
      * Returns whether a machine with this key can run the pattern.
      */
