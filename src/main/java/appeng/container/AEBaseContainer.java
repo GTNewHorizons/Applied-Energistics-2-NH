@@ -1187,7 +1187,7 @@ public abstract class AEBaseContainer extends Container {
         }
 
         final EntityPlayer player = this.getInventoryPlayer().player;
-        Platform.openGUI(player, context.getTile(), context.getSide(), gui, this.getTargetSlotIndex());
+        Platform.openGUI(player, context.getTile(), context.getSide(), gui, this.getTargetSlotIndex(), true);
 
         if (player.openContainer instanceof IContainerSubGui sg) {
             sg.setPrimaryGui(this.createPrimaryGui());

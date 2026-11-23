@@ -13,7 +13,6 @@ package appeng.core.sync.packets;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
 
-import appeng.client.gui.AEBaseGui;
 import appeng.container.AEBaseContainer;
 import appeng.container.ContainerOpenContext;
 import appeng.container.PrimaryGui;
@@ -21,7 +20,6 @@ import appeng.container.interfaces.IContainerSubGui;
 import appeng.core.sync.AppEngPacket;
 import appeng.core.sync.GuiBridge;
 import appeng.core.sync.network.INetworkInfo;
-import appeng.util.Platform;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -39,10 +37,6 @@ public class PacketSwitchGuis extends AppEngPacket {
     public PacketSwitchGuis(final GuiBridge newGui) {
         this.newGui = newGui;
 
-        if (Platform.isClient()) {
-            AEBaseGui.setSwitchingGuis(true);
-        }
-
         final ByteBuf data = Unpooled.buffer();
 
         data.writeInt(this.getPacketID());
@@ -57,10 +51,6 @@ public class PacketSwitchGuis extends AppEngPacket {
     // api
     public PacketSwitchGuis() {
         this.newGui = null;
-
-        if (Platform.isClient()) {
-            AEBaseGui.setSwitchingGuis(true);
-        }
 
         final ByteBuf data = Unpooled.buffer();
 
@@ -94,10 +84,5 @@ public class PacketSwitchGuis extends AppEngPacket {
                 sg.setPrimaryGui(pGui);
             }
         }
-    }
-
-    @Override
-    public void clientPacketData(final INetworkInfo network, final AppEngPacket packet, final EntityPlayer player) {
-        AEBaseGui.setSwitchingGuis(true);
     }
 }

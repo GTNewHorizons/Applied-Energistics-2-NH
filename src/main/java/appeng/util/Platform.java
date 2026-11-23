@@ -368,6 +368,15 @@ public class Platform {
 
     public static void openGUI(@NonNull final EntityPlayer p, @Nullable final TileEntity tile,
             @Nullable final ForgeDirection side, @NonNull final GuiBridge type, int slotIndex) {
+        openGUI(p, tile, side, type, slotIndex, false);
+    }
+
+    /**
+     * @param subGui whether the GUI is opened by moving between a primary GUI and its sub-GUIs, see
+     *               {@link appeng.client.gui.AEBaseGui#isSubGui()}
+     */
+    public static void openGUI(@NonNull final EntityPlayer p, @Nullable final TileEntity tile,
+            @Nullable final ForgeDirection side, @NonNull final GuiBridge type, int slotIndex, final boolean subGui) {
         if (isClient()) {
             return;
         }
@@ -387,15 +396,15 @@ public class Platform {
             if (tile == null && type.getType() != GuiHostType.WORLD) {
                 p.openGui(
                         AppEng.instance(),
-                        type.ordinal() << 5 | (1 << 4),
+                        type.encodeGuiId(subGui, 1 << 4),
                         p.getEntityWorld(),
                         itemGuiSlotOffset + slotIndex,
                         p.openContainer instanceof AEBaseContainer abc ? abc.getSwitchAbleGuiNext() : Integer.MIN_VALUE,
                         0);
             } else if (tile == null || type.getType() == GuiHostType.ITEM) {
-                p.openGui(AppEng.instance(), type.ordinal() << 5 | (1 << 3), p.getEntityWorld(), x, y, z);
+                p.openGui(AppEng.instance(), type.encodeGuiId(subGui, 1 << 3), p.getEntityWorld(), x, y, z);
             } else {
-                p.openGui(AppEng.instance(), type.ordinal() << 5 | (side.ordinal()), tile.getWorldObj(), x, y, z);
+                p.openGui(AppEng.instance(), type.encodeGuiId(subGui, side.ordinal()), tile.getWorldObj(), x, y, z);
             }
         }
     }

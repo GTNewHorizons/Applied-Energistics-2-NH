@@ -7,10 +7,8 @@ import net.minecraft.entity.player.InventoryPlayer;
 import org.jspecify.annotations.Nullable;
 
 import appeng.api.storage.data.IAEStack;
-import appeng.client.gui.AEBaseGui;
 import appeng.container.ContainerSubGui;
 import appeng.container.PrimaryGui;
-import appeng.container.sync.ActionHandler;
 import appeng.container.sync.SyncCodecs;
 import appeng.container.sync.handlers.ObjectSyncHandler;
 
@@ -44,11 +42,6 @@ public abstract class ContainerStackEdit extends ContainerSubGui {
 
     public void setStackListener(final @Nullable Runnable listener) {
         this.stackListener = listener;
-    }
-
-    protected final <T> void sendSubmit(final ActionHandler<T> action, final T payload) {
-        AEBaseGui.setSwitchingGuis(true);
-        action.send(payload);
     }
 
     /**

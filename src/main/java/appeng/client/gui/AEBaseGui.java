@@ -145,7 +145,6 @@ public abstract class AEBaseGui extends GuiContainer implements IGuiTooltipHandl
         }
     }
 
-    private static boolean switchingGuis;
     // drag y
     protected final Set<Slot> draggedSlots = new HashSet<>();
     public static final AppEngRenderItem aeRenderItem = new AppEngRenderItem();
@@ -165,8 +164,6 @@ public abstract class AEBaseGui extends GuiContainer implements IGuiTooltipHandl
 
     public AEBaseGui(final Container container) {
         super(container);
-        this.subGui = switchingGuis;
-        switchingGuis = false;
         aeRenderItem.parent = this;
     }
 
@@ -192,6 +189,10 @@ public abstract class AEBaseGui extends GuiContainer implements IGuiTooltipHandl
 
     public boolean isSubGui() {
         return this.subGui;
+    }
+
+    public void setSubGui(final boolean subGui) {
+        this.subGui = subGui;
     }
 
     @Override
@@ -1028,14 +1029,6 @@ public abstract class AEBaseGui extends GuiContainer implements IGuiTooltipHandl
 
     protected void setScrollBar(final GuiScrollbar myScrollBar) {
         this.scrollBar = myScrollBar;
-    }
-
-    public static final synchronized boolean isSwitchingGuis() {
-        return switchingGuis;
-    }
-
-    public static final synchronized void setSwitchingGuis(final boolean switchingGuis) {
-        AEBaseGui.switchingGuis = switchingGuis;
     }
 
     protected void addItemTooltip(ItemStack is, List<String> lineList) {

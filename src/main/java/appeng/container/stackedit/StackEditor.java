@@ -7,7 +7,6 @@ import java.util.function.IntFunction;
 
 import org.jspecify.annotations.Nullable;
 
-import appeng.client.gui.AEBaseGui;
 import appeng.container.AEBaseContainer;
 import appeng.container.sync.ActionHandler;
 import appeng.container.sync.StreamCodecs;
@@ -38,12 +37,9 @@ public final class StackEditor {
 
     public void request(final StackEditMode mode, final int slot) {
         final ActionHandler<Integer> request = this.requests.get(mode);
-        if (request == null || this.owner.getInventoryPlayer().getItemStack() != null) {
-            return;
+        if (request != null) {
+            request.send(slot);
         }
-
-        AEBaseGui.setSwitchingGuis(true);
-        request.send(slot);
     }
 
     private void open(final StackEditMode mode, final int slot) {

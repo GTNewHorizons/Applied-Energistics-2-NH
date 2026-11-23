@@ -19,7 +19,7 @@ public class ContainerStackRename extends ContainerStackEdit {
     }
 
     public void submitName(final String name) {
-        this.sendSubmit(this.nameAction, name);
+        this.nameAction.send(name);
     }
 
     private void setName(final String name) {

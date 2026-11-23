@@ -17,7 +17,7 @@ public class ContainerStackAmount extends ContainerStackEdit {
     }
 
     public void submitAmount(final long amount) {
-        this.sendSubmit(this.amountAction, amount);
+        this.amountAction.send(amount);
     }
 
     private void setAmount(final long amount) {

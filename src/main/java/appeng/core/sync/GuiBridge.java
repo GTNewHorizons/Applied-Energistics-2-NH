@@ -52,6 +52,7 @@ import appeng.api.parts.IPatternTerminalEx;
 import appeng.api.parts.IStorageBus;
 import appeng.api.storage.ITerminalHost;
 import appeng.api.util.DimensionalCoord;
+import appeng.client.gui.AEBaseGui;
 import appeng.client.gui.GuiNull;
 import appeng.container.AEBaseContainer;
 import appeng.container.ContainerNull;
@@ -277,6 +278,16 @@ public enum GuiBridge implements IGuiHandler {
     private GuiHostType type;
     private SecurityPermissions requiredPermission;
 
+    private static final int GUI_ID_TYPE_SHIFT = 6;
+    private static final int GUI_ID_SUB_GUI = 1 << 5;
+
+    /**
+     * @param flags host and side bits in the low 5 bits of the ID
+     */
+    public int encodeGuiId(final boolean subGui, final int flags) {
+        return this.ordinal() << GUI_ID_TYPE_SHIFT | (subGui ? GUI_ID_SUB_GUI : 0) | flags;
+    }
+
     GuiBridge() {
         this.tileClass = null;
         this.guiClass = null;
@@ -322,7 +333,7 @@ public enum GuiBridge implements IGuiHandler {
     public Object getServerGuiElement(final int ordinal, final EntityPlayer player, final World w, final int x,
             final int y, final int z) {
         final ForgeDirection side = ForgeDirection.getOrientation(ordinal & 0x07);
-        final GuiBridge ID = values()[ordinal >> 5];
+        final GuiBridge ID = values()[ordinal >> GUI_ID_TYPE_SHIFT];
         final boolean stem = ((ordinal >> 3) & 1) == 1;
         final boolean pastXLimit = x >= itemGuiSlotOffset;
         final int slotIndex = x - itemGuiSlotOffset;
@@ -471,8 +482,17 @@ public enum GuiBridge implements IGuiHandler {
     @Override
     public Object getClientGuiElement(final int ordinal, final EntityPlayer player, final World w, final int x,
             final int y, final int z) {
+        final Object gui = this.createClientGuiElement(ordinal, player, w, x, y, z);
+        if ((ordinal & GUI_ID_SUB_GUI) != 0 && gui instanceof AEBaseGui aeGui) {
+            aeGui.setSubGui(true);
+        }
+        return gui;
+    }
+
+    private Object createClientGuiElement(final int ordinal, final EntityPlayer player, final World w, final int x,
+            final int y, final int z) {
         final ForgeDirection side = ForgeDirection.getOrientation(ordinal & 0x07);
-        final GuiBridge ID = values()[ordinal >> 5];
+        final GuiBridge ID = values()[ordinal >> GUI_ID_TYPE_SHIFT];
         final boolean stem = ((ordinal >> 3) & 1) == 1;
         final boolean pastXLimit = x >= itemGuiSlotOffset;
         final int slotIndex = x - itemGuiSlotOffset;

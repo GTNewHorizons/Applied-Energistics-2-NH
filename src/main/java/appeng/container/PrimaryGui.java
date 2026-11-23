@@ -25,7 +25,7 @@ public class PrimaryGui {
 
     public void open(EntityPlayer p) {
         if (gui instanceof GuiBridge gb) {
-            Platform.openGUI(p, te, side, gb, slotIndex);
+            Platform.openGUI(p, te, side, gb, slotIndex, true);
         }
     }
 
