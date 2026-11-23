@@ -25,8 +25,6 @@ import appeng.api.networking.crafting.ICraftingGrid;
 import appeng.api.networking.crafting.ICraftingJob;
 import appeng.api.networking.storage.IStorageGrid;
 import appeng.api.storage.IMEMonitor;
-import appeng.api.storage.data.IAEFluidStack;
-import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.container.ContainerOpenContext;
 import appeng.container.PrimaryGui;
@@ -116,17 +114,12 @@ public class PacketCraftRequest extends AppEngPacket {
                                 cca.getWorld(),
                                 cca.getGrid(),
                                 cca.getActionSrc(),
-                                cca.getItemToCraft(),
+                                item,
                                 this.craftingMode,
                                 liteMode,
                                 null);
                     } else {
-                        futureJob = cg.beginCraftingJob(
-                                cca.getWorld(),
-                                cca.getGrid(),
-                                cca.getActionSrc(),
-                                cca.getItemToCraft(),
-                                null);
+                        futureJob = cg.beginCraftingJob(cca.getWorld(), cca.getGrid(), cca.getActionSrc(), item, null);
                     }
 
                     final ContainerOpenContext context = cca.getOpenContext();
@@ -152,40 +145,32 @@ public class PacketCraftRequest extends AppEngPacket {
         }
     }
 
-    private boolean setCraftingAmount(IGrid g, IAEStack<?> item) {
+    private boolean setCraftingAmount(IGrid g, IAEStack<?> stack) {
         long craftAmount = this.amount;
 
         if (this.amountMode == AmountMode.MATCH_TOTAL) {
-            final long storedAmount = getStoredAmount(g, item);
-            craftAmount = Math.max(0, this.amount - storedAmount);
+            final long storedAmount = getStoredAmount(g, stack);
+            craftAmount = Math.max(0L, this.amount - storedAmount);
         }
 
         if (craftAmount <= 0) {
             return false;
         }
 
-        item.setStackSize(craftAmount);
+        stack.setStackSize(craftAmount);
 
         return true;
     }
 
-    private long getStoredAmount(IGrid g, IAEStack<?> item) {
+    @SuppressWarnings("unchecked")
+    private <T extends IAEStack<T>> long getStoredAmount(IGrid g, IAEStack<T> item) {
         final IStorageGrid sg = g.getCache(IStorageGrid.class);
 
-        if (item instanceof IAEItemStack itemStack) {
-            final IMEMonitor<IAEItemStack> monitor = sg.getItemInventory();
-            final IAEItemStack stored = monitor.getStorageList().findPrecise(itemStack);
+        final IMEMonitor<T> monitor = (IMEMonitor<T>) sg.getMEMonitor(item.getStackType());
+        if (monitor == null) return 0L;
 
-            return stored != null ? stored.getStackSize() : 0;
-        } else {
-            if (item instanceof IAEFluidStack fluidStack) {
-                final IMEMonitor<IAEFluidStack> monitor = sg.getFluidInventory();
-                final IAEFluidStack stored = monitor.getStorageList().findPrecise(fluidStack);
+        final T stored = monitor.getStorageList().findPrecise((T) item);
 
-                return stored != null ? stored.getStackSize() : 0;
-            }
-        }
-
-        return 0;
+        return stored != null ? stored.getStackSize() : 0;
     }
 }
