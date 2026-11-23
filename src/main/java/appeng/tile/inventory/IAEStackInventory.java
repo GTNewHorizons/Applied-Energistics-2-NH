@@ -3,6 +3,8 @@ package appeng.tile.inventory;
 import static appeng.util.Platform.readStackNBT;
 import static appeng.util.Platform.writeStackNBT;
 
+import java.util.function.IntFunction;
+
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.util.Constants.NBT;
@@ -21,6 +23,7 @@ public class IAEStackInventory {
     private final IAEStack<?>[] inv;
     private final int size;
     private final StorageName storageName;
+    private int updateDepth;
 
     public IAEStackInventory(final IIAEStackInventory te, final int size, StorageName storageName) {
         this.aesInventory = te;
@@ -51,7 +54,22 @@ public class IAEStackInventory {
 
     public void putAEStackInSlot(final int n, IAEStack<?> aes) {
         this.inv[n] = aes;
-        markDirty();
+        if (this.updateDepth == 0) {
+            this.markDirty();
+        }
+    }
+
+    public void updateSlots(IntFunction<IAEStack<?>> stackProvider) {
+        this.updateDepth++;
+        try {
+            for (int slot = 0; slot < this.getSizeInventory(); slot++) {
+                this.putAEStackInSlot(slot, stackProvider.apply(slot));
+            }
+        } finally {
+            if (--this.updateDepth == 0) {
+                this.markDirty();
+            }
+        }
     }
 
     public void writeToNBT(@NonNull ItemStack stack, String name) {
