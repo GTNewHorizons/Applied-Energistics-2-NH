@@ -14,7 +14,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import thaumicenergistics.common.ThaumicEnergistics;
+import thaumicenergistics.common.ThECreativeTab;
 import thaumicenergistics.common.registries.EnumCache;
 import thaumicenergistics.common.registries.Renderers;
 import thaumicenergistics.common.tiles.abstraction.TileProviderBase;
@@ -25,7 +25,7 @@ public abstract class AbstractBlockProviderBase extends AbstractBlockAEWrenchabl
         super(material);
 
         // Place in our creative tab
-        this.setCreativeTab(ThaumicEnergistics.ThETab);
+        this.setCreativeTab(ThECreativeTab.INSTANCE);
     }
 
     @Override
