@@ -39,6 +39,7 @@ final class PatternTargetController {
     private final ContainerPatternTerm container;
 
     private ItemStack lastPattern;
+    private boolean refreshRequested;
     private List<PatternTargetQuery.Entry> lastTargets = Collections.emptyList();
     private List<PatternTargetQuery.Conflict> lastConflicts = Collections.emptyList();
     private List<PatternTargetList.CardSource> lastTargetCards = Collections.emptyList();
@@ -68,9 +69,10 @@ final class PatternTargetController {
     void update() {
         final ItemStack pattern = this.container.getEncodedPattern();
         // The query walks every provider of the network, so it runs only when the encoded pattern changes.
-        if (ItemStack.areItemStacksEqual(pattern, this.lastPattern)) {
+        if (!this.refreshRequested && ItemStack.areItemStacksEqual(pattern, this.lastPattern)) {
             return;
         }
+        this.refreshRequested = false;
         this.lastPattern = pattern == null ? null : pattern.copy();
         this.lastTargets = Collections.emptyList();
         this.lastTargetCards = Collections.emptyList();
@@ -209,7 +211,7 @@ final class PatternTargetController {
             player.entityDropItem(extracted, 0);
         }
         // The encoded pattern did not change, so the lists must be rebuilt by hand to drop the extracted one.
-        this.lastPattern = null;
+        this.refreshRequested = true;
     }
 
     /**
@@ -231,14 +233,17 @@ final class PatternTargetController {
 
         final IInterfaceViewable provider = this.lastTargets.get(index).provider;
         final EntityPlayer player = this.container.getPlayerInv().player;
-        if (this.lastTargetCards.get(index) != PatternTargetList.CardSource.NONE) {
-            if (!this.installCapacityCard(provider, node.getGrid(), player)) {
-                return;
-            }
-            // The card changed the interface's free slots even if the pattern below fails to fit.
-            this.lastPattern = null;
+        final IGrid grid = node.getGrid();
+        if (PatternTargetQuery.insertPattern(provider, grid, player, pattern)) {
+            this.container.consumeEncodedPattern();
+            return;
         }
-        if (PatternTargetQuery.insertPattern(provider, node.getGrid(), player, pattern)) {
+        if (this.lastTargetCards.get(index) == PatternTargetList.CardSource.NONE
+                || !this.installCapacityCard(provider, grid, player)) {
+            return;
+        }
+        this.refreshRequested = true;
+        if (PatternTargetQuery.insertPattern(provider, grid, player, pattern)) {
             this.container.consumeEncodedPattern();
         }
     }

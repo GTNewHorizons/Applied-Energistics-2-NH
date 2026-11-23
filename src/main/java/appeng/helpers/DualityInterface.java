@@ -68,7 +68,7 @@ import appeng.api.config.Upgrades;
 import appeng.api.config.YesNo;
 import appeng.api.crafting.CraftingMachineTarget;
 import appeng.api.crafting.ICraftingIconProvider;
-import appeng.api.crafting.IPatternTarget;
+import appeng.api.crafting.IPatternTargetKeyProvider;
 import appeng.api.implementations.ICraftingPatternItem;
 import appeng.api.implementations.IUpgradeableHost;
 import appeng.api.implementations.tiles.ICraftingMachine;
@@ -1678,7 +1678,7 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
      * Returns the target of the first adjacent machine that describes itself, or null if none does.
      */
     @Nullable
-    public IPatternTarget getPatternTarget() {
+    public IPatternTargetKeyProvider getPatternTarget() {
         final TileEntity hostTile = this.iHost.getTileEntity();
         final World hostWorld = hostTile.getWorldObj();
 
@@ -1692,7 +1692,10 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
                 continue;
             }
 
-            final IPatternTarget target = getCapability(directedTile, IPatternTarget.class);
+            final IPatternTargetKeyProvider target = getCapability(
+                    directedTile,
+                    IPatternTargetKeyProvider.class,
+                    direction.getOpposite());
             if (target != null) {
                 return target;
             }

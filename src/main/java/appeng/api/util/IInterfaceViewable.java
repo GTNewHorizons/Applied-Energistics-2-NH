@@ -9,7 +9,7 @@ import net.minecraft.util.IChatComponent;
 
 import org.jspecify.annotations.Nullable;
 
-import appeng.api.crafting.IPatternTarget;
+import appeng.api.crafting.IPatternTargetKeyProvider;
 import appeng.api.networking.IGridHost;
 import appeng.api.storage.data.IAEStackType;
 import appeng.helpers.IPriorityHost;
@@ -120,7 +120,7 @@ public interface IInterfaceViewable extends IGridHost {
      * Returns the machine this provider pushes patterns into, or null if unknown; call it on the server thread.
      */
     @Nullable
-    default IPatternTarget getPatternTarget() {
+    default IPatternTargetKeyProvider getPatternTarget() {
         return null;
     }
 }

@@ -17,9 +17,10 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 import appeng.api.AEApi;
 import appeng.api.config.SecurityPermissions;
-import appeng.api.crafting.IPatternTarget;
 import appeng.api.crafting.IPatternTargetKey;
+import appeng.api.crafting.IPatternTargetKeyProvider;
 import appeng.api.crafting.PatternMatch;
+import appeng.api.implementations.ICraftingPatternItem;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.crafting.ICraftingGrid;
@@ -111,7 +112,7 @@ public final class PatternTargetQuery {
 
                     final List<IPatternTargetKey> memberKeys = new ArrayList<>();
                     for (IInterfaceViewable member : pushingMembers(machine)) {
-                        final IPatternTarget target = member.getPatternTarget();
+                        final IPatternTargetKeyProvider target = member.getPatternTarget();
                         final IPatternTargetKey key = target == null ? null : target.getTargetKey();
                         memberKeys.add(key);
                         if (key != null && !results.containsKey(key)) {
@@ -341,13 +342,15 @@ public final class PatternTargetQuery {
     private static void addConflict(List<Conflict> conflicts, IInterfaceViewable provider,
             ICraftingPatternDetails details, boolean sameRecipe) {
         final IInventory patterns = provider.getPatterns();
-        if (patterns == null) {
+        final TileEntity tile = provider.getTileEntity();
+        if (patterns == null || tile == null || tile.getWorldObj() == null) {
             return;
         }
         final int slots = Math.min(provider.numSlots(), patterns.getSizeInventory());
         for (int i = 0; i < slots; i++) {
             final ItemStack stack = patterns.getStackInSlot(i);
-            if (stack != null && ItemStack.areItemStacksEqual(stack, details.getPattern())) {
+            if (stack != null && stack.getItem() instanceof ICraftingPatternItem item
+                    && details.equals(item.getPatternForItem(stack, tile.getWorldObj()))) {
                 for (Conflict known : conflicts) {
                     if (known.provider == provider && known.slot == i) {
                         return;

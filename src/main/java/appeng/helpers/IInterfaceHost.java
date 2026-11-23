@@ -21,7 +21,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 import appeng.api.config.Settings;
 import appeng.api.config.Upgrades;
 import appeng.api.config.YesNo;
-import appeng.api.crafting.IPatternTarget;
+import appeng.api.crafting.IPatternTargetKeyProvider;
 import appeng.api.implementations.IUpgradeableHost;
 import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.networking.crafting.ICraftingRequester;
@@ -95,7 +95,7 @@ public interface IInterfaceHost extends ICraftingProvider, IUpgradeableHost, ICr
     }
 
     @Override
-    default IPatternTarget getPatternTarget() {
+    default IPatternTargetKeyProvider getPatternTarget() {
         return getInterfaceDuality().getPatternTarget();
     }
 }

@@ -5,7 +5,7 @@ import appeng.api.networking.crafting.ICraftingPatternDetails;
 /**
  * Pattern target of a machine that exists but cannot run anything now, such as an unformed multiblock.
  */
-public enum NotReadyTarget implements IPatternTarget, IPatternTargetKey {
+public enum NotReadyTarget implements IPatternTargetKeyProvider, IPatternTargetKey {
 
     INSTANCE;
 
