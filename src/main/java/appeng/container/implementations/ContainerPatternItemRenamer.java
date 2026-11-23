@@ -1,12 +1,36 @@
 package appeng.container.implementations;
 
 import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.item.ItemStack;
 
 import appeng.api.storage.ITerminalHost;
+import appeng.api.storage.data.IAEItemStack;
+import appeng.container.stackedit.ContainerStackEdit;
+import appeng.container.sync.ActionHandler;
+import appeng.container.sync.StreamCodecs;
+import appeng.util.item.AEItemStack;
 
-public class ContainerPatternItemRenamer extends ContainerPatternValueAmount {
+public class ContainerPatternItemRenamer extends ContainerStackEdit {
+
+    private final ActionHandler<String> nameAction;
 
     public ContainerPatternItemRenamer(final InventoryPlayer ip, final ITerminalHost te) {
         super(ip, te);
+        this.nameAction = this.syncRegistrar().actionC2S("name", StreamCodecs.string()).onServerAction(this::setName);
+    }
+
+    public void submitName(final String name) {
+        this.sendSubmit(this.nameAction, name);
+    }
+
+    private void setName(final String name) {
+        this.submit(stack -> {
+            if (!(stack instanceof IAEItemStack itemStack)) {
+                return null;
+            }
+
+            final ItemStack renamed = itemStack.getItemStack().setStackDisplayName(name);
+            return AEItemStack.create(renamed).setStackSize(itemStack.getStackSize());
+        });
     }
 }

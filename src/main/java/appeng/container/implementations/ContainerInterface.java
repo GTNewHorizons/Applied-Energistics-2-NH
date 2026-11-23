@@ -19,6 +19,9 @@ import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import appeng.api.config.AdvancedBlockingMode;
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.InsertionMode;
@@ -29,18 +32,19 @@ import appeng.api.config.Upgrades;
 import appeng.api.config.YesNo;
 import appeng.api.implementations.ICraftingPatternItem;
 import appeng.api.networking.crafting.ICraftingPatternDetails;
-import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.util.IConfigManager;
 import appeng.container.guisync.GuiSync;
-import appeng.container.interfaces.IVirtualSlotSource;
 import appeng.container.slot.IOptionalSlotHost;
 import appeng.container.slot.OptionalSlotFake;
 import appeng.container.slot.OptionalSlotRestrictedInput;
 import appeng.container.slot.SlotNormal;
 import appeng.container.slot.SlotRestrictedInput;
+import appeng.container.stackedit.IStackEditTarget;
+import appeng.container.stackedit.StackEditMode;
+import appeng.container.stackedit.StackEditor;
 import appeng.helpers.DualityInterface;
 import appeng.helpers.IInterfaceHost;
 import appeng.helpers.InventoryAction;
@@ -49,10 +53,11 @@ import appeng.tile.inventory.AppEngInternalAEInventory;
 import appeng.util.PatternMultiplierHelper;
 import appeng.util.Platform;
 
-public class ContainerInterface extends ContainerUpgradeable implements IOptionalSlotHost, IVirtualSlotSource {
+public class ContainerInterface extends ContainerUpgradeable implements IOptionalSlotHost {
 
     private final DualityInterface myDuality;
     private final IAEStackType<?>[] supportedStackTypes;
+    public final StackEditor configEditor;
 
     @GuiSync(3)
     public YesNo bMode = YesNo.NO;
@@ -123,6 +128,13 @@ public class ContainerInterface extends ContainerUpgradeable implements IOptiona
         for (int x = 0; x < DualityInterface.NUMBER_OF_STORAGE_SLOTS; x++) {
             this.addSlotToContainer(new SlotNormal(this.myDuality.getStorage(), x, 8 + 18 * x, 15 + 18));
         }
+
+        this.configEditor = new StackEditor(
+                this,
+                this.syncRegistrar(),
+                "configEditor",
+                this::configTarget,
+                StackEditMode.AMOUNT);
     }
 
     @Override
@@ -167,20 +179,32 @@ public class ContainerInterface extends ContainerUpgradeable implements IOptiona
         super.detectAndSendChanges();
     }
 
-    @Override
-    public void updateVirtualSlot(StorageName invName, int slotId, IAEStack<?> aes) {
-        if (invName != StorageName.CONFIG || !(aes instanceof IAEItemStack requested)) return;
-        if (slotId < 0 || slotId >= DualityInterface.NUMBER_OF_CONFIG_SLOTS) return;
-
+    @Nullable
+    private IStackEditTarget configTarget(final int slot) {
         final AppEngInternalAEInventory config = this.myDuality.getConfig();
-        final IAEItemStack current = config.getAEStackInSlot(slotId);
-        if (current == null || !current.isSameType(requested)) return;
+        if (slot < 0 || slot >= config.getSizeInventory()) {
+            return null;
+        }
 
-        final ItemStack stack = requested.getItemStack();
-        stack.stackSize = (int) Math.max(
-                1,
-                Math.min(requested.getStackSize(), Math.min(config.getInventoryStackLimit(), stack.getMaxStackSize())));
-        config.setInventorySlotContents(slotId, stack);
+        return new IStackEditTarget() {
+
+            @Override
+            public @Nullable IAEStack<?> getStack() {
+                return config.getAEStackInSlot(slot);
+            }
+
+            @Override
+            public void setStack(final @NonNull IAEStack<?> stack) {
+                if (!(stack instanceof IAEItemStack itemStack)) {
+                    return;
+                }
+
+                final ItemStack is = itemStack.getItemStack();
+                final int limit = Math.min(config.getInventoryStackLimit(), is.getMaxStackSize());
+                is.stackSize = (int) Math.max(1, Math.min(itemStack.getStackSize(), limit));
+                config.setInventorySlotContents(slot, is);
+            }
+        };
     }
 
     private ArrayList<ItemStack> getRemovedPatterns() {

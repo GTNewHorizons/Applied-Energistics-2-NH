@@ -14,8 +14,10 @@ import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
 import appeng.container.AEBaseContainer;
 import appeng.container.guisync.IGuiPacketWritable;
-import appeng.container.interfaces.IVirtualSlotSource;
 import appeng.container.slot.SlotRestrictedInput;
+import appeng.container.stackedit.IStackEditTarget;
+import appeng.container.stackedit.StackEditMode;
+import appeng.container.stackedit.StackEditor;
 import appeng.container.sync.ActionHandler;
 import appeng.container.sync.StreamCodecs;
 import appeng.container.sync.SyncCodecs;
@@ -31,7 +33,7 @@ import appeng.util.Platform;
 import appeng.util.item.IAEStackList;
 import io.netty.buffer.ByteBuf;
 
-public class ContainerSuperMEReplenisher extends AEBaseContainer implements IVirtualSlotSource {
+public class ContainerSuperMEReplenisher extends AEBaseContainer {
 
     public static class Stored implements IGuiPacketWritable {
 
@@ -81,6 +83,7 @@ public class ContainerSuperMEReplenisher extends AEBaseContainer implements IVir
     public final ActionHandler<Integer> slotReset;
 
     public final AEStackInventorySyncHandler config;
+    public final StackEditor configEditor;
     public final ObjectSyncHandler<Stored> storedData;
 
     public boolean needUpdate = false;
@@ -102,6 +105,12 @@ public class ContainerSuperMEReplenisher extends AEBaseContainer implements IVir
         this.slotReset = sync.actionC2S("reset", StreamCodecs.intValue()).onServerAction(this::resetSlot);
 
         this.config = sync.aeStackInventory("config", this.getConfig());
+        this.configEditor = new StackEditor(
+                this,
+                sync,
+                "configEditor",
+                slot -> IStackEditTarget.of(this.getConfig(), slot),
+                StackEditMode.AMOUNT);
 
         this.storedData = sync.object(
                 "storedData",
@@ -170,12 +179,6 @@ public class ContainerSuperMEReplenisher extends AEBaseContainer implements IVir
         }
 
         super.detectAndSendChanges();
-    }
-
-    @Override
-    public void updateVirtualSlot(StorageName invName, int slotId, IAEStack<?> aes) {
-        final IAEStackInventory config = this.tile.getAEInventoryByName(invName);
-        config.putAEStackInSlot(slotId, aes);
     }
 
     public IAEStackInventory getConfig() {

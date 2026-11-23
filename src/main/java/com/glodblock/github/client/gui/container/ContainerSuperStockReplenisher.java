@@ -19,13 +19,14 @@ import com.glodblock.github.network.SPacketSuperStockReplenisherUpdate;
 import com.glodblock.github.util.FluidPrimaryGui;
 
 import appeng.api.implementations.items.IStorageCell;
-import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
 import appeng.container.AEBaseContainer;
 import appeng.container.ContainerOpenContext;
 import appeng.container.PrimaryGui;
-import appeng.container.interfaces.IVirtualSlotSource;
 import appeng.container.slot.SlotRestrictedInput;
+import appeng.container.stackedit.IStackEditTarget;
+import appeng.container.stackedit.StackEditMode;
+import appeng.container.stackedit.StackEditor;
 import appeng.container.sync.SyncManager;
 import appeng.container.sync.handlers.AEStackInventorySyncHandler;
 import appeng.container.sync.handlers.BooleanSyncHandler;
@@ -35,7 +36,7 @@ import appeng.util.item.AEItemStack;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-public class ContainerSuperStockReplenisher extends AEBaseContainer implements IVirtualSlotSource {
+public class ContainerSuperStockReplenisher extends AEBaseContainer {
 
     private final TileSuperStockReplenisher tile;
 
@@ -43,9 +44,11 @@ public class ContainerSuperStockReplenisher extends AEBaseContainer implements I
 
     private final IAEStackInventory configFluids;
     public final AEStackInventorySyncHandler configFluidsSlots;
+    public final StackEditor configFluidsEditor;
 
     private final IAEStackInventory configItems;
     public final AEStackInventorySyncHandler configItemsSlots;
+    public final StackEditor configItemsEditor;
 
     public final BooleanSyncHandler fullStockModeSync;
 
@@ -62,6 +65,18 @@ public class ContainerSuperStockReplenisher extends AEBaseContainer implements I
         final SyncManager sm = this.getSyncManager();
         this.configFluidsSlots = sm.root().aeStackInventory("fluidConfig", this.configFluids);
         this.configItemsSlots = sm.root().aeStackInventory("itemConfig", this.configItems);
+        this.configFluidsEditor = new StackEditor(
+                this,
+                sm.root(),
+                "fluidConfigEditor",
+                slot -> IStackEditTarget.of(this.configFluids, slot, ContainerSuperStockReplenisher::clampToInt),
+                StackEditMode.AMOUNT);
+        this.configItemsEditor = new StackEditor(
+                this,
+                sm.root(),
+                "itemConfigEditor",
+                slot -> IStackEditTarget.of(this.configItems, slot, ContainerSuperStockReplenisher::clampToInt),
+                StackEditMode.AMOUNT);
         this.fullStockModeSync = sm.root().booleanSync("fullstockMode").onClientChange((oldValue, newValue) -> {
             if (this.modeButton != null) {
                 this.modeButton.set(newValue ? "fullstockMode" : "normalMode");
@@ -157,19 +172,11 @@ public class ContainerSuperStockReplenisher extends AEBaseContainer implements I
                 context.getSide());
     }
 
-    @Override
-    public void updateVirtualSlot(StorageName invName, int slotId, IAEStack<?> aes) {
-        if (aes != null && aes.getStackSize() > Integer.MAX_VALUE) aes.setStackSize(Integer.MAX_VALUE);
-        switch (invName) {
-            case NONE -> {
-                this.configFluids.putAEStackInSlot(slotId, aes);
-                this.configFluidsSlots.markDirty();
-            }
-            case CONFIG -> {
-                this.configItems.putAEStackInSlot(slotId, aes);
-                this.configItemsSlots.markDirty();
-            }
+    private static IAEStack<?> clampToInt(final IAEStack<?> stack) {
+        if (stack.getStackSize() > Integer.MAX_VALUE) {
+            stack.setStackSize(Integer.MAX_VALUE);
         }
+        return stack;
     }
 
     public TileSuperStockReplenisher getTile() {

@@ -3,12 +3,11 @@ package appeng.client.gui.implementations;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.entity.player.InventoryPlayer;
 
+import appeng.api.storage.data.IAEStack;
 import appeng.client.gui.slots.VirtualMESlotSingle;
 import appeng.container.implementations.ContainerPatternValueAmount;
 import appeng.core.localization.ColorUtils;
 import appeng.core.localization.GuiText;
-import appeng.core.sync.network.NetworkHandler;
-import appeng.core.sync.packets.PacketPatternValueSet;
 import appeng.helpers.Reflected;
 
 public class GuiPatternValueAmount extends GuiAmount {
@@ -20,8 +19,8 @@ public class GuiPatternValueAmount extends GuiAmount {
     public GuiPatternValueAmount(final InventoryPlayer inventoryPlayer, final Object te) {
         super(new ContainerPatternValueAmount(inventoryPlayer, te));
         this.container = (ContainerPatternValueAmount) this.inventorySlots;
-
         this.slot = new VirtualMESlotSingle(34, 53, 0, null);
+        this.container.setStackListener(this::update);
     }
 
     @Override
@@ -55,12 +54,8 @@ public class GuiPatternValueAmount extends GuiAmount {
         super.actionPerformed(btn);
 
         try {
-            if (btn == this.nextBtn && btn.enabled && slot.getAEStack() != null) {
-                NetworkHandler.instance.sendToServer(
-                        new PacketPatternValueSet(
-                                this.container.getAEStack().setStackSize(getAmountLong()),
-                                this.container.getInvName(),
-                                this.container.getSlotIndex()));
+            if (btn == this.nextBtn && btn.enabled && this.container.getStack() != null) {
+                this.container.submitAmount(getAmountLong());
             }
         } catch (final NumberFormatException e) {
             // nope..
@@ -72,9 +67,14 @@ public class GuiPatternValueAmount extends GuiAmount {
         return "guis/craftAmt.png";
     }
 
-    public void update() {
-        this.slot.setAEStack(this.container.getAEStack());
-        this.amountTextField.setText(String.valueOf(this.container.getAEStack().getStackSize()));
+    private void update() {
+        final IAEStack<?> stack = this.container.getStack();
+        this.slot.setAEStack(stack);
+        if (stack == null) {
+            return;
+        }
+
+        this.amountTextField.setText(String.valueOf(stack.getStackSize()));
         this.amountTextField.setCursorPositionEnd();
         this.amountTextField.setSelectionPos(0);
     }

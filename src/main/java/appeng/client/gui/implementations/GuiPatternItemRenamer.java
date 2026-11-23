@@ -11,23 +11,21 @@ import appeng.api.storage.data.IAEStack;
 import appeng.client.gui.GuiSub;
 import appeng.client.gui.widgets.IDropToFillTextField;
 import appeng.client.gui.widgets.MEGuiTextField;
-import appeng.container.implementations.ContainerPatternValueAmount;
+import appeng.container.implementations.ContainerPatternItemRenamer;
 import appeng.core.localization.ColorUtils;
 import appeng.core.localization.GuiText;
-import appeng.core.sync.network.NetworkHandler;
-import appeng.core.sync.packets.PacketPatternValueSet;
-import appeng.util.item.AEItemStack;
 
 public class GuiPatternItemRenamer extends GuiSub implements IDropToFillTextField {
 
-    private final ContainerPatternValueAmount container;
+    private final ContainerPatternItemRenamer container;
     private final MEGuiTextField textField;
 
     public GuiPatternItemRenamer(InventoryPlayer ip, ITerminalHost p) {
-        super(new ContainerPatternValueAmount(ip, p));
-        this.container = (ContainerPatternValueAmount) this.inventorySlots;
+        super(new ContainerPatternItemRenamer(ip, p));
+        this.container = (ContainerPatternItemRenamer) this.inventorySlots;
         xSize = 256;
         textField = new MEGuiTextField(231, 12);
+        this.container.setStackListener(this::update);
     }
 
     @Override
@@ -39,8 +37,13 @@ public class GuiPatternItemRenamer extends GuiSub implements IDropToFillTextFiel
         textField.setFocused(true);
     }
 
-    public void update() {
-        textField.setText(container.getAEStack().getDisplayName());
+    private void update() {
+        final IAEStack<?> stack = this.container.getStack();
+        if (stack == null) {
+            return;
+        }
+
+        textField.setText(stack.getDisplayName());
         textField.setCursorPositionEnd();
         textField.setSelectionPos(0);
     }
@@ -66,21 +69,12 @@ public class GuiPatternItemRenamer extends GuiSub implements IDropToFillTextFiel
     @Override
     protected void keyTyped(final char character, final int key) {
         if (key == Keyboard.KEY_RETURN || key == Keyboard.KEY_NUMPADENTER) {
-            IAEStack<?> nameStack = getNewNameStack();
-            if (nameStack == null) {
-                return;
+            if (this.container.getStack() instanceof IAEItemStack) {
+                this.container.submitName(textField.getText());
             }
-            NetworkHandler.instance.sendToServer(
-                    new PacketPatternValueSet(nameStack, this.container.getInvName(), this.container.getSlotIndex()));
         } else if (!textField.textboxKeyTyped(character, key)) {
             super.keyTyped(character, key);
         }
-    }
-
-    private IAEStack<?> getNewNameStack() {
-        IAEStack<?> aeStack = this.container.getAEStack();
-        if (!(aeStack instanceof IAEItemStack itemStack)) return null;
-        return AEItemStack.create(itemStack.getItemStack().setStackDisplayName(textField.getText()));
     }
 
     public boolean isOverTextField(final int mousex, final int mousey) {

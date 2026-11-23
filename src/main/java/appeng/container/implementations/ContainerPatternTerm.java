@@ -41,11 +41,13 @@ import appeng.api.storage.data.IItemList;
 import appeng.container.ContainerNull;
 import appeng.container.ContainerOpenContext;
 import appeng.container.PrimaryGui;
-import appeng.container.interfaces.IVirtualSlotSource;
 import appeng.container.slot.AppEngSlot;
 import appeng.container.slot.IOptionalSlotHost;
 import appeng.container.slot.SlotPatternTerm;
 import appeng.container.slot.SlotRestrictedInput;
+import appeng.container.stackedit.IStackEditTarget;
+import appeng.container.stackedit.StackEditMode;
+import appeng.container.stackedit.StackEditor;
 import appeng.container.sync.ActionHandler;
 import appeng.container.sync.StreamCodecs;
 import appeng.container.sync.SyncRegistrar;
@@ -66,7 +68,7 @@ import appeng.util.inv.AdaptorPlayerHand;
 import appeng.util.item.AEItemStack;
 
 public class ContainerPatternTerm extends ContainerMEMonitorable
-        implements IAEAppEngInventory, IOptionalSlotHost, IContainerCraftingPacket, IVirtualSlotSource {
+        implements IAEAppEngInventory, IOptionalSlotHost, IContainerCraftingPacket {
 
     public static final int MULTIPLE_OF_BUTTON_CLICK = 2;
     public static final int MULTIPLE_OF_BUTTON_CLICK_ON_SHIFT = 8;
@@ -85,6 +87,8 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
 
     public final AEStackInventorySyncHandler inputsSync;
     public final AEStackInventorySyncHandler outputsSync;
+    public final StackEditor inputsEditor;
+    public final StackEditor outputsEditor;
 
     public final BooleanSyncHandler craftingModeSync;
     public final BooleanSyncHandler substituteSync;
@@ -183,6 +187,20 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
             }
         });
         this.outputsSync = sync.aeStackInventory("outputs", this.outputs);
+        this.inputsEditor = new StackEditor(
+                this,
+                sync,
+                "inputsEditor",
+                slot -> IStackEditTarget.of(this.inputs, slot),
+                StackEditMode.AMOUNT,
+                StackEditMode.NAME);
+        this.outputsEditor = new StackEditor(
+                this,
+                sync,
+                "outputsEditor",
+                slot -> IStackEditTarget.of(this.outputs, slot),
+                StackEditMode.AMOUNT,
+                StackEditMode.NAME);
 
         this.craftingModeSync = sync.booleanSync("craftingMode")
                 .onServerChange((oldValue, newValue) -> setCraftingMode(newValue))
@@ -679,8 +697,6 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
         return patternOutputPages;
     }
 
-    // For PacketPatternValueSet
-    @Override
     public void updateVirtualSlot(StorageName invName, int slotId, IAEStack<?> aes) {
         switch (invName) {
             case CRAFTING_INPUT -> {

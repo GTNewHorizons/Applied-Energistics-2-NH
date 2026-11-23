@@ -131,6 +131,7 @@ public class GuiSuperMEReplenisher extends AEBaseGui {
                                 xo + x * 18,
                                 yo + y * 18 + 9 * 18,
                                 this.containerSuperMEReplenisher.config,
+                                this.containerSuperMEReplenisher.configEditor,
                                 x + y * 9,
                                 this::acceptType) {
 
