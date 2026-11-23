@@ -1,63 +1,54 @@
 package appeng.client.render.previewBlocks;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import net.minecraft.block.Block;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import org.lwjgl.opengl.GL11;
 
+import com.gtnewhorizon.gtnhlib.api.OutlineShape;
+
 import appeng.api.parts.IPartHost;
 import appeng.core.AEConfig;
+import it.unimi.dsi.fastutil.doubles.DoubleList;
 
 public abstract class AbstractRendererPreview {
 
+    private static final double DEPTH_BIAS = 0.0005;
+
     private final int lineWidth = AEConfig.instance.previewLineWidth;
 
-    protected void renderWireframeCube(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
-        Tessellator tessellator = Tessellator.instance;
+    private final List<AxisAlignedBB> boxes = new ArrayList<>();
+    private OutlineShape shape = OutlineShape.EMPTY;
 
+    /** Adds a box to the outline that {@link #renderOutline()} draws. */
+    protected void addBox(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
+        boxes.add(AxisAlignedBB.getBoundingBox(minX, minY, minZ, maxX, maxY, maxZ));
+    }
+
+    /** Draws the boxes added since the last call as one outline, without lines where they meet. */
+    protected void renderOutline() {
+        OutlineShape built = OutlineShape.of(boxes);
+        boxes.clear();
+        // the shape merges its lines once, so keep the old one while the boxes stay the same
+        if (!built.hasSameBoxes(shape)) shape = built;
+
+        DoubleList lines = shape.getLines();
+        if (lines.isEmpty()) return;
+
+        Tessellator tessellator = Tessellator.instance;
         GL11.glLineWidth(lineWidth);
         tessellator.startDrawing(GL11.GL_LINES);
-
-        tessellator.addVertex(minX, minY, minZ);
-        tessellator.addVertex(maxX, minY, minZ);
-
-        tessellator.addVertex(maxX, minY, minZ);
-        tessellator.addVertex(maxX, minY, maxZ);
-
-        tessellator.addVertex(maxX, minY, maxZ);
-        tessellator.addVertex(minX, minY, maxZ);
-
-        tessellator.addVertex(minX, minY, maxZ);
-        tessellator.addVertex(minX, minY, minZ);
-
-        tessellator.addVertex(minX, maxY, minZ);
-        tessellator.addVertex(maxX, maxY, minZ);
-
-        tessellator.addVertex(maxX, maxY, minZ);
-        tessellator.addVertex(maxX, maxY, maxZ);
-
-        tessellator.addVertex(maxX, maxY, maxZ);
-        tessellator.addVertex(minX, maxY, maxZ);
-
-        tessellator.addVertex(minX, maxY, maxZ);
-        tessellator.addVertex(minX, maxY, minZ);
-
-        tessellator.addVertex(minX, minY, minZ);
-        tessellator.addVertex(minX, maxY, minZ);
-
-        tessellator.addVertex(maxX, minY, minZ);
-        tessellator.addVertex(maxX, maxY, minZ);
-
-        tessellator.addVertex(maxX, minY, maxZ);
-        tessellator.addVertex(maxX, maxY, maxZ);
-
-        tessellator.addVertex(minX, minY, maxZ);
-        tessellator.addVertex(minX, maxY, maxZ);
-
+        for (int i = 0; i < lines.size(); i += 3) {
+            tessellator.addVertex(lines.getDouble(i), lines.getDouble(i + 1), lines.getDouble(i + 2));
+        }
         tessellator.draw();
     }
 
@@ -165,7 +156,7 @@ public abstract class AbstractRendererPreview {
         double maxY = maxYBase / 16.0;
         double maxZ = maxZBase / 16.0;
 
-        renderWireframeCube(minX, minY, minZ, maxX, maxY, maxZ);
+        addBox(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
     protected void renderCommonPreview(Runnable renderSpecificContent) {
@@ -190,6 +181,7 @@ public abstract class AbstractRendererPreview {
         }
 
         renderSpecificContent.run();
+        renderOutline();
 
         clearGlState();
     }
@@ -205,22 +197,28 @@ public abstract class AbstractRendererPreview {
         GL11.glPushMatrix();
         GL11.glTranslated(-playerX, -playerY, -playerZ);
 
+        // the highlight event runs inside the world pass, so restore the GL state it had
+        GL11.glPushAttrib(
+                GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT
+                        | GL11.GL_DEPTH_BUFFER_BIT
+                        | GL11.GL_VIEWPORT_BIT
+                        | GL11.GL_CURRENT_BIT
+                        | GL11.GL_LINE_BIT);
+
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GL11.glDisable(GL11.GL_TEXTURE_2D);
         GL11.glDisable(GL11.GL_LIGHTING);
         GL11.glDisable(GL11.GL_CULL_FACE);
         GL11.glDepthMask(false);
+        // push lines back so the faces of an existing cable hide edges lying on it
+        GL11.glDepthRange(DEPTH_BIAS, 1.0);
 
         getValidColorGL11();
     }
 
     protected void clearGlState() {
-        GL11.glDepthMask(true);
-        GL11.glEnable(GL11.GL_CULL_FACE);
-        GL11.glEnable(GL11.GL_TEXTURE_2D);
-        GL11.glEnable(GL11.GL_LIGHTING);
-        GL11.glDisable(GL11.GL_BLEND);
+        GL11.glPopAttrib();
         GL11.glPopMatrix();
     }
 }
