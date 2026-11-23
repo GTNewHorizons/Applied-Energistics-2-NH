@@ -71,6 +71,11 @@ public interface IInterfaceViewable extends IGridHost {
         return null;
     }
 
+    /** Returns the machine configuration shown in the Pattern Terminal tooltip. */
+    default IChatComponent getPatternTargetSuffix() {
+        return getNameSuffix();
+    }
+
     TileEntity getTileEntity();
 
     boolean shouldDisplay();

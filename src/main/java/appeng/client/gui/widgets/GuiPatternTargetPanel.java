@@ -4,17 +4,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.IChatComponent;
 
 import org.lwjgl.opengl.GL11;
 
 import appeng.api.crafting.PatternMatch;
+import appeng.api.util.INameSuffixIcons;
 import appeng.client.gui.AEBaseGui;
 import appeng.client.gui.ScreenColor;
 import appeng.client.gui.implementations.GuiInterfaceTerminal;
@@ -57,6 +61,13 @@ public class GuiPatternTargetPanel {
     private static final int TRACK_WIDTH = 14;
     private static final int CONFLICT_ROWS = 3;
     private static final int LINE_HEIGHT = 10;
+    private static final int SUFFIX_ICON_SIZE = 12;
+    private static final int SUFFIX_ICON_STRIDE = SUFFIX_ICON_SIZE + 2;
+    private static final int SUFFIX_CARD_PADDING = 3;
+    private static final int CONFLICT_CARD_HEIGHT = 27;
+    private static final int CONFLICT_TITLE_TOP_PADDING = 8;
+    private static final int CONFLICT_ICON_INSET = 5;
+    private static final String CONFLICT_MARKER = "⚠ ";
     private static final int BUTTON_HEIGHT = 11;
     private static final int BUTTON_INSET = 2;
 
@@ -69,6 +80,7 @@ public class GuiPatternTargetPanel {
 
     private PatternTargetList list = PatternTargetList.EMPTY;
     private final List<PatternTargetList.Entry> entries = new ArrayList<>();
+    private final Map<PatternTargetList.Entry, List<ItemStack>> suffixIcons = new IdentityHashMap<>();
     private ItemStack patternIcon;
 
     private int x;
@@ -105,6 +117,17 @@ public class GuiPatternTargetPanel {
         this.list = list;
         this.entries.clear();
         this.entries.addAll(list.entries);
+        this.suffixIcons.clear();
+        for (PatternTargetList.Entry entry : this.entries) {
+            if (entry.suffix == null || entry.suffix.isEmpty()) continue;
+            final List<ItemStack> icons = new ArrayList<>();
+            try {
+                collectSuffixIcons(IChatComponent.Serializer.func_150699_a(entry.suffix), icons);
+                if (!icons.isEmpty()) this.suffixIcons.put(entry, icons);
+            } catch (RuntimeException ignored) {
+                // The card tooltip can still show the suffix as text.
+            }
+        }
         // Within a status, interfaces that already hold the same pattern or need a card go last.
         this.entries.sort(
                 Comparator.comparingInt((PatternTargetList.Entry e) -> statusOrder(e.match))
@@ -112,6 +135,18 @@ public class GuiPatternTargetPanel {
                         .thenComparingInt(e -> e.cardSource == PatternTargetList.CardSource.NONE ? 0 : 1)
                         .thenComparing(GuiPatternTargetPanel::displayName));
         this.scrollbar.setCurrentScroll(0);
+    }
+
+    private static void collectSuffixIcons(IChatComponent component, List<ItemStack> icons) {
+        if (component == null) return;
+        if (component instanceof INameSuffixIcons source) {
+            for (ItemStack icon : source.getSuffixIcons()) {
+                if (icon != null) icons.add(icon);
+            }
+        }
+        for (IChatComponent sibling : component.getSiblings()) {
+            collectSuffixIcons(sibling, icons);
+        }
     }
 
     public void setPatternIcon(ItemStack patternIcon) {
@@ -135,19 +170,22 @@ public class GuiPatternTargetPanel {
         int availableHeight = this.height;
         int conflictHeight = this.conflictHeight();
         // A tall button column, as on wireless terminals, can leave no room under it; then the panel goes beside it.
-        if (availableHeight < HEADER_HEIGHT + CARD_HEIGHT + 2 + PADDING + conflictHeight) {
+        final int minListHeight = this.maxCardWindowHeight(1) + 2;
+        if (availableHeight < HEADER_HEIGHT + minListHeight + PADDING + conflictHeight) {
             this.place(guiLeft, guiTop, guiHeight, screenHeight, 0, BESIDE_BUTTONS_GAP, blocked);
             availableHeight = this.height;
             conflictHeight = this.conflictHeight();
         }
-        availableHeight = Math.max(HEADER_HEIGHT + CARD_HEIGHT + 2 + PADDING, availableHeight);
+        availableHeight = Math.max(HEADER_HEIGHT + minListHeight + PADDING, availableHeight);
 
         this.listTop = this.y + HEADER_HEIGHT;
         final int maxListHeight = availableHeight - HEADER_HEIGHT - conflictHeight - PADDING;
-        final int fitByHeight = Math.max(1, (maxListHeight - 2) / CARD_HEIGHT);
-        this.visibleCards = Math.min(Math.min(MAX_VISIBLE_CARDS, fitByHeight), Math.max(1, this.entries.size()));
+        this.visibleCards = Math.max(1, Math.min(MAX_VISIBLE_CARDS, this.entries.size()));
+        while (this.visibleCards > 1 && this.maxCardWindowHeight(this.visibleCards) + 2 > maxListHeight) {
+            this.visibleCards--;
+        }
         this.scrollable = this.entries.size() > this.visibleCards;
-        this.listHeight = this.entries.isEmpty() ? EMPTY_LIST_HEIGHT : this.visibleCards * CARD_HEIGHT + 2;
+        this.listHeight = this.entries.isEmpty() ? EMPTY_LIST_HEIGHT : this.maxCardWindowHeight(this.visibleCards) + 2;
 
         this.insetX = this.x + PADDING;
         this.insetWidth = this.width - 2 * PADDING - (this.scrollable ? TRACK_WIDTH : 0);
@@ -223,11 +261,13 @@ public class GuiPatternTargetPanel {
         this.conflictTitle = conflictRows == 0 ? Collections.emptyList()
                 : listLines(
                         this.gui.getFontRenderer(),
-                        GuiText.PatternTargetsConflictTitle.getLocal(),
-                        (int) ((this.width - 2 * PADDING - 10) / this.textScale()));
+                        this.list.conflictOutput == null ? GuiText.PatternTargetsConflictTitle.getLocal()
+                                : GuiText.PatternTargetsConflictOutput
+                                        .getLocal(this.list.conflictOutput.getDisplayName()),
+                        (int) (this.conflictTitleTextWidth(this.gui.getFontRenderer()) / this.textScale()));
         return conflictRows == 0 ? 0
-                : 4 + this.conflictTitle.size() * LINE_HEIGHT
-                        + conflictRows * CARD_HEIGHT
+                : CONFLICT_TITLE_TOP_PADDING + this.conflictTitle.size() * LINE_HEIGHT
+                        + conflictRows * CONFLICT_CARD_HEIGHT
                         + (conflictCount > CONFLICT_ROWS ? LINE_HEIGHT : 0);
     }
 
@@ -265,8 +305,10 @@ public class GuiPatternTargetPanel {
         final int first = this.scrollbar.getCurrentScroll();
         for (int k = 0; k < this.visibleCards && first + k < this.entries.size(); k++) {
             final int cardY = this.cardY(k);
-            final boolean hover = this.isOver(mouseX, mouseY, this.insetX + 1, cardY, this.insetWidth - 2, CARD_HEIGHT);
-            this.drawEntryCard(font, this.entries.get(first + k), cardY, hover);
+            final PatternTargetList.Entry entry = this.entries.get(first + k);
+            final boolean hover = this
+                    .isOver(mouseX, mouseY, this.insetX + 1, cardY, this.insetWidth - 2, this.cardHeight(entry));
+            this.drawEntryCard(font, entry, cardY, hover);
         }
 
         this.drawConflicts(font, mouseX, mouseY);
@@ -283,7 +325,9 @@ public class GuiPatternTargetPanel {
         if (entry != null) {
             final List<String> lines = new ArrayList<>();
             lines.add(displayName(entry));
-            lines.add(statusLabel(entry.match));
+            if (entry.match != PatternMatch.MATCH) {
+                lines.add(statusLabel(entry.match));
+            }
             lines.add(GuiText.GuiDimensionalCoord.getLocal(entry.x, entry.y, entry.z, entry.dim));
             if (entry.match == PatternMatch.NOT_READY) {
                 lines.add(GuiText.HoldShiftClick_HIGHLIGHT_INTERFACE.getLocal());
@@ -469,33 +513,105 @@ public class GuiPatternTargetPanel {
     private void drawEntryCard(FontRenderer font, PatternTargetList.Entry entry, int cardY, boolean hover) {
         final int cardX = this.insetX + 1;
         final int cardWidth = this.insetWidth - 2;
-        this.drawCard(cardX, cardY, cardWidth, CARD_HEIGHT, hover);
-        Gui.drawRect(cardX + 1, cardY + 1, cardX + 3, cardY + CARD_HEIGHT - 1, stripeColor(entry.match));
+        final int cardHeight = this.cardHeight(entry);
+        this.drawCard(cardX, cardY, cardWidth, cardHeight, hover);
+        Gui.drawRect(cardX + 1, cardY + 1, cardX + 3, cardY + cardHeight - 1, stripeColor(entry.match));
         if (entry.icon != null) {
-            this.gui.drawItem(cardX + 5, cardY + 3, entry.icon);
+            this.gui.drawItem(cardX + 5, cardY + (cardHeight - 15) / 2, entry.icon);
         }
 
         final int textX = cardX + 24;
         final int textWidth = cardX + cardWidth - 3 - textX;
-        this.drawText(font, displayName(entry), textX, cardY + 3, textWidth, ColorUtils.guiTextColorBlack.getColor());
-        final String room;
-        int roomColor = statusTextColor(entry.match);
-        if (entry.hasSamePattern) {
-            room = GuiText.PatternTargetsHasSame.getLocal();
-            roomColor = ColorUtils.patternTargetTextHasSame.getColor();
-        } else if (entry.cardSource != PatternTargetList.CardSource.NONE) {
-            room = GuiText.PatternTargetsNeedsCard.getLocal();
-        } else {
-            room = GuiText.PatternTargetsFree.getLocal(entry.freeSlots);
+        this.drawText(
+                font,
+                GuiInterfaceTerminal.translateRawName(entry.rawName, null, entry.icon),
+                textX,
+                cardY + 3,
+                textWidth,
+                ColorUtils.guiTextColorBlack.getColor());
+        final int iconY = suffixIconY(cardY);
+        final int statusY = this.suffixIcons.containsKey(entry)
+                ? iconY + Math.round((SUFFIX_ICON_SIZE - font.FONT_HEIGHT * this.textScale()) / 2)
+                : cardY + 13;
+        final String room = roomLabel(entry);
+        final int roomColor = entry.hasSamePattern ? ColorUtils.patternTargetTextHasSame.getColor()
+                : statusTextColor(entry.match);
+        final String status = this.statusPrefix(entry);
+        if (!status.isEmpty()) {
+            this.drawText(font, status, textX, statusY, textWidth, statusTextColor(entry.match));
         }
-        // A narrow panel leaves the status to the stripe colour and the tooltip.
-        int roomX = textX;
-        if (!this.compact) {
-            final String status = statusLabel(entry.match) + " · ";
-            this.drawText(font, status, textX, cardY + 13, textWidth, statusTextColor(entry.match));
-            roomX += this.textWidth(font, status);
+        int roomX = textX + this.textWidth(font, status);
+        final int textRight = textX + textWidth;
+        final List<ItemStack> icons = this.suffixIcons.getOrDefault(entry, Collections.emptyList());
+        final int iconsWidth = textRight - roomX - this.textWidth(font, room);
+        final int shown = this.visibleSuffixIcons(font, icons.size(), iconsWidth);
+        for (int i = 0; i < shown; i++) {
+            GL11.glPushMatrix();
+            try {
+                GL11.glTranslatef(roomX, iconY, 0);
+                GL11.glScalef(SUFFIX_ICON_SIZE / 16F, SUFFIX_ICON_SIZE / 16F, 1);
+                this.gui.drawItem(0, 0, icons.get(i));
+            } finally {
+                GL11.glPopMatrix();
+            }
+            roomX += SUFFIX_ICON_STRIDE;
         }
-        this.drawText(font, room, roomX, cardY + 13, textX + textWidth - roomX, roomColor);
+        if (shown < icons.size()) {
+            final String more = "+" + (icons.size() - shown) + " ";
+            final int moreWidth = this.textWidth(font, more);
+            if (roomX + moreWidth + this.textWidth(font, room) <= textRight) {
+                this.drawText(font, more, roomX, statusY, moreWidth, ColorUtils.guiTextColorGray.getColor());
+                roomX += moreWidth;
+            }
+        }
+        this.drawText(font, room, roomX, statusY, textRight - roomX, roomColor);
+    }
+
+    private static String roomLabel(PatternTargetList.Entry entry) {
+        if (entry.hasSamePattern) return GuiText.PatternTargetsHasSame.getLocal();
+        if (entry.cardSource != PatternTargetList.CardSource.NONE) return GuiText.PatternTargetsNeedsCard.getLocal();
+        return (entry.totalSlots - entry.freeSlots) + "/" + entry.totalSlots;
+    }
+
+    private String statusPrefix(PatternTargetList.Entry entry) {
+        return this.compact || entry.match == PatternMatch.MATCH ? "" : statusLabel(entry.match) + " · ";
+    }
+
+    private int visibleSuffixIcons(FontRenderer font, int count, int width) {
+        int shown = Math.min(count, Math.max(0, width / SUFFIX_ICON_STRIDE));
+        while (shown > 0 && shown < count
+                && shown * SUFFIX_ICON_STRIDE + this.textWidth(font, "+" + (count - shown) + " ") > width) {
+            shown--;
+        }
+        return shown;
+    }
+
+    public ItemStack hoveredSuffixIcon(int mouseX, int mouseY) {
+        final PatternTargetList.Entry entry = this.entryAt(mouseX, mouseY);
+        final List<ItemStack> icons = this.suffixIcons.get(entry);
+        if (icons == null) return null;
+        final FontRenderer font = this.gui.getFontRenderer();
+        final int cardY = this.cardY(this.entries.indexOf(entry) - this.scrollbar.getCurrentScroll());
+        final int x = this.insetX + 25 + this.textWidth(font, this.statusPrefix(entry));
+        final int right = this.insetX + this.insetWidth - 4;
+        final int shown = this
+                .visibleSuffixIcons(font, icons.size(), right - x - this.textWidth(font, roomLabel(entry)));
+        for (int i = 0; i < shown; i++) {
+            if (this.isOver(
+                    mouseX,
+                    mouseY,
+                    x + i * SUFFIX_ICON_STRIDE,
+                    suffixIconY(cardY),
+                    SUFFIX_ICON_SIZE,
+                    SUFFIX_ICON_SIZE)) {
+                return icons.get(i);
+            }
+        }
+        return null;
+    }
+
+    private static int suffixIconY(int cardY) {
+        return cardY + 12;
     }
 
     private void drawConflicts(FontRenderer font, int mouseX, int mouseY) {
@@ -503,16 +619,13 @@ public class GuiPatternTargetPanel {
         if (count == 0) {
             return;
         }
-        int lineY = this.conflictTop + 4;
-        for (int i = 0; i < this.conflictTitle.size(); i++) {
-            final String prefix = i == 0 ? "⚠ " : "  ";
-            this.drawText(
-                    font,
-                    prefix + this.conflictTitle.get(i),
-                    this.x + PADDING,
-                    lineY,
-                    this.width - 2 * PADDING,
-                    ColorUtils.patternTargetTextConflict.getColor());
+        int lineY = this.conflictTop + CONFLICT_TITLE_TOP_PADDING;
+        final int markerX = this.x + PADDING + CONFLICT_ICON_INSET;
+        final int markerWidth = this.textWidth(font, CONFLICT_MARKER);
+        final int titleColor = ColorUtils.patternTargetTextConflict.getColor();
+        this.drawText(font, CONFLICT_MARKER, markerX, lineY, markerWidth, titleColor);
+        for (String line : this.conflictTitle) {
+            this.drawText(font, line, markerX + markerWidth, lineY, this.conflictTitleTextWidth(font), titleColor);
             lineY += LINE_HEIGHT;
         }
 
@@ -524,42 +637,29 @@ public class GuiPatternTargetPanel {
             final PatternTargetList.Conflict conflict = this.list.conflicts.get(i);
             final int cardY = this.conflictCardY(i);
             GL11.glColor4f(1.0F, 0.85F, 0.75F, 1.0F);
-            this.drawNineSlice(LIST_TEXTURE, cardX, cardY, cardWidth, CARD_HEIGHT, 100, 0, 67, 23, 1);
+            this.drawNineSlice(LIST_TEXTURE, cardX, cardY, cardWidth, CONFLICT_CARD_HEIGHT, 100, 0, 67, 23, 1);
             ScreenColor.resetGuiColor();
             Gui.drawRect(
                     cardX + 1,
                     cardY + 1,
                     cardX + 3,
-                    cardY + CARD_HEIGHT - 1,
+                    cardY + CONFLICT_CARD_HEIGHT - 1,
                     conflict.sameRecipe ? ColorUtils.patternTargetStripeConflict.getColor()
                             : ColorUtils.patternTargetStripeConflictOther.getColor());
             if (conflict.icon != null) {
-                this.gui.drawItem(cardX + 5, cardY + 3, conflict.icon);
+                this.gui.drawItem(cardX + CONFLICT_ICON_INSET, cardY + (CONFLICT_CARD_HEIGHT - 15) / 2, conflict.icon);
             }
 
-            // The name gets the whole first line; the button shares the second line with the recipe note.
             final int textX = cardX + 24;
             final int buttonX = cardX + cardWidth - buttonWidth - BUTTON_INSET;
-            final int buttonY = cardY + CARD_HEIGHT - BUTTON_HEIGHT - BUTTON_INSET;
+            final int buttonY = extractButtonY(cardY);
             this.drawText(
                     font,
-                    displayName(conflict),
+                    GuiInterfaceTerminal.translateRawName(conflict.rawName, null, conflict.icon),
                     textX,
-                    cardY + 2,
+                    cardY + 3,
                     cardX + cardWidth - 3 - textX,
                     ColorUtils.guiTextColorBlack.getColor());
-            if (!this.compact) {
-                // A narrow panel leaves the recipe note to the stripe colour and the tooltip.
-                final String recipe = conflict.sameRecipe ? GuiText.PatternTargetsSameRecipe.getLocal()
-                        : GuiText.PatternTargetsOtherRecipe.getLocal();
-                this.drawText(
-                        font,
-                        recipe,
-                        textX,
-                        cardY + 13,
-                        buttonX - 2 - textX,
-                        ColorUtils.patternTargetTextDim.getColor());
-            }
 
             final boolean buttonHover = this.isOver(mouseX, mouseY, buttonX, buttonY, buttonWidth, BUTTON_HEIGHT);
             this.drawCard(buttonX, buttonY, buttonWidth, BUTTON_HEIGHT, buttonHover);
@@ -580,6 +680,10 @@ public class GuiPatternTargetPanel {
                     cardWidth,
                     ColorUtils.patternTargetTextDim.getColor());
         }
+    }
+
+    private int conflictTitleTextWidth(FontRenderer font) {
+        return this.width - 2 * PADDING - CONFLICT_ICON_INSET - this.textWidth(font, CONFLICT_MARKER);
     }
 
     private int extractButtonWidth(FontRenderer font) {
@@ -676,8 +780,15 @@ public class GuiPatternTargetPanel {
         }
         final int first = this.scrollbar.getCurrentScroll();
         for (int k = 0; k < this.visibleCards && first + k < this.entries.size(); k++) {
-            if (this.isOver(mouseX, mouseY, this.insetX + 1, this.cardY(k), this.insetWidth - 2, CARD_HEIGHT)) {
-                return this.entries.get(first + k);
+            final PatternTargetList.Entry entry = this.entries.get(first + k);
+            if (this.isOver(
+                    mouseX,
+                    mouseY,
+                    this.insetX + 1,
+                    this.cardY(k),
+                    this.insetWidth - 2,
+                    this.cardHeight(entry))) {
+                return entry;
             }
         }
         return null;
@@ -691,7 +802,7 @@ public class GuiPatternTargetPanel {
                     this.x + PADDING,
                     this.conflictCardY(i),
                     this.width - 2 * PADDING,
-                    CARD_HEIGHT)) {
+                    CONFLICT_CARD_HEIGHT)) {
                 return i;
             }
         }
@@ -701,16 +812,42 @@ public class GuiPatternTargetPanel {
     private boolean isOverExtractButton(int conflict, int mouseX, int mouseY) {
         final int buttonWidth = this.extractButtonWidth(this.gui.getFontRenderer());
         final int buttonX = this.x + this.width - PADDING - buttonWidth - BUTTON_INSET;
-        final int buttonY = this.conflictCardY(conflict) + CARD_HEIGHT - BUTTON_HEIGHT - BUTTON_INSET;
+        final int buttonY = extractButtonY(this.conflictCardY(conflict));
         return this.isOver(mouseX, mouseY, buttonX, buttonY, buttonWidth, BUTTON_HEIGHT);
     }
 
+    private static int extractButtonY(int cardY) {
+        return cardY + CONFLICT_CARD_HEIGHT - BUTTON_HEIGHT - BUTTON_INSET;
+    }
+
     private int cardY(int visibleIndex) {
-        return this.listTop + 1 + visibleIndex * CARD_HEIGHT;
+        final int first = this.scrollbar.getCurrentScroll();
+        int top = this.listTop + 1;
+        for (int i = first; i < first + visibleIndex; i++) {
+            top += this.cardHeight(this.entries.get(i));
+        }
+        return top;
+    }
+
+    private int cardHeight(PatternTargetList.Entry entry) {
+        return CARD_HEIGHT + (this.suffixIcons.containsKey(entry) ? SUFFIX_CARD_PADDING : 0);
+    }
+
+    private int maxCardWindowHeight(int count) {
+        int tallest = CARD_HEIGHT;
+        int height = 0;
+        for (int i = 0; i < this.entries.size(); i++) {
+            height += this.cardHeight(this.entries.get(i));
+            if (i >= count) height -= this.cardHeight(this.entries.get(i - count));
+            tallest = Math.max(tallest, height);
+        }
+        return tallest;
     }
 
     private int conflictCardY(int index) {
-        return this.conflictTop + 4 + this.conflictTitle.size() * LINE_HEIGHT + index * CARD_HEIGHT;
+        return this.conflictTop + CONFLICT_TITLE_TOP_PADDING
+                + this.conflictTitle.size() * LINE_HEIGHT
+                + index * CONFLICT_CARD_HEIGHT;
     }
 
     private boolean isOver(int mouseX, int mouseY, int left, int top, int w, int h) {
@@ -759,10 +896,10 @@ public class GuiPatternTargetPanel {
     }
 
     private static String displayName(PatternTargetList.Entry entry) {
-        return GuiInterfaceTerminal.translateRawName(entry.rawName, null, entry.icon);
+        return GuiInterfaceTerminal.translateRawName(entry.rawName, entry.suffix, entry.icon);
     }
 
     private static String displayName(PatternTargetList.Conflict conflict) {
-        return GuiInterfaceTerminal.translateRawName(conflict.rawName, null, conflict.icon);
+        return GuiInterfaceTerminal.translateRawName(conflict.rawName, conflict.suffix, conflict.icon);
     }
 }

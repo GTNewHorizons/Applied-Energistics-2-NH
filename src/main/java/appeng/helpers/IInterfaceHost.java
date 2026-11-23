@@ -81,6 +81,11 @@ public interface IInterfaceHost extends ICraftingProvider, IUpgradeableHost, ICr
     }
 
     @Override
+    default IChatComponent getPatternTargetSuffix() {
+        return getInterfaceDuality().getAdjacentMachineSuffix();
+    }
+
+    @Override
     default int rows() {
         return getInterfaceDuality().getInstalledUpgrades(Upgrades.PATTERN_CAPACITY) + 1;
     }

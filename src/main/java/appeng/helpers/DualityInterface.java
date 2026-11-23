@@ -1739,6 +1739,10 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
      */
     public IChatComponent getAdjacentNameSuffix() {
         if (((ICustomNameObject) this.iHost).hasCustomName()) return null;
+        return getAdjacentMachineSuffix();
+    }
+
+    public IChatComponent getAdjacentMachineSuffix() {
         final TileEntity hostTile = this.iHost.getTileEntity();
         if (hostTile == null || hostTile.getWorldObj() == null) return null;
         for (final ForgeDirection direction : this.iHost.getTargets()) {

@@ -85,8 +85,8 @@ final class PatternTargetController {
                         ? patternItem.getPatternForItem(pattern, player.worldObj)
                         : null;
         if (details == null || node == null || node.getGrid() == null) {
-            this.container.patternTargetsAction
-                    .send(new PatternTargetList(pattern != null, Collections.emptyList(), Collections.emptyList()));
+            this.container.patternTargetsAction.send(
+                    new PatternTargetList(pattern != null, Collections.emptyList(), Collections.emptyList(), null));
             return;
         }
 
@@ -148,12 +148,14 @@ final class PatternTargetController {
                             i,
                             icon,
                             provider.getRawName(),
+                            ContainerInterfaceTerminal.serializeSuffix(provider.getPatternTargetSuffix()),
                             location.x,
                             location.y,
                             location.z,
                             location.getDimension(),
                             entry.match,
                             entry.freeSlots,
+                            entry.totalSlots,
                             cardSources.get(i),
                             withSamePattern.contains(provider)));
         }
@@ -169,13 +171,19 @@ final class PatternTargetController {
                             i,
                             displayRep != null ? displayRep : provider.getSelfRep(),
                             provider.getRawName(),
+                            ContainerInterfaceTerminal.serializeSuffix(provider.getPatternTargetSuffix()),
                             location.x,
                             location.y,
                             location.z,
                             location.getDimension(),
                             conflict.sameRecipe));
         }
-        this.container.patternTargetsAction.send(new PatternTargetList(true, entries, conflicts));
+        this.container.patternTargetsAction.send(
+                new PatternTargetList(
+                        true,
+                        entries,
+                        conflicts,
+                        conflicts.isEmpty() ? null : PatternTargetQuery.primaryOutput(details)));
     }
 
     /**

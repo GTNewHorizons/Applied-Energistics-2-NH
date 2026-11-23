@@ -355,6 +355,11 @@ public class GuiPatternTerm extends GuiMEMonitorable {
                 IntegrationRegistry.INSTANCE.isEnabled(IntegrationType.NEI) ? NEIWidgetBounds.controls()
                         : Collections.emptyList());
         this.targetPanel.draw(mouseX, mouseY);
+        final ItemStack icon = this.targetPanel.hoveredSuffixIcon(mouseX, mouseY);
+        if (icon != null) {
+            this.renderToolTip(icon, mouseX, mouseY);
+            return;
+        }
         final List<String> tooltip = this.targetPanel.getTooltip(mouseX, mouseY);
         if (tooltip != null) {
             this.drawHoveringText(tooltip, mouseX, mouseY, this.fontRendererObj);

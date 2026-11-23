@@ -876,7 +876,7 @@ public final class ContainerInterfaceTerminal extends AEBaseContainer implements
     /**
      * The suffix travels as a string, so components are serialized here and turned back into text on the client.
      */
-    private static String serializeSuffix(final IChatComponent suffix) {
+    static String serializeSuffix(final IChatComponent suffix) {
         return suffix == null ? null : IChatComponent.Serializer.func_150696_a(suffix);
     }
 

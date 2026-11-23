@@ -49,11 +49,13 @@ public final class PatternTargetQuery {
         public final IInterfaceViewable provider;
         public final PatternMatch match;
         public final int freeSlots;
+        public final int totalSlots;
 
-        private Entry(IInterfaceViewable provider, PatternMatch match, int freeSlots) {
+        private Entry(IInterfaceViewable provider, PatternMatch match, int freeSlots, int totalSlots) {
             this.provider = provider;
             this.match = match;
             this.freeSlots = freeSlots;
+            this.totalSlots = totalSlots;
         }
     }
 
@@ -106,7 +108,7 @@ public final class PatternTargetQuery {
                     final PatternMatch match = supportsAll(machine.getSupportedStackTypes(), neededTypes)
                             ? matchProvider(machine, pattern, results)
                             : PatternMatch.NO_MATCH;
-                    entries.add(new Entry(machine, match, countFreeSlots(machine)));
+                    entries.add(buildEntry(machine, match));
                 }
             }
         }
@@ -246,10 +248,10 @@ public final class PatternTargetQuery {
         return true;
     }
 
-    private static int countFreeSlots(IInterfaceViewable provider) {
+    private static Entry buildEntry(IInterfaceViewable provider, PatternMatch match) {
         final IInventory patterns = provider.getPatterns();
         if (patterns == null) {
-            return 0;
+            return new Entry(provider, match, 0, 0);
         }
 
         final int slots = Math.min(provider.numSlots(), patterns.getSizeInventory());
@@ -259,7 +261,7 @@ public final class PatternTargetQuery {
                 free++;
             }
         }
-        return free;
+        return new Entry(provider, match, free, slots);
     }
 
     /**
@@ -355,7 +357,7 @@ public final class PatternTargetQuery {
         }
     }
 
-    private static IAEStack<?> primaryOutput(ICraftingPatternDetails pattern) {
+    public static IAEStack<?> primaryOutput(ICraftingPatternDetails pattern) {
         for (IAEStack<?> output : pattern.getCondensedAEOutputs()) {
             if (output != null) {
                 return output;
