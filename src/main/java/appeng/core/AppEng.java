@@ -97,6 +97,7 @@ public final class AppEng {
     private File configDirectory;
     private CustomRecipeConfig customRecipeConfig;
     public static final String BAUBLESLOT = "Terminal";
+    public static final String PORTABLE_CELL_WORKBENCH_BAUBLE_SLOT = "PortableCellWorkbench";
 
     /**
      * Folder for recipes
@@ -136,6 +137,8 @@ public final class AppEng {
         if (Loader.isModLoaded("Baubles|Expanded")) {
             BaubleExpandedSlots.tryRegisterType(BAUBLESLOT);
             BaubleExpandedSlots.tryAssignSlotOfType(BAUBLESLOT);
+            BaubleExpandedSlots.tryRegisterType(PORTABLE_CELL_WORKBENCH_BAUBLE_SLOT);
+            BaubleExpandedSlots.tryAssignSlotOfType(PORTABLE_CELL_WORKBENCH_BAUBLE_SLOT);
         }
 
         final Stopwatch watch = Stopwatch.createStarted();
