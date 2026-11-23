@@ -38,10 +38,6 @@ public class PortableCellWorkbenchHost
     private final String portableId;
     private final CellWorkbenchState state;
 
-    public PortableCellWorkbenchHost(IInventory playerInventory, Item workbenchItem, int inventorySlot) {
-        this(playerInventory, workbenchItem, inventorySlot, inventorySlot);
-    }
-
     public PortableCellWorkbenchHost(IInventory playerInventory, Item workbenchItem, int inventorySlot,
             int inventorySlotIndex) {
         this.playerInventory = playerInventory;
@@ -185,14 +181,13 @@ public class PortableCellWorkbenchHost
         return new ItemStack(this.workbenchItem);
     }
 
-    @Override
     public boolean isValid() {
         ItemStack stack = this.getItemStack();
         return stack != null && stack.getItem() == this.workbenchItem
                 && this.portableId.equals(this.getPortableId(stack));
     }
 
-    private String ensurePortableId(ItemStack stack) {
+    public String ensurePortableId(ItemStack stack) {
         if (stack.hasTagCompound() && stack.getTagCompound().hasKey(ID_TAG)) {
             return stack.getTagCompound().getString(ID_TAG);
         }
@@ -206,7 +201,7 @@ public class PortableCellWorkbenchHost
         return data.getString(ID_TAG);
     }
 
-    private String getPortableId(ItemStack stack) {
+    public String getPortableId(ItemStack stack) {
         return stack.hasTagCompound() ? stack.getTagCompound().getString(ID_TAG) : "";
     }
 }

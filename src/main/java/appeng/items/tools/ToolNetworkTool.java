@@ -68,7 +68,7 @@ public class ToolNetworkTool extends AEBaseItem
     @Override
     public IGuiItemObject getGuiObject(final ItemStack is, final World world, final EntityPlayer p, final int x,
             final int y, final int z) {
-        final TileEntity te = world.getTileEntity(x, y, z);
+        final TileEntity te = world == null ? null : world.getTileEntity(x, y, z);
         return new NetworkToolViewer(is, (IGridHost) (te instanceof IGridHost ? te : null), getInventorySize());
     }
 

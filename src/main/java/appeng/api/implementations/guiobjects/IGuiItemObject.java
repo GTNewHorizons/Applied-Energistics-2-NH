@@ -18,8 +18,4 @@ import net.minecraft.item.ItemStack;
 public interface IGuiItemObject {
 
     ItemStack getItemStack();
-
-    default boolean isValid() {
-        return true;
-    }
 }

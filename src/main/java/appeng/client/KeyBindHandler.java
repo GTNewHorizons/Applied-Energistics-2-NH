@@ -15,7 +15,6 @@ import appeng.core.settings.ControllerAnimation;
 import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketOpenPortableCellWorkbench;
 import appeng.core.sync.packets.PacketPickBlock;
-import appeng.server.ServerHelper;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.InputEvent;
 import cpw.mods.fml.relauncher.Side;
@@ -54,7 +53,7 @@ public class KeyBindHandler {
     }
 
     private static void handlePortableCellWorkbenchKey() {
-        if (!ServerHelper.OPEN_PORTABLE_CELL_WORKBENCH.getKeybinding().isPressed()) return;
+        if (!CommonHelper.proxy.isKeyPressed(ActionKey.OPEN_PORTABLE_CELL_WORKBENCH)) return;
         Minecraft minecraft = Minecraft.getMinecraft();
         if (minecraft.currentScreen != null || minecraft.thePlayer == null || NetworkHandler.instance == null) return;
 

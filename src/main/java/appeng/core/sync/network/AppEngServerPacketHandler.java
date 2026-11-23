@@ -14,21 +14,16 @@ import java.lang.reflect.InvocationTargetException;
 
 import net.minecraft.entity.player.EntityPlayer;
 
-import appeng.container.AEBaseContainer;
 import appeng.core.AELog;
 import appeng.core.sync.AppEngPacket;
 import appeng.core.sync.AppEngPacketHandlerBase;
 import cpw.mods.fml.common.network.internal.FMLProxyPacket;
 import io.netty.buffer.ByteBuf;
 
-public final class AppEngServerPacketHandler extends AppEngPacketHandlerBase implements IPacketHandler {
+public class AppEngServerPacketHandler extends AppEngPacketHandlerBase implements IPacketHandler {
 
     @Override
     public void onPacketData(final INetworkInfo manager, final FMLProxyPacket packet, final EntityPlayer player) {
-        if (player.openContainer instanceof AEBaseContainer container && !container.canInteractWith(player)) {
-            player.closeScreen();
-            return;
-        }
         final ByteBuf stream = packet.payload();
 
         try {
