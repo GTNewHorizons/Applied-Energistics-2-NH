@@ -10,6 +10,8 @@ public enum ActionKey {
 
     PICK_BLOCK(Keyboard.KEY_NONE),
 
+    OPEN_PORTABLE_CELL_WORKBENCH(Keyboard.KEY_NONE),
+
     LOCATE_ITEM_FLOW(Keyboard.KEY_NONE),
 
     CYCLE_CONTROLLER_ANIMATION(Keyboard.KEY_NONE);

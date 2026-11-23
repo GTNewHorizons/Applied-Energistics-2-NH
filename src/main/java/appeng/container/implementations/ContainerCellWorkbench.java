@@ -43,6 +43,7 @@ import appeng.container.sync.SyncRegistrar;
 import appeng.container.sync.handlers.AEStackInventorySyncHandler;
 import appeng.container.sync.handlers.ConfigEnumSyncHandler;
 import appeng.helpers.ICellRestriction;
+import appeng.helpers.ICellRestriction.CellRestrictionData;
 import appeng.tile.inventory.AppEngNullInventory;
 import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.IterationCounter;
@@ -55,7 +56,6 @@ public class ContainerCellWorkbench extends ContainerUpgradeable {
     private final AppEngNullInventory nullInventory = new AppEngNullInventory();
 
     private ItemStack prevStack = null;
-    private int lastUpgrades = 0;
 
     public final ConfigEnumSyncHandler<CopyMode> copyModeSync;
     public final AEStackInventorySyncHandler configSync;
@@ -81,6 +81,7 @@ public class ContainerCellWorkbench extends ContainerUpgradeable {
             final ItemStack cell = this.workBench.getInventoryByName("cell").getStackInSlot(0);
             cwi.setFuzzyMode(cell, valueOf);
             if (valueOf == FuzzyMode.IGNORE_ALL) ItemStackNBT.removeTag(cell, "FuzzyMode");
+            this.markWorkbenchDirty();
         }
     }
 
@@ -122,12 +123,7 @@ public class ContainerCellWorkbench extends ContainerUpgradeable {
 
     @Override
     public int availableUpgrades() {
-        final ItemStack is = this.workBench.getInventoryByName("cell").getStackInSlot(0);
-        if (this.prevStack != is) {
-            this.prevStack = is;
-            this.lastUpgrades = this.getCellUpgradeInventory().getSizeInventory();
-        }
-        return this.lastUpgrades;
+        return this.getCellUpgradeInventory().getSizeInventory();
     }
 
     @Override
@@ -179,13 +175,15 @@ public class ContainerCellWorkbench extends ContainerUpgradeable {
         return haveCell() && this.workBench.getCell() instanceof ICellRestriction;
     }
 
+    protected void markWorkbenchDirty() {
+        this.workBench.getInventoryByName("cell").markDirty();
+    }
+
     private void clear() {
         final IAEStackInventory inv = this.workBench.getAEInventoryByName(StorageName.NONE);
-        for (int x = 0; x < inv.getSizeInventory(); x++) {
-            inv.putAEStackInSlot(x, null);
-        }
+        inv.updateSlots(slot -> null);
         this.setFuzzy(FuzzyMode.IGNORE_ALL);
-        this.workBench.setCellRestriction(null, new ICellRestriction.CellRestrictionData((byte) 0, 0));
+        this.workBench.setCellRestriction(null, new CellRestrictionData((byte) 0, 0));
         this.configSync.markDirty();
         this.detectAndSendChanges();
     }
@@ -213,15 +211,14 @@ public class ContainerCellWorkbench extends ContainerUpgradeable {
                 .getAvailableItems(cellInv.getStackType().createPrimitiveList(), IterationCounter.fetchNewId());
         Iterator<?> i = list.iterator();
 
-        for (int x = 0; x < inv.getSizeInventory(); x++) {
+        inv.updateSlots(slot -> {
             if (i.hasNext()) {
-                final IAEStack<?> g = (IAEStack<?>) i.next();
+                final IAEStack<?> g = ((IAEStack<?>) i.next()).copy();
                 g.setStackSize(1);
-                inv.putAEStackInSlot(x, g);
-            } else {
-                inv.putAEStackInSlot(x, null);
+                return g;
             }
-        }
+            return null;
+        });
 
         this.configSync.markDirty();
         this.detectAndSendChanges();
@@ -252,7 +249,7 @@ public class ContainerCellWorkbench extends ContainerUpgradeable {
         public ItemStack decrStackSize(final int i, final int j) {
             final IInventory inv = ContainerCellWorkbench.this.getCellUpgradeInventory();
             final ItemStack is = inv.decrStackSize(i, j);
-            inv.markDirty();
+            this.markDirty();
             return is;
         }
 
@@ -260,7 +257,7 @@ public class ContainerCellWorkbench extends ContainerUpgradeable {
         public ItemStack getStackInSlotOnClosing(final int i) {
             final IInventory inv = ContainerCellWorkbench.this.getCellUpgradeInventory();
             final ItemStack is = inv.getStackInSlotOnClosing(i);
-            inv.markDirty();
+            this.markDirty();
             return is;
         }
 
@@ -268,7 +265,7 @@ public class ContainerCellWorkbench extends ContainerUpgradeable {
         public void setInventorySlotContents(final int i, final ItemStack itemstack) {
             final IInventory inv = ContainerCellWorkbench.this.getCellUpgradeInventory();
             inv.setInventorySlotContents(i, itemstack);
-            inv.markDirty();
+            this.markDirty();
         }
 
         @Override
@@ -291,6 +288,11 @@ public class ContainerCellWorkbench extends ContainerUpgradeable {
             if (ContainerCellWorkbench.this.getUpgradeable().getInstalledUpgrades(Upgrades.FUZZY) == 0) {
                 ContainerCellWorkbench.this.setFuzzy(FuzzyMode.IGNORE_ALL);
             }
+            if (ContainerCellWorkbench.this.getUpgradeable().getInstalledUpgrades(Upgrades.ORE_FILTER) == 0) {
+                ContainerCellWorkbench.this.workBench.setFilter("");
+            }
+            ContainerCellWorkbench.this.getCellUpgradeInventory().markDirty();
+            ContainerCellWorkbench.this.markWorkbenchDirty();
         }
 
         @Override
