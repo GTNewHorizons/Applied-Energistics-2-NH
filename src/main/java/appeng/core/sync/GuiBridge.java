@@ -87,11 +87,9 @@ import appeng.container.implementations.ContainerNetworkStatus;
 import appeng.container.implementations.ContainerNetworkTool;
 import appeng.container.implementations.ContainerOptimizePatterns;
 import appeng.container.implementations.ContainerOreFilter;
-import appeng.container.implementations.ContainerPatternItemRenamer;
 import appeng.container.implementations.ContainerPatternMulti;
 import appeng.container.implementations.ContainerPatternTerm;
 import appeng.container.implementations.ContainerPatternTermEx;
-import appeng.container.implementations.ContainerPatternValueAmount;
 import appeng.container.implementations.ContainerPriority;
 import appeng.container.implementations.ContainerPriorityCard;
 import appeng.container.implementations.ContainerQNB;
@@ -101,6 +99,8 @@ import appeng.container.implementations.ContainerSecurity;
 import appeng.container.implementations.ContainerSkyChest;
 import appeng.container.implementations.ContainerSpatialIOPort;
 import appeng.container.implementations.ContainerSpatialLinkChamber;
+import appeng.container.implementations.ContainerStackAmount;
+import appeng.container.implementations.ContainerStackRename;
 import appeng.container.implementations.ContainerStorageBus;
 import appeng.container.implementations.ContainerStorageReshuffle;
 import appeng.container.implementations.ContainerSuperMEReplenisher;
@@ -238,11 +238,11 @@ public enum GuiBridge implements IGuiHandler {
     GUI_CRAFTING_AMOUNT(ContainerCraftAmount.class, ITerminalHost.class, GuiHostType.ITEM_OR_WORLD,
             SecurityPermissions.CRAFT),
 
-    GUI_PATTERN_VALUE_AMOUNT(ContainerPatternValueAmount.class, Object.class, GuiHostType.ITEM_OR_WORLD, null),
+    GUI_STACK_AMOUNT(ContainerStackAmount.class, Object.class, GuiHostType.ITEM_OR_WORLD, null),
 
     GUI_PATTERN_MULTI(ContainerPatternMulti.class, ITerminalHost.class, GuiHostType.ITEM_OR_WORLD, null),
 
-    GUI_PATTERN_ITEM_RENAMER(ContainerPatternItemRenamer.class, ITerminalHost.class, GuiHostType.ITEM_OR_WORLD, null),
+    GUI_STACK_RENAME(ContainerStackRename.class, Object.class, GuiHostType.ITEM_OR_WORLD, null),
 
     GUI_CRAFTING_CONFIRM(ContainerCraftConfirm.class, ITerminalHost.class, GuiHostType.ITEM_OR_WORLD,
             SecurityPermissions.CRAFT),

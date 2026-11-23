@@ -4,8 +4,8 @@ import appeng.core.sync.GuiBridge;
 
 public enum StackEditMode {
 
-    AMOUNT(GuiBridge.GUI_PATTERN_VALUE_AMOUNT),
-    NAME(GuiBridge.GUI_PATTERN_ITEM_RENAMER);
+    AMOUNT(GuiBridge.GUI_STACK_AMOUNT),
+    NAME(GuiBridge.GUI_STACK_RENAME);
 
     private final GuiBridge gui;
 

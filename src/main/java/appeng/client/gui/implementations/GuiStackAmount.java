@@ -5,20 +5,20 @@ import net.minecraft.entity.player.InventoryPlayer;
 
 import appeng.api.storage.data.IAEStack;
 import appeng.client.gui.slots.VirtualMESlotSingle;
-import appeng.container.implementations.ContainerPatternValueAmount;
+import appeng.container.implementations.ContainerStackAmount;
 import appeng.core.localization.ColorUtils;
 import appeng.core.localization.GuiText;
 import appeng.helpers.Reflected;
 
-public class GuiPatternValueAmount extends GuiAmount {
+public class GuiStackAmount extends GuiAmount {
 
-    private final ContainerPatternValueAmount container;
+    private final ContainerStackAmount container;
     private final VirtualMESlotSingle slot;
 
     @Reflected
-    public GuiPatternValueAmount(final InventoryPlayer inventoryPlayer, final Object te) {
-        super(new ContainerPatternValueAmount(inventoryPlayer, te));
-        this.container = (ContainerPatternValueAmount) this.inventorySlots;
+    public GuiStackAmount(final InventoryPlayer inventoryPlayer, final Object te) {
+        super(new ContainerStackAmount(inventoryPlayer, te));
+        this.container = (ContainerStackAmount) this.inventorySlots;
         this.slot = new VirtualMESlotSingle(34, 53, 0, null);
         this.container.setStackListener(this::update);
     }

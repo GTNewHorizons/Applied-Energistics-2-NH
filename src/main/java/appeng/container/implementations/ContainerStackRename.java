@@ -3,18 +3,17 @@ package appeng.container.implementations;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
 
-import appeng.api.storage.ITerminalHost;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.container.stackedit.ContainerStackEdit;
 import appeng.container.sync.ActionHandler;
 import appeng.container.sync.StreamCodecs;
 import appeng.util.item.AEItemStack;
 
-public class ContainerPatternItemRenamer extends ContainerStackEdit {
+public class ContainerStackRename extends ContainerStackEdit {
 
     private final ActionHandler<String> nameAction;
 
-    public ContainerPatternItemRenamer(final InventoryPlayer ip, final ITerminalHost te) {
+    public ContainerStackRename(final InventoryPlayer ip, final Object te) {
         super(ip, te);
         this.nameAction = this.syncRegistrar().actionC2S("name", StreamCodecs.string()).onServerAction(this::setName);
     }

@@ -6,11 +6,11 @@ import appeng.container.stackedit.ContainerStackEdit;
 import appeng.container.sync.ActionHandler;
 import appeng.container.sync.StreamCodecs;
 
-public class ContainerPatternValueAmount extends ContainerStackEdit {
+public class ContainerStackAmount extends ContainerStackEdit {
 
     private final ActionHandler<Long> amountAction;
 
-    public ContainerPatternValueAmount(final InventoryPlayer ip, final Object te) {
+    public ContainerStackAmount(final InventoryPlayer ip, final Object te) {
         super(ip, te);
         this.amountAction = this.syncRegistrar().actionC2S("amount", StreamCodecs.longValue())
                 .onServerAction(this::setAmount);

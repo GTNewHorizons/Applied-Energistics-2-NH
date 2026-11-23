@@ -5,24 +5,25 @@ import net.minecraft.item.ItemStack;
 
 import org.lwjgl.input.Keyboard;
 
-import appeng.api.storage.ITerminalHost;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.client.gui.GuiSub;
 import appeng.client.gui.widgets.IDropToFillTextField;
 import appeng.client.gui.widgets.MEGuiTextField;
-import appeng.container.implementations.ContainerPatternItemRenamer;
+import appeng.container.implementations.ContainerStackRename;
 import appeng.core.localization.ColorUtils;
 import appeng.core.localization.GuiText;
+import appeng.helpers.Reflected;
 
-public class GuiPatternItemRenamer extends GuiSub implements IDropToFillTextField {
+public class GuiStackRename extends GuiSub implements IDropToFillTextField {
 
-    private final ContainerPatternItemRenamer container;
+    private final ContainerStackRename container;
     private final MEGuiTextField textField;
 
-    public GuiPatternItemRenamer(InventoryPlayer ip, ITerminalHost p) {
-        super(new ContainerPatternItemRenamer(ip, p));
-        this.container = (ContainerPatternItemRenamer) this.inventorySlots;
+    @Reflected
+    public GuiStackRename(InventoryPlayer ip, Object p) {
+        super(new ContainerStackRename(ip, p));
+        this.container = (ContainerStackRename) this.inventorySlots;
         xSize = 256;
         textField = new MEGuiTextField(231, 12);
         this.container.setStackListener(this::update);
