@@ -204,6 +204,8 @@ public enum ButtonToolTips implements Localization {
     AdvancedBlockingModeDefaultDesc,
     AdvancedBlockingModeAll,
     AdvancedBlockingModeAllDesc,
+    AdvancedBlockingModeNone,
+    AdvancedBlockingModeNoneDesc,
     LockCraftingMode,
     LockCraftingModeNone,
     LockCraftingUntilRedstonePulse,
