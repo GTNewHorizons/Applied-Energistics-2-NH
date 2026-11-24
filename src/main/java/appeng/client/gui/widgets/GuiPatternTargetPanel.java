@@ -37,9 +37,9 @@ public class GuiPatternTargetPanel {
      */
     public interface Actions {
 
-        void sendToTarget(int index);
+        void sendToTarget(PatternTargetList.Click click);
 
-        void extractConflict(int index);
+        void extractConflict(PatternTargetList.Click click);
 
         void highlight(int x, int y, int z, int dim, String name);
     }
@@ -386,7 +386,7 @@ public class GuiPatternTargetPanel {
             if (GuiScreen.isShiftKeyDown()) {
                 this.actions.highlight(entry.x, entry.y, entry.z, entry.dim, displayName(entry));
             } else if (entry.match != PatternMatch.NOT_READY) {
-                this.actions.sendToTarget(entry.index);
+                this.actions.sendToTarget(new PatternTargetList.Click(this.list.revision, entry.index));
             }
             return true;
         }
@@ -394,7 +394,7 @@ public class GuiPatternTargetPanel {
         if (conflict >= 0) {
             final PatternTargetList.Conflict c = this.list.conflicts.get(conflict);
             if (this.isOverExtractButton(conflict, mouseX, mouseY)) {
-                this.actions.extractConflict(c.index);
+                this.actions.extractConflict(new PatternTargetList.Click(this.list.revision, c.index));
             } else if (GuiScreen.isShiftKeyDown()) {
                 this.actions.highlight(c.x, c.y, c.z, c.dim, displayName(c));
             }

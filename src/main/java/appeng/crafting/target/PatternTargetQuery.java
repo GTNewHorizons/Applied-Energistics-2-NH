@@ -81,12 +81,7 @@ public final class PatternTargetQuery {
     public static Result run(IGrid grid, ICraftingPatternDetails pattern) {
         final long start = System.nanoTime();
 
-        final Set<IAEStackType<?>> neededTypes = new HashSet<>();
-        for (IAEStack<?> input : pattern.getCondensedAEInputs()) {
-            if (input != null) {
-                neededTypes.add(input.getStackType());
-            }
-        }
+        final Set<IAEStackType<?>> neededTypes = neededStackTypes(pattern);
 
         final List<Entry> entries = new ArrayList<>();
         final Map<IPatternTargetKey, PatternMatch> results = new HashMap<>();
@@ -105,15 +100,29 @@ public final class PatternTargetQuery {
                         continue;
                     }
 
-                    final PatternMatch match = supportsAll(machine.getSupportedStackTypes(), neededTypes)
-                            ? matchProvider(machine, pattern, results)
-                            : PatternMatch.NO_MATCH;
+                    final PatternMatch match = matchProvider(machine, pattern, results, neededTypes);
                     entries.add(buildEntry(machine, match));
                 }
             }
         }
 
         return new Result(entries, results.size(), System.nanoTime() - start);
+    }
+
+    /** Checks the current compatibility of one selected provider. */
+    public static PatternMatch matchProvider(IInterfaceViewable provider, ICraftingPatternDetails pattern) {
+        if (isLinkedTunnelOutput(provider) || !provider.shouldDisplay()) {
+            return PatternMatch.NO_MATCH;
+        }
+        return matchProvider(provider, pattern, new HashMap<>(), neededStackTypes(pattern));
+    }
+
+    private static Set<IAEStackType<?>> neededStackTypes(ICraftingPatternDetails pattern) {
+        final Set<IAEStackType<?>> types = new HashSet<>();
+        for (IAEStack<?> input : pattern.getCondensedAEInputs()) {
+            if (input != null) types.add(input.getStackType());
+        }
+        return types;
     }
 
     private static boolean isLinkedTunnelOutput(IInterfaceViewable machine) {
@@ -169,7 +178,10 @@ public final class PatternTargetQuery {
     }
 
     private static PatternMatch matchProvider(IInterfaceViewable provider, ICraftingPatternDetails pattern,
-            Map<IPatternTargetKey, PatternMatch> results) {
+            Map<IPatternTargetKey, PatternMatch> results, Set<IAEStackType<?>> neededTypes) {
+        if (!supportsAll(provider.getSupportedStackTypes(), neededTypes)) {
+            return PatternMatch.NO_MATCH;
+        }
         final List<IInterfaceViewable> members = pushingMembers(provider);
         if (members.isEmpty()) {
             return PatternMatch.UNKNOWN;

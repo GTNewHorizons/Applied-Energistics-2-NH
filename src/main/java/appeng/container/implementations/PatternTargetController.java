@@ -40,6 +40,7 @@ final class PatternTargetController {
 
     private ItemStack lastPattern;
     private boolean refreshRequested;
+    private int revision;
     private List<PatternTargetQuery.Entry> lastTargets = Collections.emptyList();
     private List<PatternTargetQuery.Conflict> lastConflicts = Collections.emptyList();
     private List<PatternTargetList.CardSource> lastTargetCards = Collections.emptyList();
@@ -73,6 +74,7 @@ final class PatternTargetController {
             return;
         }
         this.refreshRequested = false;
+        this.revision++;
         this.lastPattern = pattern == null ? null : pattern.copy();
         this.lastTargets = Collections.emptyList();
         this.lastTargetCards = Collections.emptyList();
@@ -80,13 +82,15 @@ final class PatternTargetController {
 
         final EntityPlayer player = this.container.getPlayerInv().player;
         final IGridNode node = this.container.getNetworkNode();
-        final ICraftingPatternDetails details = pattern != null
-                && pattern.getItem() instanceof ICraftingPatternItem patternItem
-                        ? patternItem.getPatternForItem(pattern, player.worldObj)
-                        : null;
+        final ICraftingPatternDetails details = readPattern(pattern, player);
         if (details == null || node == null || node.getGrid() == null) {
             this.container.patternTargetsAction.send(
-                    new PatternTargetList(pattern != null, Collections.emptyList(), Collections.emptyList(), null));
+                    new PatternTargetList(
+                            this.revision,
+                            pattern != null,
+                            Collections.emptyList(),
+                            Collections.emptyList(),
+                            null));
             return;
         }
 
@@ -180,10 +184,22 @@ final class PatternTargetController {
         }
         this.container.patternTargetsAction.send(
                 new PatternTargetList(
+                        this.revision,
                         true,
                         entries,
                         conflicts,
                         conflicts.isEmpty() ? null : PatternTargetQuery.primaryOutput(details)));
+    }
+
+    private static ICraftingPatternDetails readPattern(ItemStack pattern, EntityPlayer player) {
+        return pattern != null && pattern.getItem() instanceof ICraftingPatternItem item
+                ? item.getPatternForItem(pattern, player.worldObj)
+                : null;
+    }
+
+    private boolean isCurrent(PatternTargetList.Click click, ItemStack pattern) {
+        return !this.refreshRequested && click.revision() == this.revision
+                && ItemStack.areItemStacksEqual(pattern, this.lastPattern);
     }
 
     /**
@@ -200,9 +216,11 @@ final class PatternTargetController {
     /**
      * Moves the conflicting pattern at this index of the last list into the player's inventory.
      */
-    void extractConflict(int index) {
+    void extractConflict(PatternTargetList.Click click) {
+        final int index = click.index();
         final IGridNode node = this.container.getNetworkNode();
-        if (node == null || node.getGrid() == null
+        if (!this.isCurrent(click, this.container.getEncodedPattern()) || node == null
+                || node.getGrid() == null
                 || index < 0
                 || index >= this.lastConflicts.size()
                 || !this.container.hasPermission(SecurityPermissions.BUILD)) {
@@ -225,24 +243,37 @@ final class PatternTargetController {
     /**
      * Puts the encoded pattern into the provider at this index of the last list, installing a card first if needed.
      */
-    void sendToTarget(int index) {
+    void sendToTarget(PatternTargetList.Click click) {
+        final int index = click.index();
         final ItemStack pattern = this.container.getEncodedPattern();
         final IGridNode node = this.container.getNetworkNode();
-        // The index points into the list built for lastPattern, so a changed pattern makes it meaningless.
-        if (pattern == null || node == null
+        if (!this.isCurrent(click, pattern) || pattern == null
+                || node == null
                 || node.getGrid() == null
                 || index < 0
                 || index >= this.lastTargets.size()
-                || this.lastTargets.get(index).match == PatternMatch.NOT_READY
-                || !ItemStack.areItemStacksEqual(pattern, this.lastPattern)
                 || !this.container.hasPermission(SecurityPermissions.BUILD)) {
             return;
         }
 
-        final IInterfaceViewable provider = this.lastTargets.get(index).provider;
+        final PatternTargetQuery.Entry selected = this.lastTargets.get(index);
+        final IInterfaceViewable provider = selected.provider;
         final EntityPlayer player = this.container.getPlayerInv().player;
         final IGrid grid = node.getGrid();
+        if (!PatternTargetQuery.canModify(provider, grid, player)) {
+            this.refreshRequested = true;
+            return;
+        }
+        final ICraftingPatternDetails details = readPattern(pattern, player);
+        final PatternMatch match = details == null ? PatternMatch.NO_MATCH
+                : PatternTargetQuery.matchProvider(provider, details);
+        if (match == PatternMatch.NO_MATCH || match == PatternMatch.NOT_READY
+                || match == PatternMatch.UNKNOWN && selected.match == PatternMatch.MATCH) {
+            this.refreshRequested = true;
+            return;
+        }
         if (PatternTargetQuery.insertPattern(provider, grid, player, pattern)) {
+            this.refreshRequested = true;
             this.container.consumeEncodedPattern();
             return;
         }

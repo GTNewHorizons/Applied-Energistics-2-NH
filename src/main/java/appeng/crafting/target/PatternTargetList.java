@@ -6,6 +6,8 @@ import java.util.List;
 
 import net.minecraft.item.ItemStack;
 
+import com.github.bsideup.jabel.Desugar;
+
 import appeng.api.crafting.PatternMatch;
 import appeng.api.storage.data.IAEStack;
 import appeng.container.sync.StreamCodec;
@@ -18,6 +20,7 @@ import cpw.mods.fml.common.network.ByteBufUtils;
 public final class PatternTargetList {
 
     public static final PatternTargetList EMPTY = new PatternTargetList(
+            0,
             false,
             Collections.emptyList(),
             Collections.emptyList(),
@@ -25,6 +28,7 @@ public final class PatternTargetList {
 
     public static final StreamCodec<PatternTargetList> CODEC = StreamCodecs
             .of(PatternTargetList.class.getName(), (buf, list) -> {
+                buf.writeInt(list.revision);
                 buf.writeBoolean(list.hasPattern);
                 buf.writeInt(list.entries.size());
                 for (Entry entry : list.entries) {
@@ -56,6 +60,7 @@ public final class PatternTargetList {
                 }
                 IAEStack.writeToPacketGeneric(buf, list.conflictOutput);
             }, buf -> {
+                final int revision = buf.readInt();
                 final boolean hasPattern = buf.readBoolean();
                 final int size = buf.readInt();
                 final List<Entry> entries = new ArrayList<>(size);
@@ -91,20 +96,31 @@ public final class PatternTargetList {
                                     buf.readInt(),
                                     buf.readBoolean()));
                 }
-                return new PatternTargetList(hasPattern, entries, conflicts, IAEStack.fromPacketGeneric(buf));
+                return new PatternTargetList(revision, hasPattern, entries, conflicts, IAEStack.fromPacketGeneric(buf));
             });
 
+    public final int revision;
     public final boolean hasPattern;
     public final List<Entry> entries;
     public final List<Conflict> conflicts;
     public final IAEStack<?> conflictOutput;
 
-    public PatternTargetList(boolean hasPattern, List<Entry> entries, List<Conflict> conflicts,
+    public PatternTargetList(int revision, boolean hasPattern, List<Entry> entries, List<Conflict> conflicts,
             IAEStack<?> conflictOutput) {
+        this.revision = revision;
         this.hasPattern = hasPattern;
         this.entries = entries;
         this.conflicts = conflicts;
         this.conflictOutput = conflictOutput;
+    }
+
+    @Desugar
+    public record Click(int revision, int index) {
+
+        public static final StreamCodec<Click> CODEC = StreamCodecs.of(Click.class.getName(), (buf, click) -> {
+            buf.writeInt(click.revision);
+            buf.writeInt(click.index);
+        }, buf -> new Click(buf.readInt(), buf.readInt()));
     }
 
     /**

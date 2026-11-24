@@ -97,8 +97,8 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
     public final ActionHandler<Void> clearAction;
     public final ActionHandler<Integer> doubleAction;
     public final ActionHandler<PatternTargetList> patternTargetsAction;
-    public final ActionHandler<Integer> sendToTargetAction;
-    public final ActionHandler<Integer> extractConflictAction;
+    public final ActionHandler<PatternTargetList.Click> sendToTargetAction;
+    public final ActionHandler<PatternTargetList.Click> extractConflictAction;
 
     private final PatternTargetController targets = new PatternTargetController(this);
 
@@ -208,9 +208,9 @@ public class ContainerPatternTerm extends ContainerMEMonitorable
         this.doubleAction = sync.actionC2S("double", StreamCodecs.intValue()).onServerAction(this::doubleStacks);
         this.patternTargetsAction = sync.actionS2C("patternTargets", PatternTargetList.CODEC)
                 .onClientAction(this.targets::setClientTargets);
-        this.sendToTargetAction = sync.actionC2S("sendToTarget", StreamCodecs.intValue())
+        this.sendToTargetAction = sync.actionC2S("sendToTarget", PatternTargetList.Click.CODEC)
                 .onServerAction(this.targets::sendToTarget);
-        this.extractConflictAction = sync.actionC2S("extractConflict", StreamCodecs.intValue())
+        this.extractConflictAction = sync.actionC2S("extractConflict", PatternTargetList.Click.CODEC)
                 .onServerAction(this.targets::extractConflict);
 
         this.updateOrderOfOutputSlots();

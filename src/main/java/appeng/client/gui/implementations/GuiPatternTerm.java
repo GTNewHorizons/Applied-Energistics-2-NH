@@ -57,6 +57,7 @@ import appeng.core.localization.PlayerMessages;
 import appeng.core.sync.GuiBridge;
 import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketSwitchGuis;
+import appeng.crafting.target.PatternTargetList;
 import appeng.integration.IntegrationRegistry;
 import appeng.integration.IntegrationType;
 import appeng.integration.modules.NEIHelpers.NEIWidgetBounds;
@@ -93,13 +94,13 @@ public class GuiPatternTerm extends GuiMEMonitorable {
             new GuiPatternTargetPanel.Actions() {
 
                 @Override
-                public void sendToTarget(int index) {
-                    GuiPatternTerm.this.container.sendToTargetAction.send(index);
+                public void sendToTarget(PatternTargetList.Click click) {
+                    GuiPatternTerm.this.container.sendToTargetAction.send(click);
                 }
 
                 @Override
-                public void extractConflict(int index) {
-                    GuiPatternTerm.this.container.extractConflictAction.send(index);
+                public void extractConflict(PatternTargetList.Click click) {
+                    GuiPatternTerm.this.container.extractConflictAction.send(click);
                 }
 
                 @Override
