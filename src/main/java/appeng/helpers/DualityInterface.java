@@ -20,6 +20,7 @@ import static com.gtnewhorizon.gtnhlib.capability.Capabilities.getCapability;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.OptionalInt;
+import java.util.function.Function;
 
 import net.minecraft.block.Block;
 import net.minecraft.inventory.IInventory;
@@ -1743,6 +1745,18 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
     }
 
     public IChatComponent getAdjacentMachineSuffix() {
+        return findAdjacentNameData(IInterfaceNameProvider::getInterfaceNameSuffix);
+    }
+
+    public List<ItemStack> getAdjacentMachineConfigIcons() {
+        final List<ItemStack> icons = findAdjacentNameData(provider -> {
+            final List<ItemStack> stacks = provider.getMachineConfigIcons();
+            return stacks.isEmpty() ? null : stacks;
+        });
+        return icons == null ? Collections.emptyList() : icons;
+    }
+
+    private <T> T findAdjacentNameData(Function<IInterfaceNameProvider, T> read) {
         final TileEntity hostTile = this.iHost.getTileEntity();
         if (hostTile == null || hostTile.getWorldObj() == null) return null;
         for (final ForgeDirection direction : this.iHost.getTargets()) {
@@ -1760,8 +1774,8 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
                 }
             }
             if (directedTile instanceof IInterfaceNameProvider provider) {
-                final IChatComponent suffix = provider.getInterfaceNameSuffix();
-                if (suffix != null) return suffix;
+                final T value = read.apply(provider);
+                if (value != null) return value;
             }
         }
         return null;

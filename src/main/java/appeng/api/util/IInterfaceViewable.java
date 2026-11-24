@@ -76,6 +76,11 @@ public interface IInterfaceViewable extends IGridHost {
         return getNameSuffix();
     }
 
+    /** Returns the machine configuration icons shown in the Pattern Terminal. */
+    default List<ItemStack> getMachineConfigIcons() {
+        return Collections.emptyList();
+    }
+
     TileEntity getTileEntity();
 
     boolean shouldDisplay();

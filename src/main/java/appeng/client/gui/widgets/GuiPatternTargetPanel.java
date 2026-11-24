@@ -4,21 +4,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.IChatComponent;
 
 import org.lwjgl.opengl.GL11;
 
 import appeng.api.crafting.PatternMatch;
-import appeng.api.util.INameSuffixIcons;
 import appeng.client.gui.AEBaseGui;
 import appeng.client.gui.ScreenColor;
 import appeng.client.gui.implementations.GuiInterfaceTerminal;
@@ -80,7 +76,6 @@ public class GuiPatternTargetPanel {
 
     private PatternTargetList list = PatternTargetList.EMPTY;
     private final List<PatternTargetList.Entry> entries = new ArrayList<>();
-    private final Map<PatternTargetList.Entry, List<ItemStack>> suffixIcons = new IdentityHashMap<>();
     private ItemStack patternIcon;
 
     private int x;
@@ -117,17 +112,6 @@ public class GuiPatternTargetPanel {
         this.list = list;
         this.entries.clear();
         this.entries.addAll(list.entries);
-        this.suffixIcons.clear();
-        for (PatternTargetList.Entry entry : this.entries) {
-            if (entry.suffix == null || entry.suffix.isEmpty()) continue;
-            final List<ItemStack> icons = new ArrayList<>();
-            try {
-                collectSuffixIcons(IChatComponent.Serializer.func_150699_a(entry.suffix), icons);
-                if (!icons.isEmpty()) this.suffixIcons.put(entry, icons);
-            } catch (RuntimeException ignored) {
-                // The card tooltip can still show the suffix as text.
-            }
-        }
         // Within a status, interfaces that already hold the same pattern or need a card go last.
         this.entries.sort(
                 Comparator.comparingInt((PatternTargetList.Entry e) -> statusOrder(e.match))
@@ -135,18 +119,6 @@ public class GuiPatternTargetPanel {
                         .thenComparingInt(e -> e.cardSource == PatternTargetList.CardSource.NONE ? 0 : 1)
                         .thenComparing(GuiPatternTargetPanel::displayName));
         this.scrollbar.setCurrentScroll(0);
-    }
-
-    private static void collectSuffixIcons(IChatComponent component, List<ItemStack> icons) {
-        if (component == null) return;
-        if (component instanceof INameSuffixIcons source) {
-            for (ItemStack icon : source.getSuffixIcons()) {
-                if (icon != null) icons.add(icon);
-            }
-        }
-        for (IChatComponent sibling : component.getSiblings()) {
-            collectSuffixIcons(sibling, icons);
-        }
     }
 
     public void setPatternIcon(ItemStack patternIcon) {
@@ -530,7 +502,7 @@ public class GuiPatternTargetPanel {
                 textWidth,
                 ColorUtils.guiTextColorBlack.getColor());
         final int iconY = suffixIconY(cardY);
-        final int statusY = this.suffixIcons.containsKey(entry)
+        final int statusY = !entry.configIcons.isEmpty()
                 ? iconY + Math.round((SUFFIX_ICON_SIZE - font.FONT_HEIGHT * this.textScale()) / 2)
                 : cardY + 13;
         final String room = roomLabel(entry);
@@ -542,7 +514,7 @@ public class GuiPatternTargetPanel {
         }
         int roomX = textX + this.textWidth(font, status);
         final int textRight = textX + textWidth;
-        final List<ItemStack> icons = this.suffixIcons.getOrDefault(entry, Collections.emptyList());
+        final List<ItemStack> icons = entry.configIcons;
         final int iconsWidth = textRight - roomX - this.textWidth(font, room);
         final int shown = this.visibleSuffixIcons(font, icons.size(), iconsWidth);
         for (int i = 0; i < shown; i++) {
@@ -588,8 +560,8 @@ public class GuiPatternTargetPanel {
 
     public ItemStack hoveredSuffixIcon(int mouseX, int mouseY) {
         final PatternTargetList.Entry entry = this.entryAt(mouseX, mouseY);
-        final List<ItemStack> icons = this.suffixIcons.get(entry);
-        if (icons == null) return null;
+        if (entry == null || entry.configIcons.isEmpty()) return null;
+        final List<ItemStack> icons = entry.configIcons;
         final FontRenderer font = this.gui.getFontRenderer();
         final int cardY = this.cardY(this.entries.indexOf(entry) - this.scrollbar.getCurrentScroll());
         final int x = this.insetX + 25 + this.textWidth(font, this.statusPrefix(entry));
@@ -830,7 +802,7 @@ public class GuiPatternTargetPanel {
     }
 
     private int cardHeight(PatternTargetList.Entry entry) {
-        return CARD_HEIGHT + (this.suffixIcons.containsKey(entry) ? SUFFIX_CARD_PADDING : 0);
+        return CARD_HEIGHT + (!entry.configIcons.isEmpty() ? SUFFIX_CARD_PADDING : 0);
     }
 
     private int maxCardWindowHeight(int count) {

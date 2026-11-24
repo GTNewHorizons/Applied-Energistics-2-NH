@@ -36,6 +36,10 @@ public final class PatternTargetList {
                     ByteBufUtils.writeItemStack(buf, entry.icon);
                     ByteBufUtils.writeUTF8String(buf, entry.rawName);
                     ByteBufUtils.writeUTF8String(buf, entry.suffix == null ? "" : entry.suffix);
+                    buf.writeInt(entry.configIcons.size());
+                    for (ItemStack icon : entry.configIcons) {
+                        ByteBufUtils.writeItemStack(buf, icon);
+                    }
                     buf.writeInt(entry.x);
                     buf.writeInt(entry.y);
                     buf.writeInt(entry.z);
@@ -71,6 +75,7 @@ public final class PatternTargetList {
                                     ByteBufUtils.readItemStack(buf),
                                     ByteBufUtils.readUTF8String(buf),
                                     ByteBufUtils.readUTF8String(buf),
+                                    readConfigIcons(buf),
                                     buf.readInt(),
                                     buf.readInt(),
                                     buf.readInt(),
@@ -104,6 +109,16 @@ public final class PatternTargetList {
     public final List<Entry> entries;
     public final List<Conflict> conflicts;
     public final IAEStack<?> conflictOutput;
+
+    private static List<ItemStack> readConfigIcons(io.netty.buffer.ByteBuf buf) {
+        final int count = buf.readInt();
+        final List<ItemStack> icons = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            final ItemStack icon = ByteBufUtils.readItemStack(buf);
+            if (icon != null) icons.add(icon);
+        }
+        return icons;
+    }
 
     public PatternTargetList(int revision, boolean hasPattern, List<Entry> entries, List<Conflict> conflicts,
             IAEStack<?> conflictOutput) {
@@ -139,6 +154,7 @@ public final class PatternTargetList {
         public final ItemStack icon;
         public final String rawName;
         public final String suffix;
+        public final List<ItemStack> configIcons;
         public final int x;
         public final int y;
         public final int z;
@@ -151,12 +167,14 @@ public final class PatternTargetList {
         /** True when this provider already holds a pattern with the same inputs and outputs. */
         public final boolean hasSamePattern;
 
-        public Entry(int index, ItemStack icon, String rawName, String suffix, int x, int y, int z, int dim,
-                PatternMatch match, int freeSlots, int totalSlots, CardSource cardSource, boolean hasSamePattern) {
+        public Entry(int index, ItemStack icon, String rawName, String suffix, List<ItemStack> configIcons, int x,
+                int y, int z, int dim, PatternMatch match, int freeSlots, int totalSlots, CardSource cardSource,
+                boolean hasSamePattern) {
             this.index = index;
             this.icon = icon;
             this.rawName = rawName;
             this.suffix = suffix;
+            this.configIcons = configIcons;
             this.x = x;
             this.y = y;
             this.z = z;

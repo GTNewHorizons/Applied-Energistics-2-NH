@@ -153,6 +153,7 @@ final class PatternTargetController {
                             icon,
                             provider.getRawName(),
                             ContainerInterfaceTerminal.serializeSuffix(provider.getPatternTargetSuffix()),
+                            provider.getMachineConfigIcons(),
                             location.x,
                             location.y,
                             location.z,
@@ -277,11 +278,11 @@ final class PatternTargetController {
             this.container.consumeEncodedPattern();
             return;
         }
+        this.refreshRequested = true;
         if (this.lastTargetCards.get(index) == PatternTargetList.CardSource.NONE
                 || !this.installCapacityCard(provider, grid, player)) {
             return;
         }
-        this.refreshRequested = true;
         if (PatternTargetQuery.insertPattern(provider, grid, player, pattern)) {
             this.container.consumeEncodedPattern();
         }

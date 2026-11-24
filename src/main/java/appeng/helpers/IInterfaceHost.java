@@ -86,6 +86,11 @@ public interface IInterfaceHost extends ICraftingProvider, IUpgradeableHost, ICr
     }
 
     @Override
+    default List<ItemStack> getMachineConfigIcons() {
+        return getInterfaceDuality().getAdjacentMachineConfigIcons();
+    }
+
+    @Override
     default int rows() {
         return getInterfaceDuality().getInstalledUpgrades(Upgrades.PATTERN_CAPACITY) + 1;
     }
