@@ -34,6 +34,7 @@ import appeng.block.AEBaseTileBlock;
 import appeng.client.render.blocks.RenderBlockSkyChest;
 import appeng.core.features.AEFeature;
 import appeng.core.sync.GuiBridge;
+import appeng.core.worlddata.WorldData;
 import appeng.helpers.ICustomCollision;
 import appeng.tile.storage.TileSkyChest;
 import appeng.util.Platform;
@@ -55,6 +56,15 @@ public class BlockSkyChest extends AEBaseTileBlock implements ICustomCollision {
         this.setHardness(50);
         this.blockResistance = 150.0f;
         this.setFeature(EnumSet.of(AEFeature.Core, AEFeature.SkyStoneChests));
+    }
+
+    @Override
+    public void breakBlock(final World world, final int x, final int y, final int z, final Block block,
+            final int metadata) {
+        super.breakBlock(world, x, y, z, block, metadata);
+        if (!world.isRemote) {
+            WorldData.instance().compassData().service().indexChests(world.getChunkFromBlockCoords(x, z), false);
+        }
     }
 
     @Override

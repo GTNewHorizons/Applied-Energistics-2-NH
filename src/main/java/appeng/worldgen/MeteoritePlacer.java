@@ -38,6 +38,7 @@ import appeng.core.AEJSONEntry;
 import appeng.core.AELog;
 import appeng.core.features.AEFeature;
 import appeng.core.worlddata.WorldData;
+import appeng.tile.storage.TileSkyChest;
 import appeng.util.InventoryAdaptor;
 import appeng.util.Platform;
 import appeng.worldgen.meteorite.Fallout;
@@ -347,6 +348,9 @@ public final class MeteoritePlacer {
             }
 
             final TileEntity te = w.getTileEntity(x, y, z);
+            if (te instanceof TileSkyChest chest) {
+                chest.markGenerated();
+            }
             if (te instanceof IInventory) {
                 try {
                     Random lootRng = new Random(this.seed + SEED_OFFSET_CHEST_LOOT);

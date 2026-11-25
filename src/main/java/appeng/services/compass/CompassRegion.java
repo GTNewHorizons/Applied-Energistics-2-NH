@@ -28,16 +28,19 @@ public final class CompassRegion {
     private final int world;
     private final File worldCompassFolder;
     private final MeteorDataNameEncoder encoder;
+    private final boolean findChests;
 
     private boolean hasFile = false;
     private RandomAccessFile raf = null;
     private ByteBuffer buffer;
 
-    public CompassRegion(final int cx, final int cz, final int worldID, @NonNull final File worldCompassFolder) {
+    public CompassRegion(final int cx, final int cz, final int worldID, @NonNull final File worldCompassFolder,
+            final boolean findChests) {
         Preconditions.checkNotNull(worldCompassFolder);
         Preconditions.checkArgument(worldCompassFolder.isDirectory());
 
         this.world = worldID;
+        this.findChests = findChests;
         this.worldCompassFolder = worldCompassFolder;
         this.encoder = new MeteorDataNameEncoder(0);
 
@@ -131,7 +134,7 @@ public final class CompassRegion {
     private File getFile() {
         final String fileName = this.encoder.encode(this.world, this.lowX, this.lowZ);
 
-        return new File(this.worldCompassFolder, fileName);
+        return new File(this.worldCompassFolder, this.findChests ? "chests-" + fileName : fileName);
     }
 
     private boolean isFileExistent(final File file) {
