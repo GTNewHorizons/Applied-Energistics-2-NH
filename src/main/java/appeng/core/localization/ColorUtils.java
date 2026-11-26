@@ -130,6 +130,11 @@ public class ColorUtils {
         craftingTreeRequest                 = color.rgb("craftingTreeRequest",                  "0xAAAAAA"),
         craftingTreeTask                    = color.rgb("craftingTreeTask",                     "0x777777"),
         craftingTreeNegativeCount           = color.rgb("craftingTreeNegativeCount",            "0xFF0000"),
+        patternTargetTextMatch              = color.rgb("patternTargetTextMatch",               "0x2E7D32"),
+        patternTargetTextUnknown            = color.rgb("patternTargetTextUnknown",             "0x8A6D00"),
+        patternTargetTextDim                = color.rgb("patternTargetTextDim",                 "0x606060"),
+        patternTargetTextHasSame            = color.rgb("patternTargetTextHasSame",             "0xB07000"),
+        patternTargetTextConflict           = color.rgb("patternTargetTextConflict",            "0x9A1010"),
 
         searchboxFocused                    = color.argb("searchboxFocused",                    "0x6E000000"),
         searchboxUnfocused                  = color.argb("searchboxUnfocused",                  "0x00000000"),
@@ -182,6 +187,11 @@ public class ColorUtils {
         networkVisualiserLinkDefault        = color.argb("networkVisualiserLinkDefault",        "0xff0000ff"),
         contextMenuBackground               = color.argb("contextMenuBackground",               "0xFFCDCDCD"),
         contextMenuBackgroundHover          = color.argb("contextMenuBackgroundHover",          "0xFFA0A0A0"),
-        contextMenuBorder                   = color.argb("contextMenuBorder",                   "0xFF404040");
+        contextMenuBorder                   = color.argb("contextMenuBorder",                   "0xFF404040"),
+        patternTargetStripeMatch            = color.argb("patternTargetStripeMatch",            "0xFF2E9E2E"),
+        patternTargetStripeUnknown          = color.argb("patternTargetStripeUnknown",          "0xFFC8A000"),
+        patternTargetStripeNotReady         = color.argb("patternTargetStripeNotReady",         "0xFF8B8B8B"),
+        patternTargetStripeConflict         = color.argb("patternTargetStripeConflict",         "0xFFD08A1E"),
+        patternTargetStripeConflictOther    = color.argb("patternTargetStripeConflictOther",    "0xFFB02020");
     // spotless:on
 }

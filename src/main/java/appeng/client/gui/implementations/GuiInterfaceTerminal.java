@@ -335,13 +335,10 @@ public class GuiInterfaceTerminal extends AEBaseGui
     }
 
     private void updateLayout() {
-        final ContainerInterfaceTerminal container = (ContainerInterfaceTerminal) inventorySlots;
-        final int toolboxSize = container.getToolboxSize();
-        final Layout next = Layout.forScreen(width, toolboxSize, container.getSelectedUpgradeId() >= 0);
+        final Layout next = Layout.forScreen(width);
         if (next.equals(layout) && toolbarHeight == next.toolbarHeight(Layout.visibleButtonCount(sidebarButtons)))
             return;
 
-        xSize = next.width();
         guiLeft = next.left();
         // Custom controls can depend on xSize/ySize, so recreate them after calculating the geometry.
         // A second pass accounts for any extra toolbar rows added by the provider.
@@ -349,8 +346,7 @@ public class GuiInterfaceTerminal extends AEBaseGui
             toolbarHeight = next.toolbarHeight(Math.max(8, Layout.visibleButtonCount(sidebarButtons)));
             viewHeight = calculateViewHeight();
             ySize = HEADER_HEIGHT + INV_HEIGHT + viewHeight;
-            final int contentHeight = Math.max(ySize, toolboxSize == 0 ? 0 : 98 + toolboxSize * 18);
-            final int unusedSpace = height - contentHeight - toolbarHeight;
+            final int unusedSpace = height - ySize - toolbarHeight;
             guiTop = toolbarHeight + (int) Math.floor(unusedSpace / (unusedSpace < 0 ? 3.8f : 2.0f));
             initButtons();
             if (toolbarHeight == next.toolbarHeight(Layout.visibleButtonCount(sidebarButtons))) break;
@@ -368,16 +364,11 @@ public class GuiInterfaceTerminal extends AEBaseGui
 
     // Zero columns keeps the sidebar on the left; otherwise it wraps above the GUI.
     @Desugar
-    static record Layout(int width, int left, int columns) {
+    static record Layout(int left, int columns) {
 
-        static Layout forScreen(int screenWidth, int toolboxSize, boolean upgradesOpen) {
-            final int panelWidth = Math.max(upgradesOpen ? 90 : 0, toolboxSize == 0 ? 0 : toolboxSize * 18 + 16);
-            final int guiWidth = MAIN_WIDTH + panelWidth;
-            final boolean toolbar = screenWidth < guiWidth + 18;
-            return new Layout(
-                    guiWidth,
-                    (screenWidth - guiWidth + (toolbar ? 0 : 18)) / 2,
-                    toolbar ? Math.max(1, guiWidth / 18) : 0);
+        static Layout forScreen(int screenWidth) {
+            final boolean toolbar = screenWidth < MAIN_WIDTH + 18;
+            return new Layout((screenWidth - MAIN_WIDTH + (toolbar ? 0 : 18)) / 2, toolbar ? MAIN_WIDTH / 18 : 0);
         }
 
         int toolbarHeight(int buttons) {
@@ -551,7 +542,44 @@ public class GuiInterfaceTerminal extends AEBaseGui
         if (masterList.mouseClicked(xCoord - guiLeft - VIEW_LEFT, yCoord - guiTop - HEADER_HEIGHT, btn)) {
             return;
         }
-        super.mouseClicked(xCoord, yCoord, btn);
+        withSidePanelMouseBounds(xCoord, yCoord, () -> super.mouseClicked(xCoord, yCoord, btn));
+    }
+
+    @Override
+    protected void mouseMovedOrUp(final int x, final int y, final int state) {
+        withSidePanelMouseBounds(x, y, () -> super.mouseMovedOrUp(x, y, state));
+    }
+
+    private void withSidePanelMouseBounds(int x, int y, Runnable mouseAction) {
+        final int mainWidth = xSize;
+        final int mainHeight = ySize;
+        if (intersectsSidePanel(x, y, 1, 1)) {
+            xSize = x - guiLeft + 1;
+            ySize = Math.max(ySize, y - guiTop + 1);
+        }
+        try {
+            mouseAction.run();
+        } finally {
+            xSize = mainWidth;
+            ySize = mainHeight;
+        }
+    }
+
+    public boolean intersectsSidePanel(int x, int y, int w, int h) {
+        final ContainerInterfaceTerminal container = (ContainerInterfaceTerminal) inventorySlots;
+        final int panelX = guiLeft + MAIN_WIDTH + 2;
+        if (container.getSelectedUpgradeId() >= 0 && x < panelX + 86
+                && x + w > panelX
+                && y < guiTop + 72
+                && y + h > guiTop + 8) {
+            return true;
+        }
+        final int toolboxSize = container.getToolboxSize();
+        final int toolboxWidth = toolboxSize * 18 + 14;
+        return (toolboxSize == 3 || toolboxSize == 5) && x < panelX + toolboxWidth
+                && x + w > panelX
+                && y < guiTop + 84 + toolboxWidth
+                && y + h > guiTop + 84;
     }
 
     @Override
@@ -1341,7 +1369,7 @@ public class GuiInterfaceTerminal extends AEBaseGui
         this.masterList.markDirty();
     }
 
-    private static String translateRawName(String rawName, String suffix, ItemStack dispRep) {
+    public static String translateRawName(String rawName, String suffix, ItemStack dispRep) {
         if (rawName == null || rawName.isEmpty()) return "";
         String translatedName;
         if (StatCollector.canTranslate(rawName)) {
