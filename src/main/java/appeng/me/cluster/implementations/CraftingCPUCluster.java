@@ -2026,16 +2026,18 @@ public class CraftingCPUCluster implements IAECluster, ICraftingCPU {
                 final IChatComponent suffix;
                 final ItemStack displayItem;
                 final DimensionalCoord cord;
-                final boolean customName = craftingProvider instanceof ICustomNameObject cno && cno.hasCustomName();
+                final Object nameOwner = craftingProvider instanceof DualityInterface duality ? duality.getHost()
+                        : craftingProvider;
+                final boolean customName = nameOwner instanceof ICustomNameObject cno && cno.hasCustomName();
 
                 if (customName) {
-                    rawName = ((ICustomNameObject) craftingProvider).getCustomName();
+                    rawName = ((ICustomNameObject) nameOwner).getCustomName();
                     suffix = null;
                     displayItem = null;
                 } else if (craftingProvider instanceof DualityInterface di) {
-                    rawName = di.getRawTermName();
-                    suffix = di.getAdjacentNameSuffix();
                     displayItem = di.getCrafterIcon();
+                    rawName = displayItem == null ? "Nothing" : displayItem.getUnlocalizedName();
+                    suffix = di.getAdjacentNameSuffix();
                 } else if (craftingProvider instanceof IInterfaceViewable iv) {
                     rawName = iv.getRawName();
                     suffix = iv.getNameSuffix();
