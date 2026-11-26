@@ -268,6 +268,7 @@ public class ItemMagnet extends Item {
                 distanceFromPlayer).iterator();
         while (iterator.hasNext()) {
             EntityItem itemToGet = (EntityItem) iterator.next();
+            // func_145800_j = player that dropped the item if any
             if (itemToGet.func_145800_j() != null && itemToGet.func_145800_j().equals(player.getCommandSenderName())) {
                 continue;
             }
@@ -278,16 +279,18 @@ public class ItemMagnet extends Item {
                 continue;
             }
 
-            if (!world.isRemote) {
-                if (itemToGet.delayBeforeCanPickup > 0) {
-                    itemToGet.delayBeforeCanPickup = 0;
-                }
-                itemToGet.motionX = itemToGet.motionY = itemToGet.motionZ = 0;
-                itemToGet.setPosition(
-                        player.posX - 0.2 + (world.rand.nextDouble() * 0.4),
-                        player.posY - 0.6,
-                        player.posZ - 0.2 + (world.rand.nextDouble() * 0.4));
+            if (itemToGet.delayBeforeCanPickup > 0) {
+                itemToGet.delayBeforeCanPickup = 0;
             }
+            itemToGet.motionX = itemToGet.motionY = itemToGet.motionZ = 0;
+            itemToGet.setPosition(
+                    player.posX - 0.2 + (world.rand.nextDouble() * 0.4),
+                    player.posY - 0.6,
+                    player.posZ - 0.2 + (world.rand.nextDouble() * 0.4));
+            // EntityTracker only syncs item positions every 20 ticks and skips small velocity changes,
+            // so force both; otherwise the client keeps simulating the item with its old motion.
+            itemToGet.isAirBorne = true; // force position update
+            itemToGet.velocityChanged = true; // force velocity update
         }
 
         // xp
