@@ -49,6 +49,7 @@ import appeng.core.sync.network.NetworkHandler;
 import appeng.core.sync.packets.PacketCraftingItemInterface;
 import appeng.core.sync.packets.PacketInventoryAction;
 import appeng.core.sync.packets.PacketValueConfig;
+import appeng.helpers.CraftingProviderLocation;
 import appeng.helpers.InventoryAction;
 import appeng.util.Platform;
 import appeng.util.ReadableNumberConverter;
@@ -625,8 +626,15 @@ public class GuiCraftingCPU extends AEBaseGui implements IGuiTooltipHandler {
         }
     }
 
-    public void postInterfaceLocationsUpdate(final List<NamedDimensionalCoord> interfaceLocations) {
-        this.hoveredInterfaceLocations = interfaceLocations;
+    public void postInterfaceLocationsUpdate(final List<CraftingProviderLocation> interfaceLocations) {
+        final List<NamedDimensionalCoord> locations = new ArrayList<>(interfaceLocations.size());
+        for (CraftingProviderLocation location : interfaceLocations) {
+            final String name = location.customName() ? location.rawName()
+                    : GuiInterfaceTerminal
+                            .translateRawName(location.rawName(), location.suffix(), location.displayItem());
+            locations.add(new NamedDimensionalCoord(location.position(), name));
+        }
+        this.hoveredInterfaceLocations = locations;
     }
 
     public void postVisualEntryUpdate(final CraftingCpuEntry[] updates, final boolean clearFirst,

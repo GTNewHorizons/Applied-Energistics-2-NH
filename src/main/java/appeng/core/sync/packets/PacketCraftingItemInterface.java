@@ -1,6 +1,7 @@
 package appeng.core.sync.packets;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
@@ -11,13 +12,13 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import appeng.api.networking.IGridHost;
 import appeng.api.networking.crafting.ICraftingCPU;
 import appeng.api.storage.data.IAEStack;
-import appeng.api.util.NamedDimensionalCoord;
 import appeng.client.gui.implementations.GuiCraftingCPU;
 import appeng.container.ContainerOpenContext;
 import appeng.container.implementations.ContainerCraftingCPU;
 import appeng.core.sync.AppEngPacket;
 import appeng.core.sync.network.INetworkInfo;
 import appeng.core.sync.network.NetworkHandler;
+import appeng.helpers.CraftingProviderLocation;
 import appeng.me.cluster.implementations.CraftingCPUCluster;
 import appeng.util.Platform;
 import cpw.mods.fml.relauncher.Side;
@@ -28,14 +29,18 @@ import io.netty.buffer.Unpooled;
 public class PacketCraftingItemInterface extends AppEngPacket {
 
     private IAEStack<?> is;
-    private List<NamedDimensionalCoord> interfaceLocations;
+    private List<CraftingProviderLocation> interfaceLocations;
 
     public PacketCraftingItemInterface(final ByteBuf stream) throws IOException {
         if (stream.readBoolean()) {
             this.is = Platform.readStackByte(stream);
         }
         if (stream.readBoolean()) {
-            this.interfaceLocations = NamedDimensionalCoord.readAsListFromPacket(stream);
+            final int size = stream.readInt();
+            this.interfaceLocations = new ArrayList<>();
+            for (int i = 0; i < size; i++) {
+                this.interfaceLocations.add(CraftingProviderLocation.readFromPacket(stream));
+            }
         }
     }
 
@@ -54,7 +59,7 @@ public class PacketCraftingItemInterface extends AppEngPacket {
     }
 
     // Server -> Client
-    public PacketCraftingItemInterface(final List<NamedDimensionalCoord> interfaceLocations) throws IOException {
+    public PacketCraftingItemInterface(final List<CraftingProviderLocation> interfaceLocations) throws IOException {
         this.interfaceLocations = interfaceLocations;
 
         final ByteBuf data = Unpooled.buffer();
@@ -62,7 +67,10 @@ public class PacketCraftingItemInterface extends AppEngPacket {
         data.writeInt(this.getPacketID());
         data.writeBoolean(false);
         data.writeBoolean(true);
-        NamedDimensionalCoord.writeListToPacketNamed(data, this.interfaceLocations);
+        data.writeInt(interfaceLocations.size());
+        for (CraftingProviderLocation location : interfaceLocations) {
+            location.writeToPacket(data);
+        }
 
         this.configureWrite(data);
     }
