@@ -20,6 +20,7 @@ import static com.gtnewhorizon.gtnhlib.capability.Capabilities.getCapability;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.OptionalInt;
+import java.util.function.Function;
 
 import net.minecraft.block.Block;
 import net.minecraft.inventory.IInventory;
@@ -67,6 +69,9 @@ import appeng.api.config.Settings;
 import appeng.api.config.Upgrades;
 import appeng.api.config.YesNo;
 import appeng.api.crafting.ICraftingIconProvider;
+import appeng.api.crafting.IPatternTargetKey;
+import appeng.api.crafting.IPatternTargetKeyProvider;
+import appeng.api.crafting.PatternMatch;
 import appeng.api.implementations.ICraftingPatternItem;
 import appeng.api.implementations.IUpgradeableHost;
 import appeng.api.implementations.tiles.ICraftingMachine;
@@ -146,6 +151,7 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
     public static final int NUMBER_OF_PATTERN_SLOTS = 9;
 
     private static final Collection<Block> BAD_BLOCKS = new HashSet<>(100);
+    private static final IPatternTargetKey UNKNOWN_PATTERN_TARGET = pattern -> PatternMatch.UNKNOWN;
     private final int[] sides = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
     private final IAEItemStack[] requireWork = { null, null, null, null, null, null, null, null, null };
     private final MultiCraftingTracker craftingTracker;
@@ -1672,6 +1678,36 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
         return null;
     }
 
+    /** Returns the target keys for the faces this interface can push to. */
+    public List<IPatternTargetKey> getPatternTargetKeys() {
+        final TileEntity hostTile = this.iHost.getTileEntity();
+        final World hostWorld = hostTile.getWorldObj();
+        final List<IPatternTargetKey> keys = new ArrayList<>();
+
+        for (final ForgeDirection direction : this.iHost.getTargets()) {
+            final TileEntity directedTile = Platform.getLoadedTileEntity(
+                    hostWorld,
+                    hostTile.xCoord + direction.offsetX,
+                    hostTile.yCoord + direction.offsetY,
+                    hostTile.zCoord + direction.offsetZ);
+            if (directedTile == null) {
+                continue;
+            }
+
+            final ForgeDirection face = direction.getOpposite();
+            final IPatternTargetKeyProvider target = getCapability(directedTile, IPatternTargetKeyProvider.class, face);
+            if (target != null) {
+                final IPatternTargetKey key = target.getTargetKey();
+                keys.add(key == null ? UNKNOWN_PATTERN_TARGET : key);
+            } else if (directedTile instanceof ICraftingMachine
+                    || InventoryAdaptor.getAdaptor(directedTile, face) != null) {
+                        keys.add(UNKNOWN_PATTERN_TARGET);
+                    }
+        }
+
+        return keys;
+    }
+
     @Override
     public BlockingMode getBlockingMode() {
         if (this.isBlocking() && this.isSmartBlocking()) return BlockingMode.SMART_BLOCKING;
@@ -1705,6 +1741,22 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
      */
     public IChatComponent getAdjacentNameSuffix() {
         if (((ICustomNameObject) this.iHost).hasCustomName()) return null;
+        return getAdjacentMachineSuffix();
+    }
+
+    public IChatComponent getAdjacentMachineSuffix() {
+        return findAdjacentNameData(IInterfaceNameProvider::getInterfaceNameSuffix);
+    }
+
+    public List<ItemStack> getAdjacentMachineConfigIcons() {
+        final List<ItemStack> icons = findAdjacentNameData(provider -> {
+            final List<ItemStack> stacks = provider.getMachineConfigIcons();
+            return stacks.isEmpty() ? null : stacks;
+        });
+        return icons == null ? Collections.emptyList() : icons;
+    }
+
+    private <T> T findAdjacentNameData(Function<IInterfaceNameProvider, T> read) {
         final TileEntity hostTile = this.iHost.getTileEntity();
         if (hostTile == null || hostTile.getWorldObj() == null) return null;
         for (final ForgeDirection direction : this.iHost.getTargets()) {
@@ -1722,8 +1774,8 @@ public class DualityInterface implements IGridTickable, IStorageMonitorable, IIn
                 }
             }
             if (directedTile instanceof IInterfaceNameProvider provider) {
-                final IChatComponent suffix = provider.getInterfaceNameSuffix();
-                if (suffix != null) return suffix;
+                final T value = read.apply(provider);
+                if (value != null) return value;
             }
         }
         return null;

@@ -22,12 +22,17 @@ import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
+
 import appeng.api.AEApi;
 import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
 import appeng.api.config.RedstoneMode;
 import appeng.api.config.Settings;
 import appeng.api.config.Upgrades;
+import appeng.api.crafting.CraftingMachineTarget;
+import appeng.api.crafting.IPatternTargetKeyProvider;
 import appeng.api.definitions.ITileDefinition;
 import appeng.api.implementations.IPowerChannelState;
 import appeng.api.implementations.IUpgradeableHost;
@@ -69,6 +74,8 @@ public class TileMolecularAssembler extends AENetworkInvTile
         implements IUpgradeableHost, IConfigManagerHost, IGridTickable, ICraftingMachine, IPowerChannelState {
 
     private static final int[] SIDES = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+
+    private static final IPatternTargetKeyProvider PATTERN_TARGET = () -> CraftingMachineTarget.INSTANCE;
 
     // SPEED.length == ACCELERATION_TAX.length
     public static final int[] SPEED = { 10, 13, 17, 20, 25, 50 };
@@ -257,6 +264,12 @@ public class TileMolecularAssembler extends AENetworkInvTile
     @Override
     public AECableType getCableConnectionType(final ForgeDirection dir) {
         return AECableType.COVERED;
+    }
+
+    @Override
+    public <T> @Nullable T getCapability(@NonNull Class<T> capability, @NonNull ForgeDirection side) {
+        final T inherited = super.getCapability(capability, side);
+        return capability == IPatternTargetKeyProvider.class ? capability.cast(PATTERN_TARGET) : inherited;
     }
 
     @Override
