@@ -1341,7 +1341,7 @@ public class GuiInterfaceTerminal extends AEBaseGui
         this.masterList.markDirty();
     }
 
-    private static String translateRawName(String rawName, String suffix, ItemStack dispRep) {
+    public static String translateRawName(String rawName, String suffix, ItemStack dispRep) {
         if (rawName == null || rawName.isEmpty()) return "";
         String translatedName;
         if (StatCollector.canTranslate(rawName)) {

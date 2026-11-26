@@ -733,25 +733,8 @@ public final class ContainerInterfaceTerminal extends AEBaseContainer implements
         return playerInv.addItems(stack);
     }
 
-    private void fletchRepeaters(final IGrid grid, final Set<IGrid> gridSet) {
-        for (IGridNode node : grid.getMachines(PartPatternRepeater.class)) {
-            final PartPatternRepeater rep = (PartPatternRepeater) node.getMachine();
-            if (!rep.isProvider() || rep.getPair() == null || !node.isActive() || rep.getPair().isProvider()) continue;
-            final IGridNode n = rep.getPair().getGridNode();
-            if (n == null || !n.isActive()) continue;
-            final IGrid currentGrid = n.getGrid();
-            if (!gridSet.contains(currentGrid)) {
-                gridSet.add(currentGrid);
-                this.fletchRepeaters(currentGrid, gridSet);
-            }
-        }
-    }
-
     private Set<IGrid> collectReachableGrids() {
-        final Set<IGrid> gridSet = new HashSet<>();
-        gridSet.add(this.grid);
-        this.fletchRepeaters(this.grid, gridSet);
-        return gridSet;
+        return PartPatternRepeater.collectReachableGrids(this.grid);
     }
 
     /**
@@ -893,7 +876,7 @@ public final class ContainerInterfaceTerminal extends AEBaseContainer implements
     /**
      * The suffix travels as a string, so components are serialized here and turned back into text on the client.
      */
-    private static String serializeSuffix(final IChatComponent suffix) {
+    static String serializeSuffix(final IChatComponent suffix) {
         return suffix == null ? null : IChatComponent.Serializer.func_150696_a(suffix);
     }
 
