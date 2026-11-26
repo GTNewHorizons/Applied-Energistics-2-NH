@@ -1,5 +1,9 @@
 package appeng.api.interfaces;
 
+import java.util.Collections;
+import java.util.List;
+
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.IChatComponent;
 
 /**
@@ -34,4 +38,9 @@ public interface IInterfaceNameProvider {
      * @return suffix component or {@code null}
      */
     IChatComponent getInterfaceNameSuffix();
+
+    /** Returns the item icons for this machine's configuration. */
+    default List<ItemStack> getMachineConfigIcons() {
+        return Collections.emptyList();
+    }
 }

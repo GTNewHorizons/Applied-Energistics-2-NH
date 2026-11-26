@@ -2,11 +2,15 @@ package appeng.api.util;
 
 import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 
+import java.util.Collections;
+import java.util.List;
+
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.IChatComponent;
 
+import appeng.api.crafting.IPatternTargetKey;
 import appeng.api.networking.IGridHost;
 import appeng.api.storage.data.IAEStackType;
 import appeng.helpers.IPriorityHost;
@@ -67,6 +71,16 @@ public interface IInterfaceViewable extends IGridHost {
         return null;
     }
 
+    /** Returns the machine configuration shown in the Pattern Terminal tooltip. */
+    default IChatComponent getPatternTargetSuffix() {
+        return getNameSuffix();
+    }
+
+    /** Returns the machine configuration icons shown in the Pattern Terminal. */
+    default List<ItemStack> getMachineConfigIcons() {
+        return Collections.emptyList();
+    }
+
     TileEntity getTileEntity();
 
     boolean shouldDisplay();
@@ -111,5 +125,12 @@ public interface IInterfaceViewable extends IGridHost {
      */
     default ItemStack getDisplayRep() {
         return null;
+    }
+
+    /**
+     * Returns the target keys for the machines this provider can push to, or an empty list if unknown.
+     */
+    default List<IPatternTargetKey> getPatternTargetKeys() {
+        return Collections.emptyList();
     }
 }
