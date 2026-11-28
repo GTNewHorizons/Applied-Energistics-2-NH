@@ -2,29 +2,25 @@ package com.glodblock.github.common.item;
 
 import java.util.EnumSet;
 
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
+
+import org.jspecify.annotations.Nullable;
 
 import com.glodblock.github.FluidCraft;
 import com.glodblock.github.common.tabs.FluidCraftingTabs;
-import com.glodblock.github.inventory.gui.GuiType;
-import com.glodblock.github.inventory.item.WirelessLevelTerminalInventory;
+import com.glodblock.github.common.terminal.TerminalIds;
 import com.glodblock.github.loader.IRegister;
 import com.glodblock.github.util.NameConst;
-import com.glodblock.github.util.Util;
 
 import appeng.api.AEApi;
-import appeng.api.networking.IGridNode;
+import appeng.api.features.IUltraTerminalType;
 import appeng.core.features.AEFeature;
-import appeng.core.localization.PlayerMessages;
 import cpw.mods.fml.common.registry.GameRegistry;
 
 public class ItemWirelessLevelTerminal extends ItemBaseWirelessTerminal
         implements IRegister<ItemWirelessLevelTerminal> {
 
     public ItemWirelessLevelTerminal() {
-        super(GuiType.WIRELESS_LEVEL_TERMINAL);
         AEApi.instance().registries().wireless().registerWirelessHandler(this);
         this.setFeature(EnumSet.of(AEFeature.WirelessAccessTerminal, AEFeature.PoweredTools));
         setUnlocalizedName(NameConst.ITEM_WIRELESS_LEVEL_TERMINAL);
@@ -38,14 +34,9 @@ public class ItemWirelessLevelTerminal extends ItemBaseWirelessTerminal
         return this;
     }
 
+    @Nullable
     @Override
-    public Object getInventory(ItemStack stack, World world, int x, int y, int z, EntityPlayer player) {
-        try {
-            IGridNode gridNode = Util.getWirelessGrid(stack);
-            return new WirelessLevelTerminalInventory(stack, x, gridNode, player);
-        } catch (Exception e) {
-            player.addChatMessage(PlayerMessages.OutOfRange.toChat());
-        }
-        return null;
+    protected IUltraTerminalType getTerminalType(final ItemStack is) {
+        return findTerminalType(TerminalIds.AE2FC_LEVEL);
     }
 }

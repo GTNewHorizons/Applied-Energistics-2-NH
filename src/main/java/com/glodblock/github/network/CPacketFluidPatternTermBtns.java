@@ -5,8 +5,8 @@ import net.minecraft.inventory.Container;
 import net.minecraftforge.common.util.ForgeDirection;
 
 import com.glodblock.github.FluidCraft;
-import com.glodblock.github.client.UltraTerminalButtons;
 import com.glodblock.github.client.gui.container.ContainerMagnetFilter;
+import com.glodblock.github.common.terminal.IUltraTerminalButtonState;
 import com.glodblock.github.inventory.InventoryHandler;
 import com.glodblock.github.inventory.gui.GuiType;
 import com.glodblock.github.inventory.item.IWirelessMagnetFilter;
@@ -105,18 +105,17 @@ public class CPacketFluidPatternTermBtns implements IMessage {
 
                 switch (command) {
                     case RESTOCK -> {
-                        if (icbp.getDataObject() instanceof UltraTerminalButtons utb) {
+                        if (icbp.getDataObject() instanceof IUltraTerminalButtonState utb) {
                             utb.toggleRestock();
                         }
                     }
                     case MAGNET_MODE -> {
-                        if (icbp.getDataObject() instanceof UltraTerminalButtons utb) {
+                        if (icbp.getDataObject() instanceof IUltraTerminalButtonState utb) {
                             utb.toggleMagnetMode();
                         }
                     }
                     case MAGNET_OPEN_FILTER -> {
                         final PrimaryGui pGui = abc.createPrimaryGui();
-                        final int nextGui = abc.getSwitchAbleGuiNext();
 
                         InventoryHandler.openGui(
                                 player,
@@ -130,10 +129,6 @@ public class CPacketFluidPatternTermBtns implements IMessage {
 
                         if (player.openContainer instanceof IContainerSubGui sg) {
                             sg.setPrimaryGui(pGui);
-                        }
-
-                        if (player.openContainer instanceof AEBaseContainer ab) {
-                            ab.setSwitchAbleGuiNext(nextGui);
                         }
                     }
                 }

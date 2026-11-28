@@ -259,10 +259,6 @@ public class WirelessTerminalGuiObject implements IPortableCell, IActionHost, II
         return GuiText.WirelessTerminal;
     }
 
-    public int getMode() {
-        return this.getItemStack().getTagCompound().getInteger("mode");
-    }
-
     public void writeInventory() {}
 
     public void readInventory() {}
@@ -276,12 +272,16 @@ public class WirelessTerminalGuiObject implements IPortableCell, IActionHost, II
 
     @Override
     public void writeCustomButtonData() {
-        this.customButtonDataObject.writeData(this.getItemStack().getTagCompound());
+        if (this.customButtonDataObject != null) {
+            this.customButtonDataObject.writeData(this.getItemStack().getTagCompound());
+        }
     }
 
     @Override
     public void readCustomButtonData() {
-        this.customButtonDataObject.readData(this.getItemStack().getTagCompound());
+        if (this.customButtonDataObject != null) {
+            this.customButtonDataObject.readData(this.getItemStack().getTagCompound());
+        }
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.glodblock.github.inventory.item;
 
 import static appeng.util.Platform.nextEnum;
-import static com.glodblock.github.client.UltraTerminalButtons.restockItems;
+import static com.glodblock.github.common.terminal.UltraTerminalButtonState.RESTOCK;
 import static com.glodblock.github.inventory.item.WirelessMagnet.modeKey;
 
 import java.util.Objects;
@@ -81,7 +81,7 @@ public abstract class BaseWirelessInventory extends MEMonitorHandler implements 
     private void readFromNBT() {
         NBTTagCompound data = Platform.openNbtData(this.target);
         this.setMagnetCardMode(WirelessMagnet.Mode.values()[data.getInteger(modeKey)]);
-        this.setRestock(data.getBoolean(restockItems));
+        this.setRestock(data.getBoolean(RESTOCK));
     }
 
     public StorageChannel getChannel() {
@@ -184,7 +184,7 @@ public abstract class BaseWirelessInventory extends MEMonitorHandler implements 
 
     public void saveSettings() {
         NBTTagCompound data = Platform.openNbtData(this.target);
-        data.setBoolean(restockItems, this.restock);
+        data.setBoolean(RESTOCK, this.restock);
         data.setInteger(modeKey, this.getMagnetCardMode().ordinal());
     }
 
