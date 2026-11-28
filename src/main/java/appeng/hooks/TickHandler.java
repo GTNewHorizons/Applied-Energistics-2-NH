@@ -144,6 +144,9 @@ public class TickHandler {
             }
 
             callQueue.remove(ev.world);
+            if (WorldData.instance() != null) {
+                WorldData.instance().compassData().service().unloadWorld(ev.world);
+            }
         }
     }
 
@@ -160,6 +163,9 @@ public class TickHandler {
             if (te instanceof AEBaseTile) {
                 ((AEBaseTile) te).onChunkLoad();
             }
+        }
+        if (!load.world.isRemote) {
+            WorldData.instance().compassData().service().indexChests(load.getChunk(), true);
         }
     }
 

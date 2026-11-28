@@ -18,12 +18,16 @@ import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.IIcon;
+import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import appeng.block.AEBaseItemBlock;
 import appeng.block.AEBaseTileBlock;
 import appeng.client.render.blocks.RenderBlockSkyCompass;
 import appeng.core.features.AEFeature;
@@ -34,12 +38,41 @@ import cpw.mods.fml.relauncher.SideOnly;
 
 public class BlockSkyCompass extends AEBaseTileBlock implements ICustomCollision {
 
+    public static final int SKY_STONE_MODE = 0;
+    public static final int CHEST_MODE = 1;
+
     public BlockSkyCompass() {
         super(Material.iron);
         this.setTileEntity(TileSkyCompass.class);
         this.isOpaque = this.isFullSize = false;
         this.lightOpacity = 0;
+        this.hasSubtypes = true;
         this.setFeature(EnumSet.of(AEFeature.MeteoriteCompass));
+    }
+
+    public static String modeKey(final int mode) {
+        return mode == CHEST_MODE ? "gui.appliedenergistics2.SkyChest" : "gui.appliedenergistics2.CompassSkyStone";
+    }
+
+    @Override
+    public Class<? extends AEBaseItemBlock> getItemBlockClass() {
+        return ItemSkyCompass.class;
+    }
+
+    @Override
+    public int damageDropped(final int metadata) {
+        return metadata == CHEST_MODE ? CHEST_MODE : SKY_STONE_MODE;
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void addInformation(final ItemStack stack, final EntityPlayer player, final List<String> lines,
+            final boolean advancedTooltips) {
+        lines.add(
+                StatCollector.translateToLocalFormatted(
+                        "gui.appliedenergistics2.CompassMode",
+                        StatCollector.translateToLocal(modeKey(stack.getItemDamage()))));
+        lines.add(StatCollector.translateToLocal("gui.appliedenergistics2.CompassToggle"));
     }
 
     @Override

@@ -13,17 +13,19 @@ package appeng.services;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import net.minecraft.block.Block;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
-import net.minecraftforge.event.world.WorldEvent;
 
 import org.jspecify.annotations.NonNull;
 
@@ -31,10 +33,11 @@ import com.google.common.base.Preconditions;
 
 import appeng.api.AEApi;
 import appeng.api.util.DimensionalCoord;
+import appeng.core.AELog;
+import appeng.core.worlddata.WorldData;
 import appeng.services.compass.CompassReader;
 import appeng.services.compass.ICompassCallback;
-import appeng.util.Platform;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import appeng.tile.storage.TileSkyChest;
 
 public final class CompassService {
 
@@ -42,7 +45,9 @@ public final class CompassService {
     private static final int CLEANUP_TIMEOUT_IN_SECONDS = 60;
 
     private final Map<World, AutoClosingCompassReader> worldSet = new HashMap<>(10);
+    private final Map<World, AutoClosingCompassReader> chestReaders = new HashMap<>();
     private final ScheduledExecutorService executor;
+    private Future<?> cleanup;
     /**
      * AE2 Folder for each world
      */
@@ -52,31 +57,75 @@ public final class CompassService {
         Preconditions.checkNotNull(worldCompassFolder);
 
         this.worldCompassFolder = worldCompassFolder;
-        this.executor = Executors.newSingleThreadScheduledExecutor(factory);
+        final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, factory);
+        executor.setRemoveOnCancelPolicy(true);
+        this.executor = executor;
     }
 
     public Future<?> getCompassDirection(final DimensionalCoord coord, final int maxRange, final ICompassCallback cc) {
-        return this.executor.submit(new CMDirectionRequest(coord, maxRange, cc));
+        return this.getCompassDirection(coord, maxRange, false, cc);
     }
 
-    /**
-     * Ensure the a compass service is removed once a world gets unloaded by forge.
-     *
-     * @param event the event containing the unloaded world.
-     */
-    @SubscribeEvent
-    public void unloadWorld(final WorldEvent.Unload event) {
-        if (Platform.isServer() && this.worldSet.containsKey(event.world)) {
-            final AutoClosingCompassReader compassReader = this.worldSet.remove(event.world);
+    public Future<?> getCompassDirection(final DimensionalCoord coord, final int maxRange, final boolean findChests,
+            final ICompassCallback cc) {
+        return this.submit(new CMDirectionRequest(coord, maxRange, findChests, cc));
+    }
 
-            compassReader.close();
+    public void unloadWorld(final World world) {
+        this.submit(() -> {
+            closeReader(this.worldSet.remove(world));
+            closeReader(this.chestReaders.remove(world));
+        });
+    }
+
+    private static void closeReader(final AutoClosingCompassReader reader) {
+        if (reader != null) {
+            reader.close();
         }
     }
 
-    private void cleanUp() {
-        for (final AutoClosingCompassReader cr : this.worldSet.values()) {
-            cr.close();
+    public void indexChests(final Chunk chunk, final boolean migrateLegacy) {
+        final World world = chunk.worldObj;
+        if (world.isRemote) {
+            return;
         }
+
+        boolean hasTarget = false;
+        boolean hasMeteoriteChest = false;
+        for (final Object tile : chunk.chunkTileEntityMap.values()) {
+            if (!(tile instanceof TileSkyChest chest) || chest.isInvalid()) {
+                continue;
+            }
+            if (migrateLegacy && chest.needsOriginCheck()) {
+                chest.setMeteoriteOrigin(this.matchesLegacyMeteorite(chunk, chest));
+                chunk.setChunkModified();
+            }
+            hasMeteoriteChest |= chest.hasMeteoriteOrigin();
+            hasTarget |= chest.refreshCompassTarget();
+        }
+
+        if (!migrateLegacy || hasMeteoriteChest) {
+            final int chunkX = chunk.xPosition;
+            final int chunkZ = chunk.zPosition;
+            final boolean hasBeacon = hasTarget;
+            this.submit(() -> this.getReader(world, true).get(false).setHasBeacon(chunkX, chunkZ, 0, hasBeacon));
+        }
+    }
+
+    private boolean matchesLegacyMeteorite(final Chunk chunk, final TileSkyChest chest) {
+        if (chunk.getBlockMetadata(chest.xCoord & 15, chest.yCoord, chest.zCoord & 15) != 0) {
+            return false;
+        }
+
+        // Old saves cannot distinguish a replacement chest at the exact meteorite center.
+        for (final NBTTagCompound meteorite : WorldData.instance().spawnData()
+                .getNearByMeteorites(chunk.worldObj.provider.dimensionId, chunk.xPosition, chunk.zPosition)) {
+            if (meteorite.getInteger("x") == chest.xCoord && meteorite.getInteger("y") == chest.yCoord
+                    && meteorite.getInteger("z") == chest.zCoord) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void updateArea(final World w, final int chunkX, final int chunkZ) {
@@ -111,37 +160,57 @@ public final class CompassService {
                     for (int k = low_y; k < hi_y; k++) {
                         final Block blk = c.getBlock(i, k, j);
                         if (blk == skyStoneBlock && c.getBlockMetadata(i, k, j) == 0) {
-                            return this.executor.submit(new CMUpdatePost(w, cx, cz, cdy, true));
+                            return this.submit(new CMUpdatePost(w, cx, cz, cdy, true));
                         }
                     }
                 }
             }
         }
 
-        return this.executor.submit(new CMUpdatePost(w, cx, cz, cdy, false));
+        return this.submit(new CMUpdatePost(w, cx, cz, cdy, false));
     }
 
     public void kill() {
-
-        this.executor.shutdownNow();
-
-        for (final AutoClosingCompassReader cr : this.worldSet.values()) {
-            cr.close();
+        try {
+            this.beginCleanup().get();
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (final ExecutionException e) {
+            AELog.debug(e);
         }
-
-        this.worldSet.clear();
     }
 
-    private CompassReader getReader(final World w) {
-        AutoClosingCompassReader cr = this.worldSet.get(w);
+    private synchronized Future<?> submit(final Runnable task) {
+        return this.cleanup == null ? this.executor.submit(task) : CompletableFuture.completedFuture(null);
+    }
+
+    private synchronized Future<?> beginCleanup() {
+        if (this.cleanup == null) {
+            this.cleanup = this.executor.submit(() -> {
+                try {
+                    this.worldSet.values().forEach(AutoClosingCompassReader::close);
+                    this.worldSet.clear();
+                    this.chestReaders.values().forEach(AutoClosingCompassReader::close);
+                    this.chestReaders.clear();
+                } finally {
+                    this.executor.shutdown();
+                }
+            });
+        }
+        return this.cleanup;
+    }
+
+    private AutoClosingCompassReader getReader(final World w, final boolean findChests) {
+        final Map<World, AutoClosingCompassReader> readers = findChests ? this.chestReaders : this.worldSet;
+        AutoClosingCompassReader cr = readers.get(w);
 
         if (cr == null) {
-            CompassReader reader = new CompassReader(w.provider.dimensionId, this.worldCompassFolder);
+            CompassReader reader = new CompassReader(w.provider.dimensionId, this.worldCompassFolder, findChests);
             cr = new AutoClosingCompassReader(reader, this.executor);
-            this.worldSet.put(w, cr);
+            readers.put(w, cr);
         }
 
-        return cr.get();
+        return cr;
     }
 
     private int dist(final int ax, final int az, final int bx, final int bz) {
@@ -177,7 +246,7 @@ public final class CompassService {
 
         @Override
         public void run() {
-            final CompassReader cr = CompassService.this.getReader(this.world);
+            final CompassReader cr = CompassService.this.getReader(this.world, false).get(true);
             cr.setHasBeacon(this.chunkX, this.chunkZ, this.doubleChunkY, this.value);
         }
     }
@@ -188,8 +257,12 @@ public final class CompassService {
         public final DimensionalCoord coord;
         public final ICompassCallback callback;
 
-        public CMDirectionRequest(final DimensionalCoord coord, final int getMaxRange, final ICompassCallback cc) {
+        private final boolean findChests;
+
+        public CMDirectionRequest(final DimensionalCoord coord, final int getMaxRange, final boolean findChests,
+                final ICompassCallback cc) {
             this.coord = coord;
+            this.findChests = findChests;
             this.maxRange = getMaxRange;
             this.callback = cc;
         }
@@ -199,7 +272,7 @@ public final class CompassService {
             final int cx = this.coord.x >> 4;
             final int cz = this.coord.z >> 4;
 
-            final CompassReader cr = CompassService.this.getReader(this.coord.getWorld());
+            final CompassReader cr = CompassService.this.getReader(this.coord.getWorld(), this.findChests).get(true);
 
             // Am I standing on it?
             if (cr.hasBeacon(cx, cz)) {
@@ -277,8 +350,8 @@ public final class CompassService {
      * A small helper class that wraps a {@link CompassReader}. <br />
      * Its job is to close the associated {@link CompassReader} once it wasn't retrieved for
      * {@link CompassService#CLEANUP_TIMEOUT_IN_SECONDS} seconds. <br />
-     * Callers must not cache the result of {@link AutoClosingCompassReader#get}, as that would defeat the purpose of
-     * this class.
+     * Callers must not cache the result of {@link AutoClosingCompassReader#get(boolean)}, as that would defeat the
+     * purpose of this class.
      */
     private static class AutoClosingCompassReader {
 
@@ -289,6 +362,7 @@ public final class CompassService {
 
             @Override
             public void run() {
+                scheduledCloseTask = null;
                 cr.close();
             }
         };
@@ -299,11 +373,14 @@ public final class CompassService {
             this.executorService = executorService;
         }
 
-        public CompassReader get() {
-            if (scheduledCloseTask != null) {
-                scheduledCloseTask.cancel(/* interruptIfRunning */ false);
+        public CompassReader get(final boolean refreshTimeout) {
+            if (refreshTimeout && scheduledCloseTask != null) {
+                scheduledCloseTask.cancel(false);
+                scheduledCloseTask = null;
             }
-            scheduledCloseTask = executorService.schedule(closeTask, CLEANUP_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+            if (scheduledCloseTask == null) {
+                scheduledCloseTask = executorService.schedule(closeTask, CLEANUP_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
+            }
             return cr;
         }
 
