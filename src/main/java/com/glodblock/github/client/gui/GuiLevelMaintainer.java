@@ -24,7 +24,7 @@ import com.glodblock.github.util.FCGuiColors;
 import com.glodblock.github.util.NameConst;
 
 import appeng.api.features.LevelState;
-import appeng.api.storage.data.IAEStack;
+import appeng.api.stacks.GenericStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.client.gui.GuiSub;
 import appeng.client.gui.slots.VirtualMEPhantomSlot;
@@ -295,8 +295,8 @@ public class GuiLevelMaintainer extends GuiSub {
             this.isEnable = enable;
         }
 
-        public IAEStack<?> getStack() {
-            return this.container.getTile().getAEStackInventory().getAEStackInSlot(this.getIndex());
+        public @Nullable GenericStack getStack() {
+            return this.container.getTile().getAEStackInventory().getStack(this.getIndex());
         }
 
         private void send(Widget widget) {
@@ -500,10 +500,10 @@ public class GuiLevelMaintainer extends GuiSub {
                 this.textField.setTextColor(FCGuiColors.guiTextColorGray.getColor());
             }
 
-            IAEStack<?> stack = component[this.componentIndex].getStack();
-            if (stack != null) {
+            final TileLevelMaintainer.RequestInfo request = cont.getTile().requests[this.componentIndex];
+            if (request != null) {
                 Long amount = component[this.componentIndex].getQty().getAmount();
-                stack.setStackSize(amount != null ? amount : 0);
+                request.getAEStack().setStackSize(amount != null ? amount : 0);
             }
         }
 

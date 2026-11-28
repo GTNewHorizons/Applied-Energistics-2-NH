@@ -31,7 +31,10 @@ import appeng.api.networking.security.MachineSource;
 import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.networking.ticking.TickRateModulation;
 import appeng.api.stacks.AEItemKey;
+import appeng.api.storage.ConfigInventory;
+import appeng.api.storage.IConfigInventoryHost;
 import appeng.api.storage.IMEMonitor;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
@@ -40,8 +43,6 @@ import appeng.core.sync.GuiBridge;
 import appeng.helpers.IOreFilterable;
 import appeng.hooks.TickHandler;
 import appeng.me.GridAccessException;
-import appeng.tile.inventory.IAEStackInventory;
-import appeng.tile.inventory.IIAEStackInventory;
 import appeng.util.InventoryAdaptor;
 import appeng.util.Platform;
 import appeng.util.target.TileTarget;
@@ -50,9 +51,9 @@ import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
 public abstract class PartSharedItemBus<StackType extends IAEStack<StackType>> extends PartUpgradeable
-        implements IGridTickable, IOreFilterable, IIAEStackInventory {
+        implements IGridTickable, IOreFilterable, IConfigInventoryHost {
 
-    private final IAEStackInventory config = new IAEStackInventory(this, 9);
+    private final KeyConfigInventory config = new KeyConfigInventory(this, 9);
     private int cachedAdaptorHash = 0;
     private InventoryAdaptor cachedAdaptor;
     private final TileTargetCache targetCache = new TileTargetCache();
@@ -250,10 +251,20 @@ public abstract class PartSharedItemBus<StackType extends IAEStack<StackType>> e
     }
 
     @Override
-    public void saveAEStackInv() {}
+    public void onChangeConfigInventory(ConfigInventory inv, int slot) {
+        if (this.isClientSide()) {
+            return;
+        }
+
+        this.saveChanges();
+    }
+
+    public KeyConfigInventory getConfig() {
+        return this.config;
+    }
 
     @Override
-    public IAEStackInventory getAEInventoryByName(StorageName name) {
+    public ConfigInventory getAEInventoryByName(StorageName name) {
         if (name == StorageName.CONFIG) {
             return this.config;
         }

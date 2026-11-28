@@ -26,8 +26,10 @@ import com.gtnewhorizon.gtnhlib.item.ItemStackNBT;
 import appeng.api.config.FuzzyMode;
 import appeng.api.config.Upgrades;
 import appeng.api.implementations.items.IUpgradeModule;
+import appeng.api.stacks.AEKey;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.ICellWorkbenchItem;
-import appeng.api.storage.data.IAEStack;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.data.IAEStackType;
 import appeng.core.features.AEFeature;
 import appeng.core.localization.ButtonToolTips;
@@ -35,7 +37,6 @@ import appeng.core.localization.GuiText;
 import appeng.items.AEBaseItem;
 import appeng.items.contents.CellConfig;
 import appeng.items.contents.CellUpgrades;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.Platform;
 import appeng.util.partitionlist.IPartitionList;
 import appeng.util.partitionlist.MergedPartitionList;
@@ -62,7 +63,7 @@ public class ItemViewCell extends AEBaseItem implements ICellWorkbenchItem {
             if ((currentViewCell.getItem() instanceof ItemViewCell vc)) {
                 if (!vc.getViewMode(currentViewCell)) continue;
                 final IInventory upgrades = vc.getUpgradesInventory(currentViewCell);
-                final IAEStackInventory config = vc.getConfigAEInventory(currentViewCell);
+                final ConfigInventory config = vc.getConfigAEInventory(currentViewCell);
                 final FuzzyMode fzMode = vc.getFuzzyMode(currentViewCell);
                 final String filter = vc.getOreFilter(currentViewCell);
 
@@ -92,9 +93,9 @@ public class ItemViewCell extends AEBaseItem implements ICellWorkbenchItem {
                     final IPartitionList.Builder builder = IPartitionList.builder();
 
                     for (int x = 0; x < config.getSizeInventory(); x++) {
-                        final IAEStack<?> aes = config.getAEStackInSlot(x);
-                        if (aes != null) {
-                            builder.add(aes.getKey());
+                        final AEKey key = config.getKey(x);
+                        if (key != null) {
+                            builder.add(key);
                         }
                     }
 
@@ -129,7 +130,7 @@ public class ItemViewCell extends AEBaseItem implements ICellWorkbenchItem {
     }
 
     @Override
-    public IAEStackInventory getConfigAEInventory(ItemStack is) {
+    public KeyConfigInventory getConfigAEInventory(ItemStack is) {
         return new CellConfig(is);
     }
 

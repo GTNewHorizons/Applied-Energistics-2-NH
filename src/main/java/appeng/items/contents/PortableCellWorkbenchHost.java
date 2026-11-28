@@ -13,7 +13,9 @@ import org.jspecify.annotations.Nullable;
 import appeng.api.config.Upgrades;
 import appeng.api.implementations.guiobjects.IGuiItemObject;
 import appeng.api.implementations.tiles.ICellWorkbench;
+import appeng.api.storage.ConfigInventory;
 import appeng.api.storage.ICellWorkbenchItem;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.StorageName;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.util.IConfigManager;
@@ -22,7 +24,6 @@ import appeng.helpers.CellWorkbenchState;
 import appeng.helpers.ICellRestriction.CellData;
 import appeng.helpers.ICellRestriction.CellRestrictionData;
 import appeng.helpers.IPrimaryGuiIconProvider;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.tile.inventory.InvOperation;
 import appeng.util.Platform;
 
@@ -122,13 +123,18 @@ public class PortableCellWorkbenchHost
     }
 
     @Override
-    public void saveAEStackInv() {
-        this.state.saveAEStackInv();
+    public void onChangeConfigInventory(ConfigInventory inv, int slot) {
+        this.state.onChangeConfigInventory(slot);
     }
 
     @Override
-    public IAEStackInventory getAEInventoryByName(StorageName name) {
-        return this.state.getAEInventoryByName(name);
+    public ConfigInventory getAEInventoryByName(StorageName name) {
+        return this.state.getConfig();
+    }
+
+    @Override
+    public KeyConfigInventory getConfig() {
+        return this.state.getConfig();
     }
 
     @Override

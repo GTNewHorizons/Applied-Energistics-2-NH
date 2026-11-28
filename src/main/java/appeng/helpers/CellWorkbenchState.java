@@ -12,15 +12,14 @@ import appeng.api.config.Upgrades;
 import appeng.api.implementations.items.IStorageCell;
 import appeng.api.implementations.items.IUpgradeModule;
 import appeng.api.implementations.tiles.ICellWorkbench;
+import appeng.api.stacks.AEKey;
 import appeng.api.storage.ICellWorkbenchItem;
-import appeng.api.storage.StorageName;
-import appeng.api.storage.data.IAEStack;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.util.IConfigManager;
 import appeng.helpers.ICellRestriction.CellData;
 import appeng.helpers.ICellRestriction.CellRestrictionData;
 import appeng.tile.inventory.AppEngInternalInventory;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.tile.inventory.InvOperation;
 import appeng.util.ConfigManager;
 import appeng.util.Platform;
@@ -34,11 +33,11 @@ public class CellWorkbenchState {
 
     private final ICellWorkbench host;
     private final AppEngInternalInventory cell;
-    private final IAEStackInventory config;
+    private final KeyConfigInventory config;
     private final ConfigManager manager;
 
     private IInventory cachedUpgrades;
-    private IAEStackInventory cachedConfig;
+    private @Nullable KeyConfigInventory cachedConfig;
     private boolean updatingCell;
     private long cellRestrictAmount;
     private byte cellRestrictTypes;
@@ -50,7 +49,7 @@ public class CellWorkbenchState {
     public CellWorkbenchState(ICellWorkbench host) {
         this.host = host;
         this.cell = new AppEngInternalInventory(host, 1);
-        this.config = new IAEStackInventory(host, 63);
+        this.config = new KeyConfigInventory(host, 63);
         this.manager = new ConfigManager((manager, settingName, newValue) -> {
             if (!this.updatingCell) {
                 this.host.updateSetting(manager, settingName, newValue);
@@ -123,9 +122,9 @@ public class CellWorkbenchState {
             this.previousStackType = this.stackType;
             if (this.previousStackType == null) {
                 for (int slot = 0; slot < this.config.getSizeInventory(); slot++) {
-                    IAEStack<?> stack = this.config.getAEStackInSlot(slot);
-                    if (stack != null) {
-                        this.previousStackType = stack.getStackType();
+                    AEKey key = this.config.getKey(slot);
+                    if (key != null) {
+                        this.previousStackType = key.toAEStack().getStackType();
                         break;
                     }
                 }
@@ -162,7 +161,7 @@ public class CellWorkbenchState {
                 this.previousStackType = this.stackType;
             }
 
-            IAEStackInventory cellConfig = this.getCellConfigInventory();
+            KeyConfigInventory cellConfig = this.getCellConfigInventory();
             if (cellConfig != null) {
                 if (!cellConfig.isEmpty()) {
                     this.copyConfig(cellConfig, this.config);
@@ -177,18 +176,18 @@ public class CellWorkbenchState {
         }
     }
 
-    public void saveAEStackInv() {
-        if (this.updatingCell) {
+    public void onChangeConfigInventory(int slot) {
+        if (this.updatingCell || Platform.isClient()) {
             return;
         }
-        IAEStackInventory cellConfig = this.getCellConfigInventory();
-        if (cellConfig != null) {
-            this.copyConfig(this.config, cellConfig);
+        KeyConfigInventory cellConfig = this.getCellConfigInventory();
+        if (cellConfig != null && slot < cellConfig.getSizeInventory()) {
+            cellConfig.setKey(slot, this.config.getKey(slot));
         }
         this.host.saveChanges();
     }
 
-    public IAEStackInventory getAEInventoryByName(StorageName name) {
+    public KeyConfigInventory getConfig() {
         return this.config;
     }
 
@@ -238,7 +237,7 @@ public class CellWorkbenchState {
         return this.stackType;
     }
 
-    private IAEStackInventory getCellConfigInventory() {
+    private @Nullable KeyConfigInventory getCellConfigInventory() {
         if (this.cachedConfig == null) {
             ICellWorkbenchItem cellWorkbenchItem = this.getCell();
             ItemStack stack = this.cell.getStackInSlot(0);
@@ -261,14 +260,15 @@ public class CellWorkbenchState {
     }
 
     private void clearConfig() {
-        this.config.updateSlots(slot -> null);
+        for (int slot = 0; slot < this.config.getSizeInventory(); slot++) {
+            this.config.setKey(slot, null);
+        }
     }
 
-    private void copyConfig(IAEStackInventory source, IAEStackInventory destination) {
-        destination.updateSlots(slot -> {
-            IAEStack<?> stack = slot < source.getSizeInventory() ? source.getAEStackInSlot(slot) : null;
-            return stack == null ? null : stack.copy();
-        });
+    private void copyConfig(KeyConfigInventory source, KeyConfigInventory destination) {
+        for (int slot = 0; slot < destination.getSizeInventory(); slot++) {
+            destination.setKey(slot, slot < source.getSizeInventory() ? source.getKey(slot) : null);
+        }
     }
 
     private CellRestrictionData getCopiedRestriction(ItemStack stack) {

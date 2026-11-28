@@ -50,6 +50,7 @@ import appeng.api.networking.crafting.ICraftingJob;
 import appeng.api.networking.crafting.ICraftingLink;
 import appeng.api.networking.security.BaseActionSource;
 import appeng.api.storage.ICellWorkbenchItem;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.core.AppEng;
@@ -57,7 +58,6 @@ import appeng.me.GridAccessException;
 import appeng.tile.crafting.TileCraftingStorageTile;
 import appeng.tile.crafting.TileCraftingTile;
 import appeng.tile.crafting.TileMolecularAssembler;
-import appeng.tile.inventory.IAEStackInventory;
 import appeng.tile.misc.TileInterface;
 import appeng.tile.networking.TileController;
 import appeng.tile.storage.TileDrive;
@@ -554,9 +554,9 @@ public class CraftingExecutionTests {
         InventoryHelper
                 .setSlot(upgrades, 0, AEApi.instance().definitions().materials().cardSticky().maybeStack(1).get());
 
-        IAEStackInventory config = cellItem.getConfigAEInventory(cell);
+        KeyConfigInventory config = cellItem.getConfigAEInventory(cell);
         helper.assertNotNull(config, "Item cell config inventory should exist");
-        config.putAEStackInSlot(0, itemStack(partition, 1));
+        config.setKey(0, itemStack(partition, 1).getKey());
     }
 
     private static ItemStack encodedProcessingPattern(Block input, int inputAmount, Block output, int outputAmount) {

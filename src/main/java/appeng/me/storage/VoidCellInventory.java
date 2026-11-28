@@ -13,12 +13,12 @@ import appeng.api.config.FuzzyMode;
 import appeng.api.networking.security.BaseActionSource;
 import appeng.api.storage.ICellInventory;
 import appeng.api.storage.IMEInventoryHandler;
+import appeng.api.storage.KeyConfigInventory;
 import appeng.api.storage.StorageChannel;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
 import appeng.api.storage.data.IItemList;
 import appeng.items.storage.ItemVoidStorageCell;
-import appeng.tile.inventory.IAEStackInventory;
 
 public class VoidCellInventory<StackType extends IAEStack<StackType>> implements ICellInventory<StackType> {
 
@@ -94,7 +94,7 @@ public class VoidCellInventory<StackType extends IAEStack<StackType>> implements
     }
 
     @Override
-    public IAEStackInventory getConfigAEInventory() {
+    public KeyConfigInventory getConfigAEInventory() {
         return this.cellType.getConfigAEInventory(this.cellItem);
     }
 
