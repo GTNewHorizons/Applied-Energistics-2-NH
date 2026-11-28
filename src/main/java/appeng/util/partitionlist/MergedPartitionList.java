@@ -8,19 +8,19 @@
  * Applied Energistics 2. If not, see <http://www.gnu.org/licenses/lgpl>.
  */
 
-package appeng.util.prioitylist;
+package appeng.util.partitionlist;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
-import appeng.api.storage.data.IAEStack;
+import appeng.api.stacks.AEKey;
 
-public final class MergedPriorityList<T extends IAEStack<T>> implements IPartitionList<T> {
+public final class MergedPartitionList implements IPartitionList {
 
-    private final Collection<IPartitionList<T>> positive = new ArrayList<>();
-    private final Collection<IPartitionList<T>> negative = new ArrayList<>();
+    private final Collection<IPartitionList> positive = new ArrayList<>();
+    private final Collection<IPartitionList> negative = new ArrayList<>();
 
-    public void addNewList(final IPartitionList<T> list, final boolean isWhitelist) {
+    public void addNewList(final IPartitionList list, final boolean isWhitelist) {
         if (isWhitelist) {
             this.positive.add(list);
         } else {
@@ -29,17 +29,15 @@ public final class MergedPriorityList<T extends IAEStack<T>> implements IPartiti
     }
 
     @Override
-    public boolean isListed(final T input) {
-        for (final IPartitionList<T> l : this.negative) {
-            if (l instanceof OreFilteredList && !input.isItem()) continue;
+    public boolean isListed(final AEKey input) {
+        for (final IPartitionList l : this.negative) {
             if (l.isListed(input)) {
                 return false;
             }
         }
 
         if (!this.positive.isEmpty()) {
-            for (final IPartitionList<T> l : this.positive) {
-                if (l instanceof OreFilteredList && !input.isItem()) continue;
+            for (final IPartitionList l : this.positive) {
                 if (l.isListed(input)) {
                     return true;
                 }
@@ -57,7 +55,7 @@ public final class MergedPriorityList<T extends IAEStack<T>> implements IPartiti
     }
 
     @Override
-    public Iterable<T> getItems() {
+    public Iterable<AEKey> getKeys() {
         throw new UnsupportedOperationException();
     }
 }
