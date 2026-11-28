@@ -55,7 +55,6 @@ import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IChatComponent;
-import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.util.Constants.NBT;
@@ -105,7 +104,6 @@ import appeng.api.util.CraftCompleteListener;
 import appeng.api.util.CraftUpdateListener;
 import appeng.api.util.DimensionalCoord;
 import appeng.api.util.IInterfaceViewable;
-import appeng.api.util.NamedDimensionalCoord;
 import appeng.api.util.WorldCoord;
 import appeng.container.ContainerNull;
 import appeng.container.implementations.ContainerCraftingCPU;
@@ -119,6 +117,7 @@ import appeng.crafting.CraftBranchFailure;
 import appeng.crafting.CraftingLink;
 import appeng.crafting.CraftingWatcher;
 import appeng.crafting.MECraftingInventory;
+import appeng.helpers.CraftingProviderLocation;
 import appeng.helpers.DualityInterface;
 import appeng.helpers.ICustomNameObject;
 import appeng.hooks.CraftingNotificationManager;
@@ -151,7 +150,7 @@ public class CraftingCPUCluster implements IAECluster, ICraftingCPU {
     protected final LinkedList<TileCraftingTile> tiles = new LinkedList<>();
     protected final LinkedList<TileCraftingMonitorTile> status = new LinkedList<>();
     protected final HashMap<IMEMonitorHandlerReceiver, Object> listeners = new HashMap<>();
-    protected final HashMap<IAEStack<?>, List<NamedDimensionalCoord>> providers = new HashMap<>();
+    protected final HashMap<IAEStack<?>, List<CraftingProviderLocation>> providers = new HashMap<>();
     protected ICraftingLink myLastLink;
     protected String myName = "";
     protected boolean isDestroyed = false;
@@ -1987,9 +1986,9 @@ public class CraftingCPUCluster implements IAECluster, ICraftingCPU {
     }
 
     @SuppressWarnings("unchecked")
-    public List<NamedDimensionalCoord> getProviders(IAEStack<?> is) {
+    public List<CraftingProviderLocation> getProviders(IAEStack<?> is) {
         if (this.providers.isEmpty()) updateProviders();
-        return this.providers.getOrDefault(is, Collections.EMPTY_LIST);
+        return this.providers.getOrDefault(is, Collections.emptyList());
     }
 
     public void onPatternChange() {
@@ -2020,31 +2019,35 @@ public class CraftingCPUCluster implements IAECluster, ICraftingCPU {
     protected void setProvider(ICraftingPatternDetails details, CraftingGridCache cache) {
         for (final IAEStack<?> aes : details.getCondensedAEOutputs()) {
             List<ICraftingMedium> craftingProviders = cache.getMediums(details);
-            List<NamedDimensionalCoord> dimensionalCoords = new ArrayList<>();
+            List<CraftingProviderLocation> dimensionalCoords = new ArrayList<>();
 
             for (ICraftingMedium craftingProvider : craftingProviders) {
                 final String rawName;
-                final String suffix;
+                final IChatComponent suffix;
+                final ItemStack displayItem;
                 final DimensionalCoord cord;
+                final Object nameOwner = craftingProvider instanceof DualityInterface duality ? duality.getHost()
+                        : craftingProvider;
+                final boolean customName = nameOwner instanceof ICustomNameObject cno && cno.hasCustomName();
 
-                if (craftingProvider instanceof ICustomNameObject cno && cno.hasCustomName()) {
-                    rawName = cno.getCustomName();
+                if (customName) {
+                    rawName = ((ICustomNameObject) nameOwner).getCustomName();
                     suffix = null;
+                    displayItem = null;
+                } else if (craftingProvider instanceof DualityInterface di) {
+                    displayItem = di.getCrafterIcon();
+                    rawName = displayItem == null ? "Nothing" : displayItem.getUnlocalizedName();
+                    suffix = di.getAdjacentNameSuffix();
+                } else if (craftingProvider instanceof IInterfaceViewable iv) {
+                    rawName = iv.getRawName();
+                    suffix = iv.getNameSuffix();
+                    displayItem = iv.getDisplayRep();
                 } else {
-                    if (craftingProvider instanceof DualityInterface di) {
-                        rawName = di.getRawTermName();
-                        final IChatComponent suffixComponent = di.getAdjacentNameSuffix();
-                        // This name is already translated server-side, so the suffix is flattened here as well.
-                        suffix = suffixComponent == null ? null : suffixComponent.getUnformattedText();
-                    } else if (craftingProvider instanceof IInterfaceViewable iv) {
-                        rawName = iv.getName();
-                        suffix = null;
-                    } else {
-                        final TileEntity tile = this.getTile(craftingProvider);
-                        if (tile == null) continue;
-                        rawName = tile.getBlockType().getUnlocalizedName();
-                        suffix = null;
-                    }
+                    final TileEntity tile = this.getTile(craftingProvider);
+                    if (tile == null) continue;
+                    rawName = tile.getBlockType().getUnlocalizedName();
+                    suffix = null;
+                    displayItem = null;
                 }
 
                 if (craftingProvider instanceof IGridProxyable igp) {
@@ -2055,10 +2058,9 @@ public class CraftingCPUCluster implements IAECluster, ICraftingCPU {
                     cord = new DimensionalCoord(tile);
                 }
 
-                String translatedName = translateFromNetwork(rawName);
-                String displayName = suffix != null ? translatedName + suffix : translatedName;
-
-                dimensionalCoords.add(new NamedDimensionalCoord(cord, displayName));
+                final String serializedSuffix = suffix == null ? "" : IChatComponent.Serializer.func_150696_a(suffix);
+                dimensionalCoords
+                        .add(new CraftingProviderLocation(cord, rawName, serializedSuffix, displayItem, customName));
             }
             this.providers.put(aes.copy(), dimensionalCoords);
         }
@@ -2142,21 +2144,6 @@ public class CraftingCPUCluster implements IAECluster, ICraftingCPU {
         } else {
             countToTryExtractItems++;
         }
-    }
-
-    public static String translateFromNetwork(String name) {
-        final String dispName;
-        if (StatCollector.canTranslate(name)) {
-            dispName = StatCollector.translateToLocal(name);
-        } else {
-            String fallback = name + ".name";
-            if (StatCollector.canTranslate(fallback)) {
-                dispName = StatCollector.translateToLocal(fallback);
-            } else {
-                dispName = StatCollector.translateToFallback(name);
-            }
-        }
-        return dispName;
     }
 
     public BaseActionSource getCurrentJobSource() {
