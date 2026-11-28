@@ -41,6 +41,7 @@ import org.lwjgl.opengl.GL11;
 import com.glodblock.github.common.item.ItemFluidPacket;
 
 import appeng.api.config.FuzzyMode;
+import appeng.api.stacks.AEFluidKey;
 import appeng.api.storage.StorageChannel;
 import appeng.api.storage.data.IAEFluidStack;
 import appeng.api.storage.data.IAEStack;
@@ -58,6 +59,7 @@ public final class AEFluidStack extends AEStack<IAEFluidStack> implements IAEFlu
     private final int myHash;
     private final Fluid fluid;
     private IAETagCompound tagCompound;
+    private final AEFluidKey key;
 
     private AEFluidStack(final AEFluidStack is) {
 
@@ -71,6 +73,7 @@ public final class AEFluidStack extends AEStack<IAEFluidStack> implements IAEFlu
         this.setUsedPercent(is.getUsedPercent());
 
         this.tagCompound = is.tagCompound;
+        this.key = is.key;
 
         this.myHash = is.myHash;
     }
@@ -81,6 +84,7 @@ public final class AEFluidStack extends AEStack<IAEFluidStack> implements IAEFlu
         if (this.fluid == null) {
             throw new IllegalArgumentException("Fluid is null.");
         }
+        this.key = AEFluidKey.of(this.fluid);
 
         this.setStackSize(is.amount);
         this.setCraftable(false);
@@ -512,5 +516,11 @@ public final class AEFluidStack extends AEStack<IAEFluidStack> implements IAEFlu
     @Override
     public IAEStackType<IAEFluidStack> getStackType() {
         return FLUID_STACK_TYPE;
+    }
+
+    @NonNull
+    @Override
+    public AEFluidKey getKey() {
+        return this.key;
     }
 }
