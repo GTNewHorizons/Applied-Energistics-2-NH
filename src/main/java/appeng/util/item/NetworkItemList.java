@@ -202,11 +202,6 @@ public class NetworkItemList<T extends IAEStack> implements IItemList<T> {
     }
 
     @Override
-    public void addCrafting(T option) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void addRequestable(T option) {
         throw new UnsupportedOperationException();
     }

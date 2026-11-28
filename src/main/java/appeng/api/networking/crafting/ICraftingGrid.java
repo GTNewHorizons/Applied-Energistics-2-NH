@@ -13,6 +13,7 @@
 
 package appeng.api.networking.crafting;
 
+import java.util.Set;
 import java.util.concurrent.Future;
 
 import net.minecraft.world.World;
@@ -25,6 +26,7 @@ import com.google.common.collect.ImmutableSet;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridCache;
 import appeng.api.networking.security.BaseActionSource;
+import appeng.api.stacks.AEKey;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 
@@ -54,6 +56,16 @@ public interface ICraftingGrid extends IGridCache {
      */
     default ImmutableSet<IAEStack<?>> getEmitableItems() {
         return ImmutableSet.of();
+    }
+
+    /**
+     * @return an unmodifiable set of everything that has a pattern or can be emitted. The same instance is returned
+     *         until the set changes, so callers can detect changes by identity.
+     */
+    Set<AEKey> getCraftables();
+
+    default boolean isCraftable(AEKey what) {
+        return this.getCraftables().contains(what);
     }
 
     /**

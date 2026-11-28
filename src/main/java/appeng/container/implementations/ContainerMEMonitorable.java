@@ -15,10 +15,12 @@ import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
 
 import java.io.IOException;
 import java.nio.BufferOverflowException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -50,10 +52,12 @@ import appeng.api.implementations.tiles.IViewCellStorage;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridHost;
 import appeng.api.networking.IGridNode;
+import appeng.api.networking.crafting.ICraftingGrid;
 import appeng.api.networking.energy.IEnergyGrid;
 import appeng.api.networking.energy.IEnergySource;
 import appeng.api.networking.security.BaseActionSource;
 import appeng.api.networking.storage.IBaseMonitor;
+import appeng.api.stacks.AEKey;
 import appeng.api.storage.IMEMonitor;
 import appeng.api.storage.IMEMonitorHandlerReceiver;
 import appeng.api.storage.ITerminalHost;
@@ -93,6 +97,7 @@ import appeng.items.misc.ItemMEStackPacket;
 import appeng.items.storage.ItemViewCell;
 import appeng.me.cache.ItemFlowGridCache;
 import appeng.me.cache.ItemFlowGridCache.FlowRate;
+import appeng.me.cache.NetworkMonitor;
 import appeng.me.helpers.ChannelPowerSrc;
 import appeng.me.storage.LegacyInventoryStorage;
 import appeng.util.ConfigManager;
@@ -112,6 +117,8 @@ public class ContainerMEMonitorable extends AEBaseContainer
 
     private final Map<IAEStackType<?>, IMEMonitor<?>> monitors = new IdentityHashMap<>();
     private final Map<IAEStackType<?>, Set<IAEStack<?>>> updateQueue = new IdentityHashMap<>();
+    private @Nullable ICraftingGrid craftingGrid;
+    private Set<AEKey> sentCraftables = Collections.emptySet();
 
     private final IConfigManager clientCM;
     private final ITerminalHost host;
@@ -169,6 +176,9 @@ public class ContainerMEMonitorable extends AEBaseContainer
                     monitor.addListener(this, null);
                     this.monitors.put(type, monitor);
                     this.updateQueue.put(type, new HashSet<>());
+                    if (this.craftingGrid == null && monitor instanceof NetworkMonitor<?>networkMonitor) {
+                        this.craftingGrid = networkMonitor.getGrid().getCache(ICraftingGrid.class);
+                    }
                 }
             }
 
@@ -281,8 +291,10 @@ public class ContainerMEMonitorable extends AEBaseContainer
                     }
                 }
             } else {
+                this.queueCraftableChanges();
+
                 try {
-                    final PacketMEInventoryUpdate piu = new PacketMEInventoryUpdate();
+                    PacketMEInventoryUpdate piu = new PacketMEInventoryUpdate();
 
                     for (var entry : this.updateQueue.entrySet()) {
                         IItemList list = this.monitors.get(entry.getKey()).getStorageList();
@@ -290,23 +302,16 @@ public class ContainerMEMonitorable extends AEBaseContainer
                             final IAEStack<?> send = list.findPrecise(aes);
                             if (send == null) {
                                 aes.setStackSize(0);
-                                piu.appendItem(aes);
+                                piu = this.appendToCrafters(piu, aes);
                             } else {
-                                piu.appendItem(send);
+                                piu = this.appendToCrafters(piu, send);
                             }
                         }
+                        entry.getValue().clear();
                     }
 
                     if (!piu.isEmpty()) {
-                        for (var list : this.updateQueue.values()) {
-                            list.clear();
-                        }
-
-                        for (final Object c : this.crafters) {
-                            if (c instanceof EntityPlayer) {
-                                NetworkHandler.instance.sendTo(piu, (EntityPlayerMP) c);
-                            }
-                        }
+                        this.sendToCrafters(piu);
                     }
                 } catch (final IOException e) {
                     AELog.debug(e);
@@ -429,12 +434,25 @@ public class ContainerMEMonitorable extends AEBaseContainer
         }
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     private void queueInventory(final EntityPlayerMP player) {
+        this.sentCraftables = this.getCraftables();
+
         try {
             PacketMEInventoryUpdate piu = new PacketMEInventoryUpdate();
 
+            final Consumer<PacketMEInventoryUpdate> sender = packet -> NetworkHandler.instance.sendTo(packet, player);
+
             for (var monitor : this.monitors.values()) {
-                piu = queueInventoryList(piu, monitor.getStorageList(), player);
+                piu = queueInventoryList(piu, monitor.getStorageList(), sender);
+            }
+
+            for (AEKey craftable : this.sentCraftables) {
+                final IAEStack<?> stack = craftable.toAEStack(0);
+                final IMEMonitor<?> monitor = this.monitors.get(stack.getStackType());
+                if (monitor != null && ((IItemList) monitor.getStorageList()).findPrecise(stack) == null) {
+                    piu = this.append(piu, stack, sender);
+                }
             }
 
             NetworkHandler.instance.sendTo(piu, player);
@@ -445,21 +463,81 @@ public class ContainerMEMonitorable extends AEBaseContainer
 
     @SuppressWarnings({ "rawtypes" })
     private PacketMEInventoryUpdate queueInventoryList(PacketMEInventoryUpdate piu, IItemList monitorCache,
-            EntityPlayerMP player) {
+            Consumer<PacketMEInventoryUpdate> sender) {
         try {
             for (final IAEStack<?> send : (IItemList<?>) monitorCache) {
-                try {
-                    piu.appendItem(send);
-                } catch (final BufferOverflowException boe) {
-                    NetworkHandler.instance.sendTo(piu, player);
-
-                    piu = new PacketMEInventoryUpdate();
-                    piu.appendItem(send);
-                }
+                piu = this.append(piu, send, sender);
             }
         } catch (Exception ignored) {}
 
         return piu;
+    }
+
+    private PacketMEInventoryUpdate appendToCrafters(PacketMEInventoryUpdate piu, IAEStack<?> stack)
+            throws IOException {
+        return this.append(piu, stack, this::sendToCrafters);
+    }
+
+    private PacketMEInventoryUpdate append(PacketMEInventoryUpdate piu, IAEStack<?> stack,
+            Consumer<PacketMEInventoryUpdate> sender) throws IOException {
+        final IAEStack<?> send = this.withCraftable(stack);
+        try {
+            piu.appendItem(send);
+            return piu;
+        } catch (final BufferOverflowException e) {
+            sender.accept(piu);
+            final PacketMEInventoryUpdate next = new PacketMEInventoryUpdate();
+            next.appendItem(send);
+            return next;
+        }
+    }
+
+    private void sendToCrafters(PacketMEInventoryUpdate piu) {
+        for (final Object c : this.crafters) {
+            if (c instanceof EntityPlayerMP player) {
+                NetworkHandler.instance.sendTo(piu, player);
+            }
+        }
+    }
+
+    private IAEStack<?> withCraftable(IAEStack<?> stack) {
+        final boolean craftable = this.sentCraftables.contains(stack.getKey());
+        if (stack.isCraftable() == craftable) {
+            return stack;
+        }
+        final IAEStack<?> copy = stack.copy();
+        copy.setCraftable(craftable);
+        return copy;
+    }
+
+    private Set<AEKey> getCraftables() {
+        return this.craftingGrid == null ? Collections.emptySet() : this.craftingGrid.getCraftables();
+    }
+
+    private void queueCraftableChanges() {
+        final Set<AEKey> craftables = this.getCraftables();
+        if (craftables == this.sentCraftables) {
+            return;
+        }
+        for (AEKey key : this.sentCraftables) {
+            if (!craftables.contains(key)) {
+                this.queueUpdate(key);
+            }
+        }
+        for (AEKey key : craftables) {
+            if (!this.sentCraftables.contains(key)) {
+                this.queueUpdate(key);
+            }
+        }
+        this.sentCraftables = craftables;
+    }
+
+    private void queueUpdate(AEKey key) {
+        final IAEStack<?> stack = key.toAEStack(0);
+        final Set<IAEStack<?>> queue = this.updateQueue.get(stack.getStackType());
+        if (queue != null) {
+            queue.add(stack);
+        }
     }
 
     @Override

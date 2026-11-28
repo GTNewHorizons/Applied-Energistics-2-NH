@@ -41,7 +41,6 @@ import appeng.api.storage.data.IAEStackType;
 import appeng.api.storage.data.IItemList;
 import appeng.me.cache.SecurityCache;
 import appeng.util.SortedArrayList;
-import appeng.util.inv.ItemListIgnoreCrafting;
 import appeng.util.item.NetworkItemList;
 import appeng.util.item.PrioritizedNetworkItemList;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
@@ -353,7 +352,6 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
             return this.iterationItems == null ? out : this.iterationItems;
         }
 
-        final boolean isIgnoreCrafting = out instanceof ItemListIgnoreCrafting;
         final boolean isSource = this.getDepth(Actionable.SIMULATE).size() == 1;
 
         final NetworkItemList<T> networkItemList = new NetworkItemList<>(
@@ -361,9 +359,7 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
                 () -> (IItemList<T>) getStackType().createPrimitiveList());
         this.iterationItems = networkItemList;
 
-        final IItemList<T> currentNetworkItemList = isIgnoreCrafting
-                ? new ItemListIgnoreCrafting<>(getPrimitiveItemList())
-                : getPrimitiveItemList();
+        final IItemList<T> currentNetworkItemList = getPrimitiveItemList();
         final List<IMEInventoryHandler<T>> priorityInventory = this.priorityInventory;
         final int size = priorityInventory.size();
         for (int i = 0; i < size; i++) {
@@ -405,7 +401,6 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
 
         final PrioritizedNetworkItemList<T> networkItemList = new PrioritizedNetworkItemList<>(this);
         this.prioritizedIterationItems = networkItemList;
-        final boolean isSource = this.getDepth(Actionable.SIMULATE).size() == 1;
 
         IItemList<T> currentPriorityItemList = null;
 
@@ -426,8 +421,7 @@ public class NetworkInventoryHandler<T extends IAEStack<T>> implements IMENetwor
                 if (lastPriority != null && !currentPriorityItemList.isEmpty())
                     networkItemList.addNetworkItems(this, lastPriority, currentPriorityItemList);
                 lastPriority = inv.getPriority();
-                currentPriorityItemList = isSource ? new ItemListIgnoreCrafting<>(getPrimitiveItemList())
-                        : getPrimitiveItemList();
+                currentPriorityItemList = getPrimitiveItemList();
             }
 
             if (externalNetworkInventory != null) {

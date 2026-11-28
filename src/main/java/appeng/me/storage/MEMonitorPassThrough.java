@@ -13,8 +13,6 @@ package appeng.me.storage;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.function.Predicate;
 
 import appeng.api.config.StorageFilter;
 import appeng.api.networking.security.BaseActionSource;
@@ -27,8 +25,6 @@ import appeng.api.storage.data.IAEStackType;
 import appeng.api.storage.data.IItemList;
 import appeng.util.IterationCounter;
 import appeng.util.Platform;
-import appeng.util.inv.ItemListIgnoreCrafting;
-import appeng.util.item.ItemFilterList;
 
 public class MEMonitorPassThrough<T extends IAEStack<T>> extends MEPassThrough<T>
         implements IMEMonitor<T>, IMEMonitorHandlerReceiver<T> {
@@ -53,9 +49,8 @@ public class MEMonitorPassThrough<T extends IAEStack<T>> extends MEPassThrough<T
 
         this.monitor = null;
         final IItemList<T> before = this.getInternal() == null ? this.getWrappedChannel().createList()
-                : this.getInternal().getAvailableItems(
-                        new ItemListIgnoreCrafting(this.getWrappedChannel().createList()),
-                        IterationCounter.fetchNewId());
+                : this.getInternal()
+                        .getAvailableItems(this.getWrappedChannel().createList(), IterationCounter.fetchNewId());
 
         super.setInternal(i);
         if (i instanceof IMEMonitor) {
@@ -63,41 +58,14 @@ public class MEMonitorPassThrough<T extends IAEStack<T>> extends MEPassThrough<T
         }
 
         final IItemList<T> after = this.getInternal() == null ? this.getWrappedChannel().createList()
-                : this.getInternal().getAvailableItems(
-                        new ItemListIgnoreCrafting(this.getWrappedChannel().createList()),
-                        IterationCounter.fetchNewId());
+                : this.getInternal()
+                        .getAvailableItems(this.getWrappedChannel().createList(), IterationCounter.fetchNewId());
 
         if (this.monitor != null) {
             this.monitor.addListener(this, this.monitor);
         }
 
         Platform.postListChanges(before, after, this, this.getChangeSource());
-    }
-
-    @Override
-    public IItemList<T> getAvailableItems(final IItemList out, int iterator) {
-        if (out instanceof ItemFilterList) {
-            return super.getAvailableItems(out, iterator);
-        }
-        IItemList<T> ret = super.getAvailableItems(new ItemListIgnoreCrafting(out), iterator);
-        if (ret instanceof ItemListIgnoreCrafting) {
-            return out;
-        } else {
-            return ret;
-        }
-    }
-
-    @Override
-    public IItemList<T> getAvailableItems(final IItemList<T> out, int iterator, Optional<Predicate<T>> filter) {
-        if (out instanceof ItemFilterList) {
-            return super.getAvailableItems(out, iterator, filter);
-        }
-        IItemList<T> ret = super.getAvailableItems(new ItemListIgnoreCrafting(out), iterator, filter);
-        if (ret instanceof ItemListIgnoreCrafting) {
-            return out;
-        } else {
-            return ret;
-        }
     }
 
     @Override
@@ -114,7 +82,7 @@ public class MEMonitorPassThrough<T extends IAEStack<T>> extends MEPassThrough<T
     public IItemList<T> getStorageList() {
         if (this.monitor == null) {
             final IItemList<T> out = this.getWrappedChannel().createList();
-            this.getInternal().getAvailableItems(new ItemListIgnoreCrafting(out), IterationCounter.fetchNewId());
+            this.getInternal().getAvailableItems(out, IterationCounter.fetchNewId());
             return out;
         }
         return this.monitor.getStorageList();

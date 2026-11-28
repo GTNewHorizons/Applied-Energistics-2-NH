@@ -65,11 +65,6 @@ public final class LazyItemList<StackType extends IAEStack<StackType>> implement
     }
 
     @Override
-    public void addCrafting(StackType option) {
-        getCachedOrCompute().addCrafting(option);
-    }
-
-    @Override
     public void addRequestable(StackType option) {
         getCachedOrCompute().addRequestable(option);
     }

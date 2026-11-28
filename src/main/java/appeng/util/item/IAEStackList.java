@@ -76,14 +76,6 @@ public final class IAEStackList implements IItemList<IAEStack<?>> {
 
     @Override
     @SuppressWarnings({ "unchecked" })
-    public void addCrafting(final IAEStack<?> option) {
-        if (option != null) {
-            this.lists.get(option.getStackType()).addCrafting(option);
-        }
-    }
-
-    @Override
-    @SuppressWarnings({ "unchecked" })
     public void addRequestable(final IAEStack<?> option) {
         if (option != null) {
             this.lists.get(option.getStackType()).addRequestable(option);

@@ -77,26 +77,6 @@ public class EssentiaList implements IItemList<AEEssentiaStack> {
     }
 
     @Override
-    public void addCrafting(AEEssentiaStack stack) {
-        if (stack == null) {
-            return;
-        }
-
-        final AEEssentiaStack st = this.records.get(stack);
-
-        if (st != null) {
-            st.setCraftable(true);
-            return;
-        }
-
-        final AEEssentiaStack opt = stack.copy();
-        opt.setStackSize(0);
-        opt.setCraftable(true);
-
-        this.records.add(opt);
-    }
-
-    @Override
     public void addRequestable(AEEssentiaStack stack) {
         if (stack == null) {
             return;

@@ -34,11 +34,6 @@ public final class ItemImmutableList implements IItemList<IAEItemStack> {
     }
 
     @Override
-    public void addCrafting(IAEItemStack option) {
-        throw new UnsupportedOperationException("Cannot add to immutable list");
-    }
-
-    @Override
     public void addRequestable(IAEItemStack option) {
         throw new UnsupportedOperationException("Cannot add to immutable list");
     }

@@ -63,19 +63,6 @@ public class ItemFilterList implements IItemList<IAEItemStack> {
     }
 
     @Override
-    public void addCrafting(final IAEItemStack option) {
-        if (option == null) {
-            return;
-        }
-
-        final IAEItemStack st = this.records.get(option);
-
-        if (st == null) {
-            putItemRecord(option.copy());
-        }
-    }
-
-    @Override
     public void addRequestable(final IAEItemStack option) {
         if (option == null) {
             return;

@@ -21,8 +21,8 @@ import appeng.api.networking.crafting.ICraftingGrid;
 import appeng.api.networking.crafting.ICraftingJob;
 import appeng.api.networking.security.BaseActionSource;
 import appeng.api.networking.security.ISecurityGrid;
-import appeng.api.networking.storage.IStorageGrid;
-import appeng.api.storage.IMEMonitor;
+import appeng.api.stacks.AEItemKey;
+import appeng.api.stacks.AEKey;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.container.AEBaseContainer;
@@ -131,11 +131,11 @@ public class PacketCraftingRequest implements IMessage {
             } else {
 
                 if (message.command == COMMAND_OPEN_CRAFT_CONFIRM) {
-                    final IStorageGrid inv = grid.getCache(IStorageGrid.class);
+                    final ICraftingGrid crafting = grid.getCache(ICraftingGrid.class);
                     final IAEStack<?> resultStack = IAEStack.fromNBTGeneric(message.compound);
 
                     if (resultStack != null) {
-                        final IAEStack<?> requireToCraftStack = findCraftable(inv, resultStack);
+                        final IAEStack<?> requireToCraftStack = findCraftable(crafting, resultStack);
 
                         if (requireToCraftStack != null) {
                             requireToCraftStack.setStackSize(message.getCraftAmount());
@@ -143,12 +143,11 @@ public class PacketCraftingRequest implements IMessage {
                         }
                     }
                 } else if (message.command == COMMAND_CREATE_PATTERN) {
-                    final IStorageGrid inv = grid.getCache(IStorageGrid.class);
                     final ItemStack resultStack = ItemStack
                             .loadItemStackFromNBT(message.compound.getCompoundTag("out"));
                     createRecipePattern(grid, resultStack, message.compound, player);
                     final IAEItemStack requireToCraftStack = getrequireToCraftStack(
-                            inv.getItemInventory(),
+                            grid.getCache(ICraftingGrid.class),
                             resultStack);
 
                     if (requireToCraftStack != null) {
@@ -163,27 +162,23 @@ public class PacketCraftingRequest implements IMessage {
             return null;
         }
 
-        private static IAEStack<?> findCraftable(IStorageGrid inv, IAEStack<?> requested) {
-            final IMEMonitor monitor = inv.getMEMonitor(requested.getStackType());
-            if (monitor == null) return null;
-
-            final IAEStack<?> found = (IAEStack<?>) monitor.getStorageList().findPrecise(requested);
-            return found != null && found.isCraftable() ? found.copy() : null;
+        private static IAEStack<?> findCraftable(ICraftingGrid crafting, IAEStack<?> requested) {
+            return crafting.isCraftable(requested.getKey()) ? requested.copy() : null;
         }
 
         /*
          * For some reason,the output from jei is different from the actual one, so apply ItemStack.isItemEqual to
          * match.
          */
-        private IAEItemStack getrequireToCraftStack(IMEMonitor<IAEItemStack> storage, ItemStack resultStack) {
+        private IAEItemStack getrequireToCraftStack(ICraftingGrid crafting, ItemStack resultStack) {
 
             if (resultStack == null) {
                 return null;
             }
 
-            for (IAEItemStack aeStack : storage.getStorageList()) {
-                if (resultStack.isItemEqual(aeStack.getItemStack()) && aeStack.isCraftable()) {
-                    return aeStack.copy();
+            for (AEKey craftable : crafting.getCraftables()) {
+                if (craftable instanceof AEItemKey itemKey && resultStack.isItemEqual(itemKey.getReadonlyStack())) {
+                    return itemKey.toAEStack(0);
                 }
             }
 

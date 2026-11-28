@@ -133,26 +133,6 @@ public final class ItemList implements IItemList<IAEItemStack> {
      */
 
     @Override
-    public void addCrafting(final IAEItemStack option) {
-        if (option == null) {
-            return;
-        }
-
-        final IAEItemStack st = this.setRecords.get(option);
-
-        if (st != null) {
-            st.setCraftable(true);
-            return;
-        }
-
-        final IAEItemStack opt = option.copy();
-        opt.setStackSize(0);
-        opt.setCraftable(true);
-
-        this.putItemRecord(opt);
-    }
-
-    @Override
     public void addRequestable(final IAEItemStack option) {
         if (option == null) {
             return;

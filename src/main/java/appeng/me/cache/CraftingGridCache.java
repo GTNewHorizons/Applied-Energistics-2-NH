@@ -78,10 +78,10 @@ import appeng.api.networking.events.MENetworkPostCacheConstruction;
 import appeng.api.networking.security.BaseActionSource;
 import appeng.api.networking.security.PlayerSource;
 import appeng.api.networking.storage.IStorageGrid;
+import appeng.api.stacks.AEKey;
 import appeng.api.storage.ICellProvider;
 import appeng.api.storage.IMEInventoryHandler;
 import appeng.api.storage.StorageChannel;
-import appeng.api.storage.data.AEStackTypeRegistry;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.api.storage.data.IAEStackType;
@@ -100,6 +100,7 @@ import appeng.tile.crafting.TileCraftingStorageTile;
 import appeng.tile.crafting.TileCraftingTile;
 import appeng.util.ItemSorters;
 import appeng.util.item.OreListMultiMap;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 
 public class CraftingGridCache
         implements ICraftingGrid, ICraftingProviderHelper, ICellProvider, IMEInventoryHandler<IAEStack> {
@@ -125,6 +126,7 @@ public class CraftingGridCache
     protected final Map<IAEStack<?>, ImmutableList<ICraftingPatternDetails>> craftableItems = new HashMap<>();
     private ImmutableMap<IAEStack<?>, ImmutableList<ICraftingPatternDetails>> craftableItemsSnapshot = ImmutableMap
             .of();
+    private Set<AEKey> craftables = Collections.emptySet();
     protected final Map<UUID, ICraftingPatternDetails> inputOnlyPatterns = new HashMap<>();
     protected final Map<String, CraftingLinkNexus> craftingLinks = new HashMap<>();
     protected final Multimap<IAEStack, CraftingWatcher> interests = HashMultimap.create();
@@ -306,17 +308,6 @@ public class CraftingGridCache
 
         setPatternsFromCraftingMethods();
 
-        for (IAEStackType<?> type : AEStackTypeRegistry.getAllTypes()) {
-            List<IAEStack<?>> list = new ArrayList<>();
-            for (IAEStack<?> craftable : this.craftableItems.keySet()) {
-                if (craftable.getStackType() == type) {
-                    list.add(craftable);
-                }
-            }
-
-            this.storageGrid.postAlterationOfStoredItems(type, list, new BaseActionSource());
-        }
-
         for (final ICraftingPostPatternChangeListener listener : ImmutableList
                 .copyOf(this.postPatternChangeListeners)) {
             listener.onPostPatternChange();
@@ -371,6 +362,20 @@ public class CraftingGridCache
         }
 
         this.craftableItemsSnapshot = ImmutableMap.copyOf(this.craftableItems);
+        this.updateCraftables();
+    }
+
+    private void updateCraftables() {
+        final Set<AEKey> keys = new ObjectOpenHashSet<>(this.craftableItems.size() + this.emitableMediums.size());
+        for (IAEStack<?> stack : this.craftableItems.keySet()) {
+            keys.add(stack.getKey());
+        }
+        for (IAEStack<?> stack : this.emitableMediums.keySet()) {
+            keys.add(stack.getKey());
+        }
+        if (!keys.equals(this.craftables)) {
+            this.craftables = Collections.unmodifiableSet(keys);
+        }
     }
 
     public ICraftingPatternDetails getInputOnlyPattern(final UUID uuid) {
@@ -505,31 +510,12 @@ public class CraftingGridCache
 
     @Override
     public IItemList<IAEStack> getAvailableItems(final IItemList<IAEStack> out, int iteration) {
-        return getAvailableItems(out, iteration, Optional.empty());
+        return out;
     }
 
     @Override
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     public IItemList<IAEStack> getAvailableItems(final IItemList<IAEStack> out, int iteration,
             Optional<Predicate<IAEStack>> filter) {
-        final IAEStackType<?> outType = out.getStackType();
-        final Predicate<IAEStack> predicate = filter.orElse(null);
-
-        // add craftable items!
-        for (final IAEStack<?> stack : this.craftableItems.keySet()) {
-            if ((outType == null || outType == stack.getStackType())
-                    && (predicate == null || predicate.test((IAEStack) stack))) {
-                out.addCrafting((IAEStack) stack);
-            }
-        }
-
-        for (final IAEStack<?> stack : this.emitableMediums.keySet()) {
-            if ((outType == null || outType == stack.getStackType())
-                    && (predicate == null || predicate.test((IAEStack) stack))) {
-                out.addCrafting((IAEStack) stack);
-            }
-        }
-
         return out;
     }
 
@@ -551,6 +537,11 @@ public class CraftingGridCache
     @Override
     public ImmutableSet<IAEStack<?>> getEmitableItems() {
         return ImmutableSet.copyOf(this.emitableMediums.keySet());
+    }
+
+    @Override
+    public Set<AEKey> getCraftables() {
+        return this.craftables;
     }
 
     @Override

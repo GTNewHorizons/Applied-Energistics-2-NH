@@ -523,7 +523,6 @@ public abstract class TileProviderBase extends AENetworkTile
      * 
      * @return orderIsSuccessful
      */
-    @SuppressWarnings({ "unchecked" })
     public boolean orderSomeEssentia(final Aspect aspect, final int amount) {
         try {
             ICraftingGrid craftingGrid = this.getProxy().getCrafting();
@@ -531,13 +530,7 @@ public abstract class TileProviderBase extends AENetworkTile
 
             AEEssentiaStack stack = new AEEssentiaStack(aspect);
 
-            IMEMonitor<AEEssentiaStack> monitor = (IMEMonitor<AEEssentiaStack>) grid
-                    .<IStorageGrid>getCache(IStorageGrid.class).getMEMonitor(ESSENTIA_STACK_TYPE);
-            if (monitor == null) return false;
-
-            AEEssentiaStack existing = monitor.getAvailableItem(stack, IterationCounter.fetchNewId());
-
-            if (existing == null || !existing.isCraftable()) return false;
+            if (!craftingGrid.isCraftable(stack.getKey())) return false;
 
             if (!craftingGrid.isRequesting(stack)) {
                 int index = this.craftingTracker.getFirstEmptySlot();

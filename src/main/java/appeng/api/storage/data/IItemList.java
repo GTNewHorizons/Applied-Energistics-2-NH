@@ -47,13 +47,6 @@ public interface IItemList<StackType extends IAEStack> extends IItemContainer<St
     void addStorage(StackType option); // adds a stack as stored
 
     /**
-     * add a stack to the list as craftable, this will merge the stack with an item already in the list if found.
-     *
-     * @param option stacktype option
-     */
-    void addCrafting(StackType option);
-
-    /**
      * add a stack to the list, stack size is used to add to requestable, this will merge the stack with an item already
      * in the list if found.
      *

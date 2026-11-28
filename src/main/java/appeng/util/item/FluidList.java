@@ -96,26 +96,6 @@ public final class FluidList implements IItemList<IAEFluidStack> {
      */
 
     @Override
-    public void addCrafting(final IAEFluidStack option) {
-        if (option == null) {
-            return;
-        }
-
-        final IAEFluidStack st = this.getFluidRecord(option);
-
-        if (st != null) {
-            st.setCraftable(true);
-            return;
-        }
-
-        final IAEFluidStack opt = option.copy();
-        opt.setStackSize(0);
-        opt.setCraftable(true);
-
-        this.putFluidRecord(opt);
-    }
-
-    @Override
     public void addRequestable(final IAEFluidStack option) {
         if (option == null) {
             return;
