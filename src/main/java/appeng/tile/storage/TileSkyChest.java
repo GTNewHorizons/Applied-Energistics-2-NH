@@ -29,6 +29,7 @@ public class TileSkyChest extends AEBaseInvTile {
     private static final String METEORITE_ORIGIN = "meteoriteOrigin";
 
     private boolean meteoriteOrigin;
+    private boolean meteoriteLootDepleted;
     private boolean needsOriginCheck;
     private boolean indexedAsTarget;
 
@@ -45,12 +46,14 @@ public class TileSkyChest extends AEBaseInvTile {
     public void readMeteoriteOrigin(final NBTTagCompound data) {
         this.needsOriginCheck = !data.hasKey(METEORITE_ORIGIN);
         this.meteoriteOrigin = data.getBoolean(METEORITE_ORIGIN);
+        this.meteoriteLootDepleted = data.getBoolean("meteoriteLootDepleted");
     }
 
     @TileEvent(TileEventType.WORLD_NBT_WRITE)
     public void writeMeteoriteOrigin(final NBTTagCompound data) {
         if (!this.needsOriginCheck) {
             data.setBoolean(METEORITE_ORIGIN, this.meteoriteOrigin);
+            data.setBoolean("meteoriteLootDepleted", this.meteoriteLootDepleted);
         }
     }
 
@@ -63,24 +66,31 @@ public class TileSkyChest extends AEBaseInvTile {
         this.meteoriteOrigin = generated;
     }
 
+    public boolean hasMeteoriteOrigin() {
+        return this.meteoriteOrigin;
+    }
+
     public void markGenerated() {
         this.setMeteoriteOrigin(true);
+        this.meteoriteLootDepleted = !this.hasItems();
         this.saveChanges();
         this.updateCompassTarget();
     }
 
     public boolean refreshCompassTarget() {
-        this.indexedAsTarget = this.hasMeteoriteLoot();
+        if (this.meteoriteOrigin && !this.meteoriteLootDepleted && !this.hasItems()) {
+            this.meteoriteLootDepleted = true;
+            this.saveChanges();
+        }
+        this.indexedAsTarget = this.meteoriteOrigin && !this.meteoriteLootDepleted;
         return this.indexedAsTarget;
     }
 
-    private boolean hasMeteoriteLoot() {
-        if (this.meteoriteOrigin) {
-            for (int slot = 0; slot < this.inv.getSizeInventory(); slot++) {
-                final ItemStack stack = this.inv.getStackInSlot(slot);
-                if (stack != null && stack.stackSize > 0) {
-                    return true;
-                }
+    private boolean hasItems() {
+        for (int slot = 0; slot < this.inv.getSizeInventory(); slot++) {
+            final ItemStack stack = this.inv.getStackInSlot(slot);
+            if (stack != null && stack.stackSize > 0) {
+                return true;
             }
         }
         return false;
@@ -89,7 +99,9 @@ public class TileSkyChest extends AEBaseInvTile {
     private void updateCompassTarget() {
         if (this.hasWorldObj() && !this.worldObj.isRemote
                 && !this.isInvalid()
-                && this.indexedAsTarget != this.hasMeteoriteLoot()
+                && this.meteoriteOrigin
+                && !this.meteoriteLootDepleted
+                && this.indexedAsTarget != this.hasItems()
                 && this.worldObj.blockExists(this.xCoord, this.yCoord, this.zCoord)) {
             this.saveChanges();
             WorldData.instance().compassData().service()

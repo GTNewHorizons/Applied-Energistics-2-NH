@@ -348,9 +348,6 @@ public final class MeteoritePlacer {
             }
 
             final TileEntity te = w.getTileEntity(x, y, z);
-            if (te instanceof TileSkyChest chest) {
-                chest.markGenerated();
-            }
             if (te instanceof IInventory) {
                 try {
                     Random lootRng = new Random(this.seed + SEED_OFFSET_CHEST_LOOT);
@@ -428,6 +425,9 @@ public final class MeteoritePlacer {
                                     + e.getClass()
                                     + "\n");
                 }
+            }
+            if (te instanceof TileSkyChest chest) {
+                chest.markGenerated();
             }
         }
     }
