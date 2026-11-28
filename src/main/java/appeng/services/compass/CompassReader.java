@@ -23,12 +23,14 @@ public final class CompassReader {
     private final Map<Long, CompassRegion> regions = new HashMap<>(100);
     private final int dimensionId;
     private final File worldCompassFolder;
+    private final boolean findChests;
 
-    public CompassReader(final int dimensionId, @NonNull final File worldCompassFolder) {
+    public CompassReader(final int dimensionId, @NonNull final File worldCompassFolder, final boolean findChests) {
         Preconditions.checkNotNull(worldCompassFolder);
         Preconditions.checkArgument(worldCompassFolder.isDirectory());
 
         this.dimensionId = dimensionId;
+        this.findChests = findChests;
         this.worldCompassFolder = worldCompassFolder;
     }
 
@@ -53,14 +55,12 @@ public final class CompassReader {
     }
 
     private CompassRegion getRegion(final int cx, final int cz) {
-        long pos = cx >> 10;
-        pos <<= 32;
-        pos |= (cz >> 10);
+        final long pos = ((long) (cx >> 10) << 32) | Integer.toUnsignedLong(cz >> 10);
 
         CompassRegion cr = this.regions.get(pos);
 
         if (cr == null) {
-            cr = new CompassRegion(cx, cz, this.dimensionId, this.worldCompassFolder);
+            cr = new CompassRegion(cx, cz, this.dimensionId, this.worldCompassFolder, this.findChests);
             this.regions.put(pos, cr);
         }
 

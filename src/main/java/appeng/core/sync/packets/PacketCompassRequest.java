@@ -14,6 +14,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 
 import appeng.api.util.DimensionalCoord;
+import appeng.block.misc.BlockSkyCompass;
 import appeng.core.sync.AppEngPacket;
 import appeng.core.sync.network.INetworkInfo;
 import appeng.core.sync.network.NetworkHandler;
@@ -65,6 +66,7 @@ public class PacketCompassRequest extends AppEngPacket implements ICompassCallba
         this.talkBackTo = player;
 
         final DimensionalCoord loc = new DimensionalCoord(player.worldObj, this.cx << 4, this.cdy << 5, this.cz << 4);
-        WorldData.instance().compassData().service().getCompassDirection(loc, 174, this);
+        WorldData.instance().compassData().service()
+                .getCompassDirection(loc, 174, this.attunement == BlockSkyCompass.CHEST_MODE, this);
     }
 }
