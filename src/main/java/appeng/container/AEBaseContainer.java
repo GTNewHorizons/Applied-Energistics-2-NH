@@ -140,25 +140,6 @@ public abstract class AEBaseContainer extends Container {
     private DataSynchronization dataSync;
     private final SyncManager syncManager = new SyncManager(this);
 
-    @Deprecated
-    public AEBaseContainer(final InventoryPlayer ip, final TileEntity myTile, final IPart myPart) {
-        this(ip, myTile, myPart, null);
-    }
-
-    @Deprecated
-    public AEBaseContainer(final InventoryPlayer ip, final TileEntity myTile, final IPart myPart,
-            final IGuiItemObject gio) {
-        this.invPlayer = ip;
-        this.tileEntity = myTile;
-        this.part = myPart;
-        this.obj = gio;
-        this.mySrc = new PlayerSource(ip.player, this.getActionHost());
-
-        this.targetSlotIndex = this.tileEntity == null && getTarget() instanceof IInventorySlotAware isa
-                ? isa.getInventorySlot()
-                : Integer.MIN_VALUE;
-    }
-
     public AEBaseContainer(final InventoryPlayer ip, final Object anchor) {
         this.invPlayer = ip;
         this.tileEntity = anchor instanceof TileEntity ? (TileEntity) anchor : null;

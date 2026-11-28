@@ -21,7 +21,6 @@ import net.minecraft.item.ItemStack;
 import com.google.common.base.Optional;
 
 import appeng.api.definitions.IItemDefinition;
-import appeng.api.util.AEItemDefinition;
 
 public enum Upgrades {
 
@@ -48,16 +47,8 @@ public enum Upgrades {
     SUPERLUMINALSPEED(1),
     DISTRIBUTION(1);
 
-    /**
-     * @deprecated use {@link Upgrades#getTier()}
-     */
-    @Deprecated
-    public final int tier;
+    private final int tier;
 
-    /**
-     * @deprecated use {@link Upgrades#getSupported()}
-     */
-    @Deprecated
     private final Map<ItemStack, Integer> supportedMax = new HashMap<>();
 
     Upgrades(final int tier) {
@@ -93,24 +84,6 @@ public enum Upgrades {
     public void registerItem(final ItemStack stack, final int maxSupported) {
         if (stack != null) {
             this.supportedMax.put(stack, maxSupported);
-        }
-    }
-
-    /**
-     * Registers a specific amount of this upgrade into a specific machine
-     *
-     * @param item         machine in which this upgrade can be installed
-     * @param maxSupported amount how many upgrades can be installed
-     * @deprecated use {@link Upgrades#registerItem(IItemDefinition, int)}
-     */
-    @Deprecated
-    public void registerItem(final AEItemDefinition item, final int maxSupported) {
-        if (item != null) {
-            final ItemStack stack = item.stack(1);
-
-            if (stack != null) {
-                this.registerItem(stack, maxSupported);
-            }
         }
     }
 

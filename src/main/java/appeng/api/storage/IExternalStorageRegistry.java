@@ -13,9 +13,6 @@
 
 package appeng.api.storage;
 
-import static appeng.util.item.AEFluidStackType.FLUID_STACK_TYPE;
-import static appeng.util.item.AEItemStackType.ITEM_STACK_TYPE;
-
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -37,10 +34,6 @@ public interface IExternalStorageRegistry {
      */
     void addExternalStorageInterface(IExternalStorageHandler esh);
 
-    @Deprecated
-    IExternalStorageHandler getHandler(TileEntity te, ForgeDirection opposite, StorageChannel channel,
-            BaseActionSource mySrc);
-
     /**
      * @param te       tile entity
      * @param opposite direction
@@ -48,14 +41,6 @@ public interface IExternalStorageRegistry {
      * @param mySrc    source
      * @return the handler for a given tile / forge direction
      */
-    default IExternalStorageHandler getHandler(TileEntity te, ForgeDirection opposite, IAEStackType<?> type,
-            BaseActionSource mySrc) {
-        if (type == ITEM_STACK_TYPE) {
-            return this.getHandler(te, opposite, StorageChannel.ITEMS, mySrc);
-        }
-        if (type == FLUID_STACK_TYPE) {
-            return this.getHandler(te, opposite, StorageChannel.FLUIDS, mySrc);
-        }
-        return null;
-    }
+    IExternalStorageHandler getHandler(TileEntity te, ForgeDirection opposite, IAEStackType<?> type,
+            BaseActionSource mySrc);
 }
