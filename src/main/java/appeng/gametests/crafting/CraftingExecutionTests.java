@@ -4,6 +4,7 @@ import static appeng.gametests.AEGameTestHelpers.assertActive;
 import static appeng.gametests.AEGameTestHelpers.assertNetworkStoredAmount;
 import static appeng.gametests.AEGameTestHelpers.assertStoredAmount;
 import static appeng.gametests.AEGameTestHelpers.cell1k;
+import static appeng.gametests.AEGameTestHelpers.extractFromGrid;
 import static appeng.gametests.AEGameTestHelpers.injectIntoGrid;
 import static appeng.gametests.AEGameTestHelpers.insertItems;
 import static appeng.gametests.AEGameTestHelpers.itemStack;
@@ -49,10 +50,12 @@ import appeng.api.networking.crafting.ICraftingGrid;
 import appeng.api.networking.crafting.ICraftingJob;
 import appeng.api.networking.crafting.ICraftingLink;
 import appeng.api.networking.security.BaseActionSource;
+import appeng.api.networking.security.PlayerSource;
 import appeng.api.storage.ICellWorkbenchItem;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
 import appeng.core.AppEng;
+import appeng.crafting.v2.CraftingJobV2;
 import appeng.me.GridAccessException;
 import appeng.tile.crafting.TileCraftingStorageTile;
 import appeng.tile.crafting.TileCraftingTile;
@@ -427,6 +430,212 @@ public class CraftingExecutionTests {
                 })
                 .thenExecute("stop CPU-break conservation invariant", cpuBreakDoesNotDuplicateOrProduceOutput::disable)
                 .thenSucceed();
+    }
+
+    // Ingredients that disappear while the job calculates should be crafted instead, so the job still starts.
+    @GameTest(template = "crafting_cpu", timeoutTicks = 260)
+    public static void ingredientRemovedDuringCalculationIsCrafted(GameTestHelper helper) {
+        CraftingNetwork network = getCraftingNetwork(helper);
+        ItemStack driveCell = cell1k();
+        insertItems(helper, driveCell, Blocks.cobblestone, 2);
+        insertItems(helper, driveCell, Blocks.gravel, 1);
+        helper.setSlot(DRIVE_LABEL, 0, driveCell);
+        helper.startSequence()
+                .thenWaitUntil(
+                        "wait for vanishing-ingredient crafting network to activate",
+                        100,
+                        () -> assertCraftingNetworkActive(helper, network))
+                .thenExecute(
+                        "install stone and cobblestone processing patterns",
+                        () -> installStoneChainPatterns(network))
+                .thenWaitUntil(
+                        "wait for stone and cobblestone pattern advertisement",
+                        80,
+                        () -> assertStoneChainAdvertised(helper, network))
+                .thenExecute("remove a cobblestone between the job's snapshot and its calculation", () -> {
+                    CraftingJobV2<IAEItemStack> job = newStoneJob(network.controller);
+                    helper.assertNotNull(
+                            extractFromGrid(network.controller, Blocks.cobblestone, 1),
+                            "Remove cobblestone");
+                    awaitJob(job);
+                    helper.assertFalse(
+                            job.isSimulation(),
+                            "Removed cobblestone should be planned as crafted from gravel");
+                    helper.assertNotNull(
+                            craftingGrid(network.controller).submitJob(job, null, null, false, new BaseActionSource()),
+                            "Re-planned job should start");
+                    assertNetworkStoredAmount(helper, network.controller, Blocks.cobblestone, 0);
+                    assertNetworkStoredAmount(helper, network.controller, Blocks.gravel, 0);
+                }).thenSucceed();
+    }
+
+    // Ingredients that disappear after the job finished calculating should be re-planned before it starts.
+    @GameTest(template = "crafting_cpu", timeoutTicks = 260)
+    public static void ingredientRemovedBeforeStartIsCrafted(GameTestHelper helper) {
+        CraftingNetwork network = getCraftingNetwork(helper);
+        ItemStack driveCell = cell1k();
+        insertItems(helper, driveCell, Blocks.cobblestone, 2);
+        insertItems(helper, driveCell, Blocks.gravel, 1);
+        helper.setSlot(DRIVE_LABEL, 0, driveCell);
+        helper.startSequence()
+                .thenWaitUntil(
+                        "wait for vanishing-ingredient crafting network to activate",
+                        100,
+                        () -> assertCraftingNetworkActive(helper, network))
+                .thenExecute(
+                        "install stone and cobblestone processing patterns",
+                        () -> installStoneChainPatterns(network))
+                .thenWaitUntil(
+                        "wait for stone and cobblestone pattern advertisement",
+                        80,
+                        () -> assertStoneChainAdvertised(helper, network))
+                .thenExecute("remove a cobblestone after the job was calculated", () -> {
+                    CraftingJobV2<IAEItemStack> job = newStoneJob(network.controller);
+                    awaitJob(job);
+                    helper.assertFalse(job.reconcileWithLiveStorage(), "Unchanged storage should not re-plan");
+                    helper.assertNotNull(
+                            extractFromGrid(network.controller, Blocks.cobblestone, 1),
+                            "Remove cobblestone");
+                    helper.assertTrue(job.reconcileWithLiveStorage(), "Removed cobblestone should re-plan the job");
+                    awaitJob(job);
+                    helper.assertFalse(
+                            job.isSimulation(),
+                            "Removed cobblestone should be planned as crafted from gravel");
+                    helper.assertNotNull(
+                            craftingGrid(network.controller).submitJob(job, null, null, false, new BaseActionSource()),
+                            "Re-planned job should start");
+                    assertNetworkStoredAmount(helper, network.controller, Blocks.cobblestone, 0);
+                    assertNetworkStoredAmount(helper, network.controller, Blocks.gravel, 0);
+                }).thenSucceed();
+    }
+
+    // Ingredients that keep disappearing should be crafted again each time, also after the pattern was already used.
+    @GameTest(template = "crafting_cpu", timeoutTicks = 260)
+    public static void ingredientRemovedTwiceBeforeStartIsCrafted(GameTestHelper helper) {
+        CraftingNetwork network = getCraftingNetwork(helper);
+        ItemStack driveCell = cell1k();
+        insertItems(helper, driveCell, Blocks.cobblestone, 2);
+        insertItems(helper, driveCell, Blocks.gravel, 2);
+        helper.setSlot(DRIVE_LABEL, 0, driveCell);
+        helper.startSequence()
+                .thenWaitUntil(
+                        "wait for vanishing-ingredient crafting network to activate",
+                        100,
+                        () -> assertCraftingNetworkActive(helper, network))
+                .thenExecute(
+                        "install stone and cobblestone processing patterns",
+                        () -> installStoneChainPatterns(network))
+                .thenWaitUntil(
+                        "wait for stone and cobblestone pattern advertisement",
+                        80,
+                        () -> assertStoneChainAdvertised(helper, network))
+                .thenExecute("remove both cobblestone one at a time after the job was calculated", () -> {
+                    // Player requests get several attempts, there is no player to send chat messages to
+                    CraftingJobV2<IAEItemStack> job = newStoneJob(network.controller, new PlayerSource(null, null));
+                    awaitJob(job);
+                    helper.assertNotNull(
+                            extractFromGrid(network.controller, Blocks.cobblestone, 1),
+                            "Remove first cobblestone");
+                    helper.assertTrue(job.reconcileWithLiveStorage(), "First removal should re-plan the job");
+                    awaitJob(job);
+                    helper.assertNotNull(
+                            extractFromGrid(network.controller, Blocks.cobblestone, 1),
+                            "Remove second cobblestone");
+                    helper.assertTrue(job.reconcileWithLiveStorage(), "Second removal should re-plan the job");
+                    awaitJob(job);
+                    helper.assertFalse(
+                            job.isSimulation(),
+                            "Both removed cobblestone should be planned as crafted from gravel");
+                    helper.assertNotNull(
+                            craftingGrid(network.controller).submitJob(job, null, null, false, new BaseActionSource()),
+                            "Re-planned job should start");
+                    assertNetworkStoredAmount(helper, network.controller, Blocks.cobblestone, 0);
+                    assertNetworkStoredAmount(helper, network.controller, Blocks.gravel, 0);
+                }).thenSucceed();
+    }
+
+    // Ingredients that disappear and can't be crafted should show up as missing instead of failing at start.
+    @GameTest(template = "crafting_cpu", timeoutTicks = 260)
+    public static void uncraftableIngredientRemovedBeforeStartIsMissing(GameTestHelper helper) {
+        CraftingNetwork network = getCraftingNetwork(helper);
+        ItemStack driveCell = cell1k();
+        insertItems(helper, driveCell, Blocks.cobblestone, 2);
+        helper.setSlot(DRIVE_LABEL, 0, driveCell);
+        helper.startSequence()
+                .thenWaitUntil(
+                        "wait for vanishing-ingredient crafting network to activate",
+                        100,
+                        () -> assertCraftingNetworkActive(helper, network))
+                .thenExecute(
+                        "install two-cobblestone-to-one-stone processing pattern",
+                        () -> installPattern(
+                                network.blockInterface,
+                                encodedProcessingPattern(Blocks.cobblestone, 2, Blocks.stone, 1)))
+                .thenWaitUntil(
+                        "wait for stone pattern advertisement",
+                        80,
+                        () -> helper.assertFalse(
+                                craftingOptionsFor(network.controller, Blocks.stone).isEmpty(),
+                                "Stone pattern should be advertised"))
+                .thenExecute("remove a cobblestone after the job was calculated", () -> {
+                    CraftingJobV2<IAEItemStack> job = newStoneJob(network.controller);
+                    awaitJob(job);
+                    helper.assertNotNull(
+                            extractFromGrid(network.controller, Blocks.cobblestone, 1),
+                            "Remove cobblestone");
+                    helper.assertTrue(job.reconcileWithLiveStorage(), "Removed cobblestone should re-plan the job");
+                    awaitJob(job);
+                    helper.assertTrue(job.isSimulation(), "Uncraftable removed cobblestone should be missing");
+                    helper.assertNull(
+                            craftingGrid(network.controller).submitJob(job, null, null, false, new BaseActionSource()),
+                            "Job with missing ingredients should not start");
+                    assertNetworkStoredAmount(helper, network.controller, Blocks.cobblestone, 1);
+                }).thenSucceed();
+    }
+
+    private static void installStoneChainPatterns(CraftingNetwork network) {
+        installPattern(network.blockInterface, encodedProcessingPattern(Blocks.cobblestone, 2, Blocks.stone, 1));
+        InventoryHelper.setSlot(
+                network.blockInterface.getInterfaceDuality().getPatterns(),
+                1,
+                encodedProcessingPattern(Blocks.gravel, 1, Blocks.cobblestone, 1));
+    }
+
+    private static void assertStoneChainAdvertised(GameTestHelper helper, CraftingNetwork network) {
+        helper.assertFalse(
+                craftingOptionsFor(network.controller, Blocks.stone).isEmpty(),
+                "Stone pattern should be advertised");
+        helper.assertFalse(
+                craftingOptionsFor(network.controller, Blocks.cobblestone).isEmpty(),
+                "Cobblestone pattern should be advertised");
+    }
+
+    private static CraftingJobV2<IAEItemStack> newStoneJob(TileController controller) {
+        return newStoneJob(controller, new BaseActionSource());
+    }
+
+    private static CraftingJobV2<IAEItemStack> newStoneJob(TileController controller, BaseActionSource source) {
+        try {
+            return new CraftingJobV2<>(
+                    controller.getWorldObj(),
+                    controller.getProxy().getGrid(),
+                    source,
+                    itemStack(Blocks.stone, 1),
+                    null);
+        } catch (GridAccessException e) {
+            throw new AssertionError("Network grid should be accessible", e);
+        }
+    }
+
+    private static void awaitJob(CraftingJobV2<IAEItemStack> job) {
+        try {
+            job.get(JOB_CALCULATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError("Crafting job calculation should not be interrupted", e);
+        } catch (ExecutionException | TimeoutException e) {
+            throw new AssertionError("Crafting job should finish calculating", e);
+        }
     }
 
     private static CraftingNetwork getCraftingNetwork(GameTestHelper helper) {

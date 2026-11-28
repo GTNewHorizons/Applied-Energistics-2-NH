@@ -133,9 +133,9 @@ public class GuiCraftConfirm extends GuiSub implements ICraftingCPUTableHolder, 
 
     private int rows = 5;
 
-    private final IItemList<IAEStack<?>> storage = new IAEStackList();
-    private final IItemList<IAEStack<?>> pending = new IAEStackList();
-    private final IItemList<IAEStack<?>> missing = new IAEStackList();
+    private IItemList<IAEStack<?>> storage = new IAEStackList();
+    private IItemList<IAEStack<?>> pending = new IAEStackList();
+    private IItemList<IAEStack<?>> missing = new IAEStackList();
     private CraftingJobV2 jobTree = null;
 
     private final List<IAEStack<?>> visual = new ArrayList<>();
@@ -798,6 +798,17 @@ public class GuiCraftConfirm extends GuiSub implements ICraftingCPUTableHolder, 
     }
 
     public void postUpdate(final List<IAEStack<?>> list, final byte ref) {
+        if (ref == 0) {
+            // The server sends a plan as one storage packet, followed by the pending and (for simulations) missing
+            // packets, and never splits a plan across packets. A storage packet therefore always begins a fresh plan
+            // that replaces what is shown, e.g. after the job was re-planned because ingredients went missing.
+            // Start from empty lists: resetting would only zero the old entries, and the drawing and sorting code
+            // treats any entry that is present as part of the plan.
+            this.storage = new IAEStackList();
+            this.pending = new IAEStackList();
+            this.missing = new IAEStackList();
+            this.visual.clear();
+        }
         for (final IAEStack<?> stack : list) {
             switch (ref) {
                 case 0 -> {
@@ -893,6 +904,10 @@ public class GuiCraftConfirm extends GuiSub implements ICraftingCPUTableHolder, 
 
             if (a != null) {
                 a.setStackSize(l.getStackSize());
+                // Entries get reused when a re-planned job is sent, after being reset for the new plan. Keep every
+                // displayed field up to date, not just the amount.
+                a.setCountRequestableCrafts(l.getCountRequestableCrafts());
+                a.setUsedPercent(l.getUsedPercent());
             }
         }
     }

@@ -22,8 +22,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import appeng.api.config.CraftingMode;
 import appeng.api.networking.crafting.ICraftingPatternDetails;
+import appeng.api.networking.security.PlayerSource;
 import appeng.api.storage.data.IAEItemStack;
+import appeng.core.localization.GuiText;
 import appeng.crafting.v2.CraftingJobV2;
 import appeng.crafting.v2.CraftingRequest;
 import appeng.crafting.v2.CraftingRequest.UsedResolverEntry;
@@ -807,5 +810,409 @@ public class CraftingV2Tests {
         assertEquals(0, platePatterns.get(1).getPriority());
         assertEquals(0, platePatterns.get(2).getPriority());
         assertEquals(-1, platePatterns.get(3).getPriority());
+    }
+
+    private void addExpensiveStickPatterns(MockAESystem aeSystem) {
+        aeSystem.newProcessingPattern().addInput(new ItemStack(Items.diamond, 1))
+                .addOutput(new ItemStack(Items.stick, 1)).buildAndAdd();
+        aeSystem.newProcessingPattern().addInput(new ItemStack(Items.gold_ingot, 1))
+                .addOutput(new ItemStack(Items.diamond, 1)).buildAndAdd();
+    }
+
+    @Test
+    void itemsRemovedDuringCalculationAreCrafted() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        aeSystem.addStoredItem(new ItemStack(Items.gold_ingot, 64));
+        addExpensiveStickPatterns(aeSystem);
+        final CraftingJobV2 job = aeSystem.makeCraftingJob(new ItemStack(Items.stick, 13));
+        // The job already took its snapshot of the storage
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 5));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 8)).setCountRequestable(5),
+                AEItemStack.create(new ItemStack(Items.gold_ingot, 5)));
+    }
+
+    @Test
+    void itemsRemovedAfterCalculationAreReplanned() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 10));
+        aeSystem.addStoredItem(new ItemStack(Items.gold_ingot, 64));
+        addExpensiveStickPatterns(aeSystem);
+        final CraftingJobV2 job = aeSystem.makeCraftingJob(new ItemStack(Items.stick, 13));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 10)).setCountRequestable(3),
+                AEItemStack.create(new ItemStack(Items.gold_ingot, 3)));
+        assertFalse(job.reconcileWithLiveStorage(), "Unchanged storage should not re-plan");
+
+        // The diamond request was already partially crafted, crafting the rest must still be possible
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 4));
+        assertTrue(job.reconcileWithLiveStorage());
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 6)).setCountRequestable(7),
+                AEItemStack.create(new ItemStack(Items.gold_ingot, 7)));
+        assertFalse(job.reconcileWithLiveStorage(), "Re-planned job should match the storage");
+    }
+
+    @Test
+    void itemsRemovedRepeatedlyAreCraftedEachTime() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        aeSystem.addStoredItem(new ItemStack(Items.gold_ingot, 64));
+        addExpensiveStickPatterns(aeSystem);
+        // Player requests get several attempts, there is no player to send chat messages to
+        final CraftingJobV2 job = aeSystem
+                .makeCraftingJob(new ItemStack(Items.stick, 13), new PlayerSource(null, null));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 5));
+        assertTrue(job.reconcileWithLiveStorage());
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 8)).setCountRequestable(5),
+                AEItemStack.create(new ItemStack(Items.gold_ingot, 5)));
+
+        // The diamond request is now partially crafted, the pattern it used must stay usable for the next shortfall
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 3));
+        assertTrue(job.reconcileWithLiveStorage());
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 5)).setCountRequestable(8),
+                AEItemStack.create(new ItemStack(Items.gold_ingot, 8)));
+        assertFalse(job.reconcileWithLiveStorage(), "Re-planned job should match the storage");
+    }
+
+    @Test
+    void replanUsesLiveStorageForNewIngredients() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        aeSystem.addStoredItem(new ItemStack(Items.gold_ingot, 64));
+        addExpensiveStickPatterns(aeSystem);
+        final CraftingJobV2 job = aeSystem.makeCraftingJob(new ItemStack(Items.stick, 13));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+
+        // The gold wasn't part of the plan, but the re-plan needs it and must not use the old snapshot
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 5));
+        aeSystem.removeStoredItem(new ItemStack(Items.gold_ingot, 64));
+        assertTrue(job.reconcileWithLiveStorage());
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertTrue(job.isSimulation(), "Gold that is gone must not be planned as extracted");
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 8)).setCountRequestable(5),
+                AEItemStack.create(new ItemStack(Items.gold_ingot, 5)));
+        assertEquals(
+                0,
+                job.getStorageAtBeginning().getAvailableItem(AEItemStack.create(new ItemStack(Items.gold_ingot, 1)))
+                        .getStackSize());
+    }
+
+    @Test
+    void replanSeesItemsAddedAfterCalculation() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        addExpensiveStickPatterns(aeSystem);
+        final CraftingJobV2 job = aeSystem.makeCraftingJob(new ItemStack(Items.stick, 13));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+
+        // Gold inserted after the calculation can be used to craft the missing diamonds
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 5));
+        aeSystem.addStoredItem(new ItemStack(Items.gold_ingot, 64));
+        assertTrue(job.reconcileWithLiveStorage());
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 8)).setCountRequestable(5),
+                AEItemStack.create(new ItemStack(Items.gold_ingot, 5)));
+    }
+
+    @Test
+    void replanKeepsTheRequestedItemOutOfTheItemModel() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.stick, 10));
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        aeSystem.addStoredItem(new ItemStack(Items.gold_ingot, 64));
+        addExpensiveStickPatterns(aeSystem);
+        final CraftingJobV2 job = aeSystem.makeCraftingJob(new ItemStack(Items.stick, 13));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+        // Stored sticks are never extracted to fulfill a stick request
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 13)));
+
+        // More sticks arrive while diamonds go missing. The snapshot has to learn about the sticks, the item model
+        // must not, otherwise a re-planned sub-request could extract the item the job is crafting.
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 5));
+        aeSystem.addStoredItem(new ItemStack(Items.stick, 20));
+        assertTrue(job.reconcileWithLiveStorage());
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+        final IAEItemStack stick = AEItemStack.create(new ItemStack(Items.stick, 1));
+        final IAEItemStack modelledSticks = job.getContext().itemModel.findPrecise(stick);
+        assertTrue(
+                modelledSticks == null || modelledSticks.getStackSize() == 0,
+                () -> "The requested item leaked back into the item model: " + modelledSticks);
+        assertEquals(30, job.getStorageAtBeginning().getAvailableItem(stick).getStackSize());
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 8)).setCountRequestable(5),
+                AEItemStack.create(new ItemStack(Items.gold_ingot, 5)));
+    }
+
+    @Test
+    void fuzzyExtractionReplansAfterPartialRefund() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Blocks.planks, 8, 0));
+        aeSystem.addStoredItem(new ItemStack(Blocks.planks, 16, 1));
+        addFuzzyProcessingChestPattern(aeSystem);
+        final CraftingJobV2 job = aeSystem.makeCraftingJob(new ItemStack(Blocks.chest, 3));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Blocks.planks, 8, 0)),
+                AEItemStack.create(new ItemStack(Blocks.planks, 16, 1)),
+                AEItemStack.create(new ItemStack(Blocks.chest, 0)).setCountRequestable(3));
+
+        // A refund by the parent hands back the fuzzy substitute first, the exact match must still be accounted for
+        final CraftingRequest planks = job.getContext().getLiveRequests().stream().map(r -> r.request)
+                .filter(r -> r.stack.equals(AEItemStack.create(new ItemStack(Blocks.planks, 1, 0)))).findFirst()
+                .orElseThrow(AssertionError::new);
+        planks.partialRefund(job.getContext(), 8);
+
+        aeSystem.removeStoredItem(new ItemStack(Blocks.planks, 8, 0));
+        assertTrue(job.reconcileWithLiveStorage());
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Blocks.planks, 16, 1)),
+                AEItemStack.create(new ItemStack(Blocks.chest, 0)).setCountRequestable(3));
+    }
+
+    @Test
+    void partialRefundSpansAllEntriesOfAFuzzyExtraction() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Blocks.planks, 16, 0));
+        aeSystem.addStoredItem(new ItemStack(Blocks.planks, 8, 1));
+        addFuzzyProcessingChestPattern(aeSystem);
+        final CraftingJobV2 job = aeSystem.makeCraftingJob(new ItemStack(Blocks.chest, 3));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Blocks.planks, 16, 0)),
+                AEItemStack.create(new ItemStack(Blocks.planks, 8, 1)),
+                AEItemStack.create(new ItemStack(Blocks.chest, 0)).setCountRequestable(3));
+
+        // The extract task recorded the exact match before the substitute, but hands the substitute back first. A
+        // refund larger than the first entry has to be covered by the task's total, not by that entry alone.
+        final CraftingRequest planks = job.getContext().getLiveRequests().stream().map(r -> r.request)
+                .filter(r -> r.stack.equals(AEItemStack.create(new ItemStack(Blocks.planks, 1, 0)))).findFirst()
+                .orElseThrow(AssertionError::new);
+        planks.partialRefund(job.getContext(), 17);
+        assertEquals(7, planks.stack.getStackSize());
+        assertEquals(0, planks.remainingToProcess);
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Blocks.planks, 7, 0)),
+                AEItemStack.create(new ItemStack(Blocks.chest, 0)).setCountRequestable(3));
+    }
+
+    @Test
+    void craftableItemsWithMissingInputsShowTheInputAsMissing() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        // There is a pattern for diamonds, but no gold to craft them with
+        addExpensiveStickPatterns(aeSystem);
+        final CraftingJobV2 job = aeSystem
+                .makeCraftingJob(new ItemStack(Items.stick, 13), new PlayerSource(null, null));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 5));
+        assertTrue(job.reconcileWithLiveStorage());
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertTrue(job.isSimulation());
+        // Like a fresh calculation, the diamonds are crafted and the gold they need is what's missing
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 8)).setCountRequestable(5),
+                AEItemStack.create(new ItemStack(Items.gold_ingot, 5)));
+    }
+
+    @Test
+    void plansWithMissingItemsAreNotReplanned() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        aeSystem.newProcessingPattern().addInput(new ItemStack(Items.diamond, 1))
+                .addOutput(new ItemStack(Items.stick, 1)).buildAndAdd();
+        final CraftingJobV2 job = aeSystem
+                .makeCraftingJob(new ItemStack(Items.stick, 20), new PlayerSource(null, null));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertTrue(job.isSimulation());
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(20),
+                AEItemStack.create(new ItemStack(Items.diamond, 20)));
+
+        // The plan can't be started anyway, re-planning it would only spend attempts and spam the player
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 5));
+        assertFalse(job.reconcileWithLiveStorage(), "Plans that are already simulations should not be re-planned");
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(20),
+                AEItemStack.create(new ItemStack(Items.diamond, 20)));
+    }
+
+    @Test
+    void ignoreMissingJobsAreNotReplanned() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        aeSystem.addStoredItem(new ItemStack(Items.gold_ingot, 64));
+        addExpensiveStickPatterns(aeSystem);
+        final CraftingJobV2 job = aeSystem.makeCraftingJob(new ItemStack(Items.stick, 13), CraftingMode.IGNORE_MISSING);
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+
+        // The crafting CPU waits for items that are missing in this mode, a re-plan would make the job unsubmittable
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 5));
+        assertFalse(job.reconcileWithLiveStorage(), "Ignore-missing jobs should not be re-planned");
+        assertFalse(job.isSimulation());
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 13)));
+    }
+
+    @Test
+    void plansThatBecomeSimulationsDuringCalculationAreNotReplanned() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        aeSystem.newProcessingPattern().addInput(new ItemStack(Items.diamond, 1))
+                .addOutput(new ItemStack(Items.stick, 1)).buildAndAdd();
+        final CraftingJobV2 job = aeSystem
+                .makeCraftingJob(new ItemStack(Items.stick, 20), new PlayerSource(null, null));
+        // The job already took its snapshot of the storage
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 5));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertTrue(job.isSimulation());
+        // Without the re-plan the 13 diamonds of the snapshot stay planned as extracted
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(20),
+                AEItemStack.create(new ItemStack(Items.diamond, 20)));
+        assertEquals(
+                13,
+                job.getStorageAtBeginning().getAvailableItem(AEItemStack.create(new ItemStack(Items.diamond, 1)))
+                        .getStackSize());
+    }
+
+    @Test
+    void machineRequestsRetryOnlyOnce() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        aeSystem.addStoredItem(new ItemStack(Items.gold_ingot, 64));
+        addExpensiveStickPatterns(aeSystem);
+        final CraftingJobV2 job = aeSystem.makeCraftingJob(new ItemStack(Items.stick, 13));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 5));
+        assertTrue(job.reconcileWithLiveStorage());
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+
+        // The only retry is used up, items going missing again must fail the job instead of starting it short
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 3));
+        assertTrue(job.reconcileWithLiveStorage(), "A second shortfall must still be noticed");
+        assertTrue(job.isCancelled(), "Machine requests should only be re-planned once");
+        assertTrue(job.isSimulation(), "A cancelled job must not be submittable");
+        assertEquals(GuiText.CraftingIngredientsKeptChanging.getUnlocalized(), job.getErrorMessage());
+    }
+
+    @Test
+    void playerRequestsFailAfterTheLastRetry() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        aeSystem.addStoredItem(new ItemStack(Items.gold_ingot, 64));
+        addExpensiveStickPatterns(aeSystem);
+        final CraftingJobV2 job = aeSystem
+                .makeCraftingJob(new ItemStack(Items.stick, 13), new PlayerSource(null, null));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+
+        // Players get 5 re-plans
+        for (int round = 1; round <= 5; round++) {
+            aeSystem.removeStoredItem(new ItemStack(Items.diamond, 1));
+            assertTrue(job.reconcileWithLiveStorage(), "Re-plan " + round + " should happen");
+            simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+            assertFalse(job.isSimulation(), "Re-plan " + round + " should craft the missing diamond");
+        }
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 8)).setCountRequestable(5),
+                AEItemStack.create(new ItemStack(Items.gold_ingot, 5)));
+
+        // No re-plans left: the job must fail rather than start with an extraction the network can't satisfy
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 1));
+        assertTrue(job.reconcileWithLiveStorage(), "The shortfall must still be noticed after the last retry");
+        assertTrue(job.isCancelled());
+        assertTrue(job.isSimulation());
+        assertEquals(GuiText.CraftingIngredientsKeptChanging.getUnlocalized(), job.getErrorMessage());
+    }
+
+    @Test
+    void uncraftableItemsRemovedAfterCalculationAreMissing() {
+        MockAESystem aeSystem = new MockAESystem(dummyWorld);
+        aeSystem.addStoredItem(new ItemStack(Items.diamond, 13));
+        aeSystem.newProcessingPattern().addInput(new ItemStack(Items.diamond, 1))
+                .addOutput(new ItemStack(Items.stick, 1)).buildAndAdd();
+        final CraftingJobV2 job = aeSystem.makeCraftingJob(new ItemStack(Items.stick, 13));
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertFalse(job.isSimulation());
+
+        aeSystem.removeStoredItem(new ItemStack(Items.diamond, 5));
+        assertTrue(job.reconcileWithLiveStorage());
+        simulateJobAndCheck(job, MAX_SIMULATION_STEPS);
+        assertTrue(job.isSimulation());
+        // 8 extracted and 5 simulated, the confirm screen shows the difference to the storage as missing
+        assertJobPlanEquals(
+                job,
+                AEItemStack.create(new ItemStack(Items.stick, 0)).setCountRequestable(13),
+                AEItemStack.create(new ItemStack(Items.diamond, 13)));
+        assertEquals(
+                8,
+                job.getStorageAtBeginning().getAvailableItem(AEItemStack.create(new ItemStack(Items.diamond, 1)))
+                        .getStackSize());
     }
 }

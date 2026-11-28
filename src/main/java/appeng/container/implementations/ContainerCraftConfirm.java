@@ -178,6 +178,8 @@ public class ContainerCraftConfirm extends ContainerSubGui implements ICraftingC
                             ? new PacketMEInventoryUpdate((byte) 2)
                             : null;
 
+                    // The client replaces its shown plan when the storage packet arrives, so a re-planned job needs no
+                    // clearing of the previous plan here
                     final IItemList<IAEStack<?>> plan = AEApi.instance().storage().createAEStackList();
                     this.result.populatePlan(plan);
 
@@ -313,8 +315,16 @@ public class ContainerCraftConfirm extends ContainerSubGui implements ICraftingC
         startJob(false);
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void startJob(final boolean followCraft) {
         if (this.result != null && !this.isSimulation() && getGrid() != null) {
+            if (this.result instanceof CraftingJobV2<?>job && job.reconcileWithLiveStorage()) {
+                // Items the plan needs disappeared since it was calculated, re-plan those before starting. Auto start
+                // stays enabled, otherwise the updated plan is shown to be confirmed again.
+                this.setSimulation(true);
+                this.setJob((Future) job.schedule());
+                return;
+            }
             final ICraftingGrid cc = this.getGrid().getCache(ICraftingGrid.class);
             CraftingCPUStatus selected = this.cpuTable.getSelectedCPU();
             final ICraftingLink g = cc.submitJob(

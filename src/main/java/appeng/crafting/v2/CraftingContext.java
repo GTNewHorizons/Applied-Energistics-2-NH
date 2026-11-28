@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,8 +41,10 @@ import appeng.api.storage.data.IItemList;
 import appeng.container.ContainerNull;
 import appeng.core.AEConfig;
 import appeng.crafting.MECraftingInventory;
+import appeng.crafting.v2.resolvers.CraftableItemResolver.CraftFromPatternTask;
 import appeng.crafting.v2.resolvers.CraftingTask;
 import appeng.crafting.v2.resolvers.CraftingTask.State;
+import appeng.crafting.v2.resolvers.SimulateMissingItemResolver.ConjureItemTask;
 import appeng.me.cache.CraftingGridCache;
 import appeng.me.cluster.implementations.CraftingCPUCluster;
 import appeng.util.Platform;
@@ -124,6 +127,7 @@ public final class CraftingContext {
     private final List<CraftingTask> resolvedTasks = new ArrayList<>();
     private final ArrayDeque<CraftingTask> tasksToProcess = new ArrayDeque<>(64);
     private boolean doingWork = false;
+    private boolean reopeningRequest = false;
     // State at the point when the last task executed.
     private CraftingTask.State finishedState = CraftingTask.State.FAILURE;
     private final ImmutableMap<IAEStack<?>, ImmutableList<ICraftingPatternDetails>> availablePatterns;
@@ -173,6 +177,69 @@ public final class CraftingContext {
             throw new IllegalStateException("No resolvers available for request " + request.toString());
         }
         queueNextTaskOf(processing, true);
+    }
+
+    /**
+     * Resolves the unprocessed remainder of an already resolved request again, e.g. after items it planned to extract
+     * from the AE system disappeared. The resolvers are regenerated, because the ones used up by the original
+     * resolution can still be valid for the remainder.
+     * <p>
+     * The task that requested this one has already finished and will not backtrack, so the remainder must always get
+     * resolved. If nothing else can, it is simulated, so that it shows up as missing instead of breaking the plan.
+     * <p>
+     * This deliberately overrides {@link CraftingRequest#allowSimulation}: that flag means "fail here so the parent
+     * tries another pattern", which a finished plan can no longer do. The only alternatives are to conjure the
+     * remainder (the job becomes a simulation that can't be started and lists the item as missing) or to fail the whole
+     * job without telling the player what is missing. The simulated-pattern fallback of the craftable item resolver is
+     * forced on for the same reason, see {@link #isReopeningRequest()}.
+     *
+     * @return If any work was queued
+     */
+    public boolean reopenRequest(@NonNull CraftingRequest request) {
+        if (doingWork) {
+            throw new IllegalStateException("Trying to reopen requests while inside a CraftingTask handler");
+        }
+        final RequestInProcessing processing = request.liveRequest;
+        if (processing == null || request.remainingToProcess <= 0) {
+            return false;
+        }
+        processing.resolvers.clear();
+        // The patterns this request was already resolved with are in its patternParents to stop its children from
+        // recursing, but the request itself may use them again for the remainder. Only the parents' patterns must
+        // stay denied. A pattern task that failed removed its pattern again, so the request's own patterns are exactly
+        // those of the pattern tasks among its used resolvers.
+        final Set<ICraftingPatternDetails> ownPatterns = new HashSet<>();
+        for (CraftingRequest.UsedResolverEntry entry : request.usedResolvers) {
+            if (entry.task instanceof CraftFromPatternTask patternTask) {
+                ownPatterns.add(patternTask.pattern);
+            }
+        }
+        ownPatterns.retainAll(request.patternParents);
+        request.patternParents.removeAll(ownPatterns);
+        reopeningRequest = true;
+        try {
+            processing.resolvers.addAll(CraftingCalculations.tryResolveCraftingRequest(request, this));
+        } finally {
+            reopeningRequest = false;
+            request.patternParents.addAll(ownPatterns);
+        }
+        if (!request.allowSimulation) {
+            // Requests that allow simulation already got a ConjureItemTask from the SimulateMissingItemResolver
+            processing.resolvers.add(new ConjureItemTask(request)); // lowest priority, keeps the list sorted
+        }
+        processing.refresh();
+        Collections.reverse(processing.resolvers); // We remove from the end for efficient ArrayList usage
+        return queueNextTaskOf(processing, true);
+    }
+
+    /**
+     * @return If resolvers are currently being generated for a request reopened by {@link #reopenRequest}. Such a
+     *         request is part of an already finished plan that will not backtrack, so resolvers must not hold back
+     *         their fallbacks in the hope that a parent request finds another way, even if the request itself does not
+     *         allow simulation.
+     */
+    public boolean isReopeningRequest() {
+        return reopeningRequest;
     }
 
     public IAEItemStack getCrafterIconForPattern(@NonNull ICraftingPatternDetails pattern) {

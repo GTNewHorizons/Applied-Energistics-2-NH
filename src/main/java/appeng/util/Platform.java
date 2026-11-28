@@ -15,12 +15,14 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.security.InvalidParameterException;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -53,6 +55,8 @@ import net.minecraft.stats.Achievement;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.tileentity.TileEntityChest;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.IChatComponent;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.StatCollector;
@@ -796,6 +800,23 @@ public class Platform {
 
         final String n = ((AEItemStack) is).getModId();
         return n == null ? "** Null" : n;
+    }
+
+    /**
+     * Formats an item count for crafting chat messages: red, locale-grouped digits, colour reset afterwards.
+     */
+    public static String formatChatCount(final long count) {
+        return EnumChatFormatting.RED + NumberFormat.getNumberInstance(Locale.getDefault()).format(count)
+                + EnumChatFormatting.RESET;
+    }
+
+    /**
+     * Formats a stack's name for crafting chat messages: the hoverable item component, coloured gold.
+     */
+    public static IChatComponent formatChatStackName(final IAEStack<?> stack) {
+        final IChatComponent name = stack.getChatComponent();
+        name.getChatStyle().setColor(EnumChatFormatting.GOLD);
+        return name;
     }
 
     public static String getItemDisplayName(final Object o) {
