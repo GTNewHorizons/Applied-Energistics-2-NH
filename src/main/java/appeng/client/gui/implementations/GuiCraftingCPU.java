@@ -627,6 +627,10 @@ public class GuiCraftingCPU extends AEBaseGui implements IGuiTooltipHandler {
     }
 
     public void postInterfaceLocationsUpdate(final List<CraftingProviderLocation> interfaceLocations) {
+        if (interfaceLocations == null) {
+            this.hoveredInterfaceLocations = null;
+            return;
+        }
         final List<NamedDimensionalCoord> locations = new ArrayList<>(interfaceLocations.size());
         for (CraftingProviderLocation location : interfaceLocations) {
             final String name = location.customName() ? location.rawName()
