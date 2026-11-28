@@ -33,6 +33,8 @@ public abstract class GuiAmount extends GuiSub {
     protected GuiQuantityButton minus100;
     protected GuiQuantityButton minus1000;
 
+    private static final int MAX_LONG_DIGITS = String.valueOf(Long.MAX_VALUE).length();
+
     @Reflected
     public GuiAmount(final Container container) {
         super(container);
@@ -57,7 +59,7 @@ public abstract class GuiAmount extends GuiSub {
         };
         this.amountTextField.x = this.guiLeft + 60;
         this.amountTextField.y = this.guiTop + 55;
-        this.amountTextField.setMaxStringLength(16);
+        this.amountTextField.setMaxStringLength(getMaxAmountLength());
         this.amountTextField.setFocused(true);
         this.amountTextField.setUnfocusWithEnter(false);
         this.updateTextFieldTooltip();
@@ -65,6 +67,10 @@ public abstract class GuiAmount extends GuiSub {
 
     protected int getButtonQtyByIndex(int index) {
         return AEConfig.instance.craftItemsByStackAmounts(index);
+    }
+
+    protected int getMaxAmountLength() {
+        return MAX_LONG_DIGITS;
     }
 
     protected void refreshAmountButtons() {
@@ -207,6 +213,11 @@ public abstract class GuiAmount extends GuiSub {
         }
     }
 
+    protected void updateAmountText(final long amount) {
+        this.amountTextField.setText(Long.toString(amount));
+        this.amountTextField.setCursorPositionEnd();
+    }
+
     protected void addAmount(final int i) {
         long resultL = getAmountLong();
 
@@ -214,34 +225,40 @@ public abstract class GuiAmount extends GuiSub {
             resultL = 0;
         }
 
-        resultL += i;
+        try {
+            resultL = Math.addExact(resultL, i);
+        } catch (ArithmeticException e) {
+            resultL = (i > 0) ? Long.MAX_VALUE : 1L;
+        }
+
         if (resultL < 1) {
             resultL = 1;
         }
 
-        this.amountTextField.setText(Long.toString(resultL));
-        this.amountTextField.setCursorPositionEnd();
+        updateAmountText(resultL);
     }
 
     protected int getAmount() {
         String out = this.amountTextField.getText();
-        double resultD = Calculator.conversion(out);
+        final double parsed = parseAmountFromText(out);
 
-        if (resultD <= 0 || Double.isNaN(resultD)) {
-            return 0;
-        } else {
-            return (int) ArithHelper.round(resultD, 0);
-        }
+        return (parsed >= Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) parsed;
     }
 
     protected long getAmountLong() {
         String out = this.amountTextField.getText();
-        double resultD = Calculator.conversion(out);
+        final double parsed = parseAmountFromText(out);
+
+        return (parsed >= Long.MAX_VALUE) ? Long.MAX_VALUE : (long) parsed;
+    }
+
+    protected double parseAmountFromText(String amountText) {
+        double resultD = Calculator.conversion(amountText);
 
         if (resultD <= 0 || Double.isNaN(resultD)) {
             return 0;
         } else {
-            return (long) ArithHelper.round(resultD, 0);
+            return ArithHelper.round(resultD, 0);
         }
     }
 

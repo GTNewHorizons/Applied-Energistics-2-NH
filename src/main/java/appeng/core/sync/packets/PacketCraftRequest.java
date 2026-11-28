@@ -16,17 +16,22 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import appeng.api.config.AmountMode;
 import appeng.api.config.CraftingMode;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridHost;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.crafting.ICraftingGrid;
 import appeng.api.networking.crafting.ICraftingJob;
+import appeng.api.networking.storage.IStorageGrid;
+import appeng.api.storage.IMEMonitor;
+import appeng.api.storage.data.IAEStack;
 import appeng.container.ContainerOpenContext;
 import appeng.container.PrimaryGui;
 import appeng.container.implementations.ContainerCraftAmount;
 import appeng.container.implementations.ContainerCraftConfirm;
 import appeng.core.AELog;
+import appeng.core.localization.PlayerMessages;
 import appeng.core.sync.AppEngPacket;
 import appeng.core.sync.network.INetworkInfo;
 import appeng.me.cache.CraftingGridCache;
@@ -36,6 +41,7 @@ import io.netty.buffer.Unpooled;
 public class PacketCraftRequest extends AppEngPacket {
 
     private final long amount;
+    private final AmountMode amountMode;
     private final boolean heldShift;
     private final boolean heldCtrl;
 
@@ -47,17 +53,19 @@ public class PacketCraftRequest extends AppEngPacket {
         this.heldShift = stream.readBoolean();
         this.heldCtrl = stream.readBoolean();
         this.amount = stream.readLong();
+        this.amountMode = AmountMode.values()[stream.readByte()];
         this.craftingMode = CraftingMode.values()[stream.readByte()];
         this.liteMode = stream.readBoolean();
     }
 
     public PacketCraftRequest(final int craftAmt, final boolean shift, final boolean control) {
-        this(craftAmt, shift, control, CraftingMode.STANDARD, false);
+        this(craftAmt, AmountMode.CRAFT, shift, control, CraftingMode.STANDARD, false);
     }
 
-    public PacketCraftRequest(final long craftAmt, final boolean shift, final boolean control,
-            final CraftingMode craftingMode, final boolean liteMode) {
+    public PacketCraftRequest(final long craftAmt, final AmountMode amountMode, final boolean shift,
+            final boolean control, final CraftingMode craftingMode, final boolean liteMode) {
         this.amount = craftAmt;
+        this.amountMode = amountMode;
         this.heldShift = shift;
         this.heldCtrl = control;
         this.craftingMode = craftingMode;
@@ -69,6 +77,7 @@ public class PacketCraftRequest extends AppEngPacket {
         data.writeBoolean(shift);
         data.writeBoolean(control);
         data.writeLong(this.amount);
+        data.writeByte(amountMode.ordinal());
         data.writeByte(craftingMode.ordinal());
         data.writeBoolean(liteMode);
 
@@ -91,7 +100,11 @@ public class PacketCraftRequest extends AppEngPacket {
                     return;
                 }
 
-                cca.getItemToCraft().setStackSize(this.amount);
+                final IAEStack<?> item = cca.getItemToCraft();
+                if (!setCraftingAmount(g, item)) {
+                    player.addChatMessage(PlayerMessages.CraftingAmountAlreadyAvailable.toChat());
+                    return;
+                }
 
                 Future<ICraftingJob> futureJob = null;
                 try {
@@ -101,17 +114,12 @@ public class PacketCraftRequest extends AppEngPacket {
                                 cca.getWorld(),
                                 cca.getGrid(),
                                 cca.getActionSrc(),
-                                cca.getItemToCraft(),
+                                item,
                                 this.craftingMode,
                                 liteMode,
                                 null);
                     } else {
-                        futureJob = cg.beginCraftingJob(
-                                cca.getWorld(),
-                                cca.getGrid(),
-                                cca.getActionSrc(),
-                                cca.getItemToCraft(),
-                                null);
+                        futureJob = cg.beginCraftingJob(cca.getWorld(), cca.getGrid(), cca.getActionSrc(), item, null);
                     }
 
                     final ContainerOpenContext context = cca.getOpenContext();
@@ -135,5 +143,34 @@ public class PacketCraftRequest extends AppEngPacket {
                 }
             }
         }
+    }
+
+    private boolean setCraftingAmount(IGrid g, IAEStack<?> stack) {
+        long craftAmount = this.amount;
+
+        if (this.amountMode == AmountMode.MATCH_TOTAL) {
+            final long storedAmount = getStoredAmount(g, stack);
+            craftAmount = Math.max(0L, this.amount - storedAmount);
+        }
+
+        if (craftAmount <= 0) {
+            return false;
+        }
+
+        stack.setStackSize(craftAmount);
+
+        return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends IAEStack<T>> long getStoredAmount(IGrid g, IAEStack<T> item) {
+        final IStorageGrid sg = g.getCache(IStorageGrid.class);
+
+        final IMEMonitor<T> monitor = (IMEMonitor<T>) sg.getMEMonitor(item.getStackType());
+        if (monitor == null) return 0L;
+
+        final T stored = monitor.getStorageList().findPrecise((T) item);
+
+        return stored != null ? stored.getStackSize() : 0;
     }
 }

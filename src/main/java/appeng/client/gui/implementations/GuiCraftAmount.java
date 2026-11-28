@@ -18,6 +18,7 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
 import appeng.api.config.ActionItems;
+import appeng.api.config.AmountMode;
 import appeng.api.config.CraftingMode;
 import appeng.api.config.Settings;
 import appeng.api.storage.ITerminalHost;
@@ -65,7 +66,6 @@ public class GuiCraftAmount extends GuiAmount implements IVirtualSlotHolder {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void initGui() {
         super.initGui();
 
@@ -142,9 +142,9 @@ public class GuiCraftAmount extends GuiAmount implements IVirtualSlotHolder {
 
         try {
 
-            int resultI = getAmount();
+            long resultL = getAmountLong();
 
-            this.nextBtn.enabled = resultI > 0;
+            this.nextBtn.enabled = resultL > 0;
         } catch (final NumberFormatException e) {
             this.nextBtn.enabled = false;
         }
@@ -191,6 +191,7 @@ public class GuiCraftAmount extends GuiAmount implements IVirtualSlotHolder {
                 NetworkHandler.instance.sendToServer(
                         new PacketCraftRequest(
                                 getAmountLong(),
+                                getAmountMode(),
                                 isShiftKeyDown(),
                                 isCtrlKeyDown(),
                                 (CraftingMode) this.craftingMode.getCurrentValue(),
@@ -219,6 +220,35 @@ public class GuiCraftAmount extends GuiAmount implements IVirtualSlotHolder {
                 field.mouseClicked(xCoord, yCoord, btn);
             }
         }
+    }
+
+    @Override
+    protected int getMaxAmountLength() {
+        // Extra room for '=' character
+        return super.getMaxAmountLength() + 1;
+    }
+
+    @Override
+    protected double parseAmountFromText(String amountText) {
+        String input = amountText;
+
+        if (input.startsWith("=")) {
+            input = input.substring(1);
+        }
+
+        return super.parseAmountFromText(input);
+    }
+
+    @Override
+    protected void updateAmountText(final long amount) {
+        final boolean matchTotal = (getAmountMode() == AmountMode.MATCH_TOTAL);
+
+        this.amountTextField.setText((matchTotal ? "=" : "") + amount);
+        this.amountTextField.setCursorPositionEnd();
+    }
+
+    private AmountMode getAmountMode() {
+        return this.amountTextField.getText().startsWith("=") ? AmountMode.MATCH_TOTAL : AmountMode.CRAFT;
     }
 
     private void initializeControlValueFields() {
