@@ -91,7 +91,7 @@ public class PartP2PItems extends PartP2PTunnelRouted<PartP2PItems>
 
     @Override
     public P2PTransportPolicy getTransportPolicy() {
-        return P2PTransportPolicy.ONE_WAY_PUSH;
+        return P2PTransportPolicy.ONE_WAY_PUSH_PULL;
     }
 
     @Override
