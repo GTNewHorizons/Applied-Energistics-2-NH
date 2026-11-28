@@ -73,6 +73,7 @@ public class GuiSuperStockReplenisher extends AEBaseGui {
                     xo + i * 18,
                     yo,
                     this.containerSuperStockReplenisher.configFluidsSlots,
+                    this.containerSuperStockReplenisher.configFluidsEditor,
                     i,
                     this::acceptType);
             this.configFluidsSlots[i] = slot;
@@ -86,6 +87,7 @@ public class GuiSuperStockReplenisher extends AEBaseGui {
                         xo + ix * 18,
                         iyo + y * 18,
                         this.containerSuperStockReplenisher.configItemsSlots,
+                        this.containerSuperStockReplenisher.configItemsEditor,
                         y * 9 + ix,
                         this::acceptType);
                 this.configItemsSlots[y * 9 + ix] = slot;

@@ -109,7 +109,8 @@ public class CPacketSwitchGuis implements IMessage {
                             player.worldObj,
                             new BlockPos(te),
                             Objects.requireNonNull(context.getSide()),
-                            guiType);
+                            guiType,
+                            true);
 
                     if (player.openContainer instanceof IContainerSubGui sg) {
                         sg.setPrimaryGui(pGui);

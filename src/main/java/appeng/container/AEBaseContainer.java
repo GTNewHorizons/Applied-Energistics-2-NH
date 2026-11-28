@@ -68,6 +68,7 @@ import appeng.api.util.ItemSearchDTO;
 import appeng.container.guisync.DataSynchronization;
 import appeng.container.implementations.ContainerCellWorkbench.WorkbenchUpgradeInventory;
 import appeng.container.implementations.ContainerUpgradeable;
+import appeng.container.interfaces.IContainerSubGui;
 import appeng.container.interfaces.IInventorySlotAware;
 import appeng.container.slot.AppEngSlot;
 import appeng.container.slot.SlotCraftingMatrix;
@@ -1172,6 +1173,26 @@ public abstract class AEBaseContainer extends Container {
     @Nullable
     public PrimaryGui getPrimaryGui() {
         return primaryGui;
+    }
+
+    /**
+     * @return the player's open container afterwards, which is still this container if the GUI could not be opened, or
+     *         {@code null} if this container has no open context
+     */
+    @Nullable
+    public Container openSubGui(final GuiBridge gui) {
+        final ContainerOpenContext context = this.getOpenContext();
+        if (context == null) {
+            return null;
+        }
+
+        final EntityPlayer player = this.getInventoryPlayer().player;
+        Platform.openGUI(player, context.getTile(), context.getSide(), gui, this.getTargetSlotIndex(), true);
+
+        if (player.openContainer instanceof IContainerSubGui sg) {
+            sg.setPrimaryGui(this.createPrimaryGui());
+        }
+        return player.openContainer;
     }
 
     public int getTargetSlotIndex() {

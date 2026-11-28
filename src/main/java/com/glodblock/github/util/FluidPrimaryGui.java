@@ -22,7 +22,7 @@ public class FluidPrimaryGui extends PrimaryGui {
     public void open(EntityPlayer p) {
         if (gui instanceof GuiType gt) {
             if (te != null) {
-                InventoryHandler.openGui(p, te.getWorldObj(), new BlockPos(te), Objects.requireNonNull(side), gt);
+                InventoryHandler.openGui(p, te.getWorldObj(), new BlockPos(te), Objects.requireNonNull(side), gt, true);
             } else {
                 InventoryHandler.openGui(
                         p,
@@ -32,7 +32,8 @@ public class FluidPrimaryGui extends PrimaryGui {
                                 Util.GuiHelper.encodeType(0, Util.GuiHelper.GuiType.ITEM),
                                 0),
                         Objects.requireNonNull(side),
-                        gt);
+                        gt,
+                        true);
             }
         }
     }

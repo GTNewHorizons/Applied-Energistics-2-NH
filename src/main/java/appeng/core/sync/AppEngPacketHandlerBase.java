@@ -58,7 +58,6 @@ import appeng.core.sync.packets.PacketPartPlacement;
 import appeng.core.sync.packets.PacketPartialItem;
 import appeng.core.sync.packets.PacketPatternMultiSet;
 import appeng.core.sync.packets.PacketPatternSlot;
-import appeng.core.sync.packets.PacketPatternValueSet;
 import appeng.core.sync.packets.PacketPickBlock;
 import appeng.core.sync.packets.PacketPinsUpdate;
 import appeng.core.sync.packets.PacketRemoteRename;
@@ -141,7 +140,6 @@ public class AppEngPacketHandlerBase {
 
         PACKET_CLICK_OR_DRAG_FAKE_SLOT(PacketClickOrDragFakeSlot.class),
 
-        PACKET_PATTERN_VALUE(PacketPatternValueSet.class),
         PACKET_PATTERN_MULTI(PacketPatternMultiSet.class),
         PACKET_CRAFTING_CPU_VISUAL_ENTRIES(PacketCraftingCpuUpdate.class),
         PACKET_CRAFTING_ITEM_INTERFACE(PacketCraftingItemInterface.class),

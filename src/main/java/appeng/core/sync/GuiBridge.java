@@ -52,6 +52,7 @@ import appeng.api.parts.IPatternTerminalEx;
 import appeng.api.parts.IStorageBus;
 import appeng.api.storage.ITerminalHost;
 import appeng.api.util.DimensionalCoord;
+import appeng.client.gui.AEBaseGui;
 import appeng.client.gui.GuiNull;
 import appeng.container.AEBaseContainer;
 import appeng.container.ContainerNull;
@@ -87,11 +88,9 @@ import appeng.container.implementations.ContainerNetworkStatus;
 import appeng.container.implementations.ContainerNetworkTool;
 import appeng.container.implementations.ContainerOptimizePatterns;
 import appeng.container.implementations.ContainerOreFilter;
-import appeng.container.implementations.ContainerPatternItemRenamer;
 import appeng.container.implementations.ContainerPatternMulti;
 import appeng.container.implementations.ContainerPatternTerm;
 import appeng.container.implementations.ContainerPatternTermEx;
-import appeng.container.implementations.ContainerPatternValueAmount;
 import appeng.container.implementations.ContainerPriority;
 import appeng.container.implementations.ContainerPriorityCard;
 import appeng.container.implementations.ContainerQNB;
@@ -101,6 +100,8 @@ import appeng.container.implementations.ContainerSecurity;
 import appeng.container.implementations.ContainerSkyChest;
 import appeng.container.implementations.ContainerSpatialIOPort;
 import appeng.container.implementations.ContainerSpatialLinkChamber;
+import appeng.container.implementations.ContainerStackAmount;
+import appeng.container.implementations.ContainerStackRename;
 import appeng.container.implementations.ContainerStorageBus;
 import appeng.container.implementations.ContainerStorageReshuffle;
 import appeng.container.implementations.ContainerSuperMEReplenisher;
@@ -238,11 +239,11 @@ public enum GuiBridge implements IGuiHandler {
     GUI_CRAFTING_AMOUNT(ContainerCraftAmount.class, ITerminalHost.class, GuiHostType.ITEM_OR_WORLD,
             SecurityPermissions.CRAFT),
 
-    GUI_PATTERN_VALUE_AMOUNT(ContainerPatternValueAmount.class, Object.class, GuiHostType.ITEM_OR_WORLD, null),
+    GUI_STACK_AMOUNT(ContainerStackAmount.class, Object.class, GuiHostType.ITEM_OR_WORLD, null),
 
     GUI_PATTERN_MULTI(ContainerPatternMulti.class, ITerminalHost.class, GuiHostType.ITEM_OR_WORLD, null),
 
-    GUI_PATTERN_ITEM_RENAMER(ContainerPatternItemRenamer.class, ITerminalHost.class, GuiHostType.ITEM_OR_WORLD, null),
+    GUI_STACK_RENAME(ContainerStackRename.class, Object.class, GuiHostType.ITEM_OR_WORLD, null),
 
     GUI_CRAFTING_CONFIRM(ContainerCraftConfirm.class, ITerminalHost.class, GuiHostType.ITEM_OR_WORLD,
             SecurityPermissions.CRAFT),
@@ -276,6 +277,16 @@ public enum GuiBridge implements IGuiHandler {
     private Class guiClass;
     private GuiHostType type;
     private SecurityPermissions requiredPermission;
+
+    private static final int GUI_ID_TYPE_SHIFT = 6;
+    private static final int GUI_ID_SUB_GUI = 1 << 5;
+
+    /**
+     * @param flags host and side bits in the low 5 bits of the ID
+     */
+    public int encodeGuiId(final boolean subGui, final int flags) {
+        return this.ordinal() << GUI_ID_TYPE_SHIFT | (subGui ? GUI_ID_SUB_GUI : 0) | flags;
+    }
 
     GuiBridge() {
         this.tileClass = null;
@@ -322,7 +333,7 @@ public enum GuiBridge implements IGuiHandler {
     public Object getServerGuiElement(final int ordinal, final EntityPlayer player, final World w, final int x,
             final int y, final int z) {
         final ForgeDirection side = ForgeDirection.getOrientation(ordinal & 0x07);
-        final GuiBridge ID = values()[ordinal >> 5];
+        final GuiBridge ID = values()[ordinal >> GUI_ID_TYPE_SHIFT];
         final boolean stem = ((ordinal >> 3) & 1) == 1;
         final boolean pastXLimit = x >= itemGuiSlotOffset;
         final int slotIndex = x - itemGuiSlotOffset;
@@ -471,8 +482,17 @@ public enum GuiBridge implements IGuiHandler {
     @Override
     public Object getClientGuiElement(final int ordinal, final EntityPlayer player, final World w, final int x,
             final int y, final int z) {
+        final Object gui = this.createClientGuiElement(ordinal, player, w, x, y, z);
+        if ((ordinal & GUI_ID_SUB_GUI) != 0 && gui instanceof AEBaseGui aeGui) {
+            aeGui.setSubGui(true);
+        }
+        return gui;
+    }
+
+    private Object createClientGuiElement(final int ordinal, final EntityPlayer player, final World w, final int x,
+            final int y, final int z) {
         final ForgeDirection side = ForgeDirection.getOrientation(ordinal & 0x07);
-        final GuiBridge ID = values()[ordinal >> 5];
+        final GuiBridge ID = values()[ordinal >> GUI_ID_TYPE_SHIFT];
         final boolean stem = ((ordinal >> 3) & 1) == 1;
         final boolean pastXLimit = x >= itemGuiSlotOffset;
         final int slotIndex = x - itemGuiSlotOffset;
